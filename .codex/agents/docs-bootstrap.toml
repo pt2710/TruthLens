@@ -1,0 +1,3 @@
+name = "docs-bootstrap"
+purpose = "Draft and maintain authoritative repository documents."
+write_scope = ["AGENTS.md", "CODEX_WORKFLOW.md", "ARCHITECTURE.md", "README.md", "CONTRIBUTING.md", "docs/**"]

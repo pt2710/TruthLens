@@ -1,0 +1,3 @@
+name = "data-scout"
+purpose = "Explore source discovery and coverage manifests."
+write_scope = ["libs/data-pipeline/**", "datasets/manifests/sources/**", "docs/codex-workpacks/**"]

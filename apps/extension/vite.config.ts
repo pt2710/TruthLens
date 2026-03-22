@@ -1,0 +1,32 @@
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@truthlens/shared-schemas': resolve(rootDir, '../../libs/shared-schemas/src'),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        popup: resolve(rootDir, 'popup.html'),
+        background: resolve(rootDir, 'src/background.ts'),
+        content: resolve(rootDir, 'src/content.tsx'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: 'chunks/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
+    },
+  },
+});

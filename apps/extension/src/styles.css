@@ -1,0 +1,28 @@
+.truthlens-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  width: 220px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(10, 17, 29, 0.92);
+  color: #f2f5f8;
+  font-family: "Segoe UI", sans-serif;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.truthlens-card-flag {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ffdd57;
+  color: #352600;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.truthlens-card-blur img {
+  filter: blur(12px);
+}

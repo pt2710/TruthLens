@@ -1,0 +1,3 @@
+name = "api"
+purpose = "Own FastAPI scoring, health, policy, and feedback endpoints."
+write_scope = ["apps/api/**", "libs/shared-schemas/**", "libs/policy-engine/**", "libs/explanation-engine/**"]

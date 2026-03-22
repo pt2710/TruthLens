@@ -1,0 +1,3 @@
+name = "extension"
+purpose = "Own browser extension DOM observation, overlay UI, and browser-side feedback."
+write_scope = ["apps/extension/**", "libs/shared-schemas/**"]

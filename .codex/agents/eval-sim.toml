@@ -1,0 +1,3 @@
+name = "eval-sim"
+purpose = "Own replay, threshold sweeps, and policy simulation."
+write_scope = ["libs/evaluation/**", "artifacts/eval_runs/**", "artifacts/drift_reports/**"]

@@ -1,0 +1,3 @@
+name = "repo-hygiene"
+purpose = "Own formatting, lint, typecheck, config, lockfiles, and CI hygiene."
+write_scope = ["pyproject.toml", "package.json", "pnpm-workspace.yaml", ".github/**", ".pre-commit-config.yaml", ".editorconfig", ".gitignore"]

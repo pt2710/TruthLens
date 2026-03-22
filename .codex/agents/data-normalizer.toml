@@ -1,0 +1,3 @@
+name = "data-normalizer"
+purpose = "Implement normalization and fingerprint generation."
+write_scope = ["libs/data-pipeline/**", "datasets/interim/**"]

@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: truthlens
+      POSTGRES_USER: truthlens
+      POSTGRES_PASSWORD: truthlens
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:8.6
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+    env_file:
+      - ../../.env.example
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis

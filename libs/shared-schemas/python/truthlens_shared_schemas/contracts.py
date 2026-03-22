@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class RecommendedAction(str, Enum):
+    NONE = "none"
+    BADGE = "badge"
+    BLUR = "blur"
+    HIDE = "hide"
+    ASK_REPORT = "ask-report"
+
+
+class ChannelInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    channel_name: str = Field(min_length=1)
+    channel_url: str | None = None
+    prior_flags: int = 0
+
+
+class ItemMetadata(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    upload_time: str | None = None
+    duration_seconds: int | None = None
+    view_count: int | None = None
+    like_count: int | None = None
+
+
+class ScoreItemRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    thumbnail_ref: str | None = None
+    metadata: ItemMetadata = Field(default_factory=ItemMetadata)
+    channel: ChannelInfo
+
+
+class ScoreResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    risk_score: float = Field(ge=0.0, le=1.0)
+    confidence: float = Field(ge=0.0, le=1.0)
+    uncertainty: float = Field(ge=0.0, le=1.0)
+    recommended_action: RecommendedAction = RecommendedAction.NONE
+    reasons: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_reason_for_actions(self) -> "ScoreResult":
+        if self.recommended_action != RecommendedAction.NONE and not self.reasons:
+            msg = "Active recommendations require at least one reason."
+            raise ValueError(msg)
+        return self
+
+
+class BatchScoreRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[ScoreItemRequest] = Field(min_length=1)
+
+
+class BatchScoreResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    results: dict[str, ScoreResult]
+
+
+class FeedbackEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: str = Field(min_length=1)
+    item_hash: str | None = None
+    model_version: str = Field(min_length=1)
+    policy_version: str = Field(min_length=1)
+    action_shown: RecommendedAction
+    user_action: str = Field(min_length=1)
+    explanation_id: str | None = None
+    before_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    after_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    timestamp: str = Field(min_length=1)
+
+
+class DatasetRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: str
+    platform: str
+    source_run_id: str
+    source_url: str
+    collected_at: str
+    title: str
+    channel_name: str
+    thumbnail_path: str
+    description: str
+    tags: list[str]
+    hashtags: list[str]
+    transcript_excerpt: str | None = None
+    metadata: dict[str, Any]
+    history: dict[str, Any]
+    features: dict[str, Any]
+    labels: dict[str, Any]
+    provenance: dict[str, Any]
+    annotator_notes: list[str]

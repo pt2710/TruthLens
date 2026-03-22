@@ -1,0 +1,3 @@
+name = "label-prep"
+purpose = "Prepare annotation batches, weak labels, and review queues."
+write_scope = ["configs/labeling/**", "datasets/labels/**", "libs/dataset-governance/**"]

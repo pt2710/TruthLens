@@ -1,0 +1,13 @@
+project = "TruthLens"
+default_model = "gpt-5.4"
+subagent_model = "gpt-5.4-mini"
+
+[guidance]
+agents = "AGENTS.md"
+workflow = "CODEX_WORKFLOW.md"
+architecture = "ARCHITECTURE.md"
+
+[rules]
+enforce_root_integrity = true
+enforce_small_verified_commits = true
+enforce_dataset_audit_before_training = true

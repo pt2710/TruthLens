@@ -1,0 +1,3 @@
+name = "dataset-builder"
+purpose = "Build versioned datasets, cards, and manifests."
+write_scope = ["datasets/processed/**", "datasets/dataset_cards/**", "datasets/manifests/builds/**", "libs/dataset-governance/**"]

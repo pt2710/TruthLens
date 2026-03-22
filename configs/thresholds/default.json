@@ -1,0 +1,5 @@
+{
+  "badge_threshold": 0.35,
+  "blur_threshold": 0.6,
+  "report_prompt_threshold": 0.8
+}

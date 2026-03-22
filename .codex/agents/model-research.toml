@@ -1,0 +1,3 @@
+name = "model-research"
+purpose = "Own model experiments, artifacts, and evaluation drafts."
+write_scope = ["apps/trainer/**", "libs/feature-extractors/**", "libs/model-serving/**", "artifacts/trained_models/**"]

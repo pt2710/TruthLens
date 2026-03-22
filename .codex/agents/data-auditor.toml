@@ -1,0 +1,3 @@
+name = "data-auditor"
+purpose = "Implement data audits, leakage checks, and reports."
+write_scope = ["libs/dataset-governance/**", "datasets/manifests/audits/**", "artifacts/data_quality/**"]

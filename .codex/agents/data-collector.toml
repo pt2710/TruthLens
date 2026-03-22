@@ -1,0 +1,3 @@
+name = "data-collector"
+purpose = "Implement raw acquisition scripts and logs."
+write_scope = ["libs/data-pipeline/**", "datasets/raw/**"]
