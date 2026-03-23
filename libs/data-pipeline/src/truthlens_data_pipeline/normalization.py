@@ -16,6 +16,46 @@ from truthlens_feature_extractors import (
 from truthlens_dataset_governance.validators import validate_dataset_record
 
 
+def _thumbnail_signal(item: AcquiredItem) -> dict[str, float]:
+    thumbnail_path = repo_root() / item.thumbnail_path
+    if thumbnail_path.suffix == ".json" and thumbnail_path.exists():
+        payload = json.loads(thumbnail_path.read_text(encoding="utf-8"))
+        if "thumbnail_signal" in payload:
+            signal = payload["thumbnail_signal"]
+        else:
+            signal = payload
+        return {
+            "saturation": float(signal.get("saturation", round(item.risk_seed * 0.65, 4))),
+            "contrast": float(signal.get("contrast", round(0.18 + item.risk_seed * 0.5, 4))),
+            "text_density": float(signal.get("text_density", round(0.15 + item.risk_seed * 0.2, 4))),
+            "face_emphasis": float(signal.get("face_emphasis", round(0.12 + item.risk_seed * 0.2, 4))),
+            "shock_indicator": float(signal.get("shock_indicator", round(0.1 + item.risk_seed * 0.35, 4))),
+        }
+    return {
+        "saturation": round(item.risk_seed * 0.65, 4),
+        "contrast": round(0.18 + item.risk_seed * 0.5, 4),
+        "text_density": round(0.15 + item.risk_seed * 0.15, 4),
+        "face_emphasis": round(0.1 + item.risk_seed * 0.18, 4),
+        "shock_indicator": round(0.08 + item.risk_seed * 0.3, 4),
+    }
+
+
+def _image_fingerprint(item: AcquiredItem) -> str:
+    thumbnail_path = repo_root() / item.thumbnail_path
+    if thumbnail_path.exists():
+        return hashlib.sha1(thumbnail_path.read_bytes()).hexdigest()
+    return hashlib.sha1(
+        json.dumps(
+            {
+                "template_cluster": item.template_cluster,
+                "thumbnail_path": item.thumbnail_path,
+                "channel_name": item.channel_name,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
 def normalize_acquired_items(
     run_id: str,
     acquired_items: list[AcquiredItem],
@@ -39,6 +79,7 @@ def normalize_acquired_items(
     for item in acquired_items:
         normalized_title = normalize_text(item.title)
         normalized_description = normalize_text(item.description)
+        thumbnail_signal = _thumbnail_signal(item)
         title_transcript_overlap = transcript_overlap(normalized_title, item.transcript_excerpt)
         sensational_count = count_sensational_tokens(normalized_title)
         transcript_mismatch = transcript_mismatch_score(
@@ -46,16 +87,7 @@ def normalize_acquired_items(
             item.transcript_excerpt,
             sensational_count,
         )
-        image_fingerprint = hashlib.sha1(
-            json.dumps(
-                {
-                    "template_cluster": item.template_cluster,
-                    "thumbnail_path": item.thumbnail_path,
-                    "channel_name": item.channel_name,
-                },
-                sort_keys=True,
-            ).encode("utf-8")
-        ).hexdigest()
+        image_fingerprint = _image_fingerprint(item)
         text_fingerprint = hashlib.sha1(
             f"{normalized_title.lower()}::{item.channel_name.lower()}".encode("utf-8")
         ).hexdigest()
@@ -105,6 +137,9 @@ def normalize_acquired_items(
                     "mismatch_seed": item.mismatch_seed,
                     "duplicate_of": item.duplicate_of,
                     "transcript_path": item.transcript_path,
+                    "thumbnail_source_url": item.thumbnail_source_url,
+                    "thumbnail_artifact_kind": item.thumbnail_artifact_kind,
+                    "acquisition_status": item.acquisition_status,
                 },
                 "history": {
                     "channel_history_features": history_features,
@@ -121,8 +156,15 @@ def normalize_acquired_items(
                     "mismatch_score": round(item.mismatch_seed, 4),
                     "transcript_title_overlap": title_transcript_overlap,
                     "transcript_mismatch_score": transcript_mismatch,
-                    "thumbnail_saturation": round(item.risk_seed * 0.65, 4),
-                    "thumbnail_text_density": round(0.15 + sensational_count * 0.15, 4),
+                    "thumbnail_saturation": round(thumbnail_signal["saturation"], 4),
+                    "thumbnail_contrast": round(thumbnail_signal["contrast"], 4),
+                    "thumbnail_text_density": round(thumbnail_signal["text_density"], 4),
+                    "thumbnail_face_emphasis": round(thumbnail_signal["face_emphasis"], 4),
+                    "thumbnail_shock_indicator": round(thumbnail_signal["shock_indicator"], 4),
+                    "thumbnail_artifact_kind": item.thumbnail_artifact_kind,
+                    "thumbnail_byte_size": (repo_root() / item.thumbnail_path).stat().st_size
+                    if (repo_root() / item.thumbnail_path).exists()
+                    else 0,
                 },
                 "labels": {},
                 "provenance": {

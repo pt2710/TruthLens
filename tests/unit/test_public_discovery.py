@@ -10,6 +10,7 @@ RSS_FIXTURE = """<?xml version="1.0" encoding="UTF-8"?>
     <link rel="alternate" href="https://www.youtube.com/watch?v=abc123" />
     <published>2026-03-22T12:00:00+00:00</published>
     <media:group>
+      <media:thumbnail url="https://img.youtube.com/vi/abc123/hqdefault.jpg" />
       <media:description>Official update text with #launch and #space tags.</media:description>
     </media:group>
   </entry>
@@ -45,6 +46,7 @@ def test_public_rss_discovery_builds_manifest_and_items() -> None:
     assert manifest.records[0].source_url == source.source_url
     assert len(items) == 2
     assert items[0].source_url == "https://www.youtube.com/watch?v=abc123"
+    assert items[0].thumbnail_url == "https://img.youtube.com/vi/abc123/hqdefault.jpg"
     assert items[0].risk_seed > items[1].risk_seed
     assert "#launch" in items[0].hashtags
 

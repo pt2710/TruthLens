@@ -32,6 +32,7 @@ class DiscoveredItem(BaseModel):
     view_count: int = Field(ge=0)
     like_count: int = Field(ge=0)
     template_cluster: str = Field(min_length=1)
+    thumbnail_url: str | None = None
     thumbnail_signal: dict[str, float]
     risk_seed: float = Field(ge=0.0, le=1.0)
     mismatch_seed: float = Field(ge=0.0, le=1.0)
@@ -221,6 +222,19 @@ def _safe_text(node: ET.Element | None, path: str) -> str:
     return found.text.strip() if found is not None and found.text else ""
 
 
+def _thumbnail_url(entry: ET.Element) -> str | None:
+    media_group = entry.find("media:group", ATOM_NAMESPACE)
+    thumbnail_node = None
+    if media_group is not None:
+        thumbnail_node = media_group.find("media:thumbnail", ATOM_NAMESPACE)
+    if thumbnail_node is None:
+        thumbnail_node = entry.find("media:thumbnail", ATOM_NAMESPACE)
+    if thumbnail_node is None:
+        return None
+    candidate = thumbnail_node.attrib.get("url", "").strip()
+    return candidate or None
+
+
 def _parse_youtube_rss_source(
     run_id: str,
     source: PublicSourceSpec,
@@ -242,6 +256,7 @@ def _parse_youtube_rss_source(
         if not link and video_id:
             link = f"https://www.youtube.com/watch?v={video_id}"
         transcript_excerpt = description or title
+        thumbnail_url = _thumbnail_url(entry)
         keywords = _extract_keywords(title, description)
         hashtags = _extract_hashtags(title, description)
         sensational_hits = sum(token in title.lower() for token in ["breaking", "secret", "confirmed", "urgent", "shocking"])
@@ -267,6 +282,7 @@ def _parse_youtube_rss_source(
                 view_count=0,
                 like_count=0,
                 template_cluster=slugify(source.channel_name),
+                thumbnail_url=thumbnail_url,
                 thumbnail_signal=_thumbnail_signal_from_text(title, description),
                 risk_seed=risk_seed,
                 mismatch_seed=mismatch_seed,
@@ -377,6 +393,7 @@ def build_discovery_run(
                     view_count=12500 + channel_index * 2300 + template_index * 800,
                     like_count=1200 + channel_index * 180 + template_index * 70,
                     template_cluster=template["template_cluster"],
+                    thumbnail_url=None,
                     thumbnail_signal=template["thumbnail_signal"],
                     risk_seed=template["risk_seed"],
                     mismatch_seed=template["mismatch_seed"],
