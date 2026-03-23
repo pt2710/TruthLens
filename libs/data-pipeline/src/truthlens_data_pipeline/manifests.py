@@ -11,6 +11,7 @@ class SourceManifestRecord(BaseModel):
     source_id: str
     source_type: str
     platform: str
+    source_url: str
     collected_at: str
     access_method: str
     expected_fields: list[str]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from truthlens_data_pipeline import (
+    PublicSourceSpec,
     acquire_discovered_items,
     normalize_acquired_items,
     persist_discovery_run,
@@ -17,9 +18,18 @@ from truthlens_dataset_governance import (
 )
 
 
-def run_pipeline(run_id: str | None = None, build_id: str | None = None) -> dict[str, Any]:
+def run_pipeline(
+    run_id: str | None = None,
+    build_id: str | None = None,
+    public_sources: list[PublicSourceSpec] | None = None,
+    fetcher: Any | None = None,
+) -> dict[str, Any]:
     resolved_run_id = run_id or make_run_id("discovery")
-    run_id, source_manifest, discovered_items = persist_discovery_run(resolved_run_id)
+    run_id, source_manifest, discovered_items = persist_discovery_run(
+        resolved_run_id,
+        public_sources=public_sources,
+        fetcher=fetcher,
+    )
     acquired_items, acquisition_manifest = acquire_discovered_items(run_id, discovered_items)
     normalized_records, transform_manifest = normalize_acquired_items(run_id, acquired_items)
     labeled_records, annotation_manifest = prepare_label_batches(run_id, normalized_records)

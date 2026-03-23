@@ -10,6 +10,7 @@ def test_source_manifest_builder() -> None:
                 source_id="youtube-home",
                 source_type="feed",
                 platform="youtube",
+                source_url="https://www.youtube.com/feed/subscriptions",
                 collected_at="2026-03-22T00:00:00Z",
                 access_method="public-dom",
                 expected_fields=["title", "thumbnail", "channel_name"],

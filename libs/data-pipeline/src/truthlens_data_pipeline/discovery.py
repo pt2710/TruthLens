@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import re
+import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from typing import Any
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from truthlens_data_pipeline.manifests import DiscoveryRunManifest, SourceManifestRecord, build_source_manifest
-from truthlens_data_pipeline.paths import ensure_dir, make_run_id, repo_root, slugify, write_json, write_jsonl
+from truthlens_data_pipeline.paths import ensure_dir, make_run_id, repo_root, slugify, utc_now, write_json, write_jsonl
 
 
 class DiscoveredItem(BaseModel):
@@ -32,6 +36,23 @@ class DiscoveredItem(BaseModel):
     risk_seed: float = Field(ge=0.0, le=1.0)
     mismatch_seed: float = Field(ge=0.0, le=1.0)
     duplicate_of: str | None = None
+
+
+class PublicSourceSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str = Field(min_length=1)
+    source_type: str = Field(default="channel-rss", min_length=1)
+    platform: str = Field(default="youtube", min_length=1)
+    source_url: str = Field(min_length=1)
+    channel_name: str = Field(min_length=1)
+    access_method: str = Field(default="public-rss", min_length=1)
+    parsing_risk: str = Field(default="medium", min_length=1)
+    channel_prior_flags: int = Field(default=0, ge=0)
+
+
+FetchText = Callable[[str], str]
+ATOM_NAMESPACE = {"atom": "http://www.w3.org/2005/Atom", "media": "http://search.yahoo.com/mrss/"}
 
 
 def _channels() -> list[dict[str, Any]]:
@@ -157,8 +178,153 @@ def _neutral_templates() -> list[dict[str, Any]]:
     ]
 
 
-def build_discovery_run(run_id: str | None = None) -> tuple[str, DiscoveryRunManifest, list[DiscoveredItem]]:
+def _extract_hashtags(*values: str) -> list[str]:
+    tags: list[str] = []
+    for value in values:
+        tags.extend(re.findall(r"#([a-zA-Z0-9_-]+)", value))
+    return [f"#{tag.lower()}" for tag in dict.fromkeys(tags)]
+
+
+def _extract_keywords(*values: str) -> list[str]:
+    combined = " ".join(values).lower()
+    candidates = re.findall(r"[a-z][a-z0-9-]{3,}", combined)
+    keywords = [token for token in candidates if token not in {"https", "watch", "www", "youtube"}]
+    return list(dict.fromkeys(keywords[:6]))
+
+
+def _thumbnail_signal_from_text(title: str, description: str) -> dict[str, float]:
+    text = f"{title} {description}".lower()
+    sensational_hits = sum(
+        token in text for token in ["breaking", "secret", "confirmed", "shocking", "urgent", "exposed", "leak"]
+    )
+    text_density = min(0.18 + sensational_hits * 0.12 + len(title) / 180.0, 0.9)
+    shock_indicator = min(0.08 + sensational_hits * 0.16, 0.95)
+    return {
+        "saturation": round(min(0.28 + sensational_hits * 0.13, 0.92), 4),
+        "contrast": round(min(0.3 + sensational_hits * 0.11, 0.88), 4),
+        "text_density": round(text_density, 4),
+        "face_emphasis": round(min(0.1 + sensational_hits * 0.09, 0.86), 4),
+        "shock_indicator": round(shock_indicator, 4),
+    }
+
+
+def _default_fetch_text(source_url: str) -> str:
+    response = httpx.get(source_url, timeout=20.0, follow_redirects=True)
+    response.raise_for_status()
+    return response.text
+
+
+def _safe_text(node: ET.Element | None, path: str) -> str:
+    if node is None:
+        return ""
+    found = node.find(path, ATOM_NAMESPACE)
+    return found.text.strip() if found is not None and found.text else ""
+
+
+def _parse_youtube_rss_source(
+    run_id: str,
+    source: PublicSourceSpec,
+    feed_text: str,
+) -> list[DiscoveredItem]:
+    root = ET.fromstring(feed_text)
+    items: list[DiscoveredItem] = []
+    for index, entry in enumerate(root.findall("atom:entry", ATOM_NAMESPACE), start=1):
+        video_id = _safe_text(entry, "yt:videoId") if "yt" in ATOM_NAMESPACE else ""
+        if not video_id:
+            video_id = _safe_text(entry, "atom:id").split(":")[-1]
+        title = _safe_text(entry, "atom:title") or f"{source.channel_name} item {index}"
+        description = _safe_text(entry, "media:group/media:description") or _safe_text(entry, "atom:title")
+        upload_time = _safe_text(entry, "atom:published") or utc_now()
+        link = ""
+        link_node = entry.find("atom:link[@rel='alternate']", ATOM_NAMESPACE) or entry.find("atom:link", ATOM_NAMESPACE)
+        if link_node is not None:
+            link = link_node.attrib.get("href", "")
+        if not link and video_id:
+            link = f"https://www.youtube.com/watch?v={video_id}"
+        transcript_excerpt = description or title
+        keywords = _extract_keywords(title, description)
+        hashtags = _extract_hashtags(title, description)
+        sensational_hits = sum(token in title.lower() for token in ["breaking", "secret", "confirmed", "urgent", "shocking"])
+        risk_seed = round(min(0.14 + sensational_hits * 0.16, 0.92), 4)
+        mismatch_seed = round(min(0.08 + sensational_hits * 0.06, 0.52), 4)
+        item_id = slugify(video_id or f"{source.source_id}-{index}")
+        items.append(
+            DiscoveredItem(
+                item_id=item_id,
+                source_id=source.source_id,
+                source_type=source.source_type,
+                platform=source.platform,
+                source_url=link,
+                channel_name=source.channel_name,
+                channel_prior_flags=source.channel_prior_flags,
+                title=title,
+                description=description or title,
+                tags=keywords,
+                hashtags=hashtags,
+                transcript_excerpt=transcript_excerpt,
+                upload_time=upload_time,
+                duration_seconds=0,
+                view_count=0,
+                like_count=0,
+                template_cluster=slugify(source.channel_name),
+                thumbnail_signal=_thumbnail_signal_from_text(title, description),
+                risk_seed=risk_seed,
+                mismatch_seed=mismatch_seed,
+            )
+        )
+    return items
+
+
+def _build_public_discovery_run(
+    run_id: str,
+    public_sources: list[PublicSourceSpec],
+    fetcher: FetchText | None = None,
+) -> tuple[str, DiscoveryRunManifest, list[DiscoveredItem]]:
+    resolved_fetcher = fetcher or _default_fetch_text
+    records: list[SourceManifestRecord] = []
+    items: list[DiscoveredItem] = []
+
+    for source in public_sources:
+        status = "pending"
+        try:
+            feed_text = resolved_fetcher(source.source_url)
+            parsed_items = _parse_youtube_rss_source(run_id, source, feed_text)
+            items.extend(parsed_items)
+            status = "collected" if parsed_items else "quarantined"
+        except (httpx.HTTPError, ET.ParseError, ValueError):
+            status = "failed"
+        records.append(
+            SourceManifestRecord(
+                source_id=source.source_id,
+                source_type=source.source_type,
+                platform=source.platform,
+                source_url=source.source_url,
+                collected_at=run_id,
+                access_method=source.access_method,
+                expected_fields=[
+                    "title",
+                    "description",
+                    "source_url",
+                    "channel_name",
+                    "upload_time",
+                    "transcript_excerpt",
+                ],
+                parsing_risk=source.parsing_risk,
+                status=status,
+            )
+        )
+
+    return run_id, build_source_manifest(run_id, records), items
+
+
+def build_discovery_run(
+    run_id: str | None = None,
+    public_sources: list[PublicSourceSpec] | None = None,
+    fetcher: FetchText | None = None,
+) -> tuple[str, DiscoveryRunManifest, list[DiscoveredItem]]:
     resolved_run_id = run_id or make_run_id("discovery")
+    if public_sources:
+        return _build_public_discovery_run(resolved_run_id, public_sources, fetcher)
     records: list[SourceManifestRecord] = []
     items: list[DiscoveredItem] = []
     risk_templates = _risk_templates()
@@ -171,6 +337,7 @@ def build_discovery_run(run_id: str | None = None) -> tuple[str, DiscoveryRunMan
                 source_id=source_slug,
                 source_type="channel-feed",
                 platform="youtube",
+                source_url=f"https://www.youtube.com/@{source_slug}",
                 collected_at=resolved_run_id,
                 access_method="synthetic-bootstrap",
                 expected_fields=[
@@ -232,8 +399,12 @@ def build_discovery_run(run_id: str | None = None) -> tuple[str, DiscoveryRunMan
     return resolved_run_id, build_source_manifest(resolved_run_id, records), items
 
 
-def persist_discovery_run(run_id: str | None = None) -> tuple[str, DiscoveryRunManifest, list[DiscoveredItem]]:
-    resolved_run_id, manifest, items = build_discovery_run(run_id)
+def persist_discovery_run(
+    run_id: str | None = None,
+    public_sources: list[PublicSourceSpec] | None = None,
+    fetcher: FetchText | None = None,
+) -> tuple[str, DiscoveryRunManifest, list[DiscoveredItem]]:
+    resolved_run_id, manifest, items = build_discovery_run(run_id, public_sources=public_sources, fetcher=fetcher)
     root = repo_root()
     discovery_dir = ensure_dir(root / "datasets" / "raw" / "discovery_runs")
     source_manifest_dir = ensure_dir(root / "datasets" / "raw" / "source_manifests")

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from truthlens_data_pipeline import PublicSourceSpec
 from truthlens_data_pipeline.paths import read_json, read_jsonl, repo_root
 from truthlens_model_serving import describe_model
 from truthlens_trainer.pipeline import run_pipeline
@@ -60,3 +61,42 @@ def test_training_and_simulation_generate_artifacts(
     assert simulation_report["replay_summary"]["steps"] > 0
     assert "retraining_recommended" in drift_report
     assert "label_distribution_shift" in drift_report
+
+
+def test_pipeline_supports_public_rss_sources(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    rss_fixture = """<?xml version="1.0" encoding="UTF-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+      <entry>
+        <id>yt:video:public001</id>
+        <title>Breaking orbital weather bulletin</title>
+        <link rel="alternate" href="https://www.youtube.com/watch?v=public001" />
+        <published>2026-03-22T12:00:00+00:00</published>
+        <media:group>
+          <media:description>Bulletin text with #weather and #orbit.</media:description>
+        </media:group>
+      </entry>
+    </feed>
+    """
+    public_sources = [
+        PublicSourceSpec(
+            source_id="public-rss-source",
+            source_url="https://www.youtube.com/feeds/videos.xml?channel_id=public",
+            channel_name="Public RSS Source",
+            channel_prior_flags=1,
+        )
+    ]
+
+    result = run_pipeline(
+        run_id="discovery-public-rss",
+        build_id="build-public-rss",
+        public_sources=public_sources,
+        fetcher=lambda _url: rss_fixture,
+    )
+
+    manifest_path = repo_root() / "datasets" / "raw" / "source_manifests" / "discovery-public-rss.json"
+    manifest = read_json(manifest_path)
+
+    assert result["build_manifest"]["counts"]["train"] >= 0
+    assert manifest["records"][0]["status"] == "collected"
+    assert manifest["records"][0]["access_method"] == "public-rss"

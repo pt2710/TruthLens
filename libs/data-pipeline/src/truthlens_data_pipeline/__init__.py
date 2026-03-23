@@ -1,5 +1,5 @@
 from .acquisition import AcquiredItem, acquire_discovered_items
-from .discovery import DiscoveredItem, build_discovery_run, persist_discovery_run
+from .discovery import PublicSourceSpec, DiscoveredItem, build_discovery_run, persist_discovery_run
 from .labeling import prepare_label_batches
 from .manifests import DiscoveryRunManifest, SourceManifestRecord, build_source_manifest
 from .normalization import normalize_acquired_items
@@ -9,6 +9,7 @@ __all__ = [
     "AcquiredItem",
     "DiscoveredItem",
     "DiscoveryRunManifest",
+    "PublicSourceSpec",
     "SourceManifestRecord",
     "acquire_discovered_items",
     "build_discovery_run",
