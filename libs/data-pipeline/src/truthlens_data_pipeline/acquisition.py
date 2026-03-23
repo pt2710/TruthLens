@@ -138,6 +138,11 @@ def _caption_excerpt(xml_text: str, *, limit: int = 320) -> str:
     return transcript[:limit].strip()
 
 
+def _extract_hashtags(text: str) -> list[str]:
+    hashtags = re.findall(r"(#[A-Za-z0-9_]+)", text)
+    return sorted({tag.lower() for tag in hashtags})
+
+
 def _watch_page_metadata(
     html: str,
     *,
@@ -152,6 +157,7 @@ def _watch_page_metadata(
         duration = json_ld.get("duration")
         interaction_count = json_ld.get("interactionCount")
         description = json_ld.get("description")
+        keywords = json_ld.get("keywords")
         thumbnail_url = json_ld.get("thumbnailUrl")
         if isinstance(duration, str):
             metadata["duration_seconds"] = _parse_iso8601_duration(duration)
@@ -159,6 +165,8 @@ def _watch_page_metadata(
             metadata["view_count"] = int(interaction_count)
         if isinstance(description, str) and description.strip():
             metadata["description"] = description.strip()
+        if isinstance(keywords, list):
+            metadata["tags"] = [str(keyword).strip().lower() for keyword in keywords if str(keyword).strip()]
         if isinstance(thumbnail_url, list) and thumbnail_url:
             metadata["thumbnail_source_url"] = str(thumbnail_url[0])
         elif isinstance(thumbnail_url, str) and thumbnail_url.strip():
@@ -174,12 +182,15 @@ def _watch_page_metadata(
             short_description = video_details.get("shortDescription")
             length_seconds = video_details.get("lengthSeconds")
             view_count = video_details.get("viewCount")
+            keywords = video_details.get("keywords")
             if isinstance(short_description, str) and short_description.strip():
                 metadata["description"] = short_description.strip()
             if isinstance(length_seconds, str) and length_seconds.isdigit():
                 metadata["duration_seconds"] = int(length_seconds)
             if isinstance(view_count, str) and view_count.isdigit():
                 metadata["view_count"] = int(view_count)
+            if isinstance(keywords, list):
+                metadata["tags"] = [str(keyword).strip().lower() for keyword in keywords if str(keyword).strip()]
 
         captions = player_response.get("captions", {})
         if isinstance(captions, dict):
@@ -199,6 +210,7 @@ def _watch_page_metadata(
     description = metadata.get("description") or _meta_content(html, name="description")
     if description:
         metadata["description"] = str(description).strip()
+        metadata["hashtags"] = _extract_hashtags(metadata["description"])
     thumbnail_url = metadata.get("thumbnail_source_url") or _meta_content(html, prop="og:image")
     if thumbnail_url:
         metadata["thumbnail_source_url"] = str(thumbnail_url).strip()
@@ -255,6 +267,8 @@ def acquire_discovered_items(
         title = str(watch_metadata.get("title") or item.title)
         duration_seconds = int(watch_metadata.get("duration_seconds") or item.duration_seconds)
         view_count = int(watch_metadata.get("view_count") or item.view_count)
+        tags = [str(tag) for tag in (watch_metadata.get("tags") or item.tags)]
+        hashtags = [str(tag) for tag in (watch_metadata.get("hashtags") or item.hashtags)]
 
         if thumbnail_source_url:
             suffix = _artifact_suffix(thumbnail_source_url)
@@ -312,8 +326,8 @@ def acquire_discovered_items(
             channel_prior_flags=item.channel_prior_flags,
             title=title,
             description=description,
-            tags=item.tags,
-            hashtags=item.hashtags,
+            tags=tags,
+            hashtags=hashtags,
             transcript_excerpt=transcript_excerpt,
             upload_time=item.upload_time,
             duration_seconds=duration_seconds,

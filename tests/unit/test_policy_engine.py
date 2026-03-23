@@ -82,3 +82,33 @@ def test_policy_profile_loads_bandit_adjustments(
     profile = get_policy_profile()
 
     assert profile["bandit_adjustments"]["hide_threshold_offset"] == 0.03
+
+
+def test_policy_profile_loads_evolutionary_summary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    thresholds_dir = tmp_path / "configs" / "thresholds"
+    thresholds_dir.mkdir(parents=True, exist_ok=True)
+    (thresholds_dir / "evolutionary-search.json").write_text(
+        json.dumps(
+            {
+                "best_thresholds": {
+                    "badge_threshold": 0.33,
+                    "blur_threshold": 0.57,
+                    "report_prompt_threshold": 0.79,
+                    "hide_threshold": 0.9,
+                },
+                "best_fitness": 1.14,
+                "population_size": 12,
+                "generations": 4,
+            },
+            ensure_ascii=True,
+        ),
+        encoding="utf-8",
+    )
+
+    profile = get_policy_profile()
+
+    assert profile["evolutionary_search"]["best_thresholds"]["badge_threshold"] == 0.33

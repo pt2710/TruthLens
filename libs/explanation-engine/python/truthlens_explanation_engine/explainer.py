@@ -69,6 +69,20 @@ def _append_evidence(
     )
 
 
+def _counterfactual_details(summary: dict[str, Any]) -> str | None:
+    counterfactuals = summary.get("fusion_counterfactuals", [])
+    if not isinstance(counterfactuals, list) or not counterfactuals:
+        return None
+    top = counterfactuals[0]
+    if not isinstance(top, dict):
+        return None
+    name = top.get("name")
+    score_drop = top.get("score_drop")
+    if not isinstance(name, str) or not isinstance(score_drop, (float, int)):
+        return None
+    return f"If {_format_feature_name(name)} were removed, fusion risk drops by {float(score_drop):.2f}."
+
+
 def build_explanation(
     payload: ScoreItemRequest,
     signals: ModelSignals,
@@ -188,6 +202,15 @@ def build_explanation(
             score=signals.uncertainty,
             details=reason,
         )
+    counterfactual = _counterfactual_details(signals.feature_summary)
+    if counterfactual:
+        _append_evidence(
+            evidence,
+            "policy",
+            "Largest counterfactual driver",
+            score=signals.calibrated_score,
+            details=counterfactual,
+        )
     if action == RecommendedAction.ASK_REPORT:
         reason = f"Risk score crossed the report-prompt threshold at {thresholds['report_prompt_threshold']:.2f}."
         reasons.append(reason)
@@ -201,7 +224,7 @@ def build_explanation(
             "policy",
             "Policy crossed the report threshold",
             score=signals.calibrated_score,
-            details=details or reason,
+            details=counterfactual or details or reason,
         )
     if action == RecommendedAction.HIDE:
         reason = "Risk and confidence crossed the local hide threshold for feed filtering."
@@ -216,7 +239,7 @@ def build_explanation(
             "policy",
             "Policy crossed the local hide threshold",
             score=signals.calibrated_score,
-            details=details or reason,
+            details=counterfactual or details or reason,
         )
 
     summary_parts = reasons[:2] if reasons else ["No active intervention is recommended for this item."]

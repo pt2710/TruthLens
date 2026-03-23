@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     policy_version: str = "bootstrap-v0"
     log_level: str = "INFO"
     feedback_log_path: str = "artifacts/reports/feedback_events.jsonl"
+    require_api_key: bool = False
+    api_key: str | None = None
+    rate_limit_per_minute: int = 240
 
 
 settings = Settings()

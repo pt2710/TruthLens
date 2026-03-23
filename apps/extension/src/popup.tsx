@@ -39,9 +39,17 @@ function Popup() {
         <div style={{ display: 'grid', gap: 6 }}>
           <Metric label="Mode" value={modelInfo?.mode ?? 'loading'} />
           <Metric label="Version" value={modelInfo?.model_version ?? 'loading'} />
+          <Metric label="Artifacts" value={modelInfo?.artifact_status ?? 'loading'} />
           <p style={{ margin: 0, color: '#555', fontSize: 12 }}>
             Heads: {(modelInfo?.available_heads ?? []).join(', ') || 'bootstrap-fallback'}
           </p>
+          <div style={{ display: 'grid', gap: 4 }}>
+            {(modelInfo?.head_specs ?? []).slice(0, 6).map((head) => (
+              <span key={head.name} style={{ color: '#555', fontSize: 12 }}>
+                {head.name}: {head.family} via {head.backend}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 

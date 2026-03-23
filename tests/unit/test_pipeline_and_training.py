@@ -52,6 +52,9 @@ def test_training_and_simulation_generate_artifacts(
     assert model_info["artifact_status"] == "compatible"
     assert "runtime_library_versions" in model_info
     assert "training_library_versions" in model_info
+    assert "head_specs" in model_info
+    assert model_info["head_specs"][0]["name"] == "text"
+    assert "fusion_profile" in model_info
     assert model_dir.joinpath("model_bundle.pkl").exists()
     assert model_dir.joinpath("model_info.json").exists()
     assert (repo_root() / "artifacts/eval_runs").exists()
@@ -64,6 +67,7 @@ def test_training_and_simulation_generate_artifacts(
     assert "policy" in simulation_report
     assert "bellman_state_values" in simulation_report
     assert "replay_summary" in simulation_report
+    assert "evolutionary_search" in simulation_report
     assert "contextual_bandit" in simulation_report
     assert "bandit_threshold_adjustments" in simulation_report
     assert simulation_report["replay_summary"]["steps"] > 0
@@ -72,6 +76,7 @@ def test_training_and_simulation_generate_artifacts(
     assert "corrupted_image_rate" in audit_report
     assert "parser_failure_rate" in audit_report
     assert (repo_root() / "configs/thresholds/contextual-bandit.json").exists()
+    assert (repo_root() / "configs/thresholds/evolutionary-search.json").exists()
 
 
 def test_trained_scoring_surfaces_model_contributor_details(
@@ -104,6 +109,10 @@ def test_trained_scoring_surfaces_model_contributor_details(
 
     assert any(
         entry.details is not None and "Top" in entry.details
+        for entry in result.evidence
+    )
+    assert any(
+        entry.details is not None and "fusion risk drops" in entry.details
         for entry in result.evidence
     )
 

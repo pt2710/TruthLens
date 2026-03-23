@@ -16,7 +16,7 @@ WATCH_HTML = """
       {"duration":"PT13M5S","interactionCount":"45678","thumbnailUrl":["https://img.youtube.com/vi/rss-item-1/maxresdefault.jpg"]}
     </script>
     <script>
-      var ytInitialPlayerResponse = {"videoDetails":{"shortDescription":"Detailed watch-page description.","lengthSeconds":"785","viewCount":"45678"},"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"baseUrl":"https://example.com/captions.xml"}]}}};
+      var ytInitialPlayerResponse = {"videoDetails":{"shortDescription":"Detailed watch-page description. #Weather #Orbit","lengthSeconds":"785","viewCount":"45678","keywords":["orbit","weather","#orbit"]},"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"baseUrl":"https://example.com/captions.xml"}]}}};
     </script>
   </head>
 </html>
@@ -141,10 +141,12 @@ def test_acquisition_enriches_watch_page_metadata_and_captions(
     transcript_path = repo_root() / acquired.transcript_path
 
     assert acquired.title == "Enriched orbital weather bulletin"
-    assert acquired.description == "Detailed watch-page description."
+    assert acquired.description.startswith("Detailed watch-page description.")
     assert acquired.thumbnail_source_url == "https://img.youtube.com/vi/rss-item-1/maxresdefault.jpg"
     assert acquired.duration_seconds == 785
     assert acquired.view_count == 45678
+    assert "orbit" in acquired.tags
+    assert "#weather" in acquired.hashtags
     assert "Transcript enrichment" in acquired.transcript_excerpt
     assert "Transcript enrichment" in transcript_path.read_text(encoding="utf-8")
     assert manifest["watch_page_enrichment_rate"] == 1.0

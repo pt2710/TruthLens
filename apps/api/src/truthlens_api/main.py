@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from time import monotonic
+from uuid import uuid4
 
-from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse, PlainTextResponse
+from typing import Any
 
 from truthlens_api.settings import settings
 from truthlens_model_serving import (
@@ -23,6 +26,8 @@ from truthlens_shared_schemas.contracts import (
 )
 
 app = FastAPI(title="TruthLens API", version="0.1.0")
+_REQUEST_WINDOWS: dict[str, list[float]] = {}
+_REQUEST_COUNTS: dict[str, int] = {}
 
 
 def _utc_timestamp() -> str:
@@ -52,9 +57,84 @@ def _audit_score_event(
     )
 
 
+def _record_request(path: str) -> None:
+    _REQUEST_COUNTS[path] = _REQUEST_COUNTS.get(path, 0) + 1
+
+
+def _request_key(request: Request) -> str:
+    host = request.client.host if request.client is not None else "unknown"
+    return f"{host}:{request.url.path}"
+
+
+def _enforce_rate_limit(request: Request) -> JSONResponse | None:
+    if settings.rate_limit_per_minute <= 0:
+        return None
+    key = _request_key(request)
+    now = monotonic()
+    window = _REQUEST_WINDOWS.setdefault(key, [])
+    _REQUEST_WINDOWS[key] = [timestamp for timestamp in window if now - timestamp < 60.0]
+    if len(_REQUEST_WINDOWS[key]) >= settings.rate_limit_per_minute:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={"detail": "Rate limit exceeded."},
+        )
+    _REQUEST_WINDOWS[key].append(now)
+    return None
+
+
+def _enforce_api_key(request: Request) -> JSONResponse | None:
+    if not settings.require_api_key:
+        return None
+    if request.url.path == "/health":
+        return None
+    expected = settings.api_key or ""
+    presented = request.headers.get("x-truthlens-api-key", "")
+    if not expected or presented != expected:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Invalid API key."},
+        )
+    return None
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next: Any) -> Any:
+    api_key_response = _enforce_api_key(request)
+    if api_key_response is not None:
+        api_key_response.headers["X-TruthLens-Request-Id"] = f"req-{uuid4().hex[:12]}"
+        return api_key_response
+    rate_limit_response = _enforce_rate_limit(request)
+    request_id = f"req-{uuid4().hex[:12]}"
+    if rate_limit_response is not None:
+        rate_limit_response.headers["X-TruthLens-Request-Id"] = request_id
+        return rate_limit_response
+
+    response = await call_next(request)
+    _record_request(request.url.path)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-TruthLens-Request-Id"] = request_id
+    return response
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "env": settings.env}
+
+
+@app.get("/ready")
+def ready() -> dict[str, object]:
+    model = describe_model()
+    policy = get_policy_profile()
+    artifact_status = str(model.get("artifact_status", "missing"))
+    return {
+        "ready": artifact_status != "incompatible",
+        "artifact_status": artifact_status,
+        "policy_version": policy.get("policy_version"),
+        "model_version": model.get("model_version"),
+    }
 
 
 @app.get("/model-info")
@@ -135,4 +215,6 @@ def metrics() -> str:
         lines.append(
             f'truthlens_feedback_action_total{{action="{action}"}} {count}'
         )
+    for path, count in sorted(_REQUEST_COUNTS.items()):
+        lines.append(f'truthlens_api_requests_total{{path="{path}"}} {count}')
     return "\n".join(lines) + "\n"

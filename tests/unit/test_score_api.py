@@ -18,13 +18,17 @@ def test_health_endpoint() -> None:
 def test_info_endpoints() -> None:
     model_response = client.get("/model-info")
     policy_response = client.get("/policy-info")
+    ready_response = client.get("/ready")
 
     assert model_response.status_code == 200
     assert "mode" in model_response.json()
     assert "artifact_status" in model_response.json()
+    assert "head_specs" in model_response.json()
 
     assert policy_response.status_code == 200
     assert "effective_thresholds" in policy_response.json()
+    assert ready_response.status_code == 200
+    assert "ready" in ready_response.json()
 
 
 def test_score_item_contract() -> None:
@@ -163,6 +167,8 @@ def test_metrics_endpoint_exposes_score_and_feedback_counters(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    monkeypatch.setattr("truthlens_api.main._REQUEST_COUNTS", {})
+    monkeypatch.setattr("truthlens_api.main._REQUEST_WINDOWS", {})
 
     client.post(
         "/score-item",
@@ -200,6 +206,18 @@ def test_metrics_endpoint_exposes_score_and_feedback_counters(
     assert "truthlens_score_events_total 1" in response.text
     assert "truthlens_feedback_events_total 1" in response.text
     assert 'truthlens_feedback_action_total{action="report"} 1' in response.text
+    assert 'truthlens_api_requests_total{path="/score-item"} 1' in response.text
+
+
+def test_api_key_can_be_required(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("truthlens_api.main.settings.require_api_key", True)
+    monkeypatch.setattr("truthlens_api.main.settings.api_key", "secret-key")
+
+    unauthorized = client.get("/model-info")
+    authorized = client.get("/model-info", headers={"x-truthlens-api-key": "secret-key"})
+
+    assert unauthorized.status_code == 401
+    assert authorized.status_code == 200
 
 
 def test_muted_channel_forces_hide() -> None:

@@ -12,6 +12,7 @@ from truthlens_evaluation import (
     estimate_state_values,
     recommend_bandit_threshold_adjustments,
     run_contextual_bandit,
+    run_evolutionary_search,
     run_policy_replay,
     run_threshold_sweep,
     search_threshold_family,
@@ -66,6 +67,8 @@ def main() -> None:
     state_values = estimate_state_values(q_table)
     replay_summary = run_policy_replay(score_rows, q_table)
     thresholds = search_threshold_family(sweep)
+    evolutionary_search = run_evolutionary_search(score_rows, seed_thresholds=thresholds)
+    thresholds = evolutionary_search["best_thresholds"]
     contextual_bandit = run_contextual_bandit(score_rows)
     bandit_threshold_adjustments = recommend_bandit_threshold_adjustments(contextual_bandit)
     drift_report = build_drift_report(train_rows, test_rows)
@@ -83,6 +86,7 @@ def main() -> None:
         "bellman_state_values": state_values,
         "replay_summary": replay_summary,
         "recommended_thresholds": thresholds,
+        "evolutionary_search": evolutionary_search,
         "contextual_bandit": contextual_bandit,
         "bandit_threshold_adjustments": bandit_threshold_adjustments,
     }
@@ -98,6 +102,10 @@ def main() -> None:
     thresholds_dir = ensure_dir(repo_root() / "configs" / "thresholds")
     thresholds_path = thresholds_dir / "default.json"
     thresholds_path.write_text(json.dumps(thresholds, indent=2, ensure_ascii=True), encoding="utf-8")
+    (thresholds_dir / "evolutionary-search.json").write_text(
+        json.dumps(evolutionary_search, indent=2, ensure_ascii=True),
+        encoding="utf-8",
+    )
     (thresholds_dir / "contextual-bandit.json").write_text(
         json.dumps(bandit_threshold_adjustments, indent=2, ensure_ascii=True),
         encoding="utf-8",

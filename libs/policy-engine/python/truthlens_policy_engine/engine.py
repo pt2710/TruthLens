@@ -57,6 +57,13 @@ def _load_bandit_adjustments() -> dict[str, float]:
     }
 
 
+def _load_evolutionary_search() -> dict[str, Any] | None:
+    path = _repo_root() / "configs" / "thresholds" / "evolutionary-search.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _feedback_summary() -> dict[str, Any]:
     return summarize_feedback_events(load_feedback_events()[-200:])
 
@@ -100,10 +107,12 @@ def get_policy_profile() -> dict[str, Any]:
         3,
     )
     adjusted["hide_threshold"] = round(adjusted["hide_threshold"] + bandit_adjustments["hide_threshold_offset"], 3)
+    evolutionary_search = _load_evolutionary_search()
     return {
         "policy_version": "adaptive-threshold-v1",
         "base_thresholds": thresholds,
         "bandit_adjustments": bandit_adjustments,
+        "evolutionary_search": evolutionary_search,
         "feedback_bias": round(bias, 3),
         "effective_thresholds": adjusted,
         "feedback_summary": {

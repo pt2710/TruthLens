@@ -18,7 +18,13 @@ const scoreCache = new Map<string, ScoreResult>();
 export type ModelInfo = {
   mode: string;
   model_version?: string;
+  artifact_status?: string;
   available_heads?: string[];
+  head_specs?: Array<{
+    name: string;
+    family: string;
+    backend: string;
+  }>;
 };
 
 export type PolicyInfo = {
@@ -156,7 +162,7 @@ export async function fetchModelInfo(): Promise<ModelInfo> {
     }
     return (await response.json()) as ModelInfo;
   } catch {
-    return { mode: 'bootstrap', model_version: 'extension-fallback' };
+    return { mode: 'bootstrap', model_version: 'extension-fallback', artifact_status: 'missing' };
   }
 }
 

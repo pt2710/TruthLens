@@ -114,6 +114,31 @@ def _top_dense_contributors(
     return contributors[:limit]
 
 
+def _dense_counterfactuals(
+    model: Any,
+    feature_names: list[str],
+    vector: np.ndarray,
+    *,
+    limit: int = 2,
+) -> list[dict[str, float | str]]:
+    if not hasattr(model, "predict_proba"):
+        return []
+    baseline = _safe_probability(model, vector.reshape(1, -1))
+    counterfactuals: list[dict[str, float | str]] = []
+    for index, feature_name in enumerate(feature_names):
+        ablated = np.asarray(vector, dtype=float).copy()
+        if index >= ablated.shape[0]:
+            continue
+        ablated[index] = 0.0
+        score = _safe_probability(model, ablated.reshape(1, -1))
+        score_drop = round(max(baseline - score, 0.0), 4)
+        if score_drop <= 0:
+            continue
+        counterfactuals.append({"name": feature_name, "score_drop": score_drop})
+    counterfactuals.sort(key=lambda item: float(item["score_drop"]), reverse=True)
+    return counterfactuals[:limit]
+
+
 def _top_text_contributors(
     model: Any,
     vectorizer: Any,
@@ -400,6 +425,11 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             FUSION_FEATURE_NAMES,
             fusion_features,
         )
+        summary["fusion_counterfactuals"] = _dense_counterfactuals(
+            bundle["fusion_model"],
+            FUSION_FEATURE_NAMES,
+            fusion_features[0],
+        )
         fusion_score = _safe_probability(bundle["fusion_model"], fusion_features)
         calibration_model = bundle.get("calibration_model")
         calibrated_score = (
@@ -431,9 +461,13 @@ def describe_model() -> dict[str, Any]:
     model_info = load_model_info()
     bundle = load_model_bundle()
     if bundle is None:
-        return {"mode": "bootstrap", **model_info}
+        return {
+            "mode": "bootstrap",
+            "available_heads": [head["name"] for head in model_info.get("head_specs", [])],
+            **model_info,
+        }
     return {
         "mode": "trained",
         **model_info,
-        "available_heads": ["text", "vision", "metadata", "history", "fusion", "calibration"],
+        "available_heads": [head["name"] for head in model_info.get("head_specs", [])],
     }

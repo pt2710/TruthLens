@@ -7,6 +7,7 @@ from truthlens_evaluation import (
     expected_calibration_error,
     recommend_bandit_threshold_adjustments,
     run_contextual_bandit,
+    run_evolutionary_search,
     run_policy_replay,
 )
 
@@ -100,3 +101,18 @@ def test_contextual_bandit_outputs_weights_and_adjustments() -> None:
         "report_prompt_threshold_offset",
         "hide_threshold_offset",
     }
+
+
+def test_evolutionary_search_returns_threshold_history() -> None:
+    rows = [
+        {"score": 0.88, "uncertainty": 0.08, "label": 1},
+        {"score": 0.72, "uncertainty": 0.11, "label": 1},
+        {"score": 0.31, "uncertainty": 0.22, "label": 0},
+        {"score": 0.18, "uncertainty": 0.18, "label": 0},
+    ]
+
+    result = run_evolutionary_search(rows, generations=3, population_size=8)
+
+    assert result["best_thresholds"]["badge_threshold"] < result["best_thresholds"]["hide_threshold"]
+    assert len(result["history"]) == 3
+    assert result["population_size"] == 8

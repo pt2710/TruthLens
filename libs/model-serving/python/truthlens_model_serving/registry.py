@@ -14,6 +14,7 @@ from sklearn.exceptions import InconsistentVersionWarning
 
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
+HEAD_SPEC_VERSION = "2026-03-23"
 
 
 def _repo_root() -> Path:
@@ -47,10 +48,77 @@ def runtime_library_versions() -> dict[str, str]:
     }
 
 
+def runtime_head_specs() -> list[dict[str, Any]]:
+    return [
+        {
+            "name": "text",
+            "family": "title-encoder",
+            "backend": "sklearn-logistic-regression",
+            "encoder": "count-vectorizer-bigrams",
+            "artifact_keys": ["text_vectorizer", "text_model"],
+            "supports_attribution": True,
+            "supports_counterfactuals": True,
+            "supports_sequence": False,
+        },
+        {
+            "name": "vision",
+            "family": "thumbnail-feature-head",
+            "backend": "sklearn-logistic-regression",
+            "encoder": VISION_FEATURE_VERSION,
+            "artifact_keys": ["vision_model"],
+            "feature_count": VISION_FEATURE_COUNT,
+            "supports_attribution": True,
+            "supports_counterfactuals": True,
+            "supports_sequence": False,
+        },
+        {
+            "name": "metadata",
+            "family": "tabular-risk-head",
+            "backend": "sklearn-logistic-regression",
+            "encoder": "handcrafted-metadata-v1",
+            "artifact_keys": ["metadata_model"],
+            "supports_attribution": True,
+            "supports_counterfactuals": True,
+            "supports_sequence": False,
+        },
+        {
+            "name": "history",
+            "family": "temporal-channel-head",
+            "backend": "sklearn-logistic-regression",
+            "encoder": "sequence-summary-v1",
+            "artifact_keys": ["history_model"],
+            "supports_attribution": True,
+            "supports_counterfactuals": True,
+            "supports_sequence": True,
+        },
+        {
+            "name": "fusion",
+            "family": "multimodal-fusion-head",
+            "backend": "sklearn-logistic-regression",
+            "encoder": "score-stack-v1",
+            "artifact_keys": ["fusion_model"],
+            "supports_attribution": True,
+            "supports_counterfactuals": True,
+            "supports_sequence": False,
+        },
+        {
+            "name": "calibration",
+            "family": "probability-calibration-head",
+            "backend": "sklearn-logistic-regression",
+            "encoder": "platt-scaling-v1",
+            "artifact_keys": ["calibration_model"],
+            "supports_attribution": False,
+            "supports_counterfactuals": False,
+            "supports_sequence": False,
+        },
+    ]
+
+
 def runtime_model_contracts() -> dict[str, str]:
     return {
         "vision_feature_version": VISION_FEATURE_VERSION,
         "vision_feature_count": str(VISION_FEATURE_COUNT),
+        "head_spec_version": HEAD_SPEC_VERSION,
     }
 
 
@@ -64,6 +132,17 @@ def _artifact_status(model_info: dict[str, Any]) -> str:
         return "incompatible"
     trained_vision_feature_count = str(model_info.get("vision_feature_count", "")).strip()
     if trained_vision_feature_count != runtime_model_contracts()["vision_feature_count"]:
+        return "incompatible"
+    trained_head_spec_version = str(model_info.get("head_spec_version", "")).strip()
+    if trained_head_spec_version != runtime_model_contracts()["head_spec_version"]:
+        return "incompatible"
+    trained_heads = model_info.get("head_specs", [])
+    runtime_heads = runtime_head_specs()
+    if not isinstance(trained_heads, list) or len(trained_heads) != len(runtime_heads):
+        return "incompatible"
+    trained_head_names = [str(head.get("name", "")) for head in trained_heads if isinstance(head, dict)]
+    runtime_head_names = [str(head["name"]) for head in runtime_heads]
+    if trained_head_names != runtime_head_names:
         return "incompatible"
     if trained_sklearn == runtime_library_versions()["scikit_learn"]:
         return "compatible"
@@ -94,11 +173,24 @@ def load_model_info() -> dict[str, Any]:
             "model_version": "bootstrap-v0",
             "trained_at": None,
             "artifact_status": "missing",
+            "head_specs": runtime_head_specs(),
+            "head_spec_version": HEAD_SPEC_VERSION,
+            "fusion_profile": {
+                "head_weights": {
+                    "text": 0.32,
+                    "vision": 0.26,
+                    "metadata": 0.20,
+                    "history": 0.22,
+                },
+                "strategy": "bootstrap-weighted-average",
+            },
             "runtime_library_versions": runtime_library_versions(),
             "runtime_model_contracts": runtime_model_contracts(),
         }
     payload = json.loads(info_path.read_text(encoding="utf-8"))
     payload["artifact_status"] = _artifact_status(payload)
+    payload.setdefault("head_specs", runtime_head_specs())
+    payload.setdefault("head_spec_version", HEAD_SPEC_VERSION)
     payload["runtime_library_versions"] = runtime_library_versions()
     payload["runtime_model_contracts"] = runtime_model_contracts()
     return payload

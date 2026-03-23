@@ -12,7 +12,12 @@ from sklearn.linear_model import LogisticRegression
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
-from truthlens_model_serving.registry import VISION_FEATURE_COUNT, VISION_FEATURE_VERSION
+from truthlens_model_serving.registry import (
+    HEAD_SPEC_VERSION,
+    VISION_FEATURE_COUNT,
+    VISION_FEATURE_VERSION,
+    runtime_head_specs,
+)
 
 
 def _target(record: dict[str, Any]) -> int:
@@ -226,11 +231,23 @@ def main() -> None:
         "model_version": f"baseline-v1-{manifest['build_id']}",
         "trained_at": manifest["generated_at"],
         "build_id": manifest["build_id"],
+        "head_spec_version": HEAD_SPEC_VERSION,
+        "head_specs": runtime_head_specs(),
         "training_library_versions": {
             "scikit_learn": sklearn_version,
         },
         "vision_feature_version": VISION_FEATURE_VERSION,
         "vision_feature_count": VISION_FEATURE_COUNT,
+        "fusion_profile": {
+            "strategy": "logistic-fusion",
+            "head_weights": {
+                "text": round(float(fusion_model.coef_[0][0]), 4),
+                "vision": round(float(fusion_model.coef_[0][1]), 4),
+                "metadata": round(float(fusion_model.coef_[0][2]), 4),
+                "history": round(float(fusion_model.coef_[0][3]), 4),
+            },
+            "intercept": round(float(fusion_model.intercept_[0]), 4),
+        },
         "decision_threshold": decision_threshold,
         "metrics": metrics,
         "calibration_error": calibration_error,
