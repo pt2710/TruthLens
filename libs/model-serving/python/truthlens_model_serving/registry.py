@@ -3,9 +3,13 @@ from __future__ import annotations
 import json
 import os
 import pickle
+import warnings
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+from sklearn import __version__ as sklearn_version
+from sklearn.exceptions import InconsistentVersionWarning
 
 
 def _repo_root() -> Path:
@@ -25,12 +29,35 @@ def model_dir() -> Path:
     return path
 
 
+def runtime_library_versions() -> dict[str, str]:
+    return {
+        "scikit_learn": sklearn_version,
+    }
+
+
+def _artifact_status(model_info: dict[str, Any]) -> str:
+    training_versions = model_info.get("training_library_versions", {})
+    trained_sklearn = str(training_versions.get("scikit_learn", "")).strip()
+    if not trained_sklearn:
+        return "unknown"
+    if trained_sklearn == runtime_library_versions()["scikit_learn"]:
+        return "compatible"
+    return "incompatible"
+
+
 def load_model_bundle() -> dict[str, Any] | None:
     bundle_path = model_dir() / "model_bundle.pkl"
     if not bundle_path.exists():
         return None
-    with bundle_path.open("rb") as handle:
-        return pickle.load(handle)
+    if _artifact_status(load_model_info()) == "incompatible":
+        return None
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", InconsistentVersionWarning)
+            with bundle_path.open("rb") as handle:
+                return pickle.load(handle)
+    except (OSError, pickle.PickleError, AttributeError, EOFError, ModuleNotFoundError, ValueError):
+        return None
 
 
 def load_model_info() -> dict[str, Any]:
@@ -40,8 +67,13 @@ def load_model_info() -> dict[str, Any]:
             "mode": "bootstrap",
             "model_version": "bootstrap-v0",
             "trained_at": None,
+            "artifact_status": "missing",
+            "runtime_library_versions": runtime_library_versions(),
         }
-    return json.loads(info_path.read_text(encoding="utf-8"))
+    payload = json.loads(info_path.read_text(encoding="utf-8"))
+    payload["artifact_status"] = _artifact_status(payload)
+    payload["runtime_library_versions"] = runtime_library_versions()
+    return payload
 
 
 def load_feedback_events() -> list[dict[str, Any]]:

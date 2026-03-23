@@ -20,6 +20,7 @@ def test_info_endpoints() -> None:
 
     assert model_response.status_code == 200
     assert "mode" in model_response.json()
+    assert "artifact_status" in model_response.json()
 
     assert policy_response.status_code == 200
     assert "effective_thresholds" in policy_response.json()

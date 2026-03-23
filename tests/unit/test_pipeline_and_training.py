@@ -42,6 +42,9 @@ def test_training_and_simulation_generate_artifacts(
     drift_report = read_json(repo_root() / "artifacts/drift_reports/build-test-latest.json")
 
     assert model_info["mode"] == "trained"
+    assert model_info["artifact_status"] == "compatible"
+    assert "runtime_library_versions" in model_info
+    assert "training_library_versions" in model_info
     assert model_dir.joinpath("model_bundle.pkl").exists()
     assert model_dir.joinpath("model_info.json").exists()
     assert (repo_root() / "artifacts/eval_runs").exists()

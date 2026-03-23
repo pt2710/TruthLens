@@ -5,6 +5,7 @@ import pickle
 from typing import Any
 
 import numpy as np
+from sklearn import __version__ as sklearn_version
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 
@@ -217,6 +218,9 @@ def main() -> None:
         "model_version": f"baseline-v1-{manifest['build_id']}",
         "trained_at": manifest["generated_at"],
         "build_id": manifest["build_id"],
+        "training_library_versions": {
+            "scikit_learn": sklearn_version,
+        },
         "decision_threshold": decision_threshold,
         "metrics": metrics,
         "calibration_error": calibration_error,
