@@ -38,6 +38,7 @@ def test_training_and_simulation_generate_artifacts(
     model_info = describe_model()
     model_dir = repo_root() / "artifacts/trained_models/latest"
     eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
+    drift_report = read_json(repo_root() / "artifacts/drift_reports/build-test-latest.json")
 
     assert model_info["mode"] == "trained"
     assert model_dir.joinpath("model_bundle.pkl").exists()
@@ -49,3 +50,5 @@ def test_training_and_simulation_generate_artifacts(
     assert "confusion_matrix" in model_info
     assert "validation_calibration_error" in eval_report
     assert "calibration_error" in eval_report
+    assert "retraining_recommended" in drift_report
+    assert "label_distribution_shift" in drift_report
