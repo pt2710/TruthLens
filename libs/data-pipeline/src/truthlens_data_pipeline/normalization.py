@@ -23,6 +23,15 @@ def _normalize_text(value: str) -> str:
     return " ".join(value.strip().split())
 
 
+def _tokenize(value: str) -> set[str]:
+    tokens = {
+        token.strip(".,!?;:\"'()[]{}").lower()
+        for token in value.split()
+        if len(token.strip(".,!?;:\"'()[]{}")) >= 4
+    }
+    return {token for token in tokens if token}
+
+
 def _uppercase_ratio(value: str) -> float:
     letters = [char for char in value if char.isalpha()]
     if not letters:
@@ -36,20 +45,44 @@ def _count_sensational_tokens(value: str) -> int:
     return sum(1 for token in SENSATIONAL_TOKENS if token in lowered)
 
 
+def _transcript_overlap(title: str, transcript: str) -> float:
+    title_tokens = _tokenize(title)
+    transcript_tokens = _tokenize(transcript)
+    if not title_tokens or not transcript_tokens:
+        return 0.0
+    overlap = len(title_tokens & transcript_tokens) / len(title_tokens)
+    return round(overlap, 4)
+
+
 def normalize_acquired_items(
     run_id: str,
     acquired_items: list[AcquiredItem],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     channel_counts: dict[str, int] = {}
     channel_risk_totals: dict[str, float] = {}
+    channel_template_counts: dict[str, dict[str, int]] = {}
+    channel_like_ratios: dict[str, list[float]] = {}
     for item in acquired_items:
         channel_counts[item.channel_name] = channel_counts.get(item.channel_name, 0) + 1
         channel_risk_totals[item.channel_name] = channel_risk_totals.get(item.channel_name, 0.0) + item.risk_seed
+        channel_template_counts.setdefault(item.channel_name, {})
+        channel_template_counts[item.channel_name][item.template_cluster] = (
+            channel_template_counts[item.channel_name].get(item.template_cluster, 0) + 1
+        )
+        channel_like_ratios.setdefault(item.channel_name, []).append(
+            item.like_count / max(item.view_count, 1)
+        )
 
     normalized_records: list[dict[str, Any]] = []
     for item in acquired_items:
         normalized_title = _normalize_text(item.title)
         normalized_description = _normalize_text(item.description)
+        transcript_overlap = _transcript_overlap(normalized_title, item.transcript_excerpt)
+        sensational_count = _count_sensational_tokens(normalized_title)
+        transcript_mismatch = round(
+            min(1.0, max(0.0, (1.0 - transcript_overlap) * 0.72 + sensational_count * 0.08)),
+            4,
+        )
         image_fingerprint = hashlib.sha1(
             json.dumps(
                 {
@@ -63,13 +96,26 @@ def normalize_acquired_items(
         text_fingerprint = hashlib.sha1(
             f"{normalized_title.lower()}::{item.channel_name.lower()}".encode("utf-8")
         ).hexdigest()
-        sensational_count = _count_sensational_tokens(normalized_title)
+        channel_like_ratio = item.like_count / max(item.view_count, 1)
+        average_like_ratio = sum(channel_like_ratios[item.channel_name]) / max(
+            len(channel_like_ratios[item.channel_name]),
+            1,
+        )
+        engagement_anomaly = round(channel_like_ratio / max(average_like_ratio, 0.0001), 4)
+        repeat_template_rate = round(
+            channel_template_counts[item.channel_name].get(item.template_cluster, 0)
+            / max(channel_counts[item.channel_name], 1),
+            4,
+        )
         history_features = {
             "channel_uploads": channel_counts[item.channel_name],
             "channel_risk_mean": round(
                 channel_risk_totals[item.channel_name] / channel_counts[item.channel_name], 4
             ),
             "publishing_velocity": round(channel_counts[item.channel_name] / 7.0, 4),
+            "recent_upload_velocity": round(channel_counts[item.channel_name] / 7.0, 4),
+            "repeat_template_rate": repeat_template_rate,
+            "engagement_anomaly": engagement_anomaly,
         }
         record = validate_dataset_record(
             {
@@ -110,6 +156,8 @@ def normalize_acquired_items(
                     "uppercase_ratio": _uppercase_ratio(item.title),
                     "sensational_count": sensational_count,
                     "mismatch_score": round(item.mismatch_seed, 4),
+                    "transcript_title_overlap": transcript_overlap,
+                    "transcript_mismatch_score": transcript_mismatch,
                     "thumbnail_saturation": round(item.risk_seed * 0.65, 4),
                     "thumbnail_text_density": round(0.15 + sensational_count * 0.15, 4),
                 },

@@ -13,8 +13,10 @@ def _combine_label_score(record: dict[str, Any]) -> float:
         float(metadata.get("risk_seed", 0.0)) * 0.45
         + float(features.get("sensational_count", 0.0)) * 0.12
         + float(features.get("mismatch_score", 0.0)) * 0.18
+        + float(features.get("transcript_mismatch_score", 0.0)) * 0.14
         + float(record["history"].get("prior_flags", 0.0)) * 0.03
         + float(history.get("channel_risk_mean", 0.0)) * 0.18
+        + float(history.get("repeat_template_rate", 0.0)) * 0.08
     )
     return round(min(score, 0.99), 4)
 
@@ -32,7 +34,13 @@ def prepare_label_batches(
         weak_label_score = _combine_label_score(record)
         clickbait = bool(record["features"].get("sensational_count", 0) > 0)
         misleading_thumbnail = bool(record["metadata"].get("risk_seed", 0.0) > 0.7)
-        misleading_title = bool(record["features"].get("mismatch_score", 0.0) > 0.58)
+        misleading_title = bool(
+            max(
+                float(record["features"].get("mismatch_score", 0.0)),
+                float(record["features"].get("transcript_mismatch_score", 0.0)),
+            )
+            > 0.58
+        )
         fearbait = bool(weak_label_score > 0.62)
         ai_mass_spam = bool(record["history"].get("prior_flags", 0) >= 3 and clickbait)
         review_required = 0.35 <= weak_label_score <= 0.8 or ai_mass_spam

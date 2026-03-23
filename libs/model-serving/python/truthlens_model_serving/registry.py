@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import pickle
 from pathlib import Path
 from typing import Any
 
 
 def _repo_root() -> Path:
+    override = os.getenv("TRUTHLENS_REPO_ROOT")
+    if override:
+        return Path(override).resolve()
     return Path(__file__).resolve().parents[4]
 
 

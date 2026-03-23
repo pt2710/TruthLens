@@ -12,6 +12,7 @@ export const channelInfoSchema = z.object({
   channel_name: z.string().min(1),
   channel_url: z.string().url().optional().nullable(),
   prior_flags: z.number().int().nonnegative().default(0),
+  channel_history_features: z.record(z.number()).default({}),
 });
 
 export const itemMetadataSchema = z.object({
@@ -21,12 +22,24 @@ export const itemMetadataSchema = z.object({
   like_count: z.number().int().nonnegative().optional().nullable(),
 });
 
+export const userContextSchema = z.object({
+  strict_mode: z.boolean().default(false),
+  muted_channels: z.array(z.string()).default([]),
+  prior_corrections: z.number().int().nonnegative().default(0),
+});
+
 export const scoreItemRequestSchema = z.object({
   item_id: z.string().min(1),
   title: z.string().min(1),
   thumbnail_ref: z.string().optional().nullable(),
+  transcript_excerpt: z.string().optional().nullable(),
   metadata: itemMetadataSchema,
   channel: channelInfoSchema,
+  user_context: userContextSchema.default({
+    strict_mode: false,
+    muted_channels: [],
+    prior_corrections: 0,
+  }),
 });
 
 export const scoreResultSchema = z
@@ -58,6 +71,7 @@ export const batchScoreResponseSchema = z.object({
 export const feedbackEventSchema = z.object({
   item_id: z.string().min(1),
   item_hash: z.string().optional().nullable(),
+  channel_name: z.string().optional().nullable(),
   model_version: z.string().min(1),
   policy_version: z.string().min(1),
   action_shown: recommendedActionSchema,
@@ -94,3 +108,4 @@ export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
+export type UserContext = z.infer<typeof userContextSchema>;

@@ -17,13 +17,14 @@ from truthlens_dataset_governance import (
 )
 
 
-def run_pipeline() -> dict[str, Any]:
-    run_id, source_manifest, discovered_items = persist_discovery_run()
+def run_pipeline(run_id: str | None = None, build_id: str | None = None) -> dict[str, Any]:
+    resolved_run_id = run_id or make_run_id("discovery")
+    run_id, source_manifest, discovered_items = persist_discovery_run(resolved_run_id)
     acquired_items, acquisition_manifest = acquire_discovered_items(run_id, discovered_items)
     normalized_records, transform_manifest = normalize_acquired_items(run_id, acquired_items)
     labeled_records, annotation_manifest = prepare_label_batches(run_id, normalized_records)
     deduplicated_records, deduplication_report = deduplicate_records(run_id, labeled_records)
-    build_id = make_run_id("build")
+    build_id = build_id or make_run_id("build")
     split_rows, split_manifest = create_split_manifest(build_id, deduplicated_records)
     build_manifest = build_processed_dataset(
         build_id=build_id,

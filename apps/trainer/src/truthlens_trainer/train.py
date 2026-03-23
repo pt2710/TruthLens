@@ -58,6 +58,23 @@ def _metadata_matrix(records: list[dict[str, Any]]) -> np.ndarray:
                 float(record["metadata"].get("duration_seconds", 0.0)),
                 float(np.log1p(view_count)),
                 like_count / max(view_count, 1.0),
+                float(record["features"].get("transcript_mismatch_score", 0.0)),
+            ]
+        )
+    return np.asarray(rows, dtype=float)
+
+
+def _history_matrix(records: list[dict[str, Any]]) -> np.ndarray:
+    rows: list[list[float]] = []
+    for record in records:
+        history = record["history"]["channel_history_features"]
+        rows.append(
+            [
+                float(record["history"].get("prior_flags", 0.0)),
+                float(history.get("channel_risk_mean", 0.0)),
+                float(history.get("repeat_template_rate", 0.0)),
+                float(history.get("recent_upload_velocity", history.get("publishing_velocity", 0.0))),
+                float(history.get("engagement_anomaly", 1.0)),
             ]
         )
     return np.asarray(rows, dtype=float)
@@ -110,11 +127,15 @@ def main() -> None:
     metadata_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     metadata_model.fit(_metadata_matrix(train_records), train_labels)
 
+    history_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
+    history_model.fit(_history_matrix(train_records), train_labels)
+
     validation_base_scores = np.column_stack(
         [
             text_model.predict_proba(validation_text)[:, 1],
             vision_model.predict_proba(_vision_matrix(validation_records))[:, 1],
             metadata_model.predict_proba(_metadata_matrix(validation_records))[:, 1],
+            history_model.predict_proba(_history_matrix(validation_records))[:, 1],
         ]
     )
     fusion_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
@@ -133,6 +154,7 @@ def main() -> None:
             text_model.predict_proba(test_text)[:, 1],
             vision_model.predict_proba(_vision_matrix(test_records))[:, 1],
             metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1],
+            history_model.predict_proba(_history_matrix(test_records))[:, 1],
         ]
     )
     test_fusion_scores = fusion_model.predict_proba(test_base_scores)[:, 1]
@@ -154,6 +176,7 @@ def main() -> None:
         "text_model": text_model,
         "vision_model": vision_model,
         "metadata_model": metadata_model,
+        "history_model": history_model,
         "fusion_model": fusion_model,
         "calibration_model": calibration_model,
     }

@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from truthlens_data_pipeline.paths import read_json, relative_path, repo_root, utc_now, write_json, write_jsonl
+from truthlens_data_pipeline.paths import (
+    ensure_dir,
+    read_json,
+    relative_path,
+    repo_root,
+    utc_now,
+    write_json,
+    write_jsonl,
+)
 
 
 def _dataset_card(build_id: str, splits: dict[str, list[dict[str, Any]]]) -> str:
@@ -69,9 +77,10 @@ def build_processed_dataset(
     adjudication_path = root / "datasets" / "labels" / "adjudication" / f"{build_id}.json"
     write_json(adjudication_path, {"build_id": build_id, "gold_count": len(gold_rows)})
 
-    dataset_card_path = root / "datasets" / "dataset_cards" / f"{build_id}.md"
+    dataset_card_dir = ensure_dir(root / "datasets" / "dataset_cards")
+    dataset_card_path = dataset_card_dir / f"{build_id}.md"
     dataset_card_path.write_text(_dataset_card(build_id, splits), encoding="utf-8")
-    latest_card_path = root / "datasets" / "dataset_cards" / "latest.md"
+    latest_card_path = dataset_card_dir / "latest.md"
     latest_card_path.write_text(dataset_card_path.read_text(encoding="utf-8"), encoding="utf-8")
 
     build_manifest = {

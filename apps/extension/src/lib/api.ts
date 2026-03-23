@@ -13,7 +13,15 @@ const API_BASE = 'http://127.0.0.1:8000';
 const scoreCache = new Map<string, ScoreResult>();
 
 function cacheKey(item: ScoreItemRequest): string {
-  return `${item.item_id}:${item.title}:${item.channel.channel_name}`;
+  return [
+    item.item_id,
+    item.title,
+    item.transcript_excerpt ?? '',
+    item.channel.channel_name,
+    String(item.channel.prior_flags),
+    item.user_context.strict_mode ? 'strict' : 'default',
+    item.user_context.muted_channels.join('|'),
+  ].join(':');
 }
 
 export async function scoreFeedItem(item: ScoreItemRequest): Promise<ScoreResult> {

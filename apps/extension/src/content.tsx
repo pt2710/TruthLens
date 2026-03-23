@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { sendFeedbackEvent, scoreFeedItem } from './lib/api';
+import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
 import { App } from './overlay/App';
 import { useOverlayStore } from './overlay/store';
 import './styles.css';
@@ -9,6 +10,7 @@ import './styles.css';
 const OVERLAY_ID = 'truthlens-overlay-root';
 const PROCESSED = 'data-truthlens-processed';
 const PROCESSING = 'data-truthlens-processing';
+let rescoreTimer: number | null = null;
 
 function mountOverlay() {
   if (document.getElementById(OVERLAY_ID)) {
@@ -36,6 +38,7 @@ function buildItemId(card: HTMLElement, index: number): string {
 
 function createFeedbackPayload(
   itemId: string,
+  channelName: string,
   actionShown: 'none' | 'badge' | 'blur' | 'hide' | 'ask-report',
   userAction: string,
   beforeScore: number,
@@ -43,6 +46,7 @@ function createFeedbackPayload(
   return {
     item_id: itemId,
     item_hash: null,
+    channel_name: channelName,
     model_version: 'extension-runtime',
     policy_version: 'adaptive-threshold-v1',
     action_shown: actionShown,
@@ -57,6 +61,7 @@ function createFeedbackPayload(
 function attachActions(
   card: HTMLElement,
   itemId: string,
+  channelName: string,
   score: Awaited<ReturnType<typeof scoreFeedItem>>,
 ) {
   if (card.querySelector('.truthlens-action-row')) {
@@ -78,6 +83,10 @@ function attachActions(
   hideButton.className = 'truthlens-action-button';
   hideButton.textContent = 'Hide';
 
+  const muteButton = document.createElement('button');
+  muteButton.className = 'truthlens-action-button';
+  muteButton.textContent = 'Mute channel';
+
   const reportButton = document.createElement('button');
   reportButton.className = 'truthlens-action-button';
   reportButton.textContent = 'Report';
@@ -96,25 +105,34 @@ function attachActions(
 
   safeButton.addEventListener('click', () => {
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, score.recommended_action, 'not-misleading', score.risk_score),
+      createFeedbackPayload(itemId, channelName, score.recommended_action, 'not-misleading', score.risk_score),
     );
+    card.classList.remove('truthlens-card-hidden');
     card.classList.remove('truthlens-card-blur');
   });
 
   hideButton.addEventListener('click', () => {
     card.classList.add('truthlens-card-hidden');
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, score.recommended_action, 'hide-locally', score.risk_score),
+      createFeedbackPayload(itemId, channelName, score.recommended_action, 'hide-locally', score.risk_score),
+    );
+  });
+
+  muteButton.addEventListener('click', () => {
+    muteChannel(channelName);
+    card.classList.add('truthlens-card-hidden');
+    void sendFeedbackEvent(
+      createFeedbackPayload(itemId, channelName, score.recommended_action, 'mute-channel-local', score.risk_score),
     );
   });
 
   reportButton.addEventListener('click', () => {
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, score.recommended_action, 'report', score.risk_score),
+      createFeedbackPayload(itemId, channelName, score.recommended_action, 'report', score.risk_score),
     );
   });
 
-  actionRow.append(whyButton, safeButton, hideButton, reportButton);
+  actionRow.append(whyButton, safeButton, hideButton, muteButton, reportButton);
   card.append(actionRow, details);
 }
 
@@ -128,6 +146,11 @@ async function processCard(card: HTMLElement, index: number) {
     const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
     const channelName =
       extractText(card, 'ytd-channel-name, #channel-name, [id="channel-info"] a') || 'Unknown channel';
+    if (isChannelMuted(channelName)) {
+      card.classList.add('truthlens-card-hidden');
+      card.setAttribute(PROCESSED, 'true');
+      return;
+    }
     const thumbnailRef =
       card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
     const itemId = buildItemId(card, index);
@@ -136,11 +159,14 @@ async function processCard(card: HTMLElement, index: number) {
       item_id: itemId,
       title,
       thumbnail_ref: thumbnailRef,
+      transcript_excerpt: extractText(card, '#description-text, #metadata-line, .metadata-snippet'),
       metadata: {},
       channel: {
         channel_name: channelName,
         prior_flags: 0,
+        channel_history_features: {},
       },
+      user_context: buildUserContext(),
     });
 
     useOverlayStore.getState().recordScore(score);
@@ -159,7 +185,7 @@ async function processCard(card: HTMLElement, index: number) {
       card.classList.add('truthlens-card-hidden');
     }
 
-    attachActions(card, itemId, score);
+    attachActions(card, itemId, channelName, score);
     card.setAttribute(PROCESSED, 'true');
   } finally {
     card.removeAttribute(PROCESSING);
@@ -176,6 +202,11 @@ mountOverlay();
 void scoreCards();
 
 const observer = new MutationObserver(() => {
-  void scoreCards();
+  if (rescoreTimer !== null) {
+    window.clearTimeout(rescoreTimer);
+  }
+  rescoreTimer = window.setTimeout(() => {
+    void scoreCards();
+  }, 120);
 });
 observer.observe(document.body, { childList: true, subtree: true });

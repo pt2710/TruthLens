@@ -20,6 +20,7 @@ class ChannelInfo(BaseModel):
     channel_name: str = Field(min_length=1)
     channel_url: str | None = None
     prior_flags: int = 0
+    channel_history_features: dict[str, float] = Field(default_factory=dict)
 
 
 class ItemMetadata(BaseModel):
@@ -31,14 +32,24 @@ class ItemMetadata(BaseModel):
     like_count: int | None = None
 
 
+class UserContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    strict_mode: bool = False
+    muted_channels: list[str] = Field(default_factory=list)
+    prior_corrections: int = Field(default=0, ge=0)
+
+
 class ScoreItemRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     item_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     thumbnail_ref: str | None = None
+    transcript_excerpt: str | None = None
     metadata: ItemMetadata = Field(default_factory=ItemMetadata)
     channel: ChannelInfo
+    user_context: UserContext = Field(default_factory=UserContext)
 
 
 class ScoreResult(BaseModel):
@@ -75,6 +86,7 @@ class FeedbackEvent(BaseModel):
 
     item_id: str = Field(min_length=1)
     item_hash: str | None = None
+    channel_name: str | None = None
     model_version: str = Field(min_length=1)
     policy_version: str = Field(min_length=1)
     action_shown: RecommendedAction

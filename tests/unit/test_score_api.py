@@ -56,6 +56,7 @@ def test_feedback_endpoint_accepts_event() -> None:
         json={
             "item_id": "item-1",
             "item_hash": None,
+            "channel_name": "TruthLens Test",
             "model_version": "test-model",
             "policy_version": "test-policy",
             "action_shown": "badge",
@@ -69,3 +70,64 @@ def test_feedback_endpoint_accepts_event() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
+
+
+def test_muted_channel_forces_hide() -> None:
+    response = client.post(
+        "/score-item",
+        json={
+            "item_id": "item-muted",
+            "title": "Calm telescope update",
+            "thumbnail_ref": None,
+            "transcript_excerpt": "A calm telescope update with cited methods and no urgent claim.",
+            "metadata": {},
+            "channel": {
+                "channel_name": "Muted Channel",
+                "prior_flags": 0,
+                "channel_history_features": {},
+            },
+            "user_context": {
+                "strict_mode": False,
+                "muted_channels": ["Muted Channel"],
+                "prior_corrections": 0,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["recommended_action"] == "hide"
+    assert any("locally muted" in reason.lower() for reason in payload["reasons"])
+
+
+def test_transcript_mismatch_surfaces_reasoning() -> None:
+    response = client.post(
+        "/score-item",
+        json={
+            "item_id": "item-mismatch",
+            "title": "Breaking aliens confirmed over Europe",
+            "thumbnail_ref": None,
+            "transcript_excerpt": "This segment calmly reviews telescope maintenance and launch cadence.",
+            "metadata": {
+                "view_count": 12000,
+                "like_count": 900,
+            },
+            "channel": {
+                "channel_name": "Signal Watch Europe",
+                "prior_flags": 3,
+                "channel_history_features": {
+                    "channel_risk_mean": 0.72,
+                    "repeat_template_rate": 0.61,
+                    "recent_upload_velocity": 0.58,
+                    "engagement_anomaly": 1.22,
+                },
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert any(
+        "transcript" in reason.lower() or "framing mismatch" in reason.lower()
+        for reason in payload["reasons"]
+    )

@@ -62,15 +62,33 @@ def get_policy_profile() -> dict[str, Any]:
     }
 
 
+def _personalize_thresholds(payload: ScoreItemRequest, base_thresholds: dict[str, float]) -> dict[str, float]:
+    strict_bias = -0.05 if payload.user_context.strict_mode else 0.0
+    correction_bias = min(payload.user_context.prior_corrections * 0.005, 0.03)
+    return {
+        "badge_threshold": round(max(0.15, base_thresholds["badge_threshold"] + strict_bias + correction_bias), 3),
+        "blur_threshold": round(max(0.25, base_thresholds["blur_threshold"] + strict_bias + correction_bias), 3),
+        "report_prompt_threshold": round(
+            max(0.45, base_thresholds["report_prompt_threshold"] + strict_bias + correction_bias),
+            3,
+        ),
+        "hide_threshold": round(max(0.65, base_thresholds["hide_threshold"] + correction_bias), 3),
+    }
+
+
 def score_item(payload: ScoreItemRequest) -> ScoreResult:
     signals = predict_item_signals(payload)
     policy_profile = get_policy_profile()
-    thresholds = policy_profile["effective_thresholds"]
+    thresholds = _personalize_thresholds(payload, policy_profile["effective_thresholds"])
     risk_score = signals.calibrated_score
     confidence = signals.confidence
     uncertainty = signals.uncertainty
+    muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
+    muted_channel = payload.channel.channel_name.strip().lower() in muted_channels
 
-    if risk_score < thresholds["badge_threshold"]:
+    if muted_channel:
+        action = RecommendedAction.HIDE
+    elif risk_score < thresholds["badge_threshold"]:
         action = RecommendedAction.NONE
     elif risk_score < thresholds["blur_threshold"]:
         action = RecommendedAction.BADGE

@@ -8,6 +8,7 @@ from .contracts import (
     RecommendedAction,
     ScoreItemRequest,
     ScoreResult,
+    UserContext,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "RecommendedAction",
     "ScoreItemRequest",
     "ScoreResult",
+    "UserContext",
 ]

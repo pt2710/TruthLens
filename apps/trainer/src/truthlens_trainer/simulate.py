@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from truthlens_data_pipeline.paths import read_jsonl, repo_root
+from truthlens_data_pipeline.paths import ensure_dir, read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import build_drift_report, build_q_table, run_threshold_sweep, search_threshold_family
 
@@ -62,7 +62,8 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    thresholds_path = repo_root() / "configs" / "thresholds" / "default.json"
+    thresholds_dir = ensure_dir(repo_root() / "configs" / "thresholds")
+    thresholds_path = thresholds_dir / "default.json"
     thresholds_path.write_text(json.dumps(thresholds, indent=2, ensure_ascii=True), encoding="utf-8")
     print(manifest["build_id"])
 
