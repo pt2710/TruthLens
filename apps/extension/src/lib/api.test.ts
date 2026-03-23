@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { scoreFeedItem } from './api';
+import { fetchFeedbackSummary, scoreFeedItem } from './api';
 
 describe('scoreFeedItem', () => {
   beforeEach(() => {
@@ -23,5 +23,14 @@ describe('scoreFeedItem', () => {
 
     expect(result.recommended_action).not.toBe('none');
     expect(result.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('returns an empty feedback summary when the API is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+    const summary = await fetchFeedbackSummary();
+
+    expect(summary.total_events).toBe(0);
+    expect(summary.top_channels).toEqual([]);
   });
 });

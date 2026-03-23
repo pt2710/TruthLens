@@ -12,6 +12,42 @@ import { createBootstrapScore } from './mockScore';
 const API_BASE = 'http://127.0.0.1:8000';
 const scoreCache = new Map<string, ScoreResult>();
 
+export type ModelInfo = {
+  mode: string;
+  model_version?: string;
+  available_heads?: string[];
+};
+
+export type PolicyInfo = {
+  policy_version: string;
+  effective_thresholds: Record<string, number>;
+  feedback_summary?: {
+    total_events: number;
+    correction_rate: number;
+    top_channels: Array<{
+      channel_name: string;
+      event_count: number;
+      bias: number;
+      report_count: number;
+      dismiss_count: number;
+      mute_count: number;
+    }>;
+  };
+};
+
+export type FeedbackSummary = {
+  total_events: number;
+  correction_rate: number;
+  top_channels: Array<{
+    channel_name: string;
+    event_count: number;
+    bias: number;
+    report_count: number;
+    dismiss_count: number;
+    mute_count: number;
+  }>;
+};
+
 function cacheKey(item: ScoreItemRequest): string {
   return [
     item.item_id,
@@ -61,5 +97,58 @@ export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
     });
   } catch {
     // Fail soft in the browser; feedback is advisory and should not block UI interaction.
+  }
+}
+
+export async function fetchModelInfo(): Promise<ModelInfo> {
+  try {
+    const response = await fetch(`${API_BASE}/model-info`);
+    if (!response.ok) {
+      throw new Error(`Model info request failed: ${response.status}`);
+    }
+    return (await response.json()) as ModelInfo;
+  } catch {
+    return { mode: 'bootstrap', model_version: 'extension-fallback' };
+  }
+}
+
+export async function fetchPolicyInfo(): Promise<PolicyInfo> {
+  try {
+    const response = await fetch(`${API_BASE}/policy-info`);
+    if (!response.ok) {
+      throw new Error(`Policy info request failed: ${response.status}`);
+    }
+    return (await response.json()) as PolicyInfo;
+  } catch {
+    return {
+      policy_version: 'extension-fallback',
+      effective_thresholds: {
+        badge_threshold: 0.35,
+        blur_threshold: 0.6,
+        report_prompt_threshold: 0.8,
+        hide_threshold: 0.93,
+      },
+      feedback_summary: {
+        total_events: 0,
+        correction_rate: 0,
+        top_channels: [],
+      },
+    };
+  }
+}
+
+export async function fetchFeedbackSummary(): Promise<FeedbackSummary> {
+  try {
+    const response = await fetch(`${API_BASE}/feedback-summary`);
+    if (!response.ok) {
+      throw new Error(`Feedback summary request failed: ${response.status}`);
+    }
+    return (await response.json()) as FeedbackSummary;
+  } catch {
+    return {
+      total_events: 0,
+      correction_rate: 0,
+      top_channels: [],
+    };
   }
 }

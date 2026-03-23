@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from truthlens_explanation_engine.explainer import build_reasons
-from truthlens_model_serving import load_feedback_events, predict_item_signals
+from truthlens_model_serving import load_feedback_events, predict_item_signals, summarize_feedback_events
 from truthlens_shared_schemas.contracts import RecommendedAction, ScoreItemRequest, ScoreResult
 
 DEFAULT_THRESHOLDS = {
@@ -35,21 +35,37 @@ def _load_threshold_profile() -> dict[str, float]:
     }
 
 
-def _feedback_bias() -> float:
-    events = load_feedback_events()[-50:]
-    bias = 0.0
-    for event in events:
-        user_action = str(event.get("user_action", "")).lower()
-        if user_action in {"not-misleading", "undo-hide"}:
-            bias += 0.01
-        elif user_action in {"report", "confirm-report"}:
-            bias -= 0.005
-    return max(-0.06, min(0.08, bias))
+def _feedback_summary() -> dict[str, Any]:
+    return summarize_feedback_events(load_feedback_events()[-200:])
+
+
+def _feedback_bias(summary: dict[str, Any]) -> float:
+    action_counts = summary["action_counts"]
+    total_events = max(int(summary["total_events"]), 1)
+    bias = (
+        action_counts.get("not-misleading", 0) * 0.015
+        + action_counts.get("undo-hide", 0) * 0.01
+        - action_counts.get("report", 0) * 0.012
+        - action_counts.get("confirm-report", 0) * 0.012
+        - action_counts.get("mute-channel-local", 0) * 0.018
+    ) / total_events
+    return round(max(-0.08, min(0.08, bias)), 4)
+
+
+def _channel_feedback_bias(channel_name: str, summary: dict[str, Any]) -> float:
+    channel_key = channel_name.strip().lower()
+    if not channel_key:
+        return 0.0
+    profile = summary["channel_profiles"].get(channel_key)
+    if not profile:
+        return 0.0
+    return float(profile["bias"])
 
 
 def get_policy_profile() -> dict[str, Any]:
     thresholds = _load_threshold_profile()
-    bias = _feedback_bias()
+    summary = _feedback_summary()
+    bias = _feedback_bias(summary)
     adjusted = {
         name: round(value + bias, 3) if name != "hide_threshold" else round(value + max(bias, 0.0), 3)
         for name, value in thresholds.items()
@@ -59,6 +75,11 @@ def get_policy_profile() -> dict[str, Any]:
         "base_thresholds": thresholds,
         "feedback_bias": round(bias, 3),
         "effective_thresholds": adjusted,
+        "feedback_summary": {
+            "total_events": summary["total_events"],
+            "correction_rate": summary["correction_rate"],
+            "top_channels": summary["top_channels"],
+        },
     }
 
 
@@ -80,6 +101,19 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
     signals = predict_item_signals(payload)
     policy_profile = get_policy_profile()
     thresholds = _personalize_thresholds(payload, policy_profile["effective_thresholds"])
+    channel_bias = _channel_feedback_bias(
+        payload.channel.channel_name,
+        _feedback_summary(),
+    )
+    thresholds = {
+        "badge_threshold": round(max(0.12, thresholds["badge_threshold"] + channel_bias), 3),
+        "blur_threshold": round(max(0.2, thresholds["blur_threshold"] + channel_bias), 3),
+        "report_prompt_threshold": round(
+            max(0.38, thresholds["report_prompt_threshold"] + channel_bias),
+            3,
+        ),
+        "hide_threshold": round(max(0.55, thresholds["hide_threshold"] + min(channel_bias, 0.0)), 3),
+    }
     risk_score = signals.calibrated_score
     confidence = signals.confidence
     uncertainty = signals.uncertainty

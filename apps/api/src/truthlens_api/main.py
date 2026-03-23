@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from truthlens_api.settings import settings
-from truthlens_model_serving import append_feedback_event, describe_model
+from truthlens_model_serving import append_feedback_event, describe_model, summarize_feedback_events
 from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import (
     BatchScoreRequest,
@@ -45,3 +45,8 @@ def batch_score(payload: BatchScoreRequest) -> BatchScoreResponse:
 def feedback(payload: FeedbackEvent) -> dict[str, str]:
     append_feedback_event(payload.model_dump())
     return {"status": "accepted", "feedback_log_path": settings.feedback_log_path}
+
+
+@app.get("/feedback-summary")
+def feedback_summary() -> dict[str, object]:
+    return summarize_feedback_events()

@@ -1,4 +1,6 @@
 from fastapi.testclient import TestClient
+import pytest
+from pathlib import Path
 
 from truthlens_api.main import app
 
@@ -70,6 +72,51 @@ def test_feedback_endpoint_accepts_event() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
+
+
+def test_feedback_summary_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    client.post(
+        "/feedback",
+        json={
+            "item_id": "item-1",
+            "item_hash": None,
+            "channel_name": "Signal Watch",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "action_shown": "badge",
+            "user_action": "report",
+            "explanation_id": None,
+            "before_score": 0.61,
+            "after_score": 0.81,
+            "timestamp": "2026-03-23T10:00:00Z",
+        },
+    )
+    client.post(
+        "/feedback",
+        json={
+            "item_id": "item-2",
+            "item_hash": None,
+            "channel_name": "Signal Watch",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "action_shown": "blur",
+            "user_action": "not-misleading",
+            "explanation_id": None,
+            "before_score": 0.55,
+            "after_score": 0.21,
+            "timestamp": "2026-03-23T10:05:00Z",
+        },
+    )
+
+    response = client.get("/feedback-summary")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_events"] == 2
+    assert payload["action_counts"]["report"] == 1
+    assert payload["action_counts"]["not-misleading"] == 1
+    assert payload["top_channels"][0]["channel_name"] == "Signal Watch"
 
 
 def test_muted_channel_forces_hide() -> None:
