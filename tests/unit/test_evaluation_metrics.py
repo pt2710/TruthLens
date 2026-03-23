@@ -1,4 +1,12 @@
-from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
+from truthlens_evaluation import (
+    build_q_table,
+    compute_binary_metrics,
+    confusion_counts,
+    derive_policy,
+    estimate_state_values,
+    expected_calibration_error,
+    run_policy_replay,
+)
 
 
 def test_metrics_include_error_rates_and_confusion_counts() -> None:
@@ -20,3 +28,24 @@ def test_expected_calibration_error_is_bounded() -> None:
     error = expected_calibration_error(labels, scores, bins=5)
 
     assert 0.0 <= error <= 1.0
+
+
+def test_q_learning_outputs_policy_state_values_and_replay_metrics() -> None:
+    rows = [
+        {"score": 0.88, "uncertainty": 0.08, "label": 1},
+        {"score": 0.72, "uncertainty": 0.11, "label": 1},
+        {"score": 0.31, "uncertainty": 0.22, "label": 0},
+        {"score": 0.18, "uncertainty": 0.18, "label": 0},
+    ]
+
+    q_table = build_q_table(rows)
+    policy = derive_policy(q_table)
+    state_values = estimate_state_values(q_table)
+    replay = run_policy_replay(rows, q_table)
+
+    assert q_table
+    assert policy
+    assert state_values
+    assert replay["steps"] == len(rows)
+    assert 0.0 <= replay["intervention_rate"] <= 1.0
+    assert sum(replay["action_counts"].values()) == len(rows)

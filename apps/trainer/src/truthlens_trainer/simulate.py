@@ -5,7 +5,15 @@ from typing import Any
 
 from truthlens_data_pipeline.paths import ensure_dir, read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
-from truthlens_evaluation import build_drift_report, build_q_table, run_threshold_sweep, search_threshold_family
+from truthlens_evaluation import (
+    build_drift_report,
+    build_q_table,
+    derive_policy,
+    estimate_state_values,
+    run_policy_replay,
+    run_threshold_sweep,
+    search_threshold_family,
+)
 
 
 def _label(record: dict[str, Any]) -> int:
@@ -39,6 +47,9 @@ def main() -> None:
         scores=[float(row["score"]) for row in score_rows],
     )
     q_table = build_q_table(score_rows)
+    policy = derive_policy(q_table)
+    state_values = estimate_state_values(q_table)
+    replay_summary = run_policy_replay(score_rows, q_table)
     thresholds = search_threshold_family(sweep)
     drift_report = build_drift_report(train_rows, test_rows)
 
@@ -51,6 +62,9 @@ def main() -> None:
         "build_id": manifest["build_id"],
         "threshold_sweep": sweep,
         "q_table": q_table,
+        "policy": policy,
+        "bellman_state_values": state_values,
+        "replay_summary": replay_summary,
         "recommended_thresholds": thresholds,
     }
     (eval_dir / f"{manifest['build_id']}-simulation.json").write_text(
