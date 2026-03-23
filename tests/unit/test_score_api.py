@@ -47,9 +47,15 @@ def test_score_item_contract() -> None:
         "uncertainty",
         "recommended_action",
         "reasons",
+        "explanation_id",
+        "explanation_summary",
+        "evidence",
     }
     if payload["recommended_action"] != "none":
         assert payload["reasons"]
+        assert payload["explanation_id"]
+        assert payload["explanation_summary"]
+        assert payload["evidence"]
 
 
 def test_feedback_endpoint_accepts_event() -> None:
@@ -145,6 +151,8 @@ def test_muted_channel_forces_hide() -> None:
     payload = response.json()
     assert payload["recommended_action"] == "hide"
     assert any("locally muted" in reason.lower() for reason in payload["reasons"])
+    assert payload["explanation_id"]
+    assert payload["explanation_summary"]
 
 
 def test_transcript_mismatch_surfaces_reasoning() -> None:
@@ -178,3 +186,4 @@ def test_transcript_mismatch_surfaces_reasoning() -> None:
         "transcript" in reason.lower() or "framing mismatch" in reason.lower()
         for reason in payload["reasons"]
     )
+    assert any(entry["kind"] == "transcript" for entry in payload["evidence"])

@@ -24,6 +24,8 @@ describe('createBootstrapScore', () => {
 
     expect(result.risk_score).toBeGreaterThan(0.35);
     expect(result.reasons.length).toBeGreaterThan(0);
+    expect(result.explanation_id).toBeTruthy();
+    expect(result.evidence.length).toBeGreaterThan(0);
   });
 
   it('hides muted channels immediately', () => {
@@ -47,5 +49,6 @@ describe('createBootstrapScore', () => {
 
     expect(result.recommended_action).toBe('hide');
     expect(result.reasons[0]).toContain('muted');
+    expect(result.explanation_summary).toContain('muted');
   });
 });

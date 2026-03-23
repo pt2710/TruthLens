@@ -42,6 +42,22 @@ export const scoreItemRequestSchema = z.object({
   }),
 });
 
+export const explanationEvidenceSchema = z.object({
+  kind: z.enum([
+    'title',
+    'thumbnail',
+    'history',
+    'transcript',
+    'metadata',
+    'policy',
+    'user-context',
+    'uncertainty',
+  ]),
+  label: z.string().min(1),
+  score: z.number().min(0).max(1).optional().nullable(),
+  details: z.string().optional().nullable(),
+});
+
 export const scoreResultSchema = z
   .object({
     risk_score: z.number().min(0).max(1),
@@ -49,6 +65,9 @@ export const scoreResultSchema = z
     uncertainty: z.number().min(0).max(1),
     recommended_action: recommendedActionSchema,
     reasons: z.array(z.string()),
+    explanation_id: z.string().optional().nullable(),
+    explanation_summary: z.string().optional().nullable(),
+    evidence: z.array(explanationEvidenceSchema).default([]),
   })
   .superRefine((value, ctx) => {
     if (value.recommended_action !== 'none' && value.reasons.length === 0) {
@@ -56,6 +75,20 @@ export const scoreResultSchema = z
         code: z.ZodIssueCode.custom,
         message: 'Active recommendations require at least one reason.',
         path: ['reasons'],
+      });
+    }
+    if (value.recommended_action !== 'none' && !value.explanation_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Active recommendations require an explanation_id.',
+        path: ['explanation_id'],
+      });
+    }
+    if (value.recommended_action !== 'none' && !value.explanation_summary) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Active recommendations require an explanation_summary.',
+        path: ['explanation_summary'],
       });
     }
   });
@@ -108,6 +141,7 @@ export type BatchScoreRequest = z.infer<typeof batchScoreRequestSchema>;
 export type BatchScoreResponse = z.infer<typeof batchScoreResponseSchema>;
 export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
+export type ExplanationEvidence = z.infer<typeof explanationEvidenceSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from truthlens_explanation_engine.explainer import build_reasons
+from truthlens_explanation_engine.explainer import build_explanation
 from truthlens_model_serving import load_feedback_events, predict_item_signals, summarize_feedback_events
 from truthlens_shared_schemas.contracts import RecommendedAction, ScoreItemRequest, ScoreResult
 
@@ -133,12 +133,15 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
     else:
         action = RecommendedAction.HIDE
 
-    reasons = build_reasons(payload, signals, thresholds, action)
+    explanation = build_explanation(payload, signals, thresholds, action)
 
     return ScoreResult(
         risk_score=round(risk_score, 2),
         confidence=round(confidence, 2),
         uncertainty=round(uncertainty, 2),
         recommended_action=action,
-        reasons=reasons,
+        reasons=explanation.reasons,
+        explanation_id=explanation.explanation_id,
+        explanation_summary=explanation.summary,
+        evidence=explanation.evidence,
     )

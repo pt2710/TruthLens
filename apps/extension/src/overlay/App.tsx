@@ -12,6 +12,7 @@ export function App() {
         <>
           <p>Latest risk: {lastScore.risk_score}</p>
           <p>Action: {lastScore.recommended_action}</p>
+          {lastScore.explanation_summary ? <p>Why: {lastScore.explanation_summary}</p> : null}
         </>
       ) : (
         <p>No items scored yet.</p>

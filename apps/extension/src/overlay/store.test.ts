@@ -10,6 +10,9 @@ function score(action: ScoreResult['recommended_action']): ScoreResult {
     uncertainty: 0.2,
     recommended_action: action,
     reasons: action === 'none' ? [] : ['reason'],
+    explanation_id: action === 'none' ? null : 'exp-test',
+    explanation_summary: action === 'none' ? null : 'reason',
+    evidence: [],
   };
 }
 

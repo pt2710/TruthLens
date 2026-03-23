@@ -10,9 +10,34 @@ describe('shared schemas', () => {
       uncertainty: 0.1,
       recommended_action: 'blur',
       reasons: [],
+      explanation_id: null,
+      explanation_summary: null,
+      evidence: [],
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('accepts structured explanation payloads for active recommendations', () => {
+    const result = scoreResultSchema.safeParse({
+      risk_score: 0.8,
+      confidence: 0.9,
+      uncertainty: 0.1,
+      recommended_action: 'blur',
+      reasons: ['Title contains strong sensational framing patterns.'],
+      explanation_id: 'exp-item-1',
+      explanation_summary: 'Flagged because the title framing is sensational and the thumbnail pattern is exaggerated.',
+      evidence: [
+        {
+          kind: 'title',
+          label: 'Sensational title framing',
+          score: 0.88,
+          details: 'Multiple high-intensity claim tokens were detected in the title.',
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
   });
 
   it('validates canonical dataset records', () => {

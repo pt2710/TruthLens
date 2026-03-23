@@ -51,6 +51,7 @@ function createFeedbackPayload(
   actionShown: 'none' | 'badge' | 'blur' | 'hide' | 'ask-report',
   userAction: string,
   beforeScore: number,
+  explanationId: string | null,
 ) {
   return {
     item_id: itemId,
@@ -60,7 +61,7 @@ function createFeedbackPayload(
     policy_version: 'adaptive-threshold-v1',
     action_shown: actionShown,
     user_action: userAction,
-    explanation_id: null,
+    explanation_id: explanationId,
     before_score: beforeScore,
     after_score: beforeScore,
     timestamp: new Date().toISOString(),
@@ -103,10 +104,39 @@ function attachActions(
   const details = document.createElement('div');
   details.className = 'truthlens-details';
   details.hidden = true;
-  details.textContent =
-    score.reasons.length > 0
-      ? score.reasons.join(' ')
-      : 'No explanation available for this item.';
+  const summary = document.createElement('p');
+  summary.className = 'truthlens-details-summary';
+  summary.textContent = score.explanation_summary || 'No explanation available for this item.';
+  details.appendChild(summary);
+
+  if (score.evidence.length > 0) {
+    const evidenceList = document.createElement('ul');
+    evidenceList.className = 'truthlens-evidence-list';
+    for (const entry of score.evidence) {
+      const listItem = document.createElement('li');
+      const evidenceScore =
+        typeof entry.score === 'number' ? ` (${Math.round(entry.score * 100)}%)` : '';
+      listItem.textContent = `${entry.label}${evidenceScore}`;
+      evidenceList.appendChild(listItem);
+    }
+    details.appendChild(evidenceList);
+  } else if (score.reasons.length > 0) {
+    const fallbackList = document.createElement('ul');
+    fallbackList.className = 'truthlens-evidence-list';
+    for (const reason of score.reasons) {
+      const listItem = document.createElement('li');
+      listItem.textContent = reason;
+      fallbackList.appendChild(listItem);
+    }
+    details.appendChild(fallbackList);
+  }
+
+  if (score.explanation_id) {
+    const idLabel = document.createElement('p');
+    idLabel.className = 'truthlens-details-meta';
+    idLabel.textContent = `Explanation ID: ${score.explanation_id}`;
+    details.appendChild(idLabel);
+  }
 
   whyButton.addEventListener('click', () => {
     details.hidden = !details.hidden;
@@ -114,7 +144,14 @@ function attachActions(
 
   safeButton.addEventListener('click', () => {
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, channelName, score.recommended_action, 'not-misleading', score.risk_score),
+      createFeedbackPayload(
+        itemId,
+        channelName,
+        score.recommended_action,
+        'not-misleading',
+        score.risk_score,
+        score.explanation_id ?? null,
+      ),
     );
     card.classList.remove('truthlens-card-hidden');
     card.classList.remove('truthlens-card-blur');
@@ -123,7 +160,14 @@ function attachActions(
   hideButton.addEventListener('click', () => {
     card.classList.add('truthlens-card-hidden');
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, channelName, score.recommended_action, 'hide-locally', score.risk_score),
+      createFeedbackPayload(
+        itemId,
+        channelName,
+        score.recommended_action,
+        'hide-locally',
+        score.risk_score,
+        score.explanation_id ?? null,
+      ),
     );
   });
 
@@ -131,13 +175,27 @@ function attachActions(
     muteChannel(channelName);
     card.classList.add('truthlens-card-hidden');
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, channelName, score.recommended_action, 'mute-channel-local', score.risk_score),
+      createFeedbackPayload(
+        itemId,
+        channelName,
+        score.recommended_action,
+        'mute-channel-local',
+        score.risk_score,
+        score.explanation_id ?? null,
+      ),
     );
   });
 
   reportButton.addEventListener('click', () => {
     void sendFeedbackEvent(
-      createFeedbackPayload(itemId, channelName, score.recommended_action, 'report', score.risk_score),
+      createFeedbackPayload(
+        itemId,
+        channelName,
+        score.recommended_action,
+        'report',
+        score.risk_score,
+        score.explanation_id ?? null,
+      ),
     );
   });
 

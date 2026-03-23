@@ -1,3 +1,3 @@
-from .explainer import build_reasons
+from .explainer import ExplanationBundle, build_explanation, build_reasons
 
-__all__ = ["build_reasons"]
+__all__ = ["ExplanationBundle", "build_explanation", "build_reasons"]

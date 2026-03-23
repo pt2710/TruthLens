@@ -57,3 +57,23 @@
   font-size: 12px;
   line-height: 1.4;
 }
+
+.truthlens-details-summary,
+.truthlens-details-meta {
+  margin: 0;
+}
+
+.truthlens-details-meta {
+  margin-top: 8px;
+  color: #9eb5cc;
+  font-size: 11px;
+}
+
+.truthlens-evidence-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.truthlens-evidence-list li + li {
+  margin-top: 4px;
+}

@@ -29,6 +29,8 @@ describe('scoreFeedItem', () => {
 
     expect(result.recommended_action).not.toBe('none');
     expect(result.reasons.length).toBeGreaterThan(0);
+    expect(result.explanation_id).toBeTruthy();
+    expect(result.explanation_summary).toBeTruthy();
   });
 
   it('returns an empty feedback summary when the API is unavailable', async () => {
@@ -80,5 +82,6 @@ describe('scoreFeedItem', () => {
 
     expect(Object.keys(results)).toHaveLength(2);
     expect(results['card-1'].reasons.length).toBeGreaterThan(0);
+    expect(results['card-1'].explanation_id).toBeTruthy();
   });
 });

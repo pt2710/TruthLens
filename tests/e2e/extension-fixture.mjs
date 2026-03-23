@@ -37,6 +37,16 @@ function mockScore(item) {
       uncertainty: 0.12,
       recommended_action: 'blur',
       reasons: ['Title contains strong sensational framing patterns.'],
+      explanation_id: 'exp-card-1',
+      explanation_summary: 'Flagged because the title framing is sensational.',
+      evidence: [
+        {
+          kind: 'title',
+          label: 'Sensational title framing',
+          score: 0.88,
+          details: 'Multiple high-intensity claim tokens were detected in the title.',
+        },
+      ],
     };
   }
   if (item.title.includes('Weekly launch schedule')) {
@@ -46,6 +56,9 @@ function mockScore(item) {
       uncertainty: 0.19,
       recommended_action: 'none',
       reasons: [],
+      explanation_id: null,
+      explanation_summary: null,
+      evidence: [],
     };
   }
   if (item.title.includes('Secret lab leak')) {
@@ -55,6 +68,16 @@ function mockScore(item) {
       uncertainty: 0.09,
       recommended_action: 'ask-report',
       reasons: ['Risk score crossed the report-prompt threshold.'],
+      explanation_id: 'exp-card-3',
+      explanation_summary: 'Flagged because risk crossed the report prompt threshold.',
+      evidence: [
+        {
+          kind: 'policy',
+          label: 'Policy crossed the report threshold',
+          score: 0.83,
+          details: 'Risk score crossed the report-prompt threshold.',
+        },
+      ],
     };
   }
   return {
@@ -63,6 +86,16 @@ function mockScore(item) {
     uncertainty: 0.21,
     recommended_action: 'badge',
     reasons: ['Dynamic card entered the moderate-risk review band.'],
+    explanation_id: 'exp-card-dynamic',
+    explanation_summary: 'Flagged because the dynamic card entered the moderate-risk review band.',
+    evidence: [
+      {
+        kind: 'policy',
+        label: 'Moderate-risk review band',
+        score: 0.44,
+        details: 'Dynamic card entered the moderate-risk review band.',
+      },
+    ],
   };
 }
 
@@ -150,6 +183,8 @@ async function main() {
       const details = document.querySelector('.truthlens-details');
       return details instanceof HTMLElement && details.hidden === false;
     });
+    await expectText(page, '.truthlens-details-summary', 'Flagged because the title framing is sensational.');
+    await expectText(page, '.truthlens-details-meta', 'Explanation ID: exp-card-1');
 
     await cards.nth(2).getByRole('button', { name: 'Report' }).click();
     await cards.nth(0).getByRole('button', { name: 'Hide' }).click();
@@ -157,6 +192,8 @@ async function main() {
     assert.equal(feedbackEvents.length, 2);
     assert.equal(feedbackEvents[0].user_action, 'report');
     assert.equal(feedbackEvents[1].user_action, 'hide-locally');
+    assert.equal(feedbackEvents[0].explanation_id, 'exp-card-3');
+    assert.equal(feedbackEvents[1].explanation_id, 'exp-card-1');
     assert.equal(
       await cards.nth(0).evaluate((element) => element.classList.contains('truthlens-card-hidden')),
       true,
@@ -205,6 +242,16 @@ async function main() {
     await browser.close();
     await new Promise((resolveClose) => server.close(resolveClose));
   }
+}
+
+async function expectText(page, selector, text) {
+  await page.waitForFunction(
+    ({ selector: nextSelector, text: nextText }) => {
+      const node = document.querySelector(nextSelector);
+      return node instanceof HTMLElement && node.textContent?.includes(nextText);
+    },
+    { selector, text },
+  );
 }
 
 main().catch((error) => {

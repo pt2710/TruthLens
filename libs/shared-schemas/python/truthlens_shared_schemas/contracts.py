@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -52,6 +52,24 @@ class ScoreItemRequest(BaseModel):
     user_context: UserContext = Field(default_factory=UserContext)
 
 
+class ExplanationEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal[
+        "title",
+        "thumbnail",
+        "history",
+        "transcript",
+        "metadata",
+        "policy",
+        "user-context",
+        "uncertainty",
+    ]
+    label: str = Field(min_length=1)
+    score: float | None = Field(default=None, ge=0.0, le=1.0)
+    details: str | None = None
+
+
 class ScoreResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -60,11 +78,20 @@ class ScoreResult(BaseModel):
     uncertainty: float = Field(ge=0.0, le=1.0)
     recommended_action: RecommendedAction = RecommendedAction.NONE
     reasons: list[str] = Field(default_factory=list)
+    explanation_id: str | None = None
+    explanation_summary: str | None = None
+    evidence: list[ExplanationEvidence] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def require_reason_for_actions(self) -> "ScoreResult":
         if self.recommended_action != RecommendedAction.NONE and not self.reasons:
             msg = "Active recommendations require at least one reason."
+            raise ValueError(msg)
+        if self.recommended_action != RecommendedAction.NONE and not self.explanation_id:
+            msg = "Active recommendations require an explanation_id."
+            raise ValueError(msg)
+        if self.recommended_action != RecommendedAction.NONE and not self.explanation_summary:
+            msg = "Active recommendations require an explanation_summary."
             raise ValueError(msg)
         return self
 
