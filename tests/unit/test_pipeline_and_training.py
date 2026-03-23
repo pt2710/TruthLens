@@ -36,10 +36,16 @@ def test_training_and_simulation_generate_artifacts(
     simulate_main()
 
     model_info = describe_model()
-    model_dir = Path("artifacts/trained_models/latest")
+    model_dir = repo_root() / "artifacts/trained_models/latest"
+    eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
 
     assert model_info["mode"] == "trained"
     assert model_dir.joinpath("model_bundle.pkl").exists()
     assert model_dir.joinpath("model_info.json").exists()
-    assert Path("artifacts/eval_runs").exists()
-    assert Path("artifacts/drift_reports").exists()
+    assert (repo_root() / "artifacts/eval_runs").exists()
+    assert (repo_root() / "artifacts/drift_reports").exists()
+    assert "calibration_error" in model_info
+    assert "per_head_metrics" in model_info
+    assert "confusion_matrix" in model_info
+    assert "validation_calibration_error" in eval_report
+    assert "calibration_error" in eval_report

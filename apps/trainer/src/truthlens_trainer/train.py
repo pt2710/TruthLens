@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression
 
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
-from truthlens_evaluation import compute_binary_metrics
+from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
 
 
 def _target(record: dict[str, Any]) -> int:
@@ -103,6 +103,13 @@ def _best_threshold(labels: list[int], scores: np.ndarray) -> float:
     return best_threshold
 
 
+def _score_head_metrics(labels: list[int], scores: np.ndarray) -> dict[str, Any]:
+    return {
+        "metrics": compute_binary_metrics(labels, scores.tolist(), threshold=0.5),
+        "calibration_error": expected_calibration_error(labels, scores.tolist()),
+    }
+
+
 def main() -> None:
     manifest = load_latest_build_manifest()
     train_records = _load_split_records(manifest, "train")
@@ -147,14 +154,27 @@ def main() -> None:
         if calibration_model is not None
         else validation_fusion_scores
     )
+    validation_metrics = compute_binary_metrics(
+        validation_labels,
+        calibrated_validation_scores.tolist(),
+        threshold=0.5,
+    )
+    validation_calibration_error = expected_calibration_error(
+        validation_labels,
+        calibrated_validation_scores.tolist(),
+    )
     decision_threshold = _best_threshold(validation_labels, calibrated_validation_scores)
 
+    test_text_scores = text_model.predict_proba(test_text)[:, 1]
+    test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
+    test_metadata_scores = metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1]
+    test_history_scores = history_model.predict_proba(_history_matrix(test_records))[:, 1]
     test_base_scores = np.column_stack(
         [
-            text_model.predict_proba(test_text)[:, 1],
-            vision_model.predict_proba(_vision_matrix(test_records))[:, 1],
-            metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1],
-            history_model.predict_proba(_history_matrix(test_records))[:, 1],
+            test_text_scores,
+            test_vision_scores,
+            test_metadata_scores,
+            test_history_scores,
         ]
     )
     test_fusion_scores = fusion_model.predict_proba(test_base_scores)[:, 1]
@@ -168,6 +188,16 @@ def main() -> None:
         calibrated_test_scores.tolist(),
         threshold=decision_threshold,
     )
+    calibration_error = expected_calibration_error(test_labels, calibrated_test_scores.tolist())
+    confusion = confusion_counts(test_labels, calibrated_test_scores.tolist(), threshold=decision_threshold)
+    per_head_metrics = {
+        "text": _score_head_metrics(test_labels, test_text_scores),
+        "vision": _score_head_metrics(test_labels, test_vision_scores),
+        "metadata": _score_head_metrics(test_labels, test_metadata_scores),
+        "history": _score_head_metrics(test_labels, test_history_scores),
+        "fusion": _score_head_metrics(test_labels, test_fusion_scores),
+        "calibrated": _score_head_metrics(test_labels, calibrated_test_scores),
+    }
 
     model_dir = repo_root() / "artifacts" / "trained_models" / "latest"
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -189,6 +219,11 @@ def main() -> None:
         "build_id": manifest["build_id"],
         "decision_threshold": decision_threshold,
         "metrics": metrics,
+        "calibration_error": calibration_error,
+        "confusion_matrix": confusion,
+        "validation_metrics": validation_metrics,
+        "validation_calibration_error": validation_calibration_error,
+        "per_head_metrics": per_head_metrics,
     }
     (model_dir / "model_info.json").write_text(
         json.dumps(model_info, indent=2, ensure_ascii=True),
@@ -196,16 +231,24 @@ def main() -> None:
     )
     eval_dir = repo_root() / "artifacts" / "eval_runs"
     eval_dir.mkdir(parents=True, exist_ok=True)
+    evaluation_payload = {
+        "build_id": manifest["build_id"],
+        "metrics": metrics,
+        "calibration_error": calibration_error,
+        "confusion_matrix": confusion,
+        "validation_metrics": validation_metrics,
+        "validation_calibration_error": validation_calibration_error,
+        "per_head_metrics": per_head_metrics,
+        "sample_count": len(test_records),
+    }
     (eval_dir / f"{manifest['build_id']}.json").write_text(
-        json.dumps(
-            {
-                "build_id": manifest["build_id"],
-                "metrics": metrics,
-                "sample_count": len(test_records),
-            },
-            indent=2,
-            ensure_ascii=True,
-        ),
+        json.dumps(evaluation_payload, indent=2, ensure_ascii=True),
+        encoding="utf-8",
+    )
+    reports_dir = repo_root() / "artifacts" / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / f"{manifest['build_id']}-model-eval.json").write_text(
+        json.dumps(evaluation_payload, indent=2, ensure_ascii=True),
         encoding="utf-8",
     )
     print(model_info["model_version"])
