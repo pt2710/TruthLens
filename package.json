@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "lint": "pnpm exec eslint apps/extension/src libs/shared-schemas/src --ext .ts,.tsx",
-    "typecheck": "pnpm --filter @truthlens/shared-schemas typecheck && pnpm --filter @truthlens/extension typecheck",
-    "test": "pnpm --filter @truthlens/shared-schemas test && pnpm --filter @truthlens/extension test",
-    "build": "pnpm --filter @truthlens/shared-schemas build && pnpm --filter @truthlens/extension build",
+    "lint": "pnpm exec eslint apps/extension/src apps/labeling-ui/src libs/shared-schemas/src --ext .ts,.tsx",
+    "typecheck": "pnpm --filter @truthlens/shared-schemas typecheck && pnpm --filter @truthlens/extension typecheck && pnpm --filter @truthlens/labeling-ui typecheck",
+    "test": "pnpm --filter @truthlens/shared-schemas test && pnpm --filter @truthlens/extension test && pnpm --filter @truthlens/labeling-ui test",
+    "build": "pnpm --filter @truthlens/shared-schemas build && pnpm --filter @truthlens/extension build && pnpm --filter @truthlens/labeling-ui build",
     "format": "pnpm exec prettier --check ."
   },
   "devDependencies": {

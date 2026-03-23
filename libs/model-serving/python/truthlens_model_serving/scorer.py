@@ -8,19 +8,14 @@ from typing import Any
 
 import numpy as np
 
+from truthlens_feature_extractors import (
+    count_sensational_tokens,
+    transcript_mismatch_score,
+    transcript_overlap,
+    uppercase_ratio,
+)
 from truthlens_model_serving.registry import load_model_bundle, load_model_info
 from truthlens_shared_schemas.contracts import ScoreItemRequest
-
-SUSPICIOUS_TOKENS = {
-    "breaking",
-    "shocking",
-    "confirmed",
-    "aliens",
-    "secret",
-    "urgent",
-    "exposed",
-    "what they do not want",
-}
 
 
 @dataclass(slots=True)
@@ -48,24 +43,12 @@ def _safe_probability(model: Any, matrix: Any) -> float:
 
 def _title_summary(payload: ScoreItemRequest) -> dict[str, float]:
     title = payload.title
-    lowered = title.lower()
-    token_hits = sum(1 for token in SUSPICIOUS_TOKENS if token in lowered)
-    uppercase_letters = sum(1 for char in title if char.isalpha() and char.isupper())
-    alpha_letters = max(sum(1 for char in title if char.isalpha()), 1)
+    token_hits = count_sensational_tokens(title)
     return {
         "token_hits": float(token_hits),
         "title_length": float(len(title)),
-        "uppercase_ratio": round(uppercase_letters / alpha_letters, 4),
+        "uppercase_ratio": uppercase_ratio(title),
     }
-
-
-def _tokenize(value: str) -> set[str]:
-    tokens = {
-        token.strip(".,!?;:\"'()[]{}").lower()
-        for token in value.split()
-        if len(token.strip(".,!?;:\"'()[]{}")) >= 4
-    }
-    return {token for token in tokens if token}
 
 
 def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, float]) -> float:
@@ -75,12 +58,8 @@ def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, float]) -
         summary["transcript_mismatch_score"] = 0.0
         return 0.0
 
-    title_tokens = _tokenize(payload.title)
-    transcript_tokens = _tokenize(transcript)
-    overlap = 0.0
-    if title_tokens and transcript_tokens:
-        overlap = len(title_tokens & transcript_tokens) / len(title_tokens)
-    mismatch = min(1.0, max(0.0, (1.0 - overlap) * 0.72 + summary["token_hits"] * 0.06))
+    overlap = transcript_overlap(payload.title, transcript)
+    mismatch = transcript_mismatch_score(payload.title, transcript, summary["token_hits"])
     summary["transcript_title_overlap"] = round(overlap, 4)
     summary["transcript_mismatch_score"] = round(mismatch, 4)
     return mismatch

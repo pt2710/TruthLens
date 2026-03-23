@@ -6,52 +6,14 @@ from typing import Any
 
 from truthlens_data_pipeline.acquisition import AcquiredItem
 from truthlens_data_pipeline.paths import relative_path, repo_root, write_json, write_jsonl
+from truthlens_feature_extractors import (
+    count_sensational_tokens,
+    normalize_text,
+    transcript_mismatch_score,
+    transcript_overlap,
+    uppercase_ratio,
+)
 from truthlens_dataset_governance.validators import validate_dataset_record
-
-SENSATIONAL_TOKENS = {
-    "breaking",
-    "shocking",
-    "confirmed",
-    "aliens",
-    "secret",
-    "urgent",
-    "exposed",
-}
-
-
-def _normalize_text(value: str) -> str:
-    return " ".join(value.strip().split())
-
-
-def _tokenize(value: str) -> set[str]:
-    tokens = {
-        token.strip(".,!?;:\"'()[]{}").lower()
-        for token in value.split()
-        if len(token.strip(".,!?;:\"'()[]{}")) >= 4
-    }
-    return {token for token in tokens if token}
-
-
-def _uppercase_ratio(value: str) -> float:
-    letters = [char for char in value if char.isalpha()]
-    if not letters:
-        return 0.0
-    uppercase = sum(1 for char in letters if char.isupper())
-    return round(uppercase / len(letters), 4)
-
-
-def _count_sensational_tokens(value: str) -> int:
-    lowered = value.lower()
-    return sum(1 for token in SENSATIONAL_TOKENS if token in lowered)
-
-
-def _transcript_overlap(title: str, transcript: str) -> float:
-    title_tokens = _tokenize(title)
-    transcript_tokens = _tokenize(transcript)
-    if not title_tokens or not transcript_tokens:
-        return 0.0
-    overlap = len(title_tokens & transcript_tokens) / len(title_tokens)
-    return round(overlap, 4)
 
 
 def normalize_acquired_items(
@@ -75,13 +37,14 @@ def normalize_acquired_items(
 
     normalized_records: list[dict[str, Any]] = []
     for item in acquired_items:
-        normalized_title = _normalize_text(item.title)
-        normalized_description = _normalize_text(item.description)
-        transcript_overlap = _transcript_overlap(normalized_title, item.transcript_excerpt)
-        sensational_count = _count_sensational_tokens(normalized_title)
-        transcript_mismatch = round(
-            min(1.0, max(0.0, (1.0 - transcript_overlap) * 0.72 + sensational_count * 0.08)),
-            4,
+        normalized_title = normalize_text(item.title)
+        normalized_description = normalize_text(item.description)
+        title_transcript_overlap = transcript_overlap(normalized_title, item.transcript_excerpt)
+        sensational_count = count_sensational_tokens(normalized_title)
+        transcript_mismatch = transcript_mismatch_score(
+            normalized_title,
+            item.transcript_excerpt,
+            sensational_count,
         )
         image_fingerprint = hashlib.sha1(
             json.dumps(
@@ -153,10 +116,10 @@ def normalize_acquired_items(
                     "language": "en",
                     "template_cluster": item.template_cluster,
                     "title_length": len(normalized_title),
-                    "uppercase_ratio": _uppercase_ratio(item.title),
+                    "uppercase_ratio": uppercase_ratio(item.title),
                     "sensational_count": sensational_count,
                     "mismatch_score": round(item.mismatch_seed, 4),
-                    "transcript_title_overlap": transcript_overlap,
+                    "transcript_title_overlap": title_transcript_overlap,
                     "transcript_mismatch_score": transcript_mismatch,
                     "thumbnail_saturation": round(item.risk_seed * 0.65, 4),
                     "thumbnail_text_density": round(0.15 + sensational_count * 0.15, 4),
