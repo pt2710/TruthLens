@@ -200,6 +200,37 @@ async function main() {
     );
 
     await page.evaluate(() => {
+      const firstCard = document.querySelector('[data-truthlens-card]');
+      if (!(firstCard instanceof HTMLElement)) {
+        throw new Error('fixture first card missing');
+      }
+      const title = firstCard.querySelector('#video-title');
+      const snippet = firstCard.querySelector('.metadata-snippet');
+      if (!(title instanceof HTMLElement) || !(snippet instanceof HTMLElement)) {
+        throw new Error('fixture first card content missing');
+      }
+      title.textContent = 'Weekly launch schedule and mission update';
+      snippet.textContent = 'Routine mission planning and launch cadence update.';
+    });
+
+    await page.waitForFunction(() => {
+      const firstCard = document.querySelector('[data-truthlens-card]');
+      return (
+        firstCard instanceof HTMLElement &&
+        firstCard.getAttribute('data-truthlens-signature')?.includes('Weekly launch schedule') &&
+        !firstCard.classList.contains('truthlens-card-blur') &&
+        !firstCard.querySelector('.truthlens-card-flag')
+      );
+    });
+    assert.equal(batchRequests, 2);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 3);
+    assert.equal(
+      await cards.nth(0).evaluate((element) => element.classList.contains('truthlens-card-blur')),
+      false,
+    );
+    assert.equal(await cards.nth(0).locator('.truthlens-card-flag').count(), 0);
+
+    await page.evaluate(() => {
       const feed = document.querySelector('.feed');
       if (!(feed instanceof HTMLElement)) {
         throw new Error('fixture feed missing');
@@ -220,7 +251,7 @@ async function main() {
     await page.waitForFunction(
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 4,
     );
-    assert.equal(batchRequests, 2);
+    assert.equal(batchRequests, 3);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
     assert.equal(await cards.nth(3).locator('.truthlens-card-flag').count(), 1);
     assert.equal(await page.locator('.truthlens-action-row').count(), 4);

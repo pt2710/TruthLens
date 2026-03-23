@@ -12,6 +12,9 @@ from typing import Any
 from sklearn import __version__ as sklearn_version
 from sklearn.exceptions import InconsistentVersionWarning
 
+VISION_FEATURE_VERSION = "vision-v2"
+VISION_FEATURE_COUNT = 12
+
 
 def _repo_root() -> Path:
     override = os.getenv("TRUTHLENS_REPO_ROOT")
@@ -40,11 +43,24 @@ def runtime_library_versions() -> dict[str, str]:
     }
 
 
+def runtime_model_contracts() -> dict[str, str]:
+    return {
+        "vision_feature_version": VISION_FEATURE_VERSION,
+        "vision_feature_count": str(VISION_FEATURE_COUNT),
+    }
+
+
 def _artifact_status(model_info: dict[str, Any]) -> str:
     training_versions = model_info.get("training_library_versions", {})
     trained_sklearn = str(training_versions.get("scikit_learn", "")).strip()
     if not trained_sklearn:
-        return "unknown"
+        return "incompatible"
+    trained_vision_version = str(model_info.get("vision_feature_version", "")).strip()
+    if trained_vision_version != runtime_model_contracts()["vision_feature_version"]:
+        return "incompatible"
+    trained_vision_feature_count = str(model_info.get("vision_feature_count", "")).strip()
+    if trained_vision_feature_count != runtime_model_contracts()["vision_feature_count"]:
+        return "incompatible"
     if trained_sklearn == runtime_library_versions()["scikit_learn"]:
         return "compatible"
     return "incompatible"
@@ -54,7 +70,8 @@ def load_model_bundle() -> dict[str, Any] | None:
     bundle_path = model_dir() / "model_bundle.pkl"
     if not bundle_path.exists():
         return None
-    if _artifact_status(load_model_info()) == "incompatible":
+    model_info = load_model_info()
+    if model_info.get("artifact_status") != "compatible":
         return None
     try:
         with warnings.catch_warnings():
@@ -74,10 +91,12 @@ def load_model_info() -> dict[str, Any]:
             "trained_at": None,
             "artifact_status": "missing",
             "runtime_library_versions": runtime_library_versions(),
+            "runtime_model_contracts": runtime_model_contracts(),
         }
     payload = json.loads(info_path.read_text(encoding="utf-8"))
     payload["artifact_status"] = _artifact_status(payload)
     payload["runtime_library_versions"] = runtime_library_versions()
+    payload["runtime_model_contracts"] = runtime_model_contracts()
     return payload
 
 

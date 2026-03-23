@@ -11,6 +11,8 @@ import './styles.css';
 const OVERLAY_ID = 'truthlens-overlay-root';
 const PROCESSED = 'data-truthlens-processed';
 const PROCESSING = 'data-truthlens-processing';
+const ITEM_ID = 'data-truthlens-item-id';
+const SIGNATURE = 'data-truthlens-signature';
 let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 
@@ -18,6 +20,7 @@ type PendingCard = {
   card: HTMLElement;
   itemId: string;
   channelName: string;
+  signature: string;
   request: ScoreItemRequest;
 };
 
@@ -43,6 +46,23 @@ function buildItemId(card: HTMLElement, index: number): string {
     return href;
   }
   return `card-${index + 1}`;
+}
+
+function buildCardSignature(
+  title: string,
+  channelName: string,
+  thumbnailRef: string | null,
+  transcriptExcerpt: string | null,
+) {
+  return [title, channelName, thumbnailRef || '', transcriptExcerpt || ''].join('||');
+}
+
+function clearCardAugmentations(card: HTMLElement) {
+  card.classList.remove('truthlens-card-hidden');
+  card.classList.remove('truthlens-card-blur');
+  card.querySelector('.truthlens-card-flag')?.remove();
+  card.querySelector('.truthlens-action-row')?.remove();
+  card.querySelector('.truthlens-details')?.remove();
 }
 
 function createFeedbackPayload(
@@ -74,10 +94,6 @@ function attachActions(
   channelName: string,
   score: ScoreResult,
 ) {
-  if (card.querySelector('.truthlens-action-row')) {
-    return;
-  }
-
   const actionRow = document.createElement('div');
   actionRow.className = 'truthlens-action-row';
 
@@ -204,31 +220,45 @@ function attachActions(
 }
 
 function buildPendingCard(card: HTMLElement, index: number): PendingCard | null {
-  if (card.getAttribute(PROCESSED) === 'true' || card.getAttribute(PROCESSING) === 'true') {
+  if (card.getAttribute(PROCESSING) === 'true') {
     return null;
   }
 
   const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
   const channelName =
     extractText(card, 'ytd-channel-name, #channel-name, [id="channel-info"] a') || 'Unknown channel';
+  const thumbnailRef =
+    card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
+  const transcriptExcerpt = extractText(card, '#description-text, #metadata-line, .metadata-snippet');
   if (isChannelMuted(channelName)) {
     card.classList.add('truthlens-card-hidden');
     card.setAttribute(PROCESSED, 'true');
+    card.setAttribute(
+      SIGNATURE,
+      buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt),
+    );
     return null;
   }
-  const thumbnailRef =
-    card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
   const itemId = buildItemId(card, index);
+  const signature = buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt);
+  if (
+    card.getAttribute(PROCESSED) === 'true' &&
+    card.getAttribute(SIGNATURE) === signature &&
+    card.getAttribute(ITEM_ID) === itemId
+  ) {
+    return null;
+  }
   card.setAttribute(PROCESSING, 'true');
   return {
     card,
     itemId,
     channelName,
+    signature,
     request: {
       item_id: itemId,
       title,
       thumbnail_ref: thumbnailRef,
-      transcript_excerpt: extractText(card, '#description-text, #metadata-line, .metadata-snippet'),
+      transcript_excerpt: transcriptExcerpt,
       metadata: {},
       channel: {
         channel_name: channelName,
@@ -241,8 +271,9 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
 }
 
 function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
-  const { card, itemId, channelName } = pendingCard;
+  const { card, itemId, channelName, signature } = pendingCard;
   useOverlayStore.getState().recordScore(itemId, score);
+  clearCardAugmentations(card);
 
   if (score.recommended_action !== 'none' && !card.querySelector('.truthlens-card-flag')) {
     const flag = document.createElement('span');
@@ -260,6 +291,8 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
 
   attachActions(card, itemId, channelName, score);
   card.setAttribute(PROCESSED, 'true');
+  card.setAttribute(ITEM_ID, itemId);
+  card.setAttribute(SIGNATURE, signature);
   card.removeAttribute(PROCESSING);
 }
 

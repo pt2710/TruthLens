@@ -10,6 +10,7 @@ import numpy as np
 
 from truthlens_feature_extractors import (
     count_sensational_tokens,
+    extract_thumbnail_features,
     transcript_mismatch_score,
     transcript_overlap,
     uppercase_ratio,
@@ -71,7 +72,21 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list
         thumbnail_path = Path(payload.thumbnail_ref)
         if thumbnail_path.exists() and thumbnail_path.suffix == ".json":
             thumbnail_signal = json.loads(thumbnail_path.read_text(encoding="utf-8"))
+        elif thumbnail_path.exists():
+            extracted = extract_thumbnail_features(thumbnail_path)
+            thumbnail_signal = {
+                "brightness": extracted.get("thumbnail_brightness", 0.45),
+                "saturation": extracted.get("thumbnail_saturation", 0.3),
+                "contrast": extracted.get("thumbnail_contrast", 0.35),
+                "text_density": extracted.get("thumbnail_text_density", 0.18),
+                "face_emphasis": extracted.get("thumbnail_face_emphasis", 0.12),
+                "shock_indicator": extracted.get("thumbnail_shock_indicator", 0.15),
+                "entropy": extracted.get("thumbnail_entropy", 0.4),
+                "aspect_ratio": extracted.get("thumbnail_aspect_ratio", (16 / 9) / 2.5),
+                "byte_size": extracted.get("thumbnail_byte_size", 0.0),
+            }
 
+    brightness = float(thumbnail_signal.get("brightness", 0.42))
     saturation = float(thumbnail_signal.get("saturation", 0.18 + summary["token_hits"] * 0.12))
     contrast = float(thumbnail_signal.get("contrast", 0.22 + summary["token_hits"] * 0.1))
     text_density = float(
@@ -81,16 +96,48 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list
     shock_indicator = float(
         thumbnail_signal.get("shock_indicator", 0.07 + summary["token_hits"] * 0.14)
     )
+    entropy = float(thumbnail_signal.get("entropy", 0.4))
+    aspect_ratio = float(thumbnail_signal.get("aspect_ratio", (16 / 9) / 2.5))
+    byte_size = float(thumbnail_signal.get("byte_size", 0.0)) / 100000.0
+    prior_flags = float(payload.channel.prior_flags)
+    estimated_risk_seed = min(
+        0.98,
+        max(
+            0.08,
+            (shock_indicator * 0.5)
+            + (saturation * 0.25)
+            + (text_density * 0.15)
+            + (summary.get("transcript_mismatch_score", 0.0) * 0.1),
+        ),
+    )
     summary.update(
         {
+            "thumbnail_brightness": round(brightness, 4),
             "thumbnail_saturation": round(saturation, 4),
             "thumbnail_contrast": round(contrast, 4),
             "thumbnail_text_density": round(text_density, 4),
             "thumbnail_face_emphasis": round(face_emphasis, 4),
             "thumbnail_shock_indicator": round(shock_indicator, 4),
+            "thumbnail_entropy": round(entropy, 4),
+            "thumbnail_aspect_ratio": round(aspect_ratio, 4),
+            "thumbnail_byte_size": round(byte_size * 100000.0, 4),
+            "estimated_risk_seed": round(estimated_risk_seed, 4),
         }
     )
-    return [saturation, contrast, text_density, face_emphasis, shock_indicator]
+    return [
+        brightness,
+        saturation,
+        contrast,
+        text_density,
+        entropy,
+        aspect_ratio,
+        face_emphasis,
+        shock_indicator,
+        summary.get("transcript_mismatch_score", 0.0),
+        byte_size,
+        prior_flags,
+        estimated_risk_seed,
+    ]
 
 
 def _metadata_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list[float]:
@@ -210,23 +257,27 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     metadata_vector = np.asarray([_metadata_vector(payload, summary)], dtype=float)
     history_vector = np.asarray([_history_vector(payload, summary)], dtype=float)
 
-    text_score = _safe_probability(bundle["text_model"], text_matrix)
-    vision_score = _safe_probability(bundle["vision_model"], vision_vector)
-    metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
-    history_model = bundle.get("history_model")
-    history_score = (
-        _safe_probability(history_model, history_vector)
-        if history_model is not None
-        else _bootstrap_signals(payload).history_score
-    )
-    fusion_features = np.asarray([[text_score, vision_score, metadata_score, history_score]], dtype=float)
-    fusion_score = _safe_probability(bundle["fusion_model"], fusion_features)
-    calibration_model = bundle.get("calibration_model")
-    calibrated_score = (
-        _safe_probability(calibration_model, np.asarray([[fusion_score]], dtype=float))
-        if calibration_model is not None
-        else fusion_score
-    )
+    bootstrap = _bootstrap_signals(payload)
+    try:
+        text_score = _safe_probability(bundle["text_model"], text_matrix)
+        vision_score = _safe_probability(bundle["vision_model"], vision_vector)
+        metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
+        history_model = bundle.get("history_model")
+        history_score = (
+            _safe_probability(history_model, history_vector)
+            if history_model is not None
+            else bootstrap.history_score
+        )
+        fusion_features = np.asarray([[text_score, vision_score, metadata_score, history_score]], dtype=float)
+        fusion_score = _safe_probability(bundle["fusion_model"], fusion_features)
+        calibration_model = bundle.get("calibration_model")
+        calibrated_score = (
+            _safe_probability(calibration_model, np.asarray([[fusion_score]], dtype=float))
+            if calibration_model is not None
+            else fusion_score
+        )
+    except ValueError:
+        return bootstrap
     confidence = round(min(0.58 + calibrated_score * 0.38, 0.98), 4)
     uncertainty = round(max(0.02, 1.0 - confidence), 4)
     model_info = load_model_info()

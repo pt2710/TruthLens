@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
+from truthlens_model_serving.registry import VISION_FEATURE_COUNT, VISION_FEATURE_VERSION
 
 
 def _target(record: dict[str, Any]) -> int:
@@ -34,9 +35,16 @@ def _vision_matrix(records: list[dict[str, Any]]) -> np.ndarray:
     for record in records:
         rows.append(
             [
+                float(record["features"].get("thumbnail_brightness", 0.0)),
                 float(record["features"].get("thumbnail_saturation", 0.0)),
+                float(record["features"].get("thumbnail_contrast", 0.0)),
                 float(record["features"].get("thumbnail_text_density", 0.0)),
+                float(record["features"].get("thumbnail_entropy", 0.0)),
+                float(record["features"].get("thumbnail_aspect_ratio", 0.0)),
+                float(record["features"].get("thumbnail_face_emphasis", 0.0)),
+                float(record["features"].get("thumbnail_shock_indicator", 0.0)),
                 float(record["features"].get("mismatch_score", 0.0)),
+                float(record["features"].get("thumbnail_byte_size", 0.0)) / 100000.0,
                 float(record["history"].get("prior_flags", 0.0)),
                 float(record["metadata"].get("risk_seed", 0.0)),
             ]
@@ -221,6 +229,8 @@ def main() -> None:
         "training_library_versions": {
             "scikit_learn": sklearn_version,
         },
+        "vision_feature_version": VISION_FEATURE_VERSION,
+        "vision_feature_count": VISION_FEATURE_COUNT,
         "decision_threshold": decision_threshold,
         "metrics": metrics,
         "calibration_error": calibration_error,

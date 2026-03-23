@@ -8,6 +8,7 @@ from truthlens_data_pipeline.acquisition import AcquiredItem
 from truthlens_data_pipeline.paths import relative_path, repo_root, write_json, write_jsonl
 from truthlens_feature_extractors import (
     count_sensational_tokens,
+    extract_thumbnail_features,
     normalize_text,
     transcript_mismatch_score,
     transcript_overlap,
@@ -25,18 +26,36 @@ def _thumbnail_signal(item: AcquiredItem) -> dict[str, float]:
         else:
             signal = payload
         return {
+            "brightness": float(signal.get("brightness", 0.45)),
             "saturation": float(signal.get("saturation", round(item.risk_seed * 0.65, 4))),
             "contrast": float(signal.get("contrast", round(0.18 + item.risk_seed * 0.5, 4))),
             "text_density": float(signal.get("text_density", round(0.15 + item.risk_seed * 0.2, 4))),
             "face_emphasis": float(signal.get("face_emphasis", round(0.12 + item.risk_seed * 0.2, 4))),
             "shock_indicator": float(signal.get("shock_indicator", round(0.1 + item.risk_seed * 0.35, 4))),
+            "entropy": float(signal.get("entropy", 0.4)),
+            "aspect_ratio": float(signal.get("aspect_ratio", round((16 / 9) / 2.5, 4))),
+            "byte_size": float(signal.get("byte_size", thumbnail_path.stat().st_size if thumbnail_path.exists() else 0.0)),
         }
+    extracted = extract_thumbnail_features(
+        thumbnail_path,
+        fallback_signal={
+            "saturation": round(item.risk_seed * 0.65, 4),
+            "contrast": round(0.18 + item.risk_seed * 0.5, 4),
+            "text_density": round(0.15 + item.risk_seed * 0.15, 4),
+            "face_emphasis": round(0.1 + item.risk_seed * 0.18, 4),
+            "shock_indicator": round(0.08 + item.risk_seed * 0.3, 4),
+        },
+    )
     return {
-        "saturation": round(item.risk_seed * 0.65, 4),
-        "contrast": round(0.18 + item.risk_seed * 0.5, 4),
-        "text_density": round(0.15 + item.risk_seed * 0.15, 4),
-        "face_emphasis": round(0.1 + item.risk_seed * 0.18, 4),
-        "shock_indicator": round(0.08 + item.risk_seed * 0.3, 4),
+        "brightness": float(extracted.get("thumbnail_brightness", 0.45)),
+        "saturation": float(extracted.get("thumbnail_saturation", round(item.risk_seed * 0.65, 4))),
+        "contrast": float(extracted.get("thumbnail_contrast", round(0.18 + item.risk_seed * 0.5, 4))),
+        "text_density": float(extracted.get("thumbnail_text_density", round(0.15 + item.risk_seed * 0.15, 4))),
+        "face_emphasis": float(extracted.get("thumbnail_face_emphasis", round(0.1 + item.risk_seed * 0.18, 4))),
+        "shock_indicator": float(extracted.get("thumbnail_shock_indicator", round(0.08 + item.risk_seed * 0.3, 4))),
+        "entropy": float(extracted.get("thumbnail_entropy", 0.4)),
+        "aspect_ratio": float(extracted.get("thumbnail_aspect_ratio", round((16 / 9) / 2.5, 4))),
+        "byte_size": float(extracted.get("thumbnail_byte_size", 0.0)),
     }
 
 
@@ -156,15 +175,16 @@ def normalize_acquired_items(
                     "mismatch_score": round(item.mismatch_seed, 4),
                     "transcript_title_overlap": title_transcript_overlap,
                     "transcript_mismatch_score": transcript_mismatch,
+                    "thumbnail_brightness": round(thumbnail_signal["brightness"], 4),
                     "thumbnail_saturation": round(thumbnail_signal["saturation"], 4),
                     "thumbnail_contrast": round(thumbnail_signal["contrast"], 4),
                     "thumbnail_text_density": round(thumbnail_signal["text_density"], 4),
                     "thumbnail_face_emphasis": round(thumbnail_signal["face_emphasis"], 4),
                     "thumbnail_shock_indicator": round(thumbnail_signal["shock_indicator"], 4),
+                    "thumbnail_entropy": round(thumbnail_signal["entropy"], 4),
+                    "thumbnail_aspect_ratio": round(thumbnail_signal["aspect_ratio"], 4),
                     "thumbnail_artifact_kind": item.thumbnail_artifact_kind,
-                    "thumbnail_byte_size": (repo_root() / item.thumbnail_path).stat().st_size
-                    if (repo_root() / item.thumbnail_path).exists()
-                    else 0,
+                    "thumbnail_byte_size": round(thumbnail_signal["byte_size"], 4),
                 },
                 "labels": {},
                 "provenance": {
