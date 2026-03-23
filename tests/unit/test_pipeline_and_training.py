@@ -5,6 +5,8 @@ import pytest
 from truthlens_data_pipeline import PublicSourceSpec
 from truthlens_data_pipeline.paths import read_json, read_jsonl, repo_root
 from truthlens_model_serving import describe_model
+from truthlens_policy_engine import score_item
+from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, ScoreItemRequest
 from truthlens_trainer.pipeline import run_pipeline
 from truthlens_trainer.simulate import main as simulate_main
 from truthlens_trainer.train import main as train_main
@@ -61,6 +63,40 @@ def test_training_and_simulation_generate_artifacts(
     assert simulation_report["replay_summary"]["steps"] > 0
     assert "retraining_recommended" in drift_report
     assert "label_distribution_shift" in drift_report
+
+
+def test_trained_scoring_surfaces_model_contributor_details(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    run_pipeline(run_id="discovery-test-latest", build_id="build-test-latest")
+    train_main()
+
+    result = score_item(
+        ScoreItemRequest(
+            item_id="trained-evidence-item",
+            title="Breaking aliens confirmed over Europe",
+            thumbnail_ref=None,
+            transcript_excerpt="This segment reviews telescope maintenance and launch cadence.",
+            metadata=ItemMetadata(view_count=12000, like_count=900),
+            channel=ChannelInfo(
+                channel_name="Signal Watch Europe",
+                prior_flags=3,
+                channel_history_features={
+                    "channel_risk_mean": 0.72,
+                    "repeat_template_rate": 0.61,
+                    "recent_upload_velocity": 0.58,
+                    "engagement_anomaly": 1.22,
+                },
+            ),
+        )
+    )
+
+    assert any(
+        entry.details is not None and "Top" in entry.details
+        for entry in result.evidence
+    )
 
 
 def test_pipeline_supports_public_rss_sources(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

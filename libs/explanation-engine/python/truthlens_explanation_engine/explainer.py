@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha1
+from typing import Any
 from typing import Literal
 
 from truthlens_model_serving.scorer import ModelSignals
@@ -14,6 +15,31 @@ class ExplanationBundle:
     summary: str
     reasons: list[str]
     evidence: list[ExplanationEvidence]
+
+
+def _format_feature_name(name: str) -> str:
+    return name.replace("_", " ")
+
+
+def _contributor_details(summary: dict[str, Any], key: str, *, prefix: str) -> str | None:
+    contributors = summary.get(key, [])
+    if not isinstance(contributors, list) or not contributors:
+        return None
+    labels: list[str] = []
+    for contributor in contributors[:3]:
+        if not isinstance(contributor, dict):
+            continue
+        name = contributor.get("name")
+        contribution = contributor.get("contribution")
+        if not isinstance(name, str):
+            continue
+        if isinstance(contribution, (float, int)):
+            labels.append(f"{_format_feature_name(name)} ({float(contribution):.2f})")
+        else:
+            labels.append(_format_feature_name(name))
+    if not labels:
+        return None
+    return f"{prefix}: {', '.join(labels)}."
 
 
 def _append_evidence(
@@ -65,32 +91,62 @@ def build_explanation(
     if signals.text_score >= max(signals.vision_score, signals.metadata_score):
         reason = "Title contains strong sensational framing patterns."
         reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "text_top_contributors",
+            prefix="Top text contributors",
+        )
         _append_evidence(
             evidence,
             "title",
             "Sensational title framing",
             score=signals.text_score,
-            details=reason,
+            details=details or reason,
         )
     if signals.vision_score > 0.55:
         reason = "Thumbnail-style features match exaggerated shock composition."
         reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "vision_top_contributors",
+            prefix="Top thumbnail contributors",
+        )
         _append_evidence(
             evidence,
             "thumbnail",
             "Thumbnail exaggeration pattern",
             score=signals.vision_score,
-            details=reason,
+            details=details or reason,
+        )
+    if signals.metadata_score >= max(signals.text_score, signals.vision_score, signals.history_score):
+        reason = "Structured metadata features contribute strongly to the current risk estimate."
+        reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "metadata_top_contributors",
+            prefix="Top metadata contributors",
+        )
+        _append_evidence(
+            evidence,
+            "metadata",
+            "Metadata head is contributing strongly",
+            score=signals.metadata_score,
+            details=details or reason,
         )
     if payload.channel.prior_flags > 0 and max(signals.metadata_score, signals.history_score) > 0.42:
         reason = "Channel history contributes supporting risk context."
         reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "history_top_contributors",
+            prefix="Top history contributors",
+        )
         _append_evidence(
             evidence,
             "history",
             "Channel history raises supporting risk context",
             score=max(signals.metadata_score, signals.history_score),
-            details=reason,
+            details=details or reason,
         )
     if signals.feature_summary.get("repeat_template_rate", 0.0) > 0.45:
         reason = "Channel is repeating a high-risk template pattern unusually often."
@@ -135,22 +191,32 @@ def build_explanation(
     if action == RecommendedAction.ASK_REPORT:
         reason = f"Risk score crossed the report-prompt threshold at {thresholds['report_prompt_threshold']:.2f}."
         reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "fusion_top_contributors",
+            prefix="Top fusion contributors",
+        )
         _append_evidence(
             evidence,
             "policy",
             "Policy crossed the report threshold",
             score=signals.calibrated_score,
-            details=reason,
+            details=details or reason,
         )
     if action == RecommendedAction.HIDE:
         reason = "Risk and confidence crossed the local hide threshold for feed filtering."
         reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "fusion_top_contributors",
+            prefix="Top fusion contributors",
+        )
         _append_evidence(
             evidence,
             "policy",
             "Policy crossed the local hide threshold",
             score=signals.calibrated_score,
-            details=reason,
+            details=details or reason,
         )
 
     summary_parts = reasons[:2] if reasons else ["No active intervention is recommended for this item."]

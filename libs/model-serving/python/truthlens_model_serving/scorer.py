@@ -31,7 +31,50 @@ class ModelSignals:
     uncertainty: float
     model_version: str
     mode: str
-    feature_summary: dict[str, float]
+    feature_summary: dict[str, Any]
+
+
+VISION_FEATURE_NAMES = [
+    "thumbnail_brightness",
+    "thumbnail_saturation",
+    "thumbnail_contrast",
+    "thumbnail_text_density",
+    "thumbnail_entropy",
+    "thumbnail_aspect_ratio",
+    "thumbnail_face_emphasis",
+    "thumbnail_shock_indicator",
+    "transcript_mismatch_score",
+    "thumbnail_byte_size",
+    "prior_flags",
+    "estimated_risk_seed",
+]
+
+METADATA_FEATURE_NAMES = [
+    "title_length",
+    "uppercase_ratio",
+    "token_hits",
+    "prior_flags",
+    "channel_risk_mean",
+    "duration_seconds",
+    "view_count_log",
+    "like_ratio",
+    "transcript_mismatch_score",
+]
+
+HISTORY_FEATURE_NAMES = [
+    "prior_flags",
+    "channel_risk_mean",
+    "repeat_template_rate",
+    "recent_upload_velocity",
+    "engagement_anomaly",
+]
+
+FUSION_FEATURE_NAMES = [
+    "text_score",
+    "vision_score",
+    "metadata_score",
+    "history_score",
+]
 
 
 def _safe_probability(model: Any, matrix: Any) -> float:
@@ -42,7 +85,66 @@ def _safe_probability(model: Any, matrix: Any) -> float:
     return float(prediction[0])
 
 
-def _title_summary(payload: ScoreItemRequest) -> dict[str, float]:
+def _top_dense_contributors(
+    model: Any,
+    feature_names: list[str],
+    vector: np.ndarray,
+    *,
+    limit: int = 3,
+) -> list[dict[str, float | str]]:
+    if not hasattr(model, "coef_"):
+        return []
+    coefficients = np.asarray(model.coef_[0], dtype=float)
+    values = np.asarray(vector, dtype=float).ravel()
+    contributors: list[dict[str, float | str]] = []
+    for index, feature_name in enumerate(feature_names):
+        if index >= len(coefficients) or index >= len(values):
+            break
+        contribution = float(coefficients[index] * values[index])
+        if contribution <= 0:
+            continue
+        contributors.append(
+            {
+                "name": feature_name,
+                "contribution": round(contribution, 4),
+                "value": round(float(values[index]), 4),
+            }
+        )
+    contributors.sort(key=lambda item: float(item["contribution"]), reverse=True)
+    return contributors[:limit]
+
+
+def _top_text_contributors(
+    model: Any,
+    vectorizer: Any,
+    matrix: Any,
+    *,
+    limit: int = 3,
+) -> list[dict[str, float | str]]:
+    if not hasattr(model, "coef_") or not hasattr(matrix, "tocoo"):
+        return []
+    coefficients = np.asarray(model.coef_[0], dtype=float)
+    feature_names = vectorizer.get_feature_names_out()
+    row = matrix.tocoo()
+    contributors: list[dict[str, float | str]] = []
+    for column, value in zip(row.col.tolist(), row.data.tolist()):
+        if column >= len(coefficients):
+            continue
+        contribution = float(coefficients[column] * value)
+        if contribution <= 0:
+            continue
+        contributors.append(
+            {
+                "name": str(feature_names[column]),
+                "contribution": round(contribution, 4),
+                "value": round(float(value), 4),
+            }
+        )
+    contributors.sort(key=lambda item: float(item["contribution"]), reverse=True)
+    return contributors[:limit]
+
+
+def _title_summary(payload: ScoreItemRequest) -> dict[str, Any]:
     title = payload.title
     token_hits = count_sensational_tokens(title)
     return {
@@ -52,7 +154,7 @@ def _title_summary(payload: ScoreItemRequest) -> dict[str, float]:
     }
 
 
-def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, float]) -> float:
+def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
     transcript = payload.transcript_excerpt or ""
     if not transcript:
         summary["transcript_title_overlap"] = 0.0
@@ -66,7 +168,7 @@ def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, float]) -
     return mismatch
 
 
-def _vision_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list[float]:
+def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
     thumbnail_signal: dict[str, float] = {}
     if payload.thumbnail_ref:
         thumbnail_path = Path(payload.thumbnail_ref)
@@ -140,7 +242,7 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list
     ]
 
 
-def _metadata_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list[float]:
+def _metadata_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
     view_count = float(payload.metadata.view_count or 0)
     like_count = float(payload.metadata.like_count or 0)
     duration_seconds = float(payload.metadata.duration_seconds or 0)
@@ -169,7 +271,7 @@ def _metadata_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> li
     ]
 
 
-def _history_vector(payload: ScoreItemRequest, summary: dict[str, float]) -> list[float]:
+def _history_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
     history = payload.channel.channel_history_features
     prior_flags = float(payload.channel.prior_flags)
     channel_risk_mean = float(history.get("channel_risk_mean", min(0.18 + prior_flags * 0.12, 0.95)))
@@ -268,7 +370,36 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             if history_model is not None
             else bootstrap.history_score
         )
+        summary["text_top_contributors"] = _top_text_contributors(
+            bundle["text_model"],
+            bundle["text_vectorizer"],
+            text_matrix,
+        )
+        summary["vision_top_contributors"] = _top_dense_contributors(
+            bundle["vision_model"],
+            VISION_FEATURE_NAMES,
+            vision_vector,
+        )
+        summary["metadata_top_contributors"] = _top_dense_contributors(
+            bundle["metadata_model"],
+            METADATA_FEATURE_NAMES,
+            metadata_vector,
+        )
+        summary["history_top_contributors"] = (
+            _top_dense_contributors(
+                history_model,
+                HISTORY_FEATURE_NAMES,
+                history_vector,
+            )
+            if history_model is not None
+            else []
+        )
         fusion_features = np.asarray([[text_score, vision_score, metadata_score, history_score]], dtype=float)
+        summary["fusion_top_contributors"] = _top_dense_contributors(
+            bundle["fusion_model"],
+            FUSION_FEATURE_NAMES,
+            fusion_features,
+        )
         fusion_score = _safe_probability(bundle["fusion_model"], fusion_features)
         calibration_model = bundle.get("calibration_model")
         calibrated_score = (
