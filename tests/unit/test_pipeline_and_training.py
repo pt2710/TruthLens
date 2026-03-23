@@ -20,6 +20,9 @@ def test_pipeline_creates_build_outputs(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert result["build_manifest"]["counts"]["validation"] > 0
     assert result["build_manifest"]["counts"]["test"] > 0
     assert result["audit_report"]["training_gate_passed"] is True
+    assert result["build_manifest"]["sources"]["source_manifest"]["status_counts"]["pending"] > 0
+    assert "artifact_kind_counts" in result["build_manifest"]["sources"]["raw_acquisition_outputs"]
+    assert "missing_field_rate" in result["build_manifest"]["sources"]["transform_manifest"]
     normalized_rows = read_jsonl(repo_root() / "datasets/interim/normalized/discovery-test-latest.jsonl")
     latest_annotation_batch = read_json(repo_root() / "datasets/labels/annotation_batches/latest.json")
     assert all("transcript_mismatch_score" in row["features"] for row in normalized_rows)
@@ -43,6 +46,7 @@ def test_training_and_simulation_generate_artifacts(
     eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
     simulation_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-simulation.json")
     drift_report = read_json(repo_root() / "artifacts/drift_reports/build-test-latest.json")
+    audit_report = read_json(repo_root() / "datasets/manifests/audits/build-test-latest.json")
 
     assert model_info["mode"] == "trained"
     assert model_info["artifact_status"] == "compatible"
@@ -63,6 +67,8 @@ def test_training_and_simulation_generate_artifacts(
     assert simulation_report["replay_summary"]["steps"] > 0
     assert "retraining_recommended" in drift_report
     assert "label_distribution_shift" in drift_report
+    assert "corrupted_image_rate" in audit_report
+    assert "parser_failure_rate" in audit_report
 
 
 def test_trained_scoring_surfaces_model_contributor_details(

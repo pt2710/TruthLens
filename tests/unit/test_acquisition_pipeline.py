@@ -59,6 +59,9 @@ def test_acquisition_downloads_public_thumbnails(monkeypatch: pytest.MonkeyPatch
     assert thumbnail_path.exists()
     assert thumbnail_path.suffix == ".jpg"
     assert metadata_rows[0]["thumbnail_artifact_kind"] == "image-binary"
+    assert manifest["thumbnail_download_rate"] == 1.0
+    assert manifest["artifact_kind_counts"]["image-binary"] == 1
+    assert manifest["status_counts"]["collected"] == 1
 
 
 def test_acquisition_quarantines_failed_thumbnail_downloads(
@@ -84,6 +87,8 @@ def test_acquisition_quarantines_failed_thumbnail_downloads(
     assert manifest["failure_count"] == 1
     assert manifest["quarantined_count"] == 1
     assert manifest["retry_count"] == 1
+    assert manifest["parser_failure_rate"] == 1.0
+    assert manifest["corrupted_image_rate"] == 1.0
     assert acquired.acquisition_status == "quarantined"
     assert acquired.thumbnail_artifact_kind == "signal-json"
     assert failure_rows[0]["status"] == "quarantined"

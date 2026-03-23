@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 from typing import Any
@@ -199,11 +200,26 @@ def normalize_acquired_items(
 
     normalized_path = repo_root() / "datasets" / "interim" / "normalized" / f"{run_id}.jsonl"
     write_jsonl(normalized_path, normalized_records)
+    missing_fields = 0
+    artifact_kind_counts = Counter(
+        str(record["features"].get("thumbnail_artifact_kind", "unknown"))
+        for record in normalized_records
+    )
+    for record in normalized_records:
+        required_fields = [
+            record["title"],
+            record["channel_name"],
+            record["description"],
+            record["thumbnail_path"],
+        ]
+        missing_fields += sum(1 for field in required_fields if not field)
     transform_manifest = {
         "run_id": run_id,
         "generated_at": acquired_items[0].upload_time if acquired_items else "",
         "transform_version": "normalize-v1",
         "record_count": len(normalized_records),
+        "missing_field_rate": round(missing_fields / max(len(normalized_records) * 4, 1), 4),
+        "artifact_kind_counts": dict(sorted(artifact_kind_counts.items())),
         "normalized_path": relative_path(normalized_path),
         "fingerprints": ["image_fingerprint", "text_fingerprint"],
     }

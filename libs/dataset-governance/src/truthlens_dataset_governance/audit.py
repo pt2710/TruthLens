@@ -33,6 +33,8 @@ def build_audit_report(
     deduplication_report: dict[str, Any],
 ) -> dict[str, Any]:
     all_rows = [row for rows in split_rows.values() for row in rows]
+    acquisition_manifest = build_manifest["sources"]["raw_acquisition_outputs"]
+    transform_manifest = build_manifest["sources"]["transform_manifest"]
     schema_valid = 0
     for row in all_rows:
         validate_dataset_record(row)
@@ -69,11 +71,17 @@ def build_audit_report(
         "schema_validation_pass_rate": round(schema_valid / max(len(all_rows), 1), 4),
         "duplicate_rate": deduplication_report["duplicate_rate"],
         "channel_leakage_rate": round(len(shared_channels) / max(len(all_rows), 1), 4),
-        "missing_field_rate": round(missing_fields / max(len(all_rows) * 4, 1), 4),
+        "missing_field_rate": round(
+            max(
+                round(missing_fields / max(len(all_rows) * 4, 1), 4),
+                float(transform_manifest.get("missing_field_rate", 0.0)),
+            ),
+            4,
+        ),
         "split_balance": {name: len(rows) for name, rows in split_rows.items()},
         "label_distribution": {name: _label_positive_rate(rows) for name, rows in split_rows.items()},
-        "corrupted_image_rate": 0.0,
-        "parser_failure_rate": 0.0,
+        "corrupted_image_rate": float(acquisition_manifest.get("corrupted_image_rate", 0.0)),
+        "parser_failure_rate": float(acquisition_manifest.get("parser_failure_rate", 0.0)),
         "provenance_completeness": round(
             sum(1 for row in all_rows if row.get("provenance")) / max(len(all_rows), 1), 4
         ),

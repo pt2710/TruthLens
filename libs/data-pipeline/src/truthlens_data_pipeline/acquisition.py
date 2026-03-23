@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -173,6 +174,9 @@ def acquire_discovered_items(
     write_jsonl(failure_log_path, failure_rows)
     quarantined_count = sum(1 for item in acquired_items if item.acquisition_status == "quarantined")
     success_count = len(acquired_items) - quarantined_count
+    artifact_kind_counts = Counter(item.thumbnail_artifact_kind for item in acquired_items)
+    status_counts = Counter(item.acquisition_status for item in acquired_items)
+    downloaded_items = sum(1 for item in acquired_items if item.thumbnail_artifact_kind == "image-binary")
     manifest = {
         "run_id": run_id,
         "generated_at": utc_now(),
@@ -182,6 +186,11 @@ def acquire_discovered_items(
         "quarantined_count": quarantined_count,
         "retry_count": retry_count,
         "success_rate": round(success_count / max(len(acquired_items), 1), 4),
+        "thumbnail_download_rate": round(downloaded_items / max(len(acquired_items), 1), 4),
+        "artifact_kind_counts": dict(sorted(artifact_kind_counts.items())),
+        "status_counts": dict(sorted(status_counts.items())),
+        "corrupted_image_rate": round(quarantined_count / max(len(acquired_items), 1), 4),
+        "parser_failure_rate": round(len(failure_rows) / max(len(acquired_items), 1), 4),
         "coverage_count": len(acquired_items),
         "metadata_path": relative_path(metadata_path),
         "failure_log_path": relative_path(failure_log_path),

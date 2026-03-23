@@ -21,6 +21,8 @@ def test_source_manifest_builder() -> None:
     )
 
     assert manifest.coverage_count == 1
+    assert manifest.status_counts["pending"] == 1
+    assert manifest.platform_counts["youtube"] == 1
 
 
 def test_dataset_record_validation() -> None:
