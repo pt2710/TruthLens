@@ -1,0 +1,39 @@
+import type { ScoreResult } from '@truthlens/shared-schemas';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { useOverlayStore } from './store';
+
+function score(action: ScoreResult['recommended_action']): ScoreResult {
+  return {
+    risk_score: 0.6,
+    confidence: 0.8,
+    uncertainty: 0.2,
+    recommended_action: action,
+    reasons: action === 'none' ? [] : ['reason'],
+  };
+}
+
+describe('overlay store', () => {
+  beforeEach(() => {
+    useOverlayStore.setState({
+      itemCount: 0,
+      flaggedCount: 0,
+      lastScore: null,
+      scoresByItemId: {},
+      recordScore: useOverlayStore.getState().recordScore,
+    });
+  });
+
+  it('tracks unique items instead of incrementing duplicates', () => {
+    const { recordScore } = useOverlayStore.getState();
+
+    recordScore('item-1', score('badge'));
+    recordScore('item-1', score('none'));
+    recordScore('item-2', score('blur'));
+
+    const state = useOverlayStore.getState();
+    expect(state.itemCount).toBe(2);
+    expect(state.flaggedCount).toBe(1);
+    expect(state.lastScore?.recommended_action).toBe('blur');
+  });
+});

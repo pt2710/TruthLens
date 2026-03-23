@@ -1,7 +1,10 @@
 import {
+  batchScoreRequestSchema,
+  batchScoreResponseSchema,
   feedbackEventSchema,
   scoreItemRequestSchema,
   scoreResultSchema,
+  type BatchScoreRequest,
   type FeedbackEvent,
   type ScoreItemRequest,
   type ScoreResult,
@@ -84,6 +87,51 @@ export async function scoreFeedItem(item: ScoreItemRequest): Promise<ScoreResult
     const fallback = createBootstrapScore(parsedItem);
     scoreCache.set(key, fallback);
     return fallback;
+  }
+}
+
+export async function batchScoreFeedItems(items: ScoreItemRequest[]): Promise<Record<string, ScoreResult>> {
+  const parsedRequest = batchScoreRequestSchema.parse({ items }) as BatchScoreRequest;
+  const results: Record<string, ScoreResult> = {};
+  const uncachedItems: ScoreItemRequest[] = [];
+
+  for (const item of parsedRequest.items) {
+    const key = cacheKey(item);
+    const cached = scoreCache.get(key);
+    if (cached) {
+      results[item.item_id] = cached;
+      continue;
+    }
+    uncachedItems.push(item);
+  }
+
+  if (uncachedItems.length === 0) {
+    return results;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/batch-score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: uncachedItems }),
+    });
+    if (!response.ok) {
+      throw new Error(`Batch score request failed: ${response.status}`);
+    }
+    const payload = batchScoreResponseSchema.parse(await response.json());
+    for (const item of uncachedItems) {
+      const score = payload.results[item.item_id] ?? createBootstrapScore(item);
+      scoreCache.set(cacheKey(item), score);
+      results[item.item_id] = score;
+    }
+    return results;
+  } catch {
+    for (const item of uncachedItems) {
+      const fallback = createBootstrapScore(item);
+      scoreCache.set(cacheKey(item), fallback);
+      results[item.item_id] = fallback;
+    }
+    return results;
   }
 }
 

@@ -104,6 +104,8 @@ export const datasetRecordSchema = z.object({
 });
 
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
+export type BatchScoreRequest = z.infer<typeof batchScoreRequestSchema>;
+export type BatchScoreResponse = z.infer<typeof batchScoreResponseSchema>;
 export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;

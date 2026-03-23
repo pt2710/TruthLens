@@ -1,7 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import type { ScoreItemRequest, ScoreResult } from '@truthlens/shared-schemas';
 
-import { sendFeedbackEvent, scoreFeedItem } from './lib/api';
+import { batchScoreFeedItems, sendFeedbackEvent } from './lib/api';
 import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
 import { App } from './overlay/App';
 import { useOverlayStore } from './overlay/store';
@@ -11,6 +12,14 @@ const OVERLAY_ID = 'truthlens-overlay-root';
 const PROCESSED = 'data-truthlens-processed';
 const PROCESSING = 'data-truthlens-processing';
 let rescoreTimer: number | null = null;
+const BATCH_SIZE = 12;
+
+type PendingCard = {
+  card: HTMLElement;
+  itemId: string;
+  channelName: string;
+  request: ScoreItemRequest;
+};
 
 function mountOverlay() {
   if (document.getElementById(OVERLAY_ID)) {
@@ -62,7 +71,7 @@ function attachActions(
   card: HTMLElement,
   itemId: string,
   channelName: string,
-  score: Awaited<ReturnType<typeof scoreFeedItem>>,
+  score: ScoreResult,
 ) {
   if (card.querySelector('.truthlens-action-row')) {
     return;
@@ -136,26 +145,28 @@ function attachActions(
   card.append(actionRow, details);
 }
 
-async function processCard(card: HTMLElement, index: number) {
+function buildPendingCard(card: HTMLElement, index: number): PendingCard | null {
   if (card.getAttribute(PROCESSED) === 'true' || card.getAttribute(PROCESSING) === 'true') {
-    return;
+    return null;
   }
 
+  const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
+  const channelName =
+    extractText(card, 'ytd-channel-name, #channel-name, [id="channel-info"] a') || 'Unknown channel';
+  if (isChannelMuted(channelName)) {
+    card.classList.add('truthlens-card-hidden');
+    card.setAttribute(PROCESSED, 'true');
+    return null;
+  }
+  const thumbnailRef =
+    card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
+  const itemId = buildItemId(card, index);
   card.setAttribute(PROCESSING, 'true');
-  try {
-    const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
-    const channelName =
-      extractText(card, 'ytd-channel-name, #channel-name, [id="channel-info"] a') || 'Unknown channel';
-    if (isChannelMuted(channelName)) {
-      card.classList.add('truthlens-card-hidden');
-      card.setAttribute(PROCESSED, 'true');
-      return;
-    }
-    const thumbnailRef =
-      card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
-    const itemId = buildItemId(card, index);
-
-    const score = await scoreFeedItem({
+  return {
+    card,
+    itemId,
+    channelName,
+    request: {
       item_id: itemId,
       title,
       thumbnail_ref: thumbnailRef,
@@ -167,35 +178,59 @@ async function processCard(card: HTMLElement, index: number) {
         channel_history_features: {},
       },
       user_context: buildUserContext(),
-    });
+    },
+  };
+}
 
-    useOverlayStore.getState().recordScore(score);
+function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
+  const { card, itemId, channelName } = pendingCard;
+  useOverlayStore.getState().recordScore(itemId, score);
 
-    if (score.recommended_action !== 'none') {
-      const flag = document.createElement('span');
-      flag.className = 'truthlens-card-flag';
-      flag.textContent = `TruthLens: ${score.recommended_action}`;
-      card.appendChild(flag);
-    }
-
-    if (score.recommended_action === 'blur') {
-      card.classList.add('truthlens-card-blur');
-    }
-    if (score.recommended_action === 'hide') {
-      card.classList.add('truthlens-card-hidden');
-    }
-
-    attachActions(card, itemId, channelName, score);
-    card.setAttribute(PROCESSED, 'true');
-  } finally {
-    card.removeAttribute(PROCESSING);
+  if (score.recommended_action !== 'none' && !card.querySelector('.truthlens-card-flag')) {
+    const flag = document.createElement('span');
+    flag.className = 'truthlens-card-flag';
+    flag.textContent = `TruthLens: ${score.recommended_action}`;
+    card.appendChild(flag);
   }
+
+  if (score.recommended_action === 'blur') {
+    card.classList.add('truthlens-card-blur');
+  }
+  if (score.recommended_action === 'hide') {
+    card.classList.add('truthlens-card-hidden');
+  }
+
+  attachActions(card, itemId, channelName, score);
+  card.setAttribute(PROCESSED, 'true');
+  card.removeAttribute(PROCESSING);
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size));
+  }
+  return batches;
 }
 
 async function scoreCards() {
   const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
-  await Promise.all(cards.map((card, index) => processCard(card, index)));
+  const pendingCards = cards
+    .map((card, index) => buildPendingCard(card, index))
+    .filter((entry): entry is PendingCard => entry !== null);
+
+  for (const batch of chunk(pendingCards, BATCH_SIZE)) {
+    const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
+    for (const entry of batch) {
+      const score = scores[entry.itemId];
+      if (score) {
+        applyScoreToCard(entry, score);
+      } else {
+        entry.card.removeAttribute(PROCESSING);
+      }
+    }
+  }
 }
 
 mountOverlay();

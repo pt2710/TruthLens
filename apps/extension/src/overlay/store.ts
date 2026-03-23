@@ -5,17 +5,26 @@ type OverlayState = {
   itemCount: number;
   flaggedCount: number;
   lastScore: ScoreResult | null;
-  recordScore: (score: ScoreResult) => void;
+  scoresByItemId: Record<string, ScoreResult>;
+  recordScore: (itemId: string, score: ScoreResult) => void;
 };
 
 export const useOverlayStore = create<OverlayState>((set) => ({
   itemCount: 0,
   flaggedCount: 0,
   lastScore: null,
-  recordScore: (score) =>
-    set((state) => ({
-      itemCount: state.itemCount + 1,
-      flaggedCount: state.flaggedCount + (score.recommended_action === 'none' ? 0 : 1),
-      lastScore: score,
-    })),
+  scoresByItemId: {},
+  recordScore: (itemId, score) =>
+    set((state) => {
+      const nextScores = { ...state.scoresByItemId, [itemId]: score };
+      const flaggedCount = Object.values(nextScores).filter(
+        (entry) => entry.recommended_action !== 'none',
+      ).length;
+      return {
+        itemCount: Object.keys(nextScores).length,
+        flaggedCount,
+        lastScore: score,
+        scoresByItemId: nextScores,
+      };
+    }),
 }));
