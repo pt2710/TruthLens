@@ -21,6 +21,26 @@ def _combine_label_score(record: dict[str, Any]) -> float:
     return round(min(score, 0.99), 4)
 
 
+def _queue_entry(
+    record: dict[str, Any],
+    *,
+    weak_label_score: float | None = None,
+    uncertainty_bucket: str | None = None,
+    queue_reason: str,
+) -> dict[str, Any]:
+    return {
+        "item_id": record["item_id"],
+        "title": record["title"],
+        "channel_name": record["channel_name"],
+        "weak_label_score": weak_label_score,
+        "uncertainty_bucket": uncertainty_bucket,
+        "source_trust_flag": record["metadata"].get("source_trust_flag"),
+        "template_cluster": record["features"].get("template_cluster"),
+        "prior_flags": record["history"].get("prior_flags", 0),
+        "queue_reason": queue_reason,
+    }
+
+
 def prepare_label_batches(
     run_id: str,
     normalized_records: list[dict[str, Any]],
@@ -68,38 +88,60 @@ def prepare_label_batches(
         labeled_records.append(record)
 
         if review_required:
+            review_reason = (
+                "AI-mass-spam pattern requires manual review."
+                if ai_mass_spam
+                else "Weak-label score falls inside the manual-review uncertainty band."
+            )
             review_queue.append(
-                {
-                    "item_id": record["item_id"],
-                    "title": record["title"],
-                    "weak_label_score": weak_label_score,
-                    "uncertainty_bucket": record["metadata"]["uncertainty_bucket"],
-                }
+                _queue_entry(
+                    record,
+                    weak_label_score=weak_label_score,
+                    uncertainty_bucket=record["metadata"]["uncertainty_bucket"],
+                    queue_reason=review_reason,
+                )
             )
         elif weak_label_score < 0.24:
-            hard_negative_queue.append({"item_id": record["item_id"], "title": record["title"]})
+            hard_negative_queue.append(
+                _queue_entry(
+                    record,
+                    weak_label_score=weak_label_score,
+                    uncertainty_bucket=record["metadata"]["uncertainty_bucket"],
+                    queue_reason="Low weak-label score makes this a useful hard negative.",
+                )
+            )
 
         if clickbait and not misleading_title:
-            disagreement_queue.append({"item_id": record["item_id"], "title": record["title"]})
+            disagreement_queue.append(
+                _queue_entry(
+                    record,
+                    weak_label_score=weak_label_score,
+                    uncertainty_bucket=record["metadata"]["uncertainty_bucket"],
+                    queue_reason="Thumbnail/title cues disagree with the current title-misleading signal.",
+                )
+            )
 
     root = repo_root()
     weak_labels_path = root / "datasets" / "labels" / "weak_labels" / f"{run_id}.jsonl"
     annotation_batch_path = root / "datasets" / "labels" / "annotation_batches" / f"{run_id}.json"
+    latest_annotation_batch_path = root / "datasets" / "labels" / "annotation_batches" / "latest.json"
+    annotation_batch_payload = {
+        "run_id": run_id,
+        "generated_at": normalized_records[0]["collected_at"] if normalized_records else "",
+        "review_queue": review_queue,
+        "hard_negative_queue": hard_negative_queue,
+        "disagreement_queue": disagreement_queue,
+        "annotator_notes_fields": ["weak_label_score", "uncertainty_bucket", "source_trust_flag"],
+        "source_batch_path": relative_path(annotation_batch_path),
+    }
     write_jsonl(weak_labels_path, labeled_records)
-    write_json(
-        annotation_batch_path,
-        {
-            "run_id": run_id,
-            "review_queue": review_queue,
-            "hard_negative_queue": hard_negative_queue,
-            "disagreement_queue": disagreement_queue,
-            "annotator_notes_fields": ["weak_label_score", "uncertainty_bucket", "source_trust_flag"],
-        },
-    )
+    write_json(annotation_batch_path, annotation_batch_payload)
+    write_json(latest_annotation_batch_path, annotation_batch_payload)
     annotation_manifest = {
         "run_id": run_id,
         "generated_at": normalized_records[0]["collected_at"] if normalized_records else "",
         "annotation_batch_path": relative_path(annotation_batch_path),
+        "latest_annotation_batch_path": relative_path(latest_annotation_batch_path),
         "weak_labels_path": relative_path(weak_labels_path),
         "review_count": len(review_queue),
         "hard_negative_count": len(hard_negative_queue),

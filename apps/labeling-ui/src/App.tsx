@@ -23,7 +23,12 @@ function QueueSection({ title, items }: { title: string; items: QueueEntry[] }) 
                 ) : null}
               </div>
               <h3>{item.title}</h3>
+              {item.channel_name ? <p>Channel: {item.channel_name}</p> : null}
               {item.uncertainty_bucket ? <p>Bucket: {item.uncertainty_bucket}</p> : null}
+              {item.source_trust_flag ? <p>Trust flag: {item.source_trust_flag}</p> : null}
+              {item.template_cluster ? <p>Template: {item.template_cluster}</p> : null}
+              {typeof item.prior_flags === 'number' ? <p>Prior flags: {item.prior_flags}</p> : null}
+              {item.queue_reason ? <p>{item.queue_reason}</p> : null}
             </article>
           ))
         )}
@@ -62,6 +67,8 @@ export function App() {
             Use this workspace to triage review items, inspect hard negatives, and track disagreement
             lanes before adjudication.
           </p>
+          {batch.generated_at ? <p>Generated at: {batch.generated_at}</p> : null}
+          {batch.source_batch_path ? <p>Batch source: {batch.source_batch_path}</p> : null}
         </div>
         <div className="hero-stats">
           <div>

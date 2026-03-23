@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from truthlens_data_pipeline.paths import read_jsonl, repo_root
+from truthlens_data_pipeline.paths import read_json, read_jsonl, repo_root
 from truthlens_model_serving import describe_model
 from truthlens_trainer.pipeline import run_pipeline
 from truthlens_trainer.simulate import main as simulate_main
@@ -18,8 +18,12 @@ def test_pipeline_creates_build_outputs(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert result["build_manifest"]["counts"]["test"] > 0
     assert result["audit_report"]["training_gate_passed"] is True
     normalized_rows = read_jsonl(repo_root() / "datasets/interim/normalized/discovery-test-latest.jsonl")
+    latest_annotation_batch = read_json(repo_root() / "datasets/labels/annotation_batches/latest.json")
     assert all("transcript_mismatch_score" in row["features"] for row in normalized_rows)
     assert all("repeat_template_rate" in row["history"]["channel_history_features"] for row in normalized_rows)
+    assert latest_annotation_batch["run_id"] == "discovery-test-latest"
+    assert "queue_reason" in latest_annotation_batch["review_queue"][0]
+    assert "channel_name" in latest_annotation_batch["review_queue"][0]
 
 
 def test_training_and_simulation_generate_artifacts(
