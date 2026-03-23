@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import json
 import pytest
 from pathlib import Path
 
@@ -57,6 +58,36 @@ def test_score_item_contract() -> None:
         assert payload["explanation_id"]
         assert payload["explanation_summary"]
         assert payload["evidence"]
+
+
+def test_score_endpoint_writes_audit_event(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    response = client.post(
+        "/score-item",
+        json={
+            "item_id": "audit-item-1",
+            "title": "Breaking aliens confirmed",
+            "thumbnail_ref": None,
+            "metadata": {},
+            "channel": {
+                "channel_name": "Audit Channel",
+                "prior_flags": 1,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    audit_path = tmp_path / "artifacts" / "reports" / "score_events.jsonl"
+    assert audit_path.exists()
+    payload = json.loads(audit_path.read_text(encoding="utf-8").splitlines()[0])
+    assert payload["item_id"] == "audit-item-1"
+    assert payload["channel_name"] == "Audit Channel"
+    assert "model_version" in payload
+    assert "policy_version" in payload
 
 
 def test_feedback_endpoint_accepts_event() -> None:

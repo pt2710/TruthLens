@@ -27,6 +27,10 @@ def _feedback_log_path() -> Path:
     return _repo_root() / "artifacts" / "reports" / "feedback_events.jsonl"
 
 
+def _score_log_path() -> Path:
+    return _repo_root() / "artifacts" / "reports" / "score_events.jsonl"
+
+
 def _feedback_db_path() -> Path:
     return _repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
 
@@ -185,6 +189,26 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
     connection.commit()
 
 
+def _ensure_score_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS score_events (
+            item_id TEXT NOT NULL,
+            channel_name TEXT,
+            model_version TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            recommended_action TEXT NOT NULL,
+            risk_score REAL NOT NULL,
+            confidence REAL NOT NULL,
+            uncertainty REAL NOT NULL,
+            explanation_id TEXT,
+            timestamp TEXT NOT NULL
+        )
+        """
+    )
+    connection.commit()
+
+
 def append_feedback_event(payload: dict[str, Any]) -> Path:
     path = _feedback_log_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,6 +245,47 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 payload.get("explanation_id"),
                 payload.get("before_score"),
                 payload.get("after_score"),
+                payload.get("timestamp"),
+            ),
+        )
+        connection.commit()
+    return path
+
+
+def append_score_event(payload: dict[str, Any]) -> Path:
+    path = _score_log_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=True))
+        handle.write("\n")
+    db_path = _feedback_db_path()
+    with sqlite3.connect(db_path) as connection:
+        _ensure_score_table(connection)
+        connection.execute(
+            """
+            INSERT INTO score_events (
+                item_id,
+                channel_name,
+                model_version,
+                policy_version,
+                recommended_action,
+                risk_score,
+                confidence,
+                uncertainty,
+                explanation_id,
+                timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload.get("item_id"),
+                payload.get("channel_name"),
+                payload.get("model_version"),
+                payload.get("policy_version"),
+                payload.get("recommended_action"),
+                payload.get("risk_score"),
+                payload.get("confidence"),
+                payload.get("uncertainty"),
+                payload.get("explanation_id"),
                 payload.get("timestamp"),
             ),
         )
