@@ -6,6 +6,29 @@ from truthlens_data_pipeline.acquisition import acquire_discovered_items
 from truthlens_data_pipeline.discovery import DiscoveredItem
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 
+WATCH_HTML = """
+<html>
+  <head>
+    <meta property="og:title" content="Enriched orbital weather bulletin" />
+    <meta property="og:image" content="https://img.youtube.com/vi/rss-item-1/maxresdefault.jpg" />
+    <meta name="description" content="Watch-page description with more complete source notes." />
+    <script type="application/ld+json">
+      {"duration":"PT13M5S","interactionCount":"45678","thumbnailUrl":["https://img.youtube.com/vi/rss-item-1/maxresdefault.jpg"]}
+    </script>
+    <script>
+      var ytInitialPlayerResponse = {"videoDetails":{"shortDescription":"Detailed watch-page description.","lengthSeconds":"785","viewCount":"45678"},"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"baseUrl":"https://example.com/captions.xml"}]}}};
+    </script>
+  </head>
+</html>
+"""
+
+CAPTION_XML = """
+<transcript>
+  <text start="0" dur="2">Orbital weather bulletin with measured source notes.</text>
+  <text start="2" dur="2">Transcript enrichment is available from captions.</text>
+</transcript>
+"""
+
 
 def _item() -> DiscoveredItem:
     return DiscoveredItem(
@@ -92,3 +115,37 @@ def test_acquisition_quarantines_failed_thumbnail_downloads(
     assert acquired.acquisition_status == "quarantined"
     assert acquired.thumbnail_artifact_kind == "signal-json"
     assert failure_rows[0]["status"] == "quarantined"
+
+
+def test_acquisition_enriches_watch_page_metadata_and_captions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    def watch_fetcher(_url: str) -> str:
+        return WATCH_HTML
+
+    def caption_fetcher(_url: str) -> str:
+        return CAPTION_XML
+
+    acquired_items, manifest = acquire_discovered_items(
+        "run-public-enriched",
+        [_item()],
+        fetcher=lambda _url: b"fake-jpeg-binary",
+        watch_page_fetcher=watch_fetcher,
+        caption_fetcher=caption_fetcher,
+    )
+
+    acquired = acquired_items[0]
+    transcript_path = repo_root() / acquired.transcript_path
+
+    assert acquired.title == "Enriched orbital weather bulletin"
+    assert acquired.description == "Detailed watch-page description."
+    assert acquired.thumbnail_source_url == "https://img.youtube.com/vi/rss-item-1/maxresdefault.jpg"
+    assert acquired.duration_seconds == 785
+    assert acquired.view_count == 45678
+    assert "Transcript enrichment" in acquired.transcript_excerpt
+    assert "Transcript enrichment" in transcript_path.read_text(encoding="utf-8")
+    assert manifest["watch_page_enrichment_rate"] == 1.0
+    assert manifest["caption_enrichment_rate"] == 1.0

@@ -23,6 +23,8 @@ def run_pipeline(
     build_id: str | None = None,
     public_sources: list[PublicSourceSpec] | None = None,
     fetcher: Any | None = None,
+    watch_page_fetcher: Any | None = None,
+    caption_fetcher: Any | None = None,
 ) -> dict[str, Any]:
     resolved_run_id = run_id or make_run_id("discovery")
     run_id, source_manifest, discovered_items = persist_discovery_run(
@@ -30,7 +32,12 @@ def run_pipeline(
         public_sources=public_sources,
         fetcher=fetcher,
     )
-    acquired_items, acquisition_manifest = acquire_discovered_items(run_id, discovered_items)
+    acquired_items, acquisition_manifest = acquire_discovered_items(
+        run_id,
+        discovered_items,
+        watch_page_fetcher=watch_page_fetcher,
+        caption_fetcher=caption_fetcher,
+    )
     normalized_records, transform_manifest = normalize_acquired_items(run_id, acquired_items)
     labeled_records, annotation_manifest = prepare_label_batches(run_id, normalized_records)
     deduplicated_records, deduplication_report = deduplicate_records(run_id, labeled_records)

@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable
+from html import unescape
+import json
 from pathlib import Path
+import re
 from typing import Any
 from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
@@ -49,6 +53,7 @@ class AcquiredItem(BaseModel):
 
 
 FetchBytes = Callable[[str], bytes]
+FetchText = Callable[[str], str]
 
 
 def _default_fetch_bytes(source_url: str) -> bytes:
@@ -67,10 +72,148 @@ def _artifact_suffix(source_url: str | None) -> str:
     return ".bin"
 
 
+def _parse_iso8601_duration(value: str) -> int:
+    match = re.fullmatch(
+        r"PT(?:(?P<hours>\d+)H)?(?:(?P<minutes>\d+)M)?(?:(?P<seconds>\d+)S)?",
+        value.strip(),
+    )
+    if not match:
+        return 0
+    hours = int(match.group("hours") or 0)
+    minutes = int(match.group("minutes") or 0)
+    seconds = int(match.group("seconds") or 0)
+    return (hours * 3600) + (minutes * 60) + seconds
+
+
+def _first_match(pattern: str, text: str) -> str | None:
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def _extract_quoted_json_block(pattern: str, html: str) -> dict[str, Any] | None:
+    payload = _first_match(pattern, html)
+    if not payload:
+        return None
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError:
+        return None
+
+
+def _meta_content(
+    html: str,
+    *,
+    name: str | None = None,
+    prop: str | None = None,
+    itemprop: str | None = None,
+) -> str | None:
+    attribute, value = (
+        ("name", name)
+        if name is not None
+        else ("property", prop)
+        if prop is not None
+        else ("itemprop", itemprop)
+    )
+    if value is None:
+        return None
+    pattern = rf"<meta[^>]+{attribute}=[\"']{re.escape(value)}[\"'][^>]+content=[\"']([^\"']+)[\"']"
+    found = _first_match(pattern, html)
+    return unescape(found) if found else None
+
+
+def _caption_excerpt(xml_text: str, *, limit: int = 320) -> str:
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return ""
+    chunks: list[str] = []
+    for node in root.findall(".//text"):
+        if node.text:
+            chunks.append(unescape(node.text).strip())
+        if len(" ".join(chunks)) >= limit:
+            break
+    transcript = " ".join(chunk for chunk in chunks if chunk)
+    return transcript[:limit].strip()
+
+
+def _watch_page_metadata(
+    html: str,
+    *,
+    caption_fetcher: FetchText | None = None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {}
+    json_ld = _extract_quoted_json_block(
+        r"<script[^>]+type=[\"']application/ld\+json[\"'][^>]*>\s*(\{.*?\})\s*</script>",
+        html,
+    )
+    if isinstance(json_ld, dict):
+        duration = json_ld.get("duration")
+        interaction_count = json_ld.get("interactionCount")
+        description = json_ld.get("description")
+        thumbnail_url = json_ld.get("thumbnailUrl")
+        if isinstance(duration, str):
+            metadata["duration_seconds"] = _parse_iso8601_duration(duration)
+        if isinstance(interaction_count, str) and interaction_count.isdigit():
+            metadata["view_count"] = int(interaction_count)
+        if isinstance(description, str) and description.strip():
+            metadata["description"] = description.strip()
+        if isinstance(thumbnail_url, list) and thumbnail_url:
+            metadata["thumbnail_source_url"] = str(thumbnail_url[0])
+        elif isinstance(thumbnail_url, str) and thumbnail_url.strip():
+            metadata["thumbnail_source_url"] = thumbnail_url.strip()
+
+    player_response = _extract_quoted_json_block(
+        r"ytInitialPlayerResponse\s*=\s*(\{.*?\})\s*;",
+        html,
+    )
+    if isinstance(player_response, dict):
+        video_details = player_response.get("videoDetails", {})
+        if isinstance(video_details, dict):
+            short_description = video_details.get("shortDescription")
+            length_seconds = video_details.get("lengthSeconds")
+            view_count = video_details.get("viewCount")
+            if isinstance(short_description, str) and short_description.strip():
+                metadata["description"] = short_description.strip()
+            if isinstance(length_seconds, str) and length_seconds.isdigit():
+                metadata["duration_seconds"] = int(length_seconds)
+            if isinstance(view_count, str) and view_count.isdigit():
+                metadata["view_count"] = int(view_count)
+
+        captions = player_response.get("captions", {})
+        if isinstance(captions, dict):
+            renderer = captions.get("playerCaptionsTracklistRenderer", {})
+            if isinstance(renderer, dict):
+                caption_tracks = renderer.get("captionTracks", [])
+                if isinstance(caption_tracks, list) and caption_tracks and caption_fetcher is not None:
+                    first_track = caption_tracks[0]
+                    if isinstance(first_track, dict):
+                        base_url = str(first_track.get("baseUrl", "")).strip()
+                        if base_url:
+                            try:
+                                metadata["transcript_excerpt"] = _caption_excerpt(caption_fetcher(base_url))
+                            except (httpx.HTTPError, OSError, ValueError):
+                                pass
+
+    description = metadata.get("description") or _meta_content(html, name="description")
+    if description:
+        metadata["description"] = str(description).strip()
+    thumbnail_url = metadata.get("thumbnail_source_url") or _meta_content(html, prop="og:image")
+    if thumbnail_url:
+        metadata["thumbnail_source_url"] = str(thumbnail_url).strip()
+    title = _meta_content(html, itemprop="name") or _meta_content(html, prop="og:title")
+    if title:
+        metadata["title"] = str(title).strip()
+    return metadata
+
+
 def acquire_discovered_items(
     run_id: str,
     discovered_items: list[DiscoveredItem],
     fetcher: FetchBytes | None = None,
+    watch_page_fetcher: FetchText | None = None,
+    caption_fetcher: FetchText | None = None,
     max_retries: int = 2,
 ) -> tuple[list[AcquiredItem], dict[str, Any]]:
     root = repo_root()
@@ -85,15 +228,36 @@ def acquire_discovered_items(
     metadata_rows: list[dict[str, Any]] = []
     failure_rows: list[dict[str, Any]] = []
     retry_count = 0
+    watch_page_enrichment_count = 0
+    caption_enrichment_count = 0
 
     for item in discovered_items:
+        watch_metadata: dict[str, Any] = {}
+        if watch_page_fetcher is not None and item.source_url and item.source_url.startswith("http"):
+            try:
+                watch_metadata = _watch_page_metadata(
+                    watch_page_fetcher(item.source_url),
+                    caption_fetcher=caption_fetcher,
+                )
+                if watch_metadata:
+                    watch_page_enrichment_count += 1
+                if watch_metadata.get("transcript_excerpt"):
+                    caption_enrichment_count += 1
+            except (httpx.HTTPError, OSError, ValueError):
+                watch_metadata = {}
         transcript_path = transcripts_dir / f"{item.item_id}.txt"
         thumbnail_artifact_kind = "signal-json"
         acquisition_status = "collected"
         thumbnail_path: Path
+        thumbnail_source_url = str(watch_metadata.get("thumbnail_source_url") or item.thumbnail_url or "").strip() or None
+        description = str(watch_metadata.get("description") or item.description)
+        transcript_excerpt = str(watch_metadata.get("transcript_excerpt") or item.transcript_excerpt)
+        title = str(watch_metadata.get("title") or item.title)
+        duration_seconds = int(watch_metadata.get("duration_seconds") or item.duration_seconds)
+        view_count = int(watch_metadata.get("view_count") or item.view_count)
 
-        if item.thumbnail_url:
-            suffix = _artifact_suffix(item.thumbnail_url)
+        if thumbnail_source_url:
+            suffix = _artifact_suffix(thumbnail_source_url)
             candidate_thumbnail_path = thumbnails_dir / f"{item.item_id}{suffix}"
             last_error = ""
             downloaded = False
@@ -101,7 +265,7 @@ def acquire_discovered_items(
                 if attempt > 0:
                     retry_count += 1
                 try:
-                    payload = resolved_fetcher(item.thumbnail_url)
+                    payload = resolved_fetcher(thumbnail_source_url)
                     candidate_thumbnail_path.write_bytes(payload)
                     thumbnail_path = candidate_thumbnail_path
                     thumbnail_artifact_kind = "image-binary"
@@ -117,7 +281,7 @@ def acquire_discovered_items(
                     thumbnail_path,
                     {
                         "thumbnail_signal": item.thumbnail_signal,
-                        "thumbnail_url": item.thumbnail_url,
+                        "thumbnail_url": thumbnail_source_url,
                         "reason": last_error or "thumbnail download failed",
                     },
                 )
@@ -125,7 +289,7 @@ def acquire_discovered_items(
                     {
                         "item_id": item.item_id,
                         "source_url": item.source_url,
-                        "thumbnail_url": item.thumbnail_url,
+                        "thumbnail_url": thumbnail_source_url,
                         "status": acquisition_status,
                         "error": last_error or "thumbnail download failed",
                     }
@@ -138,7 +302,7 @@ def acquire_discovered_items(
         else:
             thumbnail_path = thumbnails_dir / f"{item.item_id}.json"
             write_json(thumbnail_path, item.thumbnail_signal)
-        transcript_path.write_text(item.transcript_excerpt, encoding="utf-8")
+        transcript_path.write_text(transcript_excerpt, encoding="utf-8")
 
         acquired = AcquiredItem(
             item_id=item.item_id,
@@ -146,17 +310,17 @@ def acquire_discovered_items(
             source_url=item.source_url,
             channel_name=item.channel_name,
             channel_prior_flags=item.channel_prior_flags,
-            title=item.title,
-            description=item.description,
+            title=title,
+            description=description,
             tags=item.tags,
             hashtags=item.hashtags,
-            transcript_excerpt=item.transcript_excerpt,
+            transcript_excerpt=transcript_excerpt,
             upload_time=item.upload_time,
-            duration_seconds=item.duration_seconds,
-            view_count=item.view_count,
+            duration_seconds=duration_seconds,
+            view_count=view_count,
             like_count=item.like_count,
             template_cluster=item.template_cluster,
-            thumbnail_source_url=item.thumbnail_url,
+            thumbnail_source_url=thumbnail_source_url,
             thumbnail_path=relative_path(thumbnail_path),
             thumbnail_artifact_kind=thumbnail_artifact_kind,
             transcript_path=relative_path(transcript_path),
@@ -187,6 +351,8 @@ def acquire_discovered_items(
         "retry_count": retry_count,
         "success_rate": round(success_count / max(len(acquired_items), 1), 4),
         "thumbnail_download_rate": round(downloaded_items / max(len(acquired_items), 1), 4),
+        "watch_page_enrichment_rate": round(watch_page_enrichment_count / max(len(acquired_items), 1), 4),
+        "caption_enrichment_rate": round(caption_enrichment_count / max(len(acquired_items), 1), 4),
         "artifact_kind_counts": dict(sorted(artifact_kind_counts.items())),
         "status_counts": dict(sorted(status_counts.items())),
         "corrupted_image_rate": round(quarantined_count / max(len(acquired_items), 1), 4),
