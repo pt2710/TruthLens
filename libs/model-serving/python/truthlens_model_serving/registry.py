@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import pickle
+import sqlite3
 import warnings
 from collections import Counter
 from pathlib import Path
@@ -21,6 +22,10 @@ def _repo_root() -> Path:
 
 def _feedback_log_path() -> Path:
     return _repo_root() / "artifacts" / "reports" / "feedback_events.jsonl"
+
+
+def _feedback_db_path() -> Path:
+    return _repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
 
 
 def model_dir() -> Path:
@@ -77,6 +82,57 @@ def load_model_info() -> dict[str, Any]:
 
 
 def load_feedback_events() -> list[dict[str, Any]]:
+    db_path = _feedback_db_path()
+    if db_path.exists():
+        with sqlite3.connect(db_path) as connection:
+            _ensure_feedback_table(connection)
+            cursor = connection.execute(
+                """
+                SELECT
+                    item_id,
+                    item_hash,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    action_shown,
+                    user_action,
+                    explanation_id,
+                    before_score,
+                    after_score,
+                    timestamp
+                FROM feedback_events
+                ORDER BY rowid ASC
+                """
+            )
+            db_rows = [
+                {
+                    "item_id": item_id,
+                    "item_hash": item_hash,
+                    "channel_name": channel_name,
+                    "model_version": model_version,
+                    "policy_version": policy_version,
+                    "action_shown": action_shown,
+                    "user_action": user_action,
+                    "explanation_id": explanation_id,
+                    "before_score": before_score,
+                    "after_score": after_score,
+                    "timestamp": timestamp,
+                }
+                for (
+                    item_id,
+                    item_hash,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    action_shown,
+                    user_action,
+                    explanation_id,
+                    before_score,
+                    after_score,
+                    timestamp,
+                ) in cursor.fetchall()
+            ]
+        return db_rows
     path = _feedback_log_path()
     if not path.exists():
         return []
@@ -89,12 +145,67 @@ def load_feedback_events() -> list[dict[str, Any]]:
     return rows
 
 
+def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS feedback_events (
+            item_id TEXT NOT NULL,
+            item_hash TEXT,
+            channel_name TEXT,
+            model_version TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            action_shown TEXT NOT NULL,
+            user_action TEXT NOT NULL,
+            explanation_id TEXT,
+            before_score REAL,
+            after_score REAL,
+            timestamp TEXT NOT NULL
+        )
+        """
+    )
+    connection.commit()
+
+
 def append_feedback_event(payload: dict[str, Any]) -> Path:
     path = _feedback_log_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, ensure_ascii=True))
         handle.write("\n")
+    db_path = _feedback_db_path()
+    with sqlite3.connect(db_path) as connection:
+        _ensure_feedback_table(connection)
+        connection.execute(
+            """
+            INSERT INTO feedback_events (
+                item_id,
+                item_hash,
+                channel_name,
+                model_version,
+                policy_version,
+                action_shown,
+                user_action,
+                explanation_id,
+                before_score,
+                after_score,
+                timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload.get("item_id"),
+                payload.get("item_hash"),
+                payload.get("channel_name"),
+                payload.get("model_version"),
+                payload.get("policy_version"),
+                payload.get("action_shown"),
+                payload.get("user_action"),
+                payload.get("explanation_id"),
+                payload.get("before_score"),
+                payload.get("after_score"),
+                payload.get("timestamp"),
+            ),
+        )
+        connection.commit()
     return path
 
 

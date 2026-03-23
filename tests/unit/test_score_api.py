@@ -79,6 +79,7 @@ def test_feedback_endpoint_accepts_event() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
+    assert Path("artifacts/reports/feedback_events.sqlite3").exists()
 
 
 def test_feedback_summary_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
