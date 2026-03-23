@@ -168,6 +168,66 @@ def load_feedback_events() -> list[dict[str, Any]]:
     return rows
 
 
+def load_score_events() -> list[dict[str, Any]]:
+    db_path = _feedback_db_path()
+    if db_path.exists():
+        with sqlite3.connect(db_path) as connection:
+            _ensure_score_table(connection)
+            cursor = connection.execute(
+                """
+                SELECT
+                    item_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    recommended_action,
+                    risk_score,
+                    confidence,
+                    uncertainty,
+                    explanation_id,
+                    timestamp
+                FROM score_events
+                ORDER BY rowid ASC
+                """
+            )
+            return [
+                {
+                    "item_id": item_id,
+                    "channel_name": channel_name,
+                    "model_version": model_version,
+                    "policy_version": policy_version,
+                    "recommended_action": recommended_action,
+                    "risk_score": risk_score,
+                    "confidence": confidence,
+                    "uncertainty": uncertainty,
+                    "explanation_id": explanation_id,
+                    "timestamp": timestamp,
+                }
+                for (
+                    item_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    recommended_action,
+                    risk_score,
+                    confidence,
+                    uncertainty,
+                    explanation_id,
+                    timestamp,
+                ) in cursor.fetchall()
+            ]
+    path = _score_log_path()
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
 def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
     connection.execute(
         """
@@ -365,4 +425,21 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
         "correction_rate": round(correction_actions / max(len(rows), 1), 4),
         "channel_profiles": channel_profiles,
         "top_channels": top_channels,
+    }
+
+
+def summarize_score_events(events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    rows = events if events is not None else load_score_events()
+    action_counts = Counter(str(row.get("recommended_action", "none")) for row in rows)
+    return {
+        "total_events": len(rows),
+        "action_counts": dict(sorted(action_counts.items())),
+        "average_risk_score": round(
+            sum(float(row.get("risk_score", 0.0)) for row in rows) / max(len(rows), 1),
+            4,
+        ),
+        "average_uncertainty": round(
+            sum(float(row.get("uncertainty", 0.0)) for row in rows) / max(len(rows), 1),
+            4,
+        ),
     }

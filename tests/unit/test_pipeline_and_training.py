@@ -64,11 +64,14 @@ def test_training_and_simulation_generate_artifacts(
     assert "policy" in simulation_report
     assert "bellman_state_values" in simulation_report
     assert "replay_summary" in simulation_report
+    assert "contextual_bandit" in simulation_report
+    assert "bandit_threshold_adjustments" in simulation_report
     assert simulation_report["replay_summary"]["steps"] > 0
     assert "retraining_recommended" in drift_report
     assert "label_distribution_shift" in drift_report
     assert "corrupted_image_rate" in audit_report
     assert "parser_failure_rate" in audit_report
+    assert (repo_root() / "configs/thresholds/contextual-bandit.json").exists()
 
 
 def test_trained_scoring_surfaces_model_contributor_details(

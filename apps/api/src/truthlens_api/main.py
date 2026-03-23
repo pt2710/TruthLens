@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 
 from truthlens_api.settings import settings
 from truthlens_model_serving import (
@@ -10,6 +11,7 @@ from truthlens_model_serving import (
     append_score_event,
     describe_model,
     summarize_feedback_events,
+    summarize_score_events,
 )
 from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import (
@@ -105,3 +107,32 @@ def feedback(payload: FeedbackEvent) -> dict[str, str]:
 @app.get("/feedback-summary")
 def feedback_summary() -> dict[str, object]:
     return summarize_feedback_events()
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> str:
+    score_summary = summarize_score_events()
+    feedback_summary_payload = summarize_feedback_events()
+    lines = [
+        "# HELP truthlens_score_events_total Total scored items recorded by the API.",
+        "# TYPE truthlens_score_events_total counter",
+        f"truthlens_score_events_total {score_summary['total_events']}",
+        "# HELP truthlens_feedback_events_total Total feedback events recorded by the API.",
+        "# TYPE truthlens_feedback_events_total counter",
+        f"truthlens_feedback_events_total {feedback_summary_payload['total_events']}",
+        "# HELP truthlens_score_average_risk Average calibrated risk score over scored items.",
+        "# TYPE truthlens_score_average_risk gauge",
+        f"truthlens_score_average_risk {score_summary['average_risk_score']}",
+        "# HELP truthlens_score_average_uncertainty Average uncertainty over scored items.",
+        "# TYPE truthlens_score_average_uncertainty gauge",
+        f"truthlens_score_average_uncertainty {score_summary['average_uncertainty']}",
+    ]
+    for action, count in score_summary["action_counts"].items():
+        lines.append(
+            f'truthlens_score_action_total{{action="{action}"}} {count}'
+        )
+    for action, count in feedback_summary_payload["action_counts"].items():
+        lines.append(
+            f'truthlens_feedback_action_total{{action="{action}"}} {count}'
+        )
+    return "\n".join(lines) + "\n"

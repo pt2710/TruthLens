@@ -1,9 +1,10 @@
 from pathlib import Path
+import json
 
 import pytest
 
 from truthlens_model_serving import append_feedback_event
-from truthlens_policy_engine import score_item
+from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, ScoreItemRequest
 
 
@@ -56,3 +57,28 @@ def test_channel_feedback_bias_makes_policy_more_aggressive(
 
     assert adjusted.risk_score == baseline.risk_score
     assert _rank(adjusted.recommended_action) >= _rank(baseline.recommended_action)
+
+
+def test_policy_profile_loads_bandit_adjustments(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    thresholds_dir = tmp_path / "configs" / "thresholds"
+    thresholds_dir.mkdir(parents=True, exist_ok=True)
+    (thresholds_dir / "contextual-bandit.json").write_text(
+        json.dumps(
+            {
+                "badge_threshold_offset": 0.01,
+                "blur_threshold_offset": -0.01,
+                "report_prompt_threshold_offset": 0.02,
+                "hide_threshold_offset": 0.03,
+            },
+            ensure_ascii=True,
+        ),
+        encoding="utf-8",
+    )
+
+    profile = get_policy_profile()
+
+    assert profile["bandit_adjustments"]["hide_threshold_offset"] == 0.03

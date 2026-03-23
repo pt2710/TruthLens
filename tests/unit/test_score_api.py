@@ -158,6 +158,50 @@ def test_feedback_summary_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     assert payload["top_channels"][0]["channel_name"] == "Signal Watch"
 
 
+def test_metrics_endpoint_exposes_score_and_feedback_counters(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    client.post(
+        "/score-item",
+        json={
+            "item_id": "metrics-item-1",
+            "title": "Breaking aliens confirmed",
+            "thumbnail_ref": None,
+            "metadata": {},
+            "channel": {
+                "channel_name": "Metrics Channel",
+                "prior_flags": 1,
+            },
+        },
+    )
+    client.post(
+        "/feedback",
+        json={
+            "item_id": "metrics-item-1",
+            "item_hash": None,
+            "channel_name": "Metrics Channel",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "action_shown": "blur",
+            "user_action": "report",
+            "explanation_id": "exp-metrics-1",
+            "before_score": 0.61,
+            "after_score": 0.81,
+            "timestamp": "2026-03-23T10:00:00Z",
+        },
+    )
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "truthlens_score_events_total 1" in response.text
+    assert "truthlens_feedback_events_total 1" in response.text
+    assert 'truthlens_feedback_action_total{action="report"} 1' in response.text
+
+
 def test_muted_channel_forces_hide() -> None:
     response = client.post(
         "/score-item",

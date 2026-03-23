@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,9 @@ DEFAULT_THRESHOLDS = {
 
 
 def _repo_root() -> Path:
+    override = os.getenv("TRUTHLENS_REPO_ROOT")
+    if override:
+        return Path(override).resolve()
     return Path(__file__).resolve().parents[4]
 
 
@@ -32,6 +36,24 @@ def _load_threshold_profile() -> dict[str, float]:
             payload.get("report_prompt_threshold", DEFAULT_THRESHOLDS["report_prompt_threshold"])
         ),
         "hide_threshold": float(payload.get("hide_threshold", DEFAULT_THRESHOLDS["hide_threshold"])),
+    }
+
+
+def _load_bandit_adjustments() -> dict[str, float]:
+    path = _repo_root() / "configs" / "thresholds" / "contextual-bandit.json"
+    if not path.exists():
+        return {
+            "badge_threshold_offset": 0.0,
+            "blur_threshold_offset": 0.0,
+            "report_prompt_threshold_offset": 0.0,
+            "hide_threshold_offset": 0.0,
+        }
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "badge_threshold_offset": float(payload.get("badge_threshold_offset", 0.0)),
+        "blur_threshold_offset": float(payload.get("blur_threshold_offset", 0.0)),
+        "report_prompt_threshold_offset": float(payload.get("report_prompt_threshold_offset", 0.0)),
+        "hide_threshold_offset": float(payload.get("hide_threshold_offset", 0.0)),
     }
 
 
@@ -64,15 +86,24 @@ def _channel_feedback_bias(channel_name: str, summary: dict[str, Any]) -> float:
 
 def get_policy_profile() -> dict[str, Any]:
     thresholds = _load_threshold_profile()
+    bandit_adjustments = _load_bandit_adjustments()
     summary = _feedback_summary()
     bias = _feedback_bias(summary)
     adjusted = {
         name: round(value + bias, 3) if name != "hide_threshold" else round(value + max(bias, 0.0), 3)
         for name, value in thresholds.items()
     }
+    adjusted["badge_threshold"] = round(adjusted["badge_threshold"] + bandit_adjustments["badge_threshold_offset"], 3)
+    adjusted["blur_threshold"] = round(adjusted["blur_threshold"] + bandit_adjustments["blur_threshold_offset"], 3)
+    adjusted["report_prompt_threshold"] = round(
+        adjusted["report_prompt_threshold"] + bandit_adjustments["report_prompt_threshold_offset"],
+        3,
+    )
+    adjusted["hide_threshold"] = round(adjusted["hide_threshold"] + bandit_adjustments["hide_threshold_offset"], 3)
     return {
         "policy_version": "adaptive-threshold-v1",
         "base_thresholds": thresholds,
+        "bandit_adjustments": bandit_adjustments,
         "feedback_bias": round(bias, 3),
         "effective_thresholds": adjusted,
         "feedback_summary": {

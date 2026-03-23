@@ -10,6 +10,8 @@ from truthlens_evaluation import (
     build_q_table,
     derive_policy,
     estimate_state_values,
+    recommend_bandit_threshold_adjustments,
+    run_contextual_bandit,
     run_policy_replay,
     run_threshold_sweep,
     search_threshold_family,
@@ -40,7 +42,20 @@ def main() -> None:
     for row in test_rows:
         score = float(row["metadata"].get("weak_label_score", 0.0))
         uncertainty = 1.0 - min(score + 0.25, 0.98)
-        score_rows.append({"score": score, "uncertainty": uncertainty, "label": _label(row)})
+        score_rows.append(
+            {
+                "score": score,
+                "uncertainty": uncertainty,
+                "label": _label(row),
+                "prior_flags": int(row["history"].get("prior_flags", 0)),
+                "repeat_template_rate": float(
+                    row["history"]["channel_history_features"].get("repeat_template_rate", 0.0)
+                ),
+                "transcript_mismatch_score": float(
+                    row["features"].get("transcript_mismatch_score", 0.0)
+                ),
+            }
+        )
 
     sweep = run_threshold_sweep(
         labels=[int(row["label"]) for row in score_rows],
@@ -51,6 +66,8 @@ def main() -> None:
     state_values = estimate_state_values(q_table)
     replay_summary = run_policy_replay(score_rows, q_table)
     thresholds = search_threshold_family(sweep)
+    contextual_bandit = run_contextual_bandit(score_rows)
+    bandit_threshold_adjustments = recommend_bandit_threshold_adjustments(contextual_bandit)
     drift_report = build_drift_report(train_rows, test_rows)
 
     eval_dir = repo_root() / "artifacts" / "eval_runs"
@@ -66,6 +83,8 @@ def main() -> None:
         "bellman_state_values": state_values,
         "replay_summary": replay_summary,
         "recommended_thresholds": thresholds,
+        "contextual_bandit": contextual_bandit,
+        "bandit_threshold_adjustments": bandit_threshold_adjustments,
     }
     (eval_dir / f"{manifest['build_id']}-simulation.json").write_text(
         json.dumps(payload, indent=2, ensure_ascii=True),
@@ -79,6 +98,10 @@ def main() -> None:
     thresholds_dir = ensure_dir(repo_root() / "configs" / "thresholds")
     thresholds_path = thresholds_dir / "default.json"
     thresholds_path.write_text(json.dumps(thresholds, indent=2, ensure_ascii=True), encoding="utf-8")
+    (thresholds_dir / "contextual-bandit.json").write_text(
+        json.dumps(bandit_threshold_adjustments, indent=2, ensure_ascii=True),
+        encoding="utf-8",
+    )
     print(manifest["build_id"])
 
 

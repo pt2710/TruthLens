@@ -5,6 +5,8 @@ from truthlens_evaluation import (
     derive_policy,
     estimate_state_values,
     expected_calibration_error,
+    recommend_bandit_threshold_adjustments,
+    run_contextual_bandit,
     run_policy_replay,
 )
 
@@ -49,3 +51,52 @@ def test_q_learning_outputs_policy_state_values_and_replay_metrics() -> None:
     assert replay["steps"] == len(rows)
     assert 0.0 <= replay["intervention_rate"] <= 1.0
     assert sum(replay["action_counts"].values()) == len(rows)
+
+
+def test_contextual_bandit_outputs_weights_and_adjustments() -> None:
+    rows = [
+        {
+            "score": 0.88,
+            "uncertainty": 0.08,
+            "label": 1,
+            "prior_flags": 3,
+            "repeat_template_rate": 0.61,
+            "transcript_mismatch_score": 0.74,
+        },
+        {
+            "score": 0.72,
+            "uncertainty": 0.11,
+            "label": 1,
+            "prior_flags": 2,
+            "repeat_template_rate": 0.45,
+            "transcript_mismatch_score": 0.55,
+        },
+        {
+            "score": 0.31,
+            "uncertainty": 0.22,
+            "label": 0,
+            "prior_flags": 0,
+            "repeat_template_rate": 0.08,
+            "transcript_mismatch_score": 0.12,
+        },
+        {
+            "score": 0.18,
+            "uncertainty": 0.18,
+            "label": 0,
+            "prior_flags": 0,
+            "repeat_template_rate": 0.04,
+            "transcript_mismatch_score": 0.06,
+        },
+    ]
+
+    bandit = run_contextual_bandit(rows)
+    adjustments = recommend_bandit_threshold_adjustments(bandit)
+
+    assert bandit["steps"] == len(rows)
+    assert bandit["feature_order"]
+    assert set(adjustments.keys()) == {
+        "badge_threshold_offset",
+        "blur_threshold_offset",
+        "report_prompt_threshold_offset",
+        "hide_threshold_offset",
+    }
