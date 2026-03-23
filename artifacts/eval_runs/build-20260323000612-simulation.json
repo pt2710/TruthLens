@@ -1,0 +1,177 @@
+{
+  "build_id": "build-20260323000612",
+  "threshold_sweep": [
+    {
+      "threshold": 0.2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.45,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.55,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.6,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.65,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.8,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.85,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "intervention_cost": -0.8
+    }
+  ],
+  "q_table": {
+    "s0:u2": {
+      "none": 1.0,
+      "badge": 0.4,
+      "blur": -0.3,
+      "ask-report": -0.8,
+      "hide": -1.2
+    },
+    "s3:u0": {
+      "none": -1.1,
+      "badge": 1.18,
+      "blur": 1.88,
+      "ask-report": 2.38,
+      "hide": 1.98
+    }
+  },
+  "recommended_thresholds": {
+    "badge_threshold": 0.2,
+    "blur_threshold": 0.45,
+    "report_prompt_threshold": 0.65,
+    "hide_threshold": 0.8
+  }
+}

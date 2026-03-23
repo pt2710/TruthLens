@@ -1,0 +1,107 @@
+{
+  "run_id": "discovery-20260323000612",
+  "review_queue": [
+    {
+      "item_id": "opensky-alerts-1",
+      "title": "Breaking aliens confirmed over Europe",
+      "weak_label_score": 0.99,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "opensky-alerts-2",
+      "title": "Secret lab leak exposed in new footage",
+      "weak_label_score": 0.99,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "opensky-alerts-3",
+      "title": "What they do not want you to know about tonight",
+      "weak_label_score": 0.7347,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "opensky-alerts-4",
+      "title": "Weekly launch schedule and mission recap",
+      "weak_label_score": 0.3522,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "signal-watch-europe-1",
+      "title": "Breaking aliens confirmed over Europe",
+      "weak_label_score": 0.99,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "signal-watch-europe-2",
+      "title": "Secret lab leak exposed in new footage",
+      "weak_label_score": 0.9803,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "signal-watch-europe-3",
+      "title": "What they do not want you to know about tonight",
+      "weak_label_score": 0.6962,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "now-stream-briefing-3",
+      "title": "What they do not want you to know about tonight",
+      "weak_label_score": 0.6662,
+      "uncertainty_bucket": "high"
+    },
+    {
+      "item_id": "opensky-alerts-1-dup-1",
+      "title": "Breaking aliens confirmed over Europe",
+      "weak_label_score": 0.99,
+      "uncertainty_bucket": "high"
+    }
+  ],
+  "hard_negative_queue": [
+    {
+      "item_id": "calm-science-daily-1",
+      "title": "Weekly launch schedule and mission recap"
+    },
+    {
+      "item_id": "calm-science-daily-2",
+      "title": "How telescope calibration improved this month"
+    },
+    {
+      "item_id": "calm-science-daily-3",
+      "title": "Satellite weather imaging workflow explained"
+    },
+    {
+      "item_id": "verified-space-desk-1",
+      "title": "Weekly launch schedule and mission recap"
+    },
+    {
+      "item_id": "verified-space-desk-2",
+      "title": "How telescope calibration improved this month"
+    },
+    {
+      "item_id": "verified-space-desk-3",
+      "title": "Satellite weather imaging workflow explained"
+    },
+    {
+      "item_id": "context-first-media-1",
+      "title": "Weekly launch schedule and mission recap"
+    },
+    {
+      "item_id": "context-first-media-2",
+      "title": "How telescope calibration improved this month"
+    },
+    {
+      "item_id": "context-first-media-3",
+      "title": "Satellite weather imaging workflow explained"
+    },
+    {
+      "item_id": "calm-science-daily-2-dup-2",
+      "title": "How telescope calibration improved this month"
+    }
+  ],
+  "disagreement_queue": [],
+  "annotator_notes_fields": [
+    "weak_label_score",
+    "uncertainty_bucket",
+    "source_trust_flag"
+  ]
+}

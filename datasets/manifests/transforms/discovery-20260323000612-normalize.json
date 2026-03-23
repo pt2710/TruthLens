@@ -1,0 +1,11 @@
+{
+  "run_id": "discovery-20260323000612",
+  "generated_at": "2026-03-01T12:00:00Z",
+  "transform_version": "normalize-v1",
+  "record_count": 26,
+  "normalized_path": "datasets/interim/normalized/discovery-20260323000612.jsonl",
+  "fingerprints": [
+    "image_fingerprint",
+    "text_fingerprint"
+  ]
+}

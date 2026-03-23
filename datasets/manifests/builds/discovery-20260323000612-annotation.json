@@ -1,0 +1,9 @@
+{
+  "run_id": "discovery-20260323000612",
+  "generated_at": "2026-03-01T12:00:00Z",
+  "annotation_batch_path": "datasets/labels/annotation_batches/discovery-20260323000612.json",
+  "weak_labels_path": "datasets/labels/weak_labels/discovery-20260323000612.jsonl",
+  "review_count": 9,
+  "hard_negative_count": 10,
+  "disagreement_count": 0
+}

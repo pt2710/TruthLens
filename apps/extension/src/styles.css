@@ -26,3 +26,34 @@
 .truthlens-card-blur img {
   filter: blur(12px);
 }
+
+.truthlens-card-hidden {
+  display: none !important;
+}
+
+.truthlens-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.truthlens-action-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #12253f;
+  color: #f3f7fb;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.truthlens-details {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid #ffdd57;
+  background: rgba(7, 12, 21, 0.86);
+  color: #f3f7fb;
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TruthLens Feed Fixture</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #f7f7f7;
+      }
+
+      .feed {
+        display: grid;
+        gap: 16px;
+      }
+
+      [data-truthlens-card] {
+        display: grid;
+        gap: 8px;
+        background: #fff;
+        padding: 16px;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      img {
+        width: 100%;
+        max-width: 320px;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #15263f, #36507b);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="feed">
+      <article data-truthlens-card>
+        <img alt="thumbnail one" src="https://example.com/thumb-1.jpg" />
+        <h3 id="video-title">Breaking aliens confirmed over Europe</h3>
+        <div id="channel-name">OpenSky Alerts</div>
+      </article>
+      <article data-truthlens-card>
+        <img alt="thumbnail two" src="https://example.com/thumb-2.jpg" />
+        <h3 id="video-title">Weekly launch schedule and mission recap</h3>
+        <div id="channel-name">Context First Media</div>
+      </article>
+      <article data-truthlens-card>
+        <img alt="thumbnail three" src="https://example.com/thumb-3.jpg" />
+        <h3 id="video-title">Secret lab leak exposed in new footage</h3>
+        <div id="channel-name">Signal Watch Europe</div>
+      </article>
+    </div>
+  </body>
+</html>

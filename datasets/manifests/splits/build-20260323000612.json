@@ -1,0 +1,217 @@
+{
+  "build_id": "build-20260323000612",
+  "strategy": "channel-first deterministic partitioning with explicit lineage keys",
+  "partition_dimensions": [
+    "channel_partition_key",
+    "upload_window_key",
+    "template_cluster_key",
+    "discovery_batch_key"
+  ],
+  "channel_assignments": {
+    "Calm Science Daily": "validation",
+    "Context First Media": "test",
+    "Now Stream Briefing": "train",
+    "OpenSky Alerts": "train",
+    "Signal Watch Europe": "train",
+    "Verified Space Desk": "validation"
+  },
+  "split_counts": {
+    "train": 12,
+    "validation": 8,
+    "test": 4
+  },
+  "lineage_rows": [
+    {
+      "item_id": "opensky-alerts-1",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-2",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "lab-leak-exposed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-3",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "hidden-truth-tonight",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-4",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "calm-science-daily-1",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "calm-science-daily-2",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "calibration-update",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "calm-science-daily-3",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "weather-workflow",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "calm-science-daily-4",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "signal-watch-europe-1",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "signal-watch-europe-2",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "lab-leak-exposed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "signal-watch-europe-3",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "hidden-truth-tonight",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "signal-watch-europe-4",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "verified-space-desk-1",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "verified-space-desk-2",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "calibration-update",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "verified-space-desk-3",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "weather-workflow",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "verified-space-desk-4",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "now-stream-briefing-1",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "now-stream-briefing-2",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "lab-leak-exposed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "now-stream-briefing-3",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "hidden-truth-tonight",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "now-stream-briefing-4",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-1",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "context-first-media-2",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "calibration-update",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "context-first-media-3",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "weather-workflow",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "context-first-media-4",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260323000612",
+      "assigned_split": "test"
+    }
+  ]
+}

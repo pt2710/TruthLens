@@ -1,38 +1,87 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
 from truthlens_explanation_engine.explainer import build_reasons
+from truthlens_model_serving import load_feedback_events, predict_item_signals
 from truthlens_shared_schemas.contracts import RecommendedAction, ScoreItemRequest, ScoreResult
 
-SENSATIONAL_TOKENS = {
-    "breaking",
-    "shocking",
-    "confirmed",
-    "aliens",
-    "secret",
-    "exposed",
-    "you won't believe",
-    "urgent",
-    "what they don't want",
+DEFAULT_THRESHOLDS = {
+    "badge_threshold": 0.35,
+    "blur_threshold": 0.60,
+    "report_prompt_threshold": 0.80,
+    "hide_threshold": 0.93,
 }
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+def _load_threshold_profile() -> dict[str, float]:
+    path = _repo_root() / "configs" / "thresholds" / "default.json"
+    if not path.exists():
+        return DEFAULT_THRESHOLDS.copy()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "badge_threshold": float(payload.get("badge_threshold", DEFAULT_THRESHOLDS["badge_threshold"])),
+        "blur_threshold": float(payload.get("blur_threshold", DEFAULT_THRESHOLDS["blur_threshold"])),
+        "report_prompt_threshold": float(
+            payload.get("report_prompt_threshold", DEFAULT_THRESHOLDS["report_prompt_threshold"])
+        ),
+        "hide_threshold": float(payload.get("hide_threshold", DEFAULT_THRESHOLDS["hide_threshold"])),
+    }
+
+
+def _feedback_bias() -> float:
+    events = load_feedback_events()[-50:]
+    bias = 0.0
+    for event in events:
+        user_action = str(event.get("user_action", "")).lower()
+        if user_action in {"not-misleading", "undo-hide"}:
+            bias += 0.01
+        elif user_action in {"report", "confirm-report"}:
+            bias -= 0.005
+    return max(-0.06, min(0.08, bias))
+
+
+def get_policy_profile() -> dict[str, Any]:
+    thresholds = _load_threshold_profile()
+    bias = _feedback_bias()
+    adjusted = {
+        name: round(value + bias, 3) if name != "hide_threshold" else round(value + max(bias, 0.0), 3)
+        for name, value in thresholds.items()
+    }
+    return {
+        "policy_version": "adaptive-threshold-v1",
+        "base_thresholds": thresholds,
+        "feedback_bias": round(bias, 3),
+        "effective_thresholds": adjusted,
+    }
+
+
 def score_item(payload: ScoreItemRequest) -> ScoreResult:
-    title = payload.title.lower()
-    token_hits = sum(1 for token in SENSATIONAL_TOKENS if token in title)
-    risk_score = min(0.15 + token_hits * 0.17 + payload.channel.prior_flags * 0.03, 0.98)
-    confidence = min(0.55 + token_hits * 0.1, 0.95)
-    uncertainty = max(0.05, round(1.0 - confidence, 2))
+    signals = predict_item_signals(payload)
+    policy_profile = get_policy_profile()
+    thresholds = policy_profile["effective_thresholds"]
+    risk_score = signals.calibrated_score
+    confidence = signals.confidence
+    uncertainty = signals.uncertainty
 
-    if risk_score < 0.35:
+    if risk_score < thresholds["badge_threshold"]:
         action = RecommendedAction.NONE
-    elif risk_score < 0.60:
+    elif risk_score < thresholds["blur_threshold"]:
         action = RecommendedAction.BADGE
-    elif risk_score < 0.80:
+    elif risk_score < thresholds["report_prompt_threshold"]:
         action = RecommendedAction.BLUR
-    else:
+    elif risk_score < thresholds["hide_threshold"]:
         action = RecommendedAction.ASK_REPORT
+    else:
+        action = RecommendedAction.HIDE
 
-    reasons = build_reasons(payload, token_hits, action)
+    reasons = build_reasons(payload, signals, thresholds, action)
 
     return ScoreResult(
         risk_score=round(risk_score, 2),

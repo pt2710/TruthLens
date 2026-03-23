@@ -1,0 +1,109 @@
+{
+  "run_id": "discovery-20260323000612",
+  "generated_at": "2026-03-23T00:06:12.424914+00:00",
+  "coverage_count": 6,
+  "records": [
+    {
+      "source_id": "opensky-alerts",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    },
+    {
+      "source_id": "calm-science-daily",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    },
+    {
+      "source_id": "signal-watch-europe",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    },
+    {
+      "source_id": "verified-space-desk",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    },
+    {
+      "source_id": "now-stream-briefing",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    },
+    {
+      "source_id": "context-first-media",
+      "source_type": "channel-feed",
+      "platform": "youtube",
+      "collected_at": "discovery-20260323000612",
+      "access_method": "synthetic-bootstrap",
+      "expected_fields": [
+        "title",
+        "description",
+        "thumbnail_signal",
+        "channel_name",
+        "upload_time",
+        "view_count"
+      ],
+      "parsing_risk": "low",
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "discovery-20260323000612",
+  "raw_count": 26,
+  "deduplicated_count": 24,
+  "duplicate_count": 2,
+  "duplicate_rate": 0.0769,
+  "duplicate_items": [
+    "opensky-alerts-1-dup-1",
+    "calm-science-daily-2-dup-2"
+  ],
+  "deduplicated_path": "datasets/interim/deduplicated/discovery-20260323000612.jsonl",
+  "strategy": "source_url_or_combined_text_image_fingerprint"
+}

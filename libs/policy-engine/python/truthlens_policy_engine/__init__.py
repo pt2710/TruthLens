@@ -1,3 +1,3 @@
-from .engine import score_item
+from .engine import get_policy_profile, score_item
 
-__all__ = ["score_item"]
+__all__ = ["get_policy_profile", "score_item"]

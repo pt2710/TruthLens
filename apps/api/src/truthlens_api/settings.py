@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     model_version: str = "bootstrap-v0"
     policy_version: str = "bootstrap-v0"
     log_level: str = "INFO"
+    feedback_log_path: str = "artifacts/reports/feedback_events.jsonl"
 
 
 settings = Settings()

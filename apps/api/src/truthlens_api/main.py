@@ -3,7 +3,8 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from truthlens_api.settings import settings
-from truthlens_policy_engine import score_item
+from truthlens_model_serving import append_feedback_event, describe_model
+from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import (
     BatchScoreRequest,
     BatchScoreResponse,
@@ -14,8 +15,6 @@ from truthlens_shared_schemas.contracts import (
 
 app = FastAPI(title="TruthLens API", version="0.1.0")
 
-_feedback_log: list[FeedbackEvent] = []
-
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -23,13 +22,13 @@ def health() -> dict[str, str]:
 
 
 @app.get("/model-info")
-def model_info() -> dict[str, str]:
-    return {"model_version": settings.model_version, "mode": "bootstrap"}
+def model_info() -> dict[str, object]:
+    return describe_model()
 
 
 @app.get("/policy-info")
-def policy_info() -> dict[str, str]:
-    return {"policy_version": settings.policy_version, "mode": "threshold-bootstrap"}
+def policy_info() -> dict[str, object]:
+    return get_policy_profile()
 
 
 @app.post("/score-item", response_model=ScoreResult)
@@ -44,5 +43,5 @@ def batch_score(payload: BatchScoreRequest) -> BatchScoreResponse:
 
 @app.post("/feedback")
 def feedback(payload: FeedbackEvent) -> dict[str, str]:
-    _feedback_log.append(payload)
-    return {"status": "accepted", "feedback_count": str(len(_feedback_log))}
+    append_feedback_event(payload.model_dump())
+    return {"status": "accepted", "feedback_log_path": settings.feedback_log_path}

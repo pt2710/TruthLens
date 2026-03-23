@@ -92,3 +92,5 @@ export const datasetRecordSchema = z.object({
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
 export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
+export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
+export type DatasetRecord = z.infer<typeof datasetRecordSchema>;

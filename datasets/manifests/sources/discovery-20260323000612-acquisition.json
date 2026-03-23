@@ -1,0 +1,10 @@
+{
+  "run_id": "discovery-20260323000612",
+  "generated_at": "2026-03-23T00:06:12.469156+00:00",
+  "status": "collected",
+  "success_count": 26,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "coverage_count": 26,
+  "metadata_path": "datasets/raw/metadata/discovery-20260323000612.jsonl"
+}

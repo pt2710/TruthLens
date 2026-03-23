@@ -1,0 +1,12 @@
+{
+  "build_id": "build-20260323000612",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "positive_rate": 0.25,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
+  },
+  "sample_count": 4
+}

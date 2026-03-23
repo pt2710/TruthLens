@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "description": "Detect, explain, and filter misleading video content.",
   "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
