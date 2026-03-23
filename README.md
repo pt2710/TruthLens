@@ -30,6 +30,7 @@ pnpm install
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:e2e
 pnpm build
 ```
 
