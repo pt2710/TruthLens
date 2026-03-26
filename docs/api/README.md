@@ -6,5 +6,8 @@ Initial API surface:
 - `POST /batch-score`
 - `POST /feedback`
 - `GET /health`
+- `GET /ready`
 - `GET /model-info`
 - `GET /policy-info`
+- `GET /feedback-summary`
+- `GET /metrics`

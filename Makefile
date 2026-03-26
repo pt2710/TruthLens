@@ -1,6 +1,6 @@
 PYTHON := py -m uv
 
-.PHONY: bootstrap test lint typecheck build api extension data train eval
+.PHONY: bootstrap test lint typecheck build api extension data train eval smoke
 
 bootstrap:
 	$(PYTHON) sync --group dev
@@ -28,10 +28,13 @@ extension:
 	pnpm --filter @truthlens/extension build
 
 data:
-	$(PYTHON) run python -m truthlens_trainer.pipeline
+	$(PYTHON) run python scripts/run_truthlens_module.py truthlens_trainer.pipeline
 
 train:
-	$(PYTHON) run python -m truthlens_trainer.train
+	$(PYTHON) run python scripts/run_truthlens_module.py truthlens_trainer.train
 
 eval:
-	$(PYTHON) run python -m truthlens_trainer.simulate
+	$(PYTHON) run python scripts/run_truthlens_module.py truthlens_trainer.simulate
+
+smoke:
+	$(PYTHON) run python scripts/run_truthlens_module.py truthlens_trainer.smoke

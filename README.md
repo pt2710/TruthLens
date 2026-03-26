@@ -18,9 +18,10 @@ py -m uv sync --group dev
 py -m uv run pytest
 py -m uv run ruff check .
 py -m uv run mypy .
-py -m uv run python -m truthlens_trainer.pipeline
-py -m uv run python -m truthlens_trainer.train
-py -m uv run python -m truthlens_trainer.simulate
+py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.pipeline
+py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.train
+py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
+py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.smoke
 ```
 
 ### TypeScript
@@ -48,3 +49,13 @@ pnpm build
 3. `truthlens_trainer.simulate` runs threshold sweep, Q-table policy bootstrap, threshold search, and drift reporting.
 4. `truthlens_api.main` serves scoring, batch scoring, feedback, health, model info, and policy info.
 5. The extension content script scores feed cards through the API with local fallback and captures user feedback events.
+
+## Smoke Validation
+
+Run the full local smoke chain in one command:
+
+```powershell
+make smoke
+```
+
+This runs dataset build, model training, simulation, and API endpoint validation in an isolated smoke root and writes a report to `artifacts/reports/smoke-summary.json` inside that isolated run.
