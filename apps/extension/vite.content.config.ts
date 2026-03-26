@@ -15,15 +15,16 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
+    emptyOutDir: false,
+    lib: {
+      entry: resolve(rootDir, 'src/content.tsx'),
+      name: 'TruthLensContent',
+      formats: ['iife'],
+      fileName: () => 'content.js',
+      cssFileName: 'content',
+    },
     rollupOptions: {
-      input: {
-        popup: resolve(rootDir, 'popup.html'),
-        background: resolve(rootDir, 'src/background.ts'),
-      },
       output: {
-        entryFileNames: '[name].js',
-        chunkFileNames: 'chunks/[name].js',
         assetFileNames: 'assets/[name].[ext]',
       },
     },
