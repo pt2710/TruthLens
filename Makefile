@@ -22,7 +22,7 @@ build:
 	pnpm build
 
 api:
-	$(PYTHON) run uvicorn truthlens_api.main:app --app-dir apps/api/src --reload
+	$(PYTHON) run python scripts/run_api.py --reload
 
 extension:
 	pnpm --filter @truthlens/extension build

@@ -18,6 +18,7 @@ py -m uv sync --group dev
 py -m uv run pytest
 py -m uv run ruff check .
 py -m uv run mypy .
+py -m uv run python scripts/run_api.py --reload
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.pipeline
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.train
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
