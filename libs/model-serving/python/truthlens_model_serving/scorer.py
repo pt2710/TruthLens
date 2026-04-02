@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import json
 import math
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 import numpy as np
 
 from truthlens_feature_extractors import (
     count_sensational_tokens,
     extract_thumbnail_features,
+    sentence_transformer_matrix,
     transcript_mismatch_score,
     transcript_overlap,
     uppercase_ratio,
@@ -75,6 +79,60 @@ FUSION_FEATURE_NAMES = [
     "metadata_score",
     "history_score",
 ]
+
+MUSIC_TITLE_MARKERS = (
+    "official audio",
+    "official video",
+    "music video",
+    "lyric video",
+    "lyrics",
+    "visualizer",
+    "visualiser",
+    "remix",
+    "cover",
+    "instrumental",
+    "live session",
+    "live performance",
+    "single",
+    "album track",
+    "feat.",
+    " ft.",
+)
+
+MUSIC_CHANNEL_MARKERS = (
+    "records",
+    "music",
+    "vevo",
+    "topic",
+    "beats",
+    "orchestra",
+    "choir",
+    "band",
+    "artist",
+)
+
+MUSIC_TRANSCRIPT_MARKERS = (
+    "chorus",
+    "verse",
+    "refrain",
+    "bridge",
+    "lyrics",
+    "♪",
+)
+
+NON_MUSIC_MARKERS = (
+    "trailer",
+    "review",
+    "documentary",
+    "tutorial",
+    "interview",
+    "podcast",
+    "news",
+    "update",
+    "walkthrough",
+    "gameplay",
+    "reaction",
+)
 
 
 def _safe_probability(model: Any, matrix: Any) -> float:
@@ -169,6 +227,28 @@ def _top_text_contributors(
     return contributors[:limit]
 
 
+def _text_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, Any]) -> dict[str, Any]:
+    payload = bundle.get("text_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    payload = model_info.get("text_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    return {"actual_encoder": "count-vectorizer-bigrams"}
+
+
+def _text_matrix(payload: ScoreItemRequest, bundle: dict[str, Any], model_info: dict[str, Any]) -> Any:
+    resolution = _text_encoder_resolution(bundle, model_info)
+    actual_encoder = str(resolution.get("actual_encoder", "count-vectorizer-bigrams"))
+    if actual_encoder == "sentence-transformer":
+        model_name = str(resolution.get("sentence_transformer_model", "")).strip()
+        return sentence_transformer_matrix([payload.title], model_name)
+    text_vectorizer = bundle.get("text_vectorizer")
+    if text_vectorizer is None:
+        raise ValueError("Sparse text vectorizer is missing from the trained model bundle.")
+    return text_vectorizer.transform([payload.title])
+
+
 def _title_summary(payload: ScoreItemRequest) -> dict[str, Any]:
     title = payload.title
     token_hits = count_sensational_tokens(title)
@@ -177,6 +257,43 @@ def _title_summary(payload: ScoreItemRequest) -> dict[str, Any]:
         "title_length": float(len(title)),
         "uppercase_ratio": uppercase_ratio(title),
     }
+
+
+def _count_phrase_hits(text: str, phrases: tuple[str, ...]) -> int:
+    lowered = text.lower()
+    return sum(1 for phrase in phrases if phrase in lowered)
+
+
+def _music_context(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
+    title = payload.title.lower()
+    channel_name = payload.channel.channel_name.lower()
+    transcript = (payload.transcript_excerpt or "").lower()
+    history = payload.channel.channel_history_features
+    title_hits = _count_phrase_hits(title, MUSIC_TITLE_MARKERS)
+    channel_hits = _count_phrase_hits(channel_name, MUSIC_CHANNEL_MARKERS)
+    transcript_hits = _count_phrase_hits(transcript, MUSIC_TRANSCRIPT_MARKERS)
+    non_music_hits = _count_phrase_hits(f"{title} {transcript}", NON_MUSIC_MARKERS)
+    history_music_signal = float(history.get("music_likelihood", 0.0))
+    title_music_signal = float(history.get("title_music_signal", 0.0))
+    channel_music_signal = float(history.get("channel_music_signal", 0.0))
+    likelihood = max(
+        0.0,
+        min(
+            1.0,
+            title_hits * 0.42
+            + channel_hits * 0.2
+            + transcript_hits * 0.12
+            + history_music_signal * 0.5
+            + title_music_signal * 0.18
+            + channel_music_signal * 0.1
+            - non_music_hits * 0.18,
+        ),
+    )
+    summary["music_likelihood"] = round(likelihood, 4)
+    summary["music_title_hits"] = float(title_hits)
+    summary["music_channel_hits"] = float(channel_hits)
+    summary["music_transcript_hits"] = float(transcript_hits)
+    return likelihood
 
 
 def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
@@ -188,6 +305,9 @@ def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> 
 
     overlap = transcript_overlap(payload.title, transcript)
     mismatch = transcript_mismatch_score(payload.title, transcript, summary["token_hits"])
+    music_likelihood = float(summary.get("music_likelihood", 0.0))
+    if music_likelihood > 0.0:
+        mismatch *= max(0.25, 1.0 - music_likelihood * 0.7)
     summary["transcript_title_overlap"] = round(overlap, 4)
     summary["transcript_mismatch_score"] = round(mismatch, 4)
     return mismatch
@@ -212,6 +332,32 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[f
                 "aspect_ratio": extracted.get("thumbnail_aspect_ratio", (16 / 9) / 2.5),
                 "byte_size": extracted.get("thumbnail_byte_size", 0.0),
             }
+        elif payload.thumbnail_ref.startswith(("http://", "https://")):
+            try:
+                parsed = urlparse(payload.thumbnail_ref)
+                suffix = Path(parsed.path).suffix or ".jpg"
+                with urlopen(payload.thumbnail_ref, timeout=6.0) as response:
+                    image_bytes = response.read()
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
+                    handle.write(image_bytes)
+                    temp_path = Path(handle.name)
+                try:
+                    extracted = extract_thumbnail_features(temp_path)
+                finally:
+                    temp_path.unlink(missing_ok=True)
+                thumbnail_signal = {
+                    "brightness": extracted.get("thumbnail_brightness", 0.45),
+                    "saturation": extracted.get("thumbnail_saturation", 0.3),
+                    "contrast": extracted.get("thumbnail_contrast", 0.35),
+                    "text_density": extracted.get("thumbnail_text_density", 0.18),
+                    "face_emphasis": extracted.get("thumbnail_face_emphasis", 0.12),
+                    "shock_indicator": extracted.get("thumbnail_shock_indicator", 0.15),
+                    "entropy": extracted.get("thumbnail_entropy", 0.4),
+                    "aspect_ratio": extracted.get("thumbnail_aspect_ratio", (16 / 9) / 2.5),
+                    "byte_size": extracted.get("thumbnail_byte_size", 0.0),
+                }
+            except OSError:
+                thumbnail_signal = {}
 
     brightness = float(thumbnail_signal.get("brightness", 0.42))
     saturation = float(thumbnail_signal.get("saturation", 0.18 + summary["token_hits"] * 0.12))
@@ -324,6 +470,7 @@ def _history_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[
 
 def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
     summary = _title_summary(payload)
+    _music_context(payload, summary)
     _transcript_mismatch(payload, summary)
     _vision_vector(payload, summary)
     _metadata_vector(payload, summary)
@@ -378,14 +525,23 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         return _bootstrap_signals(payload)
 
     summary = _title_summary(payload)
+    _music_context(payload, summary)
     _transcript_mismatch(payload, summary)
-    text_matrix = bundle["text_vectorizer"].transform([payload.title])
-    vision_vector = np.asarray([_vision_vector(payload, summary)], dtype=float)
-    metadata_vector = np.asarray([_metadata_vector(payload, summary)], dtype=float)
-    history_vector = np.asarray([_history_vector(payload, summary)], dtype=float)
+    model_info = load_model_info()
+    text_resolution = _text_encoder_resolution(bundle, model_info)
+    summary["text_encoder_actual"] = str(text_resolution.get("actual_encoder", "count-vectorizer-bigrams"))
+    summary["text_encoder_requested"] = str(
+        text_resolution.get("requested_encoder", summary["text_encoder_actual"])
+    )
+    if text_resolution.get("fallback_reason"):
+        summary["text_encoder_fallback_reason"] = str(text_resolution["fallback_reason"])
 
     bootstrap = _bootstrap_signals(payload)
     try:
+        text_matrix = _text_matrix(payload, bundle, model_info)
+        vision_vector = np.asarray([_vision_vector(payload, summary)], dtype=float)
+        metadata_vector = np.asarray([_metadata_vector(payload, summary)], dtype=float)
+        history_vector = np.asarray([_history_vector(payload, summary)], dtype=float)
         text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
         metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
@@ -395,11 +551,18 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             if history_model is not None
             else bootstrap.history_score
         )
-        summary["text_top_contributors"] = _top_text_contributors(
-            bundle["text_model"],
-            bundle["text_vectorizer"],
-            text_matrix,
-        )
+        if summary["text_encoder_actual"] == "count-vectorizer-bigrams" and "text_vectorizer" in bundle:
+            summary["text_top_contributors"] = _top_text_contributors(
+                bundle["text_model"],
+                bundle["text_vectorizer"],
+                text_matrix,
+            )
+        else:
+            summary["text_top_contributors"] = []
+            summary["text_embedding_note"] = (
+                "Text score came from a dense sentence-transformer embedding path, so token-level attribution "
+                "is not exposed by the current explanation layer."
+            )
         summary["vision_top_contributors"] = _top_dense_contributors(
             bundle["vision_model"],
             VISION_FEATURE_NAMES,
@@ -437,11 +600,10 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             if calibration_model is not None
             else fusion_score
         )
-    except ValueError:
+    except (ValueError, RuntimeError, ImportError, ModuleNotFoundError, OSError):
         return bootstrap
     confidence = round(min(0.58 + calibrated_score * 0.38, 0.98), 4)
     uncertainty = round(max(0.02, 1.0 - confidence), 4)
-    model_info = load_model_info()
     return ModelSignals(
         text_score=round(text_score, 4),
         vision_score=round(vision_score, 4),

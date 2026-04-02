@@ -12,6 +12,12 @@ from sklearn.linear_model import LogisticRegression
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
+from truthlens_feature_extractors import (
+    fallback_text_encoder_resolution,
+    resolve_text_encoder,
+    sentence_transformer_matrix,
+    text_encoder_resolution_payload,
+)
 from truthlens_model_serving.registry import (
     ARCHITECTURE_PLAN_VERSION,
     HEAD_SPEC_VERSION,
@@ -136,10 +142,31 @@ def main() -> None:
     validation_labels = [_target(record) for record in validation_records]
     test_labels = [_target(record) for record in test_records]
 
-    text_vectorizer = CountVectorizer(ngram_range=(1, 2), min_df=1)
-    train_text = text_vectorizer.fit_transform([record["title"] for record in train_records])
-    validation_text = text_vectorizer.transform([record["title"] for record in validation_records])
-    test_text = text_vectorizer.transform([record["title"] for record in test_records])
+    text_encoder_resolution = resolve_text_encoder()
+    text_vectorizer: CountVectorizer | None = None
+    train_titles = [record["title"] for record in train_records]
+    validation_titles = [record["title"] for record in validation_records]
+    test_titles = [record["title"] for record in test_records]
+    if text_encoder_resolution.actual_encoder == "sentence-transformer":
+        try:
+            model_name = text_encoder_resolution.sentence_transformer_model or ""
+            train_text = sentence_transformer_matrix(train_titles, model_name)
+            validation_text = sentence_transformer_matrix(validation_titles, model_name)
+            test_text = sentence_transformer_matrix(test_titles, model_name)
+        except Exception as error:
+            text_encoder_resolution = fallback_text_encoder_resolution(
+                text_encoder_resolution,
+                reason=f"sentence-transformer path failed during training: {error}",
+            )
+            text_vectorizer = CountVectorizer(ngram_range=(1, 2), min_df=1)
+            train_text = text_vectorizer.fit_transform(train_titles)
+            validation_text = text_vectorizer.transform(validation_titles)
+            test_text = text_vectorizer.transform(test_titles)
+    else:
+        text_vectorizer = CountVectorizer(ngram_range=(1, 2), min_df=1)
+        train_text = text_vectorizer.fit_transform(train_titles)
+        validation_text = text_vectorizer.transform(validation_titles)
+        test_text = text_vectorizer.transform(test_titles)
 
     text_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     text_model.fit(train_text, train_labels)
@@ -218,14 +245,16 @@ def main() -> None:
     model_dir = repo_root() / "artifacts" / "trained_models" / "latest"
     model_dir.mkdir(parents=True, exist_ok=True)
     bundle = {
-        "text_vectorizer": text_vectorizer,
         "text_model": text_model,
         "vision_model": vision_model,
         "metadata_model": metadata_model,
         "history_model": history_model,
         "fusion_model": fusion_model,
         "calibration_model": calibration_model,
+        "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
     }
+    if text_vectorizer is not None:
+        bundle["text_vectorizer"] = text_vectorizer
     with (model_dir / "model_bundle.pkl").open("wb") as handle:
         pickle.dump(bundle, handle)
 
@@ -234,9 +263,10 @@ def main() -> None:
         "trained_at": manifest["generated_at"],
         "build_id": manifest["build_id"],
         "head_spec_version": HEAD_SPEC_VERSION,
-        "head_specs": runtime_head_specs(),
+        "head_specs": runtime_head_specs(text_encoder_override=text_encoder_resolution.actual_encoder),
         "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
         "architecture_layers": runtime_architecture_layers(),
+        "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
         "training_library_versions": {
             "scikit_learn": sklearn_version,
         },

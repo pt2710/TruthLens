@@ -55,8 +55,13 @@ def test_training_and_simulation_generate_artifacts(
     assert "head_specs" in model_info
     assert "architecture_layers" in model_info
     assert "architecture_plan_version" in model_info
+    assert "text_encoder_resolution" in model_info
     assert model_info["head_specs"][0]["name"] == "text"
     assert any(layer["component_id"] == "vae-anomaly-head" for layer in model_info["architecture_layers"])
+    assert model_info["text_encoder_resolution"]["actual_encoder"] in {
+        "sentence-transformer",
+        "count-vectorizer-bigrams",
+    }
     assert "fusion_profile" in model_info
     assert model_dir.joinpath("model_bundle.pkl").exists()
     assert model_dir.joinpath("model_info.json").exists()

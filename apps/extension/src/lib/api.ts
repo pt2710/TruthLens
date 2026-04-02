@@ -55,6 +55,13 @@ export type ModelInfo = {
     backend: string;
     runtime_path: string;
   }>;
+  text_encoder_resolution?: {
+    requested_encoder: string;
+    actual_encoder: string;
+    fallback_used: boolean;
+    sentence_transformer_model?: string | null;
+    fallback_reason?: string | null;
+  };
 };
 
 export type PolicyInfo = {

@@ -59,6 +59,7 @@ function Popup() {
   const plannedLayerCount = architectureLayers.filter(
     (layer) => layer.status === 'planned',
   ).length;
+  const textEncoderResolution = modelInfo?.text_encoder_resolution;
 
   return (
     <main
@@ -172,6 +173,17 @@ function Popup() {
                 {layer.label}: {layer.layer_type} via {layer.backend}
               </span>
             ))}
+            {textEncoderResolution ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                text encoder {textEncoderResolution.actual_encoder}
+                {textEncoderResolution.fallback_used
+                  ? ` (fallback from ${textEncoderResolution.requested_encoder})`
+                  : textEncoderResolution.requested_encoder !==
+                      textEncoderResolution.actual_encoder
+                    ? ` (requested ${textEncoderResolution.requested_encoder})`
+                    : ''}
+              </span>
+            ) : null}
           </div>
         </div>
       </section>

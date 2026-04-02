@@ -26,6 +26,7 @@ def test_info_endpoints() -> None:
     assert "head_specs" in model_response.json()
     assert "architecture_layers" in model_response.json()
     assert "architecture_plan_version" in model_response.json()
+    assert "text_encoder_resolution" in model_response.json()
 
     assert policy_response.status_code == 200
     assert "effective_thresholds" in policy_response.json()
@@ -329,6 +330,10 @@ def test_model_info_exposes_current_and_planned_architecture_layers() -> None:
     assert any(layer["status"] == "implemented" for layer in payload["architecture_layers"])
     assert any(layer["status"] == "planned" for layer in payload["architecture_layers"])
     assert any(layer["layer_type"] == "llm-assist" for layer in payload["architecture_layers"])
+    assert payload["text_encoder_resolution"]["requested_encoder"] in {
+        "sentence-transformer",
+        "count-vectorizer-bigrams",
+    }
 
 
 def test_youtube_auth_status_endpoint_reports_missing_config(

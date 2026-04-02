@@ -12,6 +12,8 @@ from typing import Any
 from sklearn import __version__ as sklearn_version
 from sklearn.exceptions import InconsistentVersionWarning
 
+from truthlens_feature_extractors import resolve_text_encoder, text_encoder_resolution_payload
+
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
 HEAD_SPEC_VERSION = "2026-03-23"
@@ -71,14 +73,18 @@ def runtime_architecture_layers() -> list[dict[str, Any]]:
     return [component for component in components if isinstance(component, dict)]
 
 
-def runtime_head_specs() -> list[dict[str, Any]]:
+def runtime_head_specs(*, text_encoder_override: str | None = None) -> list[dict[str, Any]]:
+    text_encoder = text_encoder_override or "count-vectorizer-bigrams"
+    text_artifact_keys = ["text_model"]
+    if text_encoder == "count-vectorizer-bigrams":
+        text_artifact_keys = ["text_vectorizer", "text_model"]
     return [
         {
             "name": "text",
             "family": "title-encoder",
             "backend": "sklearn-logistic-regression",
-            "encoder": "count-vectorizer-bigrams",
-            "artifact_keys": ["text_vectorizer", "text_model"],
+            "encoder": text_encoder,
+            "artifact_keys": text_artifact_keys,
             "supports_attribution": True,
             "supports_counterfactuals": True,
             "supports_sequence": False,
@@ -201,6 +207,7 @@ def load_model_info() -> dict[str, Any]:
             "head_spec_version": HEAD_SPEC_VERSION,
             "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
             "architecture_layers": runtime_architecture_layers(),
+            "text_encoder_resolution": text_encoder_resolution_payload(resolve_text_encoder()),
             "fusion_profile": {
                 "head_weights": {
                     "text": 0.32,
@@ -219,6 +226,7 @@ def load_model_info() -> dict[str, Any]:
     payload.setdefault("head_spec_version", HEAD_SPEC_VERSION)
     payload.setdefault("architecture_plan_version", ARCHITECTURE_PLAN_VERSION)
     payload.setdefault("architecture_layers", runtime_architecture_layers())
+    payload.setdefault("text_encoder_resolution", text_encoder_resolution_payload(resolve_text_encoder()))
     payload["runtime_library_versions"] = runtime_library_versions()
     payload["runtime_model_contracts"] = runtime_model_contracts()
     return payload
