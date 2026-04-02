@@ -62,6 +62,15 @@ export type ModelInfo = {
     sentence_transformer_model?: string | null;
     fallback_reason?: string | null;
   };
+  vision_encoder_resolution?: {
+    requested_encoder: string;
+    actual_encoder: string;
+    fallback_used: boolean;
+    image_size: number;
+    conv_channels: number[];
+    hidden_dim: number;
+    fallback_reason?: string | null;
+  };
   history_encoder_resolution?: {
     requested_encoder: string;
     actual_encoder: string;

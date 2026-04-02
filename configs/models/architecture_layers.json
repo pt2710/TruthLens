@@ -146,16 +146,28 @@
       "notes": "Optional sentence-transformer path is implemented; sparse title projection remains the fallback path."
     },
     {
-      "component_id": "vision-cnn-vit",
-      "label": "CNN / ViT thumbnail encoder",
+      "component_id": "vision-cnn-encoder",
+      "label": "Tiny CNN thumbnail encoder",
       "phase": "V2",
+      "status": "implemented",
+      "layer_type": "vision-encoder",
+      "family": "thumbnail-encoder-next",
+      "encoder": "tiny-cnn-thumbnail",
+      "backend": "torch",
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional CNN thumbnail path; engineered thumbnail features remain the fallback and still feed anomaly/metadata signals."
+    },
+    {
+      "component_id": "vision-vit-encoder",
+      "label": "ViT thumbnail encoder",
+      "phase": "V3",
       "status": "planned",
       "layer_type": "vision-encoder",
       "family": "thumbnail-encoder-next",
-      "encoder": "cnn-or-vit",
+      "encoder": "vision-transformer",
       "backend": "torch-transformers",
       "runtime_path": "future-core-inference",
-      "notes": "Planned learned vision encoder for richer thumbnail semantics."
+      "notes": "Planned richer thumbnail transformer path beyond the currently implemented tiny CNN."
     },
     {
       "component_id": "vae-anomaly-head",

@@ -56,20 +56,28 @@ def test_training_and_simulation_generate_artifacts(
     assert "architecture_layers" in model_info
     assert "architecture_plan_version" in model_info
     assert "text_encoder_resolution" in model_info
+    assert "vision_encoder_resolution" in model_info
     assert "history_encoder_resolution" in model_info
     assert model_info["head_specs"][0]["name"] == "text"
     assert any(head["name"] == "anomaly" for head in model_info["head_specs"])
+    vision_head = next(head for head in model_info["head_specs"] if head["name"] == "vision")
     history_head = next(head for head in model_info["head_specs"] if head["name"] == "history")
     assert any(layer["component_id"] == "vae-anomaly-head" for layer in model_info["architecture_layers"])
     assert any(layer["component_id"] == "temporal-lstm-encoder" for layer in model_info["architecture_layers"])
+    assert any(layer["component_id"] == "vision-cnn-encoder" for layer in model_info["architecture_layers"])
     assert model_info["text_encoder_resolution"]["actual_encoder"] in {
         "sentence-transformer",
         "count-vectorizer-bigrams",
+    }
+    assert model_info["vision_encoder_resolution"]["actual_encoder"] in {
+        "tiny-cnn-thumbnail",
+        "vision-v2",
     }
     assert model_info["history_encoder_resolution"]["actual_encoder"] in {
         "lstm-sequence",
         "sequence-summary-v1",
     }
+    assert vision_head["encoder"] == model_info["vision_encoder_resolution"]["actual_encoder"]
     assert history_head["encoder"] == model_info["history_encoder_resolution"]["actual_encoder"]
     assert "fusion_profile" in model_info
     assert "anomaly" in model_info["fusion_profile"]["head_weights"]

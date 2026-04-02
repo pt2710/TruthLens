@@ -14,6 +14,7 @@ import numpy as np
 from truthlens_feature_extractors import (
     count_sensational_tokens,
     extract_thumbnail_features,
+    thumbnail_array_from_path,
     sentence_transformer_matrix,
     transcript_mismatch_score,
     transcript_overlap,
@@ -29,6 +30,10 @@ from truthlens_model_serving.vae import (
     PACKAGING_VAE_FEATURE_NAMES,
     artifacts_from_payload,
     packaging_anomaly_from_artifacts,
+)
+from truthlens_model_serving.vision import (
+    thumbnail_scores_from_artifacts,
+    vision_artifacts_from_payload,
 )
 from truthlens_shared_schemas.contracts import ScoreItemRequest
 
@@ -288,6 +293,21 @@ def _history_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, An
     }
 
 
+def _vision_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, Any]) -> dict[str, Any]:
+    payload = bundle.get("vision_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    payload = model_info.get("vision_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    return {
+        "actual_encoder": "vision-v2",
+        "image_size": 32,
+        "conv_channels": [8, 16],
+        "hidden_dim": 32,
+    }
+
+
 def _text_matrix(payload: ScoreItemRequest, bundle: dict[str, Any], model_info: dict[str, Any]) -> Any:
     resolution = _text_encoder_resolution(bundle, model_info)
     actual_encoder = str(resolution.get("actual_encoder", "count-vectorizer-bigrams"))
@@ -462,6 +482,34 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[f
         prior_flags,
         estimated_risk_seed,
     ]
+
+
+def _thumbnail_image_from_ref(
+    thumbnail_ref: str | None,
+    *,
+    image_size: int,
+) -> np.ndarray | None:
+    if not thumbnail_ref:
+        return None
+    thumbnail_path = Path(thumbnail_ref)
+    if thumbnail_path.exists():
+        return thumbnail_array_from_path(thumbnail_path, image_size=image_size)
+    if not thumbnail_ref.startswith(("http://", "https://")):
+        return None
+    try:
+        parsed = urlparse(thumbnail_ref)
+        suffix = Path(parsed.path).suffix or ".jpg"
+        with urlopen(thumbnail_ref, timeout=6.0) as response:
+            image_bytes = response.read()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
+            handle.write(image_bytes)
+            temp_path = Path(handle.name)
+        try:
+            return thumbnail_array_from_path(temp_path, image_size=image_size)
+        finally:
+            temp_path.unlink(missing_ok=True)
+    except OSError:
+        return None
 
 
 def _metadata_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
@@ -664,10 +712,15 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     _transcript_mismatch(payload, summary)
     model_info = load_model_info()
     text_resolution = _text_encoder_resolution(bundle, model_info)
+    vision_resolution = _vision_encoder_resolution(bundle, model_info)
     history_resolution = _history_encoder_resolution(bundle, model_info)
     summary["text_encoder_actual"] = str(text_resolution.get("actual_encoder", "count-vectorizer-bigrams"))
     summary["text_encoder_requested"] = str(
         text_resolution.get("requested_encoder", summary["text_encoder_actual"])
+    )
+    summary["vision_encoder_actual"] = str(vision_resolution.get("actual_encoder", "vision-v2"))
+    summary["vision_encoder_requested"] = str(
+        vision_resolution.get("requested_encoder", summary["vision_encoder_actual"])
     )
     summary["history_encoder_actual"] = str(history_resolution.get("actual_encoder", "sequence-summary-v1"))
     summary["history_encoder_requested"] = str(
@@ -675,6 +728,8 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     )
     if text_resolution.get("fallback_reason"):
         summary["text_encoder_fallback_reason"] = str(text_resolution["fallback_reason"])
+    if vision_resolution.get("fallback_reason"):
+        summary["vision_encoder_fallback_reason"] = str(vision_resolution["fallback_reason"])
     if history_resolution.get("fallback_reason"):
         summary["history_encoder_fallback_reason"] = str(history_resolution["fallback_reason"])
 
@@ -691,6 +746,30 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         packaging_vector = np.asarray([packaging_values], dtype=float)
         text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
+        vision_used_cnn = False
+        if summary["vision_encoder_actual"] == "tiny-cnn-thumbnail":
+            vision_payload = bundle.get("vision_encoder_artifacts")
+            if isinstance(vision_payload, dict):
+                vision_artifacts = vision_artifacts_from_payload(vision_payload)
+                thumbnail_image = _thumbnail_image_from_ref(
+                    payload.thumbnail_ref,
+                    image_size=vision_artifacts.image_size,
+                )
+                if thumbnail_image is not None:
+                    vision_score = float(
+                        thumbnail_scores_from_artifacts(
+                            np.asarray([thumbnail_image], dtype=np.float32),
+                            vision_artifacts,
+                        )[0]
+                    )
+                    vision_used_cnn = True
+                    summary["vision_embedding_note"] = (
+                        "Vision score came from the optional tiny CNN thumbnail encoder."
+                    )
+                else:
+                    summary["vision_encoder_runtime_fallback"] = (
+                        "Thumbnail bytes were unavailable at runtime, so the engineered vision head was used."
+                    )
         metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
         history_model = bundle.get("history_model")
         history_score = bootstrap.history_score
@@ -743,10 +822,14 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
                 "Text score came from a dense sentence-transformer embedding path, so token-level attribution "
                 "is not exposed by the current explanation layer."
             )
-        summary["vision_top_contributors"] = _top_dense_contributors(
-            bundle["vision_model"],
-            VISION_FEATURE_NAMES,
-            vision_vector,
+        summary["vision_top_contributors"] = (
+            []
+            if vision_used_cnn
+            else _top_dense_contributors(
+                bundle["vision_model"],
+                VISION_FEATURE_NAMES,
+                vision_vector,
+            )
         )
         summary["metadata_top_contributors"] = _top_dense_contributors(
             bundle["metadata_model"],

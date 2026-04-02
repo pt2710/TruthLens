@@ -18,9 +18,11 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from truthlens_feature_extractors import (
     history_encoder_resolution_payload,
+    resolve_vision_encoder,
     resolve_history_encoder,
     resolve_text_encoder,
     text_encoder_resolution_payload,
+    vision_encoder_resolution_payload,
 )
 
 VISION_FEATURE_VERSION = "vision-v2"
@@ -88,13 +90,24 @@ def runtime_architecture_layers() -> list[dict[str, Any]]:
 def runtime_head_specs(
     *,
     text_encoder_override: str | None = None,
+    vision_encoder_override: str | None = None,
     history_encoder_override: str | None = None,
 ) -> list[dict[str, Any]]:
     text_encoder = text_encoder_override or "count-vectorizer-bigrams"
+    vision_encoder = vision_encoder_override or VISION_FEATURE_VERSION
     history_encoder = history_encoder_override or "sequence-summary-v1"
     text_artifact_keys = ["text_model"]
     if text_encoder == "count-vectorizer-bigrams":
         text_artifact_keys = ["text_vectorizer", "text_model"]
+    vision_backend = "sklearn-logistic-regression"
+    vision_artifact_keys = ["vision_model"]
+    vision_supports_attribution = True
+    vision_supports_counterfactuals = True
+    if vision_encoder == "tiny-cnn-thumbnail":
+        vision_backend = "torch-cnn"
+        vision_artifact_keys = ["vision_encoder_artifacts", "vision_model"]
+        vision_supports_attribution = False
+        vision_supports_counterfactuals = False
     history_backend = "sklearn-logistic-regression"
     history_artifact_keys = ["history_model"]
     history_supports_attribution = True
@@ -118,12 +131,12 @@ def runtime_head_specs(
         {
             "name": "vision",
             "family": "thumbnail-feature-head",
-            "backend": "sklearn-logistic-regression",
-            "encoder": VISION_FEATURE_VERSION,
-            "artifact_keys": ["vision_model"],
+            "backend": vision_backend,
+            "encoder": vision_encoder,
+            "artifact_keys": vision_artifact_keys,
             "feature_count": VISION_FEATURE_COUNT,
-            "supports_attribution": True,
-            "supports_counterfactuals": True,
+            "supports_attribution": vision_supports_attribution,
+            "supports_counterfactuals": vision_supports_counterfactuals,
             "supports_sequence": False,
         },
         {
@@ -242,6 +255,7 @@ def load_model_info() -> dict[str, Any]:
     info_path = model_dir() / "model_info.json"
     if not info_path.exists():
         text_resolution = text_encoder_resolution_payload(resolve_text_encoder())
+        vision_resolution = vision_encoder_resolution_payload(resolve_vision_encoder())
         history_resolution = history_encoder_resolution_payload(resolve_history_encoder())
         return {
             "mode": "bootstrap",
@@ -250,12 +264,14 @@ def load_model_info() -> dict[str, Any]:
             "artifact_status": "missing",
             "head_specs": runtime_head_specs(
                 text_encoder_override=str(text_resolution.get("actual_encoder", "count-vectorizer-bigrams")),
+                vision_encoder_override=str(vision_resolution.get("actual_encoder", VISION_FEATURE_VERSION)),
                 history_encoder_override=str(history_resolution.get("actual_encoder", "sequence-summary-v1")),
             ),
             "head_spec_version": HEAD_SPEC_VERSION,
             "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
             "architecture_layers": runtime_architecture_layers(),
             "text_encoder_resolution": text_resolution,
+            "vision_encoder_resolution": vision_resolution,
             "history_encoder_resolution": history_resolution,
             "fusion_profile": {
                 "head_weights": {
@@ -275,13 +291,28 @@ def load_model_info() -> dict[str, Any]:
     encoder_payload = payload.get("text_encoder_resolution")
     if not isinstance(encoder_payload, dict):
         encoder_payload = text_encoder_resolution_payload(resolve_text_encoder())
+    vision_encoder_payload = payload.get("vision_encoder_resolution")
+    if not isinstance(vision_encoder_payload, dict):
+        vision_encoder_payload = {
+            "requested_encoder": "vision-v2",
+            "actual_encoder": "vision-v2",
+            "fallback_used": False,
+            "image_size": 32,
+            "conv_channels": [8, 16],
+            "hidden_dim": 32,
+            "epochs": 0,
+            "learning_rate": 0.0,
+            "fallback_reason": "trained artifact predates explicit vision encoder metadata",
+        }
     history_encoder_payload = payload.get("history_encoder_resolution")
     if not isinstance(history_encoder_payload, dict):
         history_encoder_payload = history_encoder_resolution_payload(resolve_history_encoder())
     payload["text_encoder_resolution"] = encoder_payload
+    payload["vision_encoder_resolution"] = vision_encoder_payload
     payload["history_encoder_resolution"] = history_encoder_payload
     payload["head_specs"] = runtime_head_specs(
         text_encoder_override=str(encoder_payload.get("actual_encoder", "count-vectorizer-bigrams")),
+        vision_encoder_override=str(vision_encoder_payload.get("actual_encoder", VISION_FEATURE_VERSION)),
         history_encoder_override=str(history_encoder_payload.get("actual_encoder", "sequence-summary-v1")),
     )
     payload["head_spec_version"] = HEAD_SPEC_VERSION

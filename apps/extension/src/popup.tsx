@@ -60,6 +60,7 @@ function Popup() {
     (layer) => layer.status === 'planned',
   ).length;
   const textEncoderResolution = modelInfo?.text_encoder_resolution;
+  const visionEncoderResolution = modelInfo?.vision_encoder_resolution;
   const historyEncoderResolution = modelInfo?.history_encoder_resolution;
 
   return (
@@ -182,6 +183,17 @@ function Popup() {
                   : textEncoderResolution.requested_encoder !==
                       textEncoderResolution.actual_encoder
                     ? ` (requested ${textEncoderResolution.requested_encoder})`
+                    : ''}
+              </span>
+            ) : null}
+            {visionEncoderResolution ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                vision encoder {visionEncoderResolution.actual_encoder}
+                {visionEncoderResolution.fallback_used
+                  ? ` (fallback from ${visionEncoderResolution.requested_encoder})`
+                  : visionEncoderResolution.requested_encoder !==
+                      visionEncoderResolution.actual_encoder
+                    ? ` (requested ${visionEncoderResolution.requested_encoder})`
                     : ''}
               </span>
             ) : null}

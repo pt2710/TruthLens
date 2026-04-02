@@ -1,0 +1,9 @@
+{
+  "requested_encoder": "tiny-cnn-thumbnail",
+  "fallback_encoder": "vision-v2",
+  "image_size": 32,
+  "conv_channels": [8, 16],
+  "hidden_dim": 32,
+  "epochs": 18,
+  "learning_rate": 0.003
+}

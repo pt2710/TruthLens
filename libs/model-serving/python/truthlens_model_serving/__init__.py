@@ -31,6 +31,14 @@ from .vae import (
     train_packaging_vae,
     vae_available,
 )
+from .vision import (
+    VisionEncoderArtifacts,
+    thumbnail_scores_from_artifacts,
+    train_tiny_thumbnail_encoder,
+    vision_artifacts_from_payload,
+    vision_artifacts_to_payload,
+    vision_available,
+)
 
 __all__ = [
     "HEAD_SPEC_VERSION",
@@ -40,6 +48,7 @@ __all__ = [
     "HistorySequenceArtifacts",
     "PACKAGING_VAE_FEATURE_NAMES",
     "PackagingVAEArtifacts",
+    "VisionEncoderArtifacts",
     "append_feedback_event",
     "append_score_event",
     "artifacts_from_payload",
@@ -59,7 +68,12 @@ __all__ = [
     "temporal_artifacts_to_payload",
     "temporal_available",
     "temporal_history_scores_from_artifacts",
+    "thumbnail_scores_from_artifacts",
     "train_packaging_vae",
     "train_temporal_history_encoder",
+    "train_tiny_thumbnail_encoder",
     "vae_available",
+    "vision_artifacts_from_payload",
+    "vision_artifacts_to_payload",
+    "vision_available",
 ]

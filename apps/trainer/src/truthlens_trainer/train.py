@@ -19,11 +19,15 @@ from truthlens_evaluation import compute_binary_metrics, confusion_counts, expec
 from truthlens_feature_extractors import (
     fallback_text_encoder_resolution,
     fallback_history_encoder_resolution,
+    fallback_vision_encoder_resolution,
     history_encoder_resolution_payload,
+    resolve_vision_encoder,
     resolve_history_encoder,
     resolve_text_encoder,
     sentence_transformer_matrix,
+    thumbnail_array_batch,
     text_encoder_resolution_payload,
+    vision_encoder_resolution_payload,
 )
 from truthlens_model_serving.registry import (
     ARCHITECTURE_PLAN_VERSION,
@@ -44,6 +48,12 @@ from truthlens_model_serving.vae import (
     packaging_anomaly_from_artifacts,
     train_packaging_vae,
     vae_available,
+)
+from truthlens_model_serving.vision import (
+    thumbnail_scores_from_artifacts,
+    train_tiny_thumbnail_encoder,
+    vision_artifacts_to_payload,
+    vision_available,
 )
 
 
@@ -190,6 +200,15 @@ def _packaging_matrix(records: list[dict[str, Any]]) -> np.ndarray:
     ).astype(float)
 
 
+def _thumbnail_image_batch(
+    records: list[dict[str, Any]],
+    *,
+    image_size: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    thumbnail_paths = [repo_root() / str(record["thumbnail_path"]) for record in records]
+    return thumbnail_array_batch(thumbnail_paths, image_size=image_size)
+
+
 def _load_split_records(manifest: dict[str, Any], split_name: str) -> list[dict[str, Any]]:
     return read_jsonl(repo_root() / manifest["artifacts"][split_name])
 
@@ -261,6 +280,59 @@ def main() -> None:
 
     vision_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     vision_model.fit(_vision_matrix(train_records), train_labels)
+    vision_encoder_resolution = resolve_vision_encoder()
+    vision_encoder_artifacts = None
+    validation_vision_scores = vision_model.predict_proba(_vision_matrix(validation_records))[:, 1]
+    test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
+    if vision_encoder_resolution.actual_encoder == "tiny-cnn-thumbnail" and vision_available():
+        train_images, train_image_mask = _thumbnail_image_batch(
+            train_records,
+            image_size=vision_encoder_resolution.image_size,
+        )
+        validation_images, validation_image_mask = _thumbnail_image_batch(
+            validation_records,
+            image_size=vision_encoder_resolution.image_size,
+        )
+        test_images, test_image_mask = _thumbnail_image_batch(
+            test_records,
+            image_size=vision_encoder_resolution.image_size,
+        )
+        available_train_labels = [
+            label
+            for label, has_image in zip(train_labels, train_image_mask, strict=False)
+            if bool(has_image)
+        ]
+        if int(train_image_mask.sum()) < 8 or len(set(available_train_labels)) < 2:
+            vision_encoder_resolution = fallback_vision_encoder_resolution(
+                vision_encoder_resolution,
+                reason="insufficient binary thumbnail coverage for the tiny CNN training path",
+            )
+        else:
+            try:
+                trained_vision_encoder = train_tiny_thumbnail_encoder(
+                    train_images[train_image_mask],
+                    available_train_labels,
+                    conv_channels=tuple(vision_encoder_resolution.conv_channels[:2]),
+                    hidden_dim=vision_encoder_resolution.hidden_dim,
+                    epochs=vision_encoder_resolution.epochs,
+                    learning_rate=vision_encoder_resolution.learning_rate,
+                )
+                vision_encoder_artifacts = vision_artifacts_to_payload(trained_vision_encoder)
+                if bool(validation_image_mask.any()):
+                    validation_vision_scores[validation_image_mask] = thumbnail_scores_from_artifacts(
+                        validation_images[validation_image_mask],
+                        trained_vision_encoder,
+                    )
+                if bool(test_image_mask.any()):
+                    test_vision_scores[test_image_mask] = thumbnail_scores_from_artifacts(
+                        test_images[test_image_mask],
+                        trained_vision_encoder,
+                    )
+            except Exception as error:
+                vision_encoder_resolution = fallback_vision_encoder_resolution(
+                    vision_encoder_resolution,
+                    reason=f"tiny CNN vision path failed during training: {error}",
+                )
 
     metadata_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     metadata_model.fit(_metadata_matrix(train_records), train_labels)
@@ -330,7 +402,7 @@ def main() -> None:
     validation_base_scores = np.column_stack(
         [
             text_model.predict_proba(validation_text)[:, 1],
-            vision_model.predict_proba(_vision_matrix(validation_records))[:, 1],
+            validation_vision_scores,
             metadata_model.predict_proba(_metadata_matrix(validation_records))[:, 1],
             validation_history_scores,
             validation_anomaly_scores,
@@ -357,7 +429,6 @@ def main() -> None:
     decision_threshold = _best_threshold(validation_labels, calibrated_validation_scores)
 
     test_text_scores = text_model.predict_proba(test_text)[:, 1]
-    test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
     test_metadata_scores = metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1]
     test_base_scores = np.column_stack(
         [
@@ -401,10 +472,13 @@ def main() -> None:
         "fusion_model": fusion_model,
         "calibration_model": calibration_model,
         "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
+        "vision_encoder_resolution": vision_encoder_resolution_payload(vision_encoder_resolution),
         "history_encoder_resolution": history_encoder_resolution_payload(history_encoder_resolution),
     }
     if text_vectorizer is not None:
         bundle["text_vectorizer"] = text_vectorizer
+    if vision_encoder_artifacts is not None:
+        bundle["vision_encoder_artifacts"] = vision_encoder_artifacts
     if history_sequence_artifacts is not None:
         bundle["history_sequence_artifacts"] = history_sequence_artifacts
     if packaging_vae_artifacts is not None:
@@ -419,11 +493,13 @@ def main() -> None:
         "head_spec_version": HEAD_SPEC_VERSION,
         "head_specs": runtime_head_specs(
             text_encoder_override=text_encoder_resolution.actual_encoder,
+            vision_encoder_override=vision_encoder_resolution.actual_encoder,
             history_encoder_override=history_encoder_resolution.actual_encoder,
         ),
         "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
         "architecture_layers": runtime_architecture_layers(),
         "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
+        "vision_encoder_resolution": vision_encoder_resolution_payload(vision_encoder_resolution),
         "history_encoder_resolution": history_encoder_resolution_payload(history_encoder_resolution),
         "training_library_versions": {
             "scikit_learn": sklearn_version,

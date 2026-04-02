@@ -3,6 +3,8 @@ from truthlens_feature_extractors import (
     extract_thumbnail_features,
     make_test_png_bytes,
     normalize_text,
+    thumbnail_array_batch,
+    thumbnail_array_from_path,
     transcript_mismatch_score,
     transcript_overlap,
     uppercase_ratio,
@@ -57,3 +59,18 @@ def test_thumbnail_feature_extractor_reads_real_png(tmp_path: Path) -> None:
     assert 0.0 <= features["thumbnail_brightness"] <= 1.0
     assert 0.0 <= features["thumbnail_saturation"] <= 1.0
     assert features["thumbnail_text_density"] == 0.42
+
+
+def test_thumbnail_array_loader_reads_png_and_masks_missing_json(tmp_path: Path) -> None:
+    image_path = tmp_path / "thumb.png"
+    image_path.write_bytes(make_test_png_bytes((30, 200, 120), width=24, height=24))
+    json_path = tmp_path / "thumb.json"
+    json_path.write_text('{"brightness": 0.4}', encoding="utf-8")
+
+    image_array = thumbnail_array_from_path(image_path, image_size=32)
+    batch, mask = thumbnail_array_batch([image_path, json_path], image_size=32)
+
+    assert image_array is not None
+    assert image_array.shape == (3, 32, 32)
+    assert batch.shape == (2, 3, 32, 32)
+    assert mask.tolist() == [True, False]

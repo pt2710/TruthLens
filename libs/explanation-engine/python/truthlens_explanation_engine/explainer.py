@@ -134,6 +134,10 @@ def build_explanation(
             "vision_top_contributors",
             prefix="Top thumbnail contributors",
         )
+        if details is None:
+            vision_note = signals.feature_summary.get("vision_embedding_note")
+            if isinstance(vision_note, str):
+                details = vision_note
         _append_evidence(
             evidence,
             "thumbnail",
