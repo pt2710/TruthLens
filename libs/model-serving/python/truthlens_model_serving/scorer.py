@@ -20,6 +20,11 @@ from truthlens_feature_extractors import (
     uppercase_ratio,
 )
 from truthlens_model_serving.registry import load_model_bundle, load_model_info
+from truthlens_model_serving.vae import (
+    PACKAGING_VAE_FEATURE_NAMES,
+    artifacts_from_payload,
+    packaging_anomaly_from_artifacts,
+)
 from truthlens_shared_schemas.contracts import ScoreItemRequest
 
 
@@ -29,6 +34,7 @@ class ModelSignals:
     vision_score: float
     metadata_score: float
     history_score: float
+    anomaly_score: float
     fusion_score: float
     calibrated_score: float
     confidence: float
@@ -78,6 +84,7 @@ FUSION_FEATURE_NAMES = [
     "vision_score",
     "metadata_score",
     "history_score",
+    "anomaly_score",
 ]
 
 MUSIC_TITLE_MARKERS = (
@@ -195,6 +202,30 @@ def _dense_counterfactuals(
         counterfactuals.append({"name": feature_name, "score_drop": score_drop})
     counterfactuals.sort(key=lambda item: float(item["score_drop"]), reverse=True)
     return counterfactuals[:limit]
+
+
+def _top_anomaly_contributors(
+    feature_names: list[str],
+    feature_errors: np.ndarray,
+    *,
+    limit: int = 3,
+) -> list[dict[str, float | str]]:
+    values = np.asarray(feature_errors, dtype=float).ravel()
+    contributors: list[dict[str, float | str]] = []
+    for index, feature_name in enumerate(feature_names):
+        if index >= len(values):
+            break
+        contribution = float(values[index])
+        if contribution <= 0:
+            continue
+        contributors.append(
+            {
+                "name": feature_name,
+                "contribution": round(contribution, 4),
+            }
+        )
+    contributors.sort(key=lambda item: float(item["contribution"]), reverse=True)
+    return contributors[:limit]
 
 
 def _top_text_contributors(
@@ -468,12 +499,40 @@ def _history_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[
     ]
 
 
+def _packaging_vector(
+    vision_vector: list[float],
+    metadata_vector: list[float],
+) -> list[float]:
+    return [
+        float(vision_vector[0]),
+        float(vision_vector[1]),
+        float(vision_vector[2]),
+        float(vision_vector[3]),
+        float(vision_vector[4]),
+        float(vision_vector[5]),
+        float(vision_vector[6]),
+        float(vision_vector[7]),
+        float(vision_vector[8]),
+        float(vision_vector[9]),
+        float(vision_vector[10]),
+        float(vision_vector[11]),
+        float(metadata_vector[0]),
+        float(metadata_vector[1]),
+        float(metadata_vector[2]),
+        float(metadata_vector[4]),
+        float(metadata_vector[5]),
+        float(metadata_vector[6]),
+        float(metadata_vector[7]),
+        float(metadata_vector[8]),
+    ]
+
+
 def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
     summary = _title_summary(payload)
     _music_context(payload, summary)
     _transcript_mismatch(payload, summary)
-    _vision_vector(payload, summary)
-    _metadata_vector(payload, summary)
+    vision_vector = _vision_vector(payload, summary)
+    metadata_vector = _metadata_vector(payload, summary)
     _history_vector(payload, summary)
     text_score = min(0.12 + summary["token_hits"] * 0.18 + summary["uppercase_ratio"] * 0.2, 0.98)
     vision_score = min(
@@ -495,11 +554,21 @@ def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
         + max(summary["engagement_anomaly"] - 1.0, 0.0) * 0.08,
         0.98,
     )
+    packaging_vector = _packaging_vector(vision_vector, metadata_vector)
+    anomaly_score = min(
+        0.08
+        + max(float(packaging_vector[7]), 0.0) * 0.18
+        + max(float(packaging_vector[8]), 0.0) * 0.26
+        + max(float(packaging_vector[15]), 0.0) * 0.1
+        + max(float(packaging_vector[18]) - 0.12, 0.0) * 0.25,
+        0.98,
+    )
     fusion_score = round(
-        (text_score * 0.32)
-        + (vision_score * 0.26)
-        + (metadata_score * 0.2)
-        + (history_score * 0.22),
+        (text_score * 0.28)
+        + (vision_score * 0.22)
+        + (metadata_score * 0.17)
+        + (history_score * 0.18)
+        + (anomaly_score * 0.15),
         4,
     )
     confidence = round(min(0.52 + fusion_score * 0.43, 0.97), 4)
@@ -509,6 +578,7 @@ def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
         vision_score=round(vision_score, 4),
         metadata_score=round(metadata_score, 4),
         history_score=round(history_score, 4),
+        anomaly_score=round(anomaly_score, 4),
         fusion_score=fusion_score,
         calibrated_score=fusion_score,
         confidence=confidence,
@@ -539,9 +609,14 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     bootstrap = _bootstrap_signals(payload)
     try:
         text_matrix = _text_matrix(payload, bundle, model_info)
-        vision_vector = np.asarray([_vision_vector(payload, summary)], dtype=float)
-        metadata_vector = np.asarray([_metadata_vector(payload, summary)], dtype=float)
-        history_vector = np.asarray([_history_vector(payload, summary)], dtype=float)
+        vision_values = _vision_vector(payload, summary)
+        metadata_values = _metadata_vector(payload, summary)
+        history_values = _history_vector(payload, summary)
+        packaging_values = _packaging_vector(vision_values, metadata_values)
+        vision_vector = np.asarray([vision_values], dtype=float)
+        metadata_vector = np.asarray([metadata_values], dtype=float)
+        history_vector = np.asarray([history_values], dtype=float)
+        packaging_vector = np.asarray([packaging_values], dtype=float)
         text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
         metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
@@ -551,6 +626,22 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             if history_model is not None
             else bootstrap.history_score
         )
+        anomaly_payload = bundle.get("packaging_vae_artifacts")
+        if isinstance(anomaly_payload, dict):
+            anomaly_artifacts = artifacts_from_payload(anomaly_payload)
+            anomaly_vector, feature_errors = packaging_anomaly_from_artifacts(
+                packaging_vector,
+                anomaly_artifacts,
+            )
+            anomaly_score = float(anomaly_vector[0])
+            summary["anomaly_top_contributors"] = _top_anomaly_contributors(
+                list(anomaly_artifacts.feature_names or PACKAGING_VAE_FEATURE_NAMES),
+                feature_errors[0],
+            )
+            summary["anomaly_reconstruction_error"] = round(float(np.mean(feature_errors[0])), 4)
+        else:
+            anomaly_score = bootstrap.anomaly_score
+            summary["anomaly_top_contributors"] = []
         if summary["text_encoder_actual"] == "count-vectorizer-bigrams" and "text_vectorizer" in bundle:
             summary["text_top_contributors"] = _top_text_contributors(
                 bundle["text_model"],
@@ -582,7 +673,10 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             if history_model is not None
             else []
         )
-        fusion_features = np.asarray([[text_score, vision_score, metadata_score, history_score]], dtype=float)
+        fusion_features = np.asarray(
+            [[text_score, vision_score, metadata_score, history_score, anomaly_score]],
+            dtype=float,
+        )
         summary["fusion_top_contributors"] = _top_dense_contributors(
             bundle["fusion_model"],
             FUSION_FEATURE_NAMES,
@@ -609,6 +703,7 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         vision_score=round(vision_score, 4),
         metadata_score=round(metadata_score, 4),
         history_score=round(history_score, 4),
+        anomaly_score=round(anomaly_score, 4),
         fusion_score=round(fusion_score, 4),
         calibrated_score=round(calibrated_score, 4),
         confidence=confidence,

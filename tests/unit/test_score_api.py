@@ -330,6 +330,7 @@ def test_model_info_exposes_current_and_planned_architecture_layers() -> None:
     assert any(layer["status"] == "implemented" for layer in payload["architecture_layers"])
     assert any(layer["status"] == "planned" for layer in payload["architecture_layers"])
     assert any(layer["layer_type"] == "llm-assist" for layer in payload["architecture_layers"])
+    assert any(head["name"] == "anomaly" for head in payload["head_specs"])
     assert payload["text_encoder_resolution"]["requested_encoder"] in {
         "sentence-transformer",
         "count-vectorizer-bigrams",

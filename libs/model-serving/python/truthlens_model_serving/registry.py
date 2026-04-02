@@ -11,12 +11,16 @@ from typing import Any
 
 from sklearn import __version__ as sklearn_version
 from sklearn.exceptions import InconsistentVersionWarning
+try:
+    from torch import __version__ as torch_version
+except ImportError:  # pragma: no cover - optional dependency
+    torch_version = None
 
 from truthlens_feature_extractors import resolve_text_encoder, text_encoder_resolution_payload
 
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
-HEAD_SPEC_VERSION = "2026-03-23"
+HEAD_SPEC_VERSION = "2026-04-02"
 ARCHITECTURE_PLAN_VERSION = "2026-04-02"
 
 
@@ -57,9 +61,12 @@ def _architecture_layers_path() -> Path:
 
 
 def runtime_library_versions() -> dict[str, str]:
-    return {
+    payload = {
         "scikit_learn": sklearn_version,
     }
+    if torch_version is not None:
+        payload["torch"] = str(torch_version)
+    return payload
 
 
 def runtime_architecture_layers() -> list[dict[str, Any]]:
@@ -119,6 +126,16 @@ def runtime_head_specs(*, text_encoder_override: str | None = None) -> list[dict
             "supports_attribution": True,
             "supports_counterfactuals": True,
             "supports_sequence": True,
+        },
+        {
+            "name": "anomaly",
+            "family": "packaging-vae-anomaly-head",
+            "backend": "torch-vae",
+            "encoder": "vision-metadata-vae-v1",
+            "artifact_keys": ["packaging_vae_artifacts"],
+            "supports_attribution": True,
+            "supports_counterfactuals": False,
+            "supports_sequence": False,
         },
         {
             "name": "fusion",
@@ -214,6 +231,7 @@ def load_model_info() -> dict[str, Any]:
                     "vision": 0.26,
                     "metadata": 0.20,
                     "history": 0.22,
+                    "anomaly": 0.15,
                 },
                 "strategy": "bootstrap-weighted-average",
             },
@@ -222,11 +240,16 @@ def load_model_info() -> dict[str, Any]:
         }
     payload = json.loads(info_path.read_text(encoding="utf-8"))
     payload["artifact_status"] = _artifact_status(payload)
-    payload.setdefault("head_specs", runtime_head_specs())
-    payload.setdefault("head_spec_version", HEAD_SPEC_VERSION)
-    payload.setdefault("architecture_plan_version", ARCHITECTURE_PLAN_VERSION)
-    payload.setdefault("architecture_layers", runtime_architecture_layers())
-    payload.setdefault("text_encoder_resolution", text_encoder_resolution_payload(resolve_text_encoder()))
+    encoder_payload = payload.get("text_encoder_resolution")
+    if not isinstance(encoder_payload, dict):
+        encoder_payload = text_encoder_resolution_payload(resolve_text_encoder())
+    payload["text_encoder_resolution"] = encoder_payload
+    payload["head_specs"] = runtime_head_specs(
+        text_encoder_override=str(encoder_payload.get("actual_encoder", "count-vectorizer-bigrams"))
+    )
+    payload["head_spec_version"] = HEAD_SPEC_VERSION
+    payload["architecture_plan_version"] = ARCHITECTURE_PLAN_VERSION
+    payload["architecture_layers"] = runtime_architecture_layers()
     payload["runtime_library_versions"] = runtime_library_versions()
     payload["runtime_model_contracts"] = runtime_model_contracts()
     return payload

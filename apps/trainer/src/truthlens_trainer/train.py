@@ -8,6 +8,10 @@ import numpy as np
 from sklearn import __version__ as sklearn_version
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
+try:
+    from torch import __version__ as torch_version
+except ImportError:  # pragma: no cover - optional dependency
+    torch_version = None
 
 from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
@@ -25,6 +29,12 @@ from truthlens_model_serving.registry import (
     VISION_FEATURE_VERSION,
     runtime_architecture_layers,
     runtime_head_specs,
+)
+from truthlens_model_serving.vae import (
+    artifacts_to_payload,
+    packaging_anomaly_from_artifacts,
+    train_packaging_vae,
+    vae_available,
 )
 
 
@@ -100,6 +110,35 @@ def _history_matrix(records: list[dict[str, Any]]) -> np.ndarray:
             ]
         )
     return np.asarray(rows, dtype=float)
+
+
+def _packaging_matrix(records: list[dict[str, Any]]) -> np.ndarray:
+    vision = _vision_matrix(records)
+    metadata = _metadata_matrix(records)
+    return np.column_stack(
+        [
+            vision[:, 0],
+            vision[:, 1],
+            vision[:, 2],
+            vision[:, 3],
+            vision[:, 4],
+            vision[:, 5],
+            vision[:, 6],
+            vision[:, 7],
+            vision[:, 8],
+            vision[:, 9],
+            vision[:, 10],
+            vision[:, 11],
+            metadata[:, 0],
+            metadata[:, 1],
+            metadata[:, 2],
+            metadata[:, 4],
+            metadata[:, 5],
+            metadata[:, 6],
+            metadata[:, 7],
+            metadata[:, 8],
+        ]
+    ).astype(float)
 
 
 def _load_split_records(manifest: dict[str, Any], split_name: str) -> list[dict[str, Any]]:
@@ -180,12 +219,32 @@ def main() -> None:
     history_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     history_model.fit(_history_matrix(train_records), train_labels)
 
+    packaging_vae_artifacts = None
+    validation_anomaly_scores = np.zeros(len(validation_records), dtype=float)
+    test_anomaly_scores = np.zeros(len(test_records), dtype=float)
+    if vae_available():
+        anomaly_train_records = [
+            record for record, label in zip(train_records, train_labels, strict=False) if label == 0
+        ]
+        anomaly_source_records = anomaly_train_records or train_records
+        packaging_vae = train_packaging_vae(_packaging_matrix(anomaly_source_records))
+        packaging_vae_artifacts = artifacts_to_payload(packaging_vae)
+        validation_anomaly_scores, _ = packaging_anomaly_from_artifacts(
+            _packaging_matrix(validation_records),
+            packaging_vae,
+        )
+        test_anomaly_scores, _ = packaging_anomaly_from_artifacts(
+            _packaging_matrix(test_records),
+            packaging_vae,
+        )
+
     validation_base_scores = np.column_stack(
         [
             text_model.predict_proba(validation_text)[:, 1],
             vision_model.predict_proba(_vision_matrix(validation_records))[:, 1],
             metadata_model.predict_proba(_metadata_matrix(validation_records))[:, 1],
             history_model.predict_proba(_history_matrix(validation_records))[:, 1],
+            validation_anomaly_scores,
         ]
     )
     fusion_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
@@ -218,6 +277,7 @@ def main() -> None:
             test_vision_scores,
             test_metadata_scores,
             test_history_scores,
+            test_anomaly_scores,
         ]
     )
     test_fusion_scores = fusion_model.predict_proba(test_base_scores)[:, 1]
@@ -238,6 +298,7 @@ def main() -> None:
         "vision": _score_head_metrics(test_labels, test_vision_scores),
         "metadata": _score_head_metrics(test_labels, test_metadata_scores),
         "history": _score_head_metrics(test_labels, test_history_scores),
+        "anomaly": _score_head_metrics(test_labels, test_anomaly_scores),
         "fusion": _score_head_metrics(test_labels, test_fusion_scores),
         "calibrated": _score_head_metrics(test_labels, calibrated_test_scores),
     }
@@ -255,6 +316,8 @@ def main() -> None:
     }
     if text_vectorizer is not None:
         bundle["text_vectorizer"] = text_vectorizer
+    if packaging_vae_artifacts is not None:
+        bundle["packaging_vae_artifacts"] = packaging_vae_artifacts
     with (model_dir / "model_bundle.pkl").open("wb") as handle:
         pickle.dump(bundle, handle)
 
@@ -279,6 +342,7 @@ def main() -> None:
                 "vision": round(float(fusion_model.coef_[0][1]), 4),
                 "metadata": round(float(fusion_model.coef_[0][2]), 4),
                 "history": round(float(fusion_model.coef_[0][3]), 4),
+                "anomaly": round(float(fusion_model.coef_[0][4]), 4),
             },
             "intercept": round(float(fusion_model.intercept_[0]), 4),
         },
@@ -290,6 +354,8 @@ def main() -> None:
         "validation_calibration_error": validation_calibration_error,
         "per_head_metrics": per_head_metrics,
     }
+    if torch_version is not None:
+        model_info["training_library_versions"]["torch"] = str(torch_version)
     (model_dir / "model_info.json").write_text(
         json.dumps(model_info, indent=2, ensure_ascii=True),
         encoding="utf-8",

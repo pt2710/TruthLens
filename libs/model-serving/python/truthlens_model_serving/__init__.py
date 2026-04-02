@@ -13,21 +13,37 @@ from .registry import (
     summarize_score_events,
 )
 from .scorer import ModelSignals, describe_model, predict_item_signals
+from .vae import (
+    PACKAGING_VAE_FEATURE_NAMES,
+    PackagingVAEArtifacts,
+    artifacts_from_payload,
+    artifacts_to_payload,
+    packaging_anomaly_from_artifacts,
+    train_packaging_vae,
+    vae_available,
+)
 
 __all__ = [
     "HEAD_SPEC_VERSION",
     "ARCHITECTURE_PLAN_VERSION",
     "ModelSignals",
+    "PACKAGING_VAE_FEATURE_NAMES",
+    "PackagingVAEArtifacts",
     "append_feedback_event",
     "append_score_event",
+    "artifacts_from_payload",
+    "artifacts_to_payload",
     "describe_model",
     "load_feedback_events",
     "load_model_info",
     "load_score_events",
     "load_model_bundle",
+    "packaging_anomaly_from_artifacts",
     "predict_item_signals",
     "runtime_architecture_layers",
     "runtime_head_specs",
     "summarize_feedback_events",
     "summarize_score_events",
+    "train_packaging_vae",
+    "vae_available",
 ]

@@ -91,6 +91,7 @@ def build_explanation(
 ) -> ExplanationBundle:
     reasons: list[str] = []
     evidence: list[ExplanationEvidence] = []
+    music_likelihood = float(signals.feature_summary.get("music_likelihood", 0.0))
     muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
     if muted_channels and payload.channel.channel_name.strip().lower() in muted_channels:
         reason = "Channel is locally muted in the current user profile."
@@ -101,6 +102,14 @@ def build_explanation(
             "Channel muted locally",
             score=1.0,
             details=reason,
+        )
+    if music_likelihood >= 0.55:
+        _append_evidence(
+            evidence,
+            "metadata",
+            "Likely music-content context detected",
+            score=music_likelihood,
+            details="This item appears likely to be music content, so literal thumbnail-to-lyrics matching is weighted less heavily.",
         )
     if signals.text_score >= max(signals.vision_score, signals.metadata_score):
         reason = "Title contains strong sensational framing patterns."
@@ -130,6 +139,21 @@ def build_explanation(
             "thumbnail",
             "Thumbnail exaggeration pattern",
             score=signals.vision_score,
+            details=details or reason,
+        )
+    if signals.anomaly_score > 0.58:
+        reason = "Combined thumbnail and metadata packaging looks statistically atypical relative to lower-risk training examples."
+        reasons.append(reason)
+        details = _contributor_details(
+            signals.feature_summary,
+            "anomaly_top_contributors",
+            prefix="Top anomaly contributors",
+        )
+        _append_evidence(
+            evidence,
+            "metadata",
+            "Packaging anomaly score is elevated",
+            score=signals.anomaly_score,
             details=details or reason,
         )
     if signals.metadata_score >= max(signals.text_score, signals.vision_score, signals.history_score):
@@ -172,7 +196,7 @@ def build_explanation(
             score=signals.feature_summary.get("repeat_template_rate", 0.0),
             details=reason,
         )
-    if signals.feature_summary.get("thumbnail_text_density", 0.0) > 0.4:
+    if music_likelihood < 0.55 and signals.feature_summary.get("thumbnail_text_density", 0.0) > 0.4:
         reason = "Thumbnail appears text-heavy for a standard feed card."
         reasons.append(reason)
         _append_evidence(
@@ -182,13 +206,18 @@ def build_explanation(
             score=signals.feature_summary.get("thumbnail_text_density", 0.0),
             details=reason,
         )
-    if signals.feature_summary.get("transcript_mismatch_score", 0.0) > 0.55:
-        reason = "Title and transcript excerpt diverge in a way that suggests framing mismatch."
+    transcript_threshold = 0.72 if music_likelihood >= 0.55 else 0.55
+    if signals.feature_summary.get("transcript_mismatch_score", 0.0) > transcript_threshold:
+        reason = (
+            "Available lyrics or spoken context still diverge from the packaging even after accounting for likely music-video framing."
+            if music_likelihood >= 0.55
+            else "Title and transcript excerpt diverge in a way that suggests framing mismatch."
+        )
         reasons.append(reason)
         _append_evidence(
             evidence,
             "transcript",
-            "Title and transcript mismatch",
+            "Packaging diverges from transcript context",
             score=signals.feature_summary.get("transcript_mismatch_score", 0.0),
             details=reason,
         )
