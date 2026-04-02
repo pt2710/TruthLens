@@ -13,9 +13,11 @@ from truthlens_data_pipeline.paths import read_jsonl, repo_root
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
 from truthlens_model_serving.registry import (
+    ARCHITECTURE_PLAN_VERSION,
     HEAD_SPEC_VERSION,
     VISION_FEATURE_COUNT,
     VISION_FEATURE_VERSION,
+    runtime_architecture_layers,
     runtime_head_specs,
 )
 
@@ -233,6 +235,8 @@ def main() -> None:
         "build_id": manifest["build_id"],
         "head_spec_version": HEAD_SPEC_VERSION,
         "head_specs": runtime_head_specs(),
+        "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
+        "architecture_layers": runtime_architecture_layers(),
         "training_library_versions": {
             "scikit_learn": sklearn_version,
         },

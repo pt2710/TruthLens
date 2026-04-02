@@ -15,12 +15,17 @@ from sklearn.exceptions import InconsistentVersionWarning
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
 HEAD_SPEC_VERSION = "2026-03-23"
+ARCHITECTURE_PLAN_VERSION = "2026-04-02"
 
 
 def _repo_root() -> Path:
     override = os.getenv("TRUTHLENS_REPO_ROOT")
     if override:
         return Path(override).resolve()
+    return Path(__file__).resolve().parents[4]
+
+
+def _source_repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
@@ -42,10 +47,28 @@ def model_dir() -> Path:
     return path
 
 
+def _architecture_layers_path() -> Path:
+    override_path = _repo_root() / "configs" / "models" / "architecture_layers.json"
+    if override_path.exists():
+        return override_path
+    return _source_repo_root() / "configs" / "models" / "architecture_layers.json"
+
+
 def runtime_library_versions() -> dict[str, str]:
     return {
         "scikit_learn": sklearn_version,
     }
+
+
+def runtime_architecture_layers() -> list[dict[str, Any]]:
+    path = _architecture_layers_path()
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    components = payload.get("components", [])
+    if not isinstance(components, list):
+        return []
+    return [component for component in components if isinstance(component, dict)]
 
 
 def runtime_head_specs() -> list[dict[str, Any]]:
@@ -119,6 +142,7 @@ def runtime_model_contracts() -> dict[str, str]:
         "vision_feature_version": VISION_FEATURE_VERSION,
         "vision_feature_count": str(VISION_FEATURE_COUNT),
         "head_spec_version": HEAD_SPEC_VERSION,
+        "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
     }
 
 
@@ -175,6 +199,8 @@ def load_model_info() -> dict[str, Any]:
             "artifact_status": "missing",
             "head_specs": runtime_head_specs(),
             "head_spec_version": HEAD_SPEC_VERSION,
+            "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
+            "architecture_layers": runtime_architecture_layers(),
             "fusion_profile": {
                 "head_weights": {
                     "text": 0.32,
@@ -191,6 +217,8 @@ def load_model_info() -> dict[str, Any]:
     payload["artifact_status"] = _artifact_status(payload)
     payload.setdefault("head_specs", runtime_head_specs())
     payload.setdefault("head_spec_version", HEAD_SPEC_VERSION)
+    payload.setdefault("architecture_plan_version", ARCHITECTURE_PLAN_VERSION)
+    payload.setdefault("architecture_layers", runtime_architecture_layers())
     payload["runtime_library_versions"] = runtime_library_versions()
     payload["runtime_model_contracts"] = runtime_model_contracts()
     return payload
@@ -214,7 +242,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     explanation_id,
                     before_score,
                     after_score,
-                    timestamp
+                    timestamp,
+                    manual_report_json
                 FROM feedback_events
                 ORDER BY rowid ASC
                 """
@@ -232,6 +261,9 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     "before_score": before_score,
                     "after_score": after_score,
                     "timestamp": timestamp,
+                    "manual_report": json.loads(manual_report_json)
+                    if manual_report_json
+                    else None,
                 }
                 for (
                     item_id,
@@ -245,6 +277,7 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     before_score,
                     after_score,
                     timestamp,
+                    manual_report_json,
                 ) in cursor.fetchall()
             ]
         return db_rows
@@ -334,10 +367,17 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
             explanation_id TEXT,
             before_score REAL,
             after_score REAL,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            manual_report_json TEXT
         )
         """
     )
+    columns = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(feedback_events)").fetchall()
+    }
+    if "manual_report_json" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN manual_report_json TEXT")
     connection.commit()
 
 
@@ -383,8 +423,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 explanation_id,
                 before_score,
                 after_score,
-                timestamp
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                timestamp,
+                manual_report_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 payload.get("item_id"),
@@ -398,6 +439,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 payload.get("before_score"),
                 payload.get("after_score"),
                 payload.get("timestamp"),
+                json.dumps(payload.get("manual_report"), ensure_ascii=True)
+                if payload.get("manual_report") is not None
+                else None,
             ),
         )
         connection.commit()
@@ -451,16 +495,41 @@ def _normalize_action(event: dict[str, Any]) -> str:
 
 def _normalize_channel(event: dict[str, Any]) -> tuple[str, str] | None:
     channel_name = str(event.get("channel_name", "")).strip()
-    if not channel_name:
+    if not channel_name or channel_name.lower() == "unknown channel":
         return None
     return channel_name.lower(), channel_name
 
 
 def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     rows = events if events is not None else load_feedback_events()
+    score_rows = load_score_events()
     action_counts = Counter(_normalize_action(row) for row in rows)
     correction_actions = action_counts["not-misleading"] + action_counts["undo-hide"]
     channel_profiles: dict[str, dict[str, Any]] = {}
+    scored_items_by_channel: dict[str, set[str]] = {}
+    for row in score_rows:
+        channel = _normalize_channel(row)
+        if channel is None:
+            continue
+        channel_key, channel_name = channel
+        item_id = str(row.get("item_id", "")).strip()
+        if not item_id:
+            continue
+        scored_items_by_channel.setdefault(channel_key, set()).add(item_id)
+        channel_profiles.setdefault(
+            channel_key,
+            {
+                "channel_name": channel_name,
+                "event_count": 0,
+                "report_count": 0,
+                "dismiss_count": 0,
+                "mute_count": 0,
+                "confirm_count": 0,
+                "transparent_count": 0,
+                "moderate_request_count": 0,
+                "remove_request_count": 0,
+            },
+        )
     for row in rows:
         channel = _normalize_channel(row)
         if channel is None:
@@ -475,14 +544,29 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
                 "dismiss_count": 0,
                 "mute_count": 0,
                 "confirm_count": 0,
+                "transparent_count": 0,
+                "moderate_request_count": 0,
+                "remove_request_count": 0,
             },
         )
         profile["event_count"] += 1
         action = _normalize_action(row)
         if action in {"report", "confirm-report"}:
             profile["report_count"] += 1
+            manual_report = row.get("manual_report")
+            requested_outcome = "moderate"
+            if isinstance(manual_report, dict):
+                requested_outcome = str(
+                    manual_report.get("requested_outcome", "moderate")
+                ).strip().lower() or "moderate"
+            if requested_outcome == "remove":
+                profile["remove_request_count"] += 1
+            else:
+                profile["moderate_request_count"] += 1
         if action in {"not-misleading", "undo-hide"}:
             profile["dismiss_count"] += 1
+        if action == "confirm-transparent":
+            profile["transparent_count"] += 1
         if action == "mute-channel-local":
             profile["mute_count"] += 1
         if action in {"report", "confirm-report", "hide-locally", "mute-channel-local"}:
@@ -490,6 +574,29 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
 
     for profile in channel_profiles.values():
         event_count = max(int(profile["event_count"]), 1)
+        channel_key = str(profile["channel_name"]).strip().lower()
+        scored_item_count = len(scored_items_by_channel.get(channel_key, set()))
+        moderate_request_count = int(profile["moderate_request_count"])
+        remove_request_count = int(profile["remove_request_count"])
+        transparent_count = int(profile["transparent_count"])
+        weighted_negative_signal = moderate_request_count + (remove_request_count * 1.35)
+        positive_signal = transparent_count * 0.75
+        total_signal = max(scored_item_count, 0) + 4.0
+        trust_score = round(
+            max(
+                0.0,
+                min(
+                    10.0,
+                    10.0
+                    * (
+                        1.0
+                        - max(0.0, (weighted_negative_signal + 2.0) - positive_signal)
+                        / total_signal
+                    ),
+                ),
+            ),
+            2,
+        )
         profile["bias"] = round(
             max(
                 -0.12,
@@ -505,6 +612,9 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
             ),
             4,
         )
+        profile["scored_item_count"] = scored_item_count
+        profile["reported_item_count"] = moderate_request_count + remove_request_count
+        profile["trust_score"] = trust_score
 
     top_channels = sorted(
         channel_profiles.values(),

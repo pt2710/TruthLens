@@ -2,12 +2,26 @@ import {
   batchScoreRequestSchema,
   batchScoreResponseSchema,
   feedbackEventSchema,
+  manualReportOptimizationRequestSchema,
+  manualReportOptimizationResponseSchema,
+  manualReportSuggestionRequestSchema,
+  manualReportSuggestionResponseSchema,
   scoreItemRequestSchema,
   scoreResultSchema,
+  youtubeAuthStatusSchema,
+  youtubeReportRequestSchema,
+  youtubeReportResponseSchema,
   type BatchScoreRequest,
   type FeedbackEvent,
+  type ManualReportOptimizationRequest,
+  type ManualReportOptimizationResponse,
+  type ManualReportSuggestionRequest,
+  type ManualReportSuggestionResponse,
   type ScoreItemRequest,
   type ScoreResult,
+  type YouTubeAuthStatus,
+  type YouTubeReportRequest,
+  type YouTubeReportResponse,
 } from '@truthlens/shared-schemas';
 
 import { createBootstrapScore } from './mockScore';
@@ -15,15 +29,31 @@ import { createBootstrapScore } from './mockScore';
 const API_BASE = 'http://127.0.0.1:8000';
 const scoreCache = new Map<string, ScoreResult>();
 
+type BackgroundOptimizeResponse =
+  | { ok: true; data: ManualReportOptimizationResponse }
+  | { ok: false; error?: string };
+
 export type ModelInfo = {
   mode: string;
   model_version?: string;
   artifact_status?: string;
+  architecture_plan_version?: string;
   available_heads?: string[];
   head_specs?: Array<{
     name: string;
     family: string;
     backend: string;
+  }>;
+  architecture_layers?: Array<{
+    component_id: string;
+    label: string;
+    phase: string;
+    status: string;
+    layer_type: string;
+    family: string;
+    encoder: string;
+    backend: string;
+    runtime_path: string;
   }>;
 };
 
@@ -33,29 +63,33 @@ export type PolicyInfo = {
   feedback_summary?: {
     total_events: number;
     correction_rate: number;
-    top_channels: Array<{
-      channel_name: string;
-      event_count: number;
-      bias: number;
-      report_count: number;
-      dismiss_count: number;
-      mute_count: number;
-    }>;
+    top_channels: FeedbackChannelProfile[];
   };
+};
+
+export type FeedbackChannelProfile = {
+  channel_name: string;
+  event_count: number;
+  bias: number;
+  report_count: number;
+  dismiss_count: number;
+  mute_count: number;
+  transparent_count?: number;
+  moderate_request_count?: number;
+  remove_request_count?: number;
+  scored_item_count?: number;
+  reported_item_count?: number;
+  trust_score?: number;
 };
 
 export type FeedbackSummary = {
   total_events: number;
   correction_rate: number;
-  top_channels: Array<{
-    channel_name: string;
-    event_count: number;
-    bias: number;
-    report_count: number;
-    dismiss_count: number;
-    mute_count: number;
-  }>;
+  channel_profiles?: Record<string, FeedbackChannelProfile>;
+  top_channels: FeedbackChannelProfile[];
 };
+
+export type { YouTubeAuthStatus, YouTubeReportRequest, YouTubeReportResponse };
 
 function cacheKey(item: ScoreItemRequest): string {
   return [
@@ -69,7 +103,9 @@ function cacheKey(item: ScoreItemRequest): string {
   ].join(':');
 }
 
-export async function scoreFeedItem(item: ScoreItemRequest): Promise<ScoreResult> {
+export async function scoreFeedItem(
+  item: ScoreItemRequest,
+): Promise<ScoreResult> {
   const parsedItem = scoreItemRequestSchema.parse(item);
   const key = cacheKey(parsedItem);
   const cached = scoreCache.get(key);
@@ -96,8 +132,12 @@ export async function scoreFeedItem(item: ScoreItemRequest): Promise<ScoreResult
   }
 }
 
-export async function batchScoreFeedItems(items: ScoreItemRequest[]): Promise<Record<string, ScoreResult>> {
-  const parsedRequest = batchScoreRequestSchema.parse({ items }) as BatchScoreRequest;
+export async function batchScoreFeedItems(
+  items: ScoreItemRequest[],
+): Promise<Record<string, ScoreResult>> {
+  const parsedRequest = batchScoreRequestSchema.parse({
+    items,
+  }) as BatchScoreRequest;
   const results: Record<string, ScoreResult> = {};
   const uncachedItems: ScoreItemRequest[] = [];
 
@@ -154,6 +194,71 @@ export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
   }
 }
 
+export async function optimizeManualReportComments(
+  payload: ManualReportOptimizationRequest,
+): Promise<ManualReportOptimizationResponse> {
+  const parsedRequest = manualReportOptimizationRequestSchema.parse(payload);
+  try {
+    const response = await fetch(`${API_BASE}/manual-report/optimize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsedRequest),
+    });
+    if (!response.ok) {
+      let detail = `Manual report optimization failed: ${response.status}`;
+      try {
+        const payload = (await response.json()) as { detail?: string };
+        if (payload.detail) {
+          detail = payload.detail;
+        }
+      } catch {
+        // Fall back to status text only.
+      }
+      throw new Error(detail);
+    }
+    return manualReportOptimizationResponseSchema.parse(await response.json());
+  } catch (error) {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      throw error;
+    }
+
+    const response = (await chrome.runtime.sendMessage({
+      type: 'TRUTHLENS_OPTIMIZE_MANUAL_REPORT',
+      payload: parsedRequest,
+    })) as BackgroundOptimizeResponse | undefined;
+
+    if (!response?.ok) {
+      throw new Error(response?.error ?? 'Manual report optimization failed.');
+    }
+
+    return manualReportOptimizationResponseSchema.parse(response.data);
+  }
+}
+
+export async function suggestManualReportComments(
+  payload: ManualReportSuggestionRequest,
+): Promise<ManualReportSuggestionResponse> {
+  const parsedRequest = manualReportSuggestionRequestSchema.parse(payload);
+  const response = await fetch(`${API_BASE}/manual-report/suggest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(parsedRequest),
+  });
+  if (!response.ok) {
+    let detail = `Manual report suggestions failed: ${response.status}`;
+    try {
+      const payload = (await response.json()) as { detail?: string };
+      if (payload.detail) {
+        detail = payload.detail;
+      }
+    } catch {
+      // Keep the default message when the backend body cannot be parsed.
+    }
+    throw new Error(detail);
+  }
+  return manualReportSuggestionResponseSchema.parse(await response.json());
+}
+
 export async function fetchModelInfo(): Promise<ModelInfo> {
   try {
     const response = await fetch(`${API_BASE}/model-info`);
@@ -162,7 +267,11 @@ export async function fetchModelInfo(): Promise<ModelInfo> {
     }
     return (await response.json()) as ModelInfo;
   } catch {
-    return { mode: 'bootstrap', model_version: 'extension-fallback', artifact_status: 'missing' };
+    return {
+      mode: 'bootstrap',
+      model_version: 'extension-fallback',
+      artifact_status: 'missing',
+    };
   }
 }
 
@@ -205,4 +314,36 @@ export async function fetchFeedbackSummary(): Promise<FeedbackSummary> {
       top_channels: [],
     };
   }
+}
+
+export async function fetchYouTubeAuthStatus(): Promise<YouTubeAuthStatus> {
+  const response = await fetch(`${API_BASE}/youtube/auth/status`);
+  if (!response.ok) {
+    throw new Error(`YouTube auth status request failed: ${response.status}`);
+  }
+  return youtubeAuthStatusSchema.parse(await response.json());
+}
+
+export async function submitYouTubeReport(
+  payload: YouTubeReportRequest,
+): Promise<YouTubeReportResponse> {
+  const parsedRequest = youtubeReportRequestSchema.parse(payload);
+  const response = await fetch(`${API_BASE}/youtube/report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(parsedRequest),
+  });
+  if (!response.ok) {
+    let detail = `YouTube report submission failed: ${response.status}`;
+    try {
+      const payload = (await response.json()) as { detail?: string };
+      if (payload.detail) {
+        detail = payload.detail;
+      }
+    } catch {
+      // Keep the default message when the backend body cannot be parsed.
+    }
+    throw new Error(detail);
+  }
+  return youtubeReportResponseSchema.parse(await response.json());
 }

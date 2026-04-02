@@ -53,7 +53,10 @@ def test_training_and_simulation_generate_artifacts(
     assert "runtime_library_versions" in model_info
     assert "training_library_versions" in model_info
     assert "head_specs" in model_info
+    assert "architecture_layers" in model_info
+    assert "architecture_plan_version" in model_info
     assert model_info["head_specs"][0]["name"] == "text"
+    assert any(layer["component_id"] == "vae-anomaly-head" for layer in model_info["architecture_layers"])
     assert "fusion_profile" in model_info
     assert model_dir.joinpath("model_bundle.pkl").exists()
     assert model_dir.joinpath("model_info.json").exists()
