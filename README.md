@@ -1,6 +1,6 @@
 # TruthLens
 
-TruthLens is a multimodal browser plugin and backend system for detecting, explaining, filtering, and supporting semi-automated reporting of misleading video packaging. The current implementation combines thumbnail, title, metadata, transcript-derived, and channel-history signals with a policy layer that decides whether content should stay untouched, receive a badge, blur, trigger a review prompt, or be hidden locally.
+TruthLens is a multimodal browser plugin and backend system for detecting, explaining, filtering, and supporting semi-automated reporting of misleading video packaging. The current implementation combines thumbnail, title, metadata, transcript-derived, anomaly, and channel-history signals with a policy layer that decides whether content should stay untouched, receive a badge, blur, trigger a review prompt, or be hidden locally.
 
 ## Why TruthLens Exists
 
@@ -21,9 +21,9 @@ That runtime loop is only one part of the system. The repository also contains t
 
 ![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.svg)
 
-The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions.
+The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions. The current visual now distinguishes baseline explicit feature paths from the implemented optional learned paths that can be activated by environment and config.
 
-For AI/ML readers, the diagram now distinguishes the currently shipped layer taxonomy from planned neural extensions. That distinction is deliberate: the current scorer is explicit, feature-driven, and logistic-regression-based, while several deeper neural components remain roadmap items rather than live runtime claims.
+For AI/ML readers, the diagram now distinguishes the currently shipped layer taxonomy from planned neural extensions. That distinction is deliberate: the current scorer is a hybrid stack with explicit engineered features, optional bounded neural encoders, logistic fusion/calibration, and clear fallback behavior, while stronger end-to-end neural components remain roadmap items rather than live runtime claims.
 
 - [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
 - [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
@@ -32,36 +32,41 @@ For AI/ML readers, the diagram now distinguishes the currently shipped layer tax
 
 ## Current Implemented Model
 
-TruthLens currently ships a six-head multimodal scoring stack backed by scikit-learn logistic regression artifacts:
+TruthLens currently ships a seven-head multimodal scoring stack:
 
-- `text`: `title-encoder` using count-vectorizer bigrams over the title surface
-- `vision`: `thumbnail-feature-head` using `vision-v2` thumbnail features
-- `metadata`: `tabular-risk-head` using handcrafted metadata and mismatch features
-- `history`: `temporal-channel-head` using sequence-summary history features
-- `fusion`: `multimodal-fusion-head` combining head probabilities into a unified risk signal
-- `calibration`: `probability-calibration-head` applying Platt-style probability calibration
+- `text`: `title-encoder`
+- `vision`: `thumbnail-feature-head`
+- `metadata`: `tabular-risk-head`
+- `history`: `temporal-channel-head`
+- `anomaly`: `packaging-vae-anomaly-head`
+- `fusion`: `multimodal-fusion-head`
+- `calibration`: `probability-calibration-head`
 
-In more explicit layer terminology, the currently implemented runtime path is:
+The important detail is that the runtime has both baseline explicit feature paths and optional learned encoder paths.
 
-- text representation layer: sparse `CountVectorizer` bigram projection over the title surface
-- vision representation layer: `vision-v2` engineered thumbnail features consumed by a logistic head
-- metadata representation layer: handcrafted tabular feature assembly
-- temporal context layer: sequence-summary aggregation over channel/history inputs
-- classifier heads: per-modality scikit-learn logistic-regression sigmoid heads
-- fusion layer: logistic fusion over head probability stacks
-- calibration layer: Platt-style logistic calibration over the fused probability
+Implemented today:
 
-What the shipped scorer does **not** currently expose as runtime layers:
+- text baseline path: sparse `CountVectorizer` bigrams feeding a scikit-learn logistic text head
+- text learned option: `sentence-transformer` embeddings feeding the same logistic text-head contract
+- vision baseline path: `vision-v2` engineered thumbnail features feeding a logistic vision head
+- vision learned option: `tiny-cnn-thumbnail` feeding the vision score directly when real thumbnail bytes are available at runtime
+- metadata path: handcrafted tabular feature assembly feeding a logistic metadata head
+- history baseline path: sequence-summary channel features feeding a logistic history head
+- history learned option: `lstm-sequence` temporal encoder trained over recent per-channel sequences
+- anomaly path: VAE anomaly scoring over combined thumbnail and metadata packaging features
+- fusion layer: logistic fusion over stacked head probabilities
+- calibration layer: Platt-style logistic calibration over fused probabilities
 
-- no learned embedding layer in the current text scorer
-- no CNN or ViT stack exposed in the current thumbnail scorer
-- no VAE anomaly head in the current shipped runtime path
-- no LSTM / GRU temporal encoder in the current history scorer
-- no LLM inside the scoring classifier itself
+The current implementation is therefore no longer “purely logistic everywhere,” but it is still deliberately auditable. The learned components are narrow, bounded, and optional. They plug into the same explicit output contract instead of replacing the whole system with an opaque end-to-end model.
 
-That last distinction matters because Gemini is present in the system, but only in the human-review path for manual report drafting and wording optimization. It is not the core inference model that produces `risk_score` or `recommended_action`.
+The scoring stack still does **not** claim:
 
-This means the current system should be read as an inspectable probabilistic multimodal stack, not as a deep end-to-end transformer architecture. Feature families, head contributions, fusion behavior, counterfactual summaries, and threshold decisions are all meant to stay auditable.
+- a ViT-based thumbnail encoder
+- a full end-to-end multimodal transformer
+- an LLM inside the scoring classifier
+- autonomous hidden reporting from raw score alone
+
+Gemini remains outside the scoring classifier. It is used in the human-review path for manual report drafting and wording optimization, not for the core `risk_score` path.
 
 The runtime output contract includes:
 
@@ -100,7 +105,9 @@ Model training is blocked until those governance artifacts exist and validate.
 
 The training and evaluation stack then:
 
-- fits the four base heads
+- fits the baseline text, vision, metadata, and history heads
+- optionally resolves and trains learned encoder paths for text, vision, and temporal history when the environment supports them
+- trains the VAE anomaly head over lower-risk packaging examples
 - trains the fusion head on validation-time probability stacks
 - trains the calibration head over fusion output
 - exports model artifacts and model metadata
@@ -121,10 +128,9 @@ This policy layer matters because TruthLens is explicitly not meant to trigger m
 
 Planned next-step model families remain clearly separate from the shipped runtime stack:
 
-- stronger text embedding or transformer encoders
-- stronger CNN / ViT vision encoders
-- the VAE anomaly signal called out in the architecture boundary notes
-- richer temporal encoders such as LSTM-style sequence modeling
+- stronger text encoders beyond the current optional sentence-transformer path
+- stronger CNN / ViT vision encoders beyond the current tiny CNN
+- richer temporal encoders beyond the current optional LSTM sequence path
 - deeper transcript / video understanding
 
 ## Human Review and Reporting
@@ -222,6 +228,10 @@ This runs dataset build, model training, simulation, and API endpoint validation
 
 ### Phase 2: Stronger Context and Personalization
 
+- optional sentence-transformer text path
+- optional tiny-CNN thumbnail path
+- VAE anomaly scoring
+- optional temporal LSTM history path
 - richer multimodal context modeling across thumbnail, description, transcript, and watch-page signals
 - more robust channel-pattern reasoning
 - stronger local personalization and verification/report prompting
@@ -232,5 +242,5 @@ This runs dataset build, model training, simulation, and API endpoint validation
 - cross-platform TruthLens clients
 - Android support
 - richer moderation analytics and reporting surfaces
-- stronger multimodal encoders and deeper video understanding
+- stronger multimodal encoders and deeper video understanding beyond the current optional neural paths
 - more advanced learning loops layered on top of the current explicit policy system

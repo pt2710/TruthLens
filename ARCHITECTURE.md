@@ -40,12 +40,13 @@ The repository is organized as a monorepo with:
 - Channel history is a supporting signal, not a sole verdict.
 - Feedback events must be auditable and versioned.
 - Model training is blocked until dataset governance artifacts are complete.
+- Optional learned encoder paths must degrade safely to explicit fallback paths when dependencies, artifacts, or runtime media bytes are unavailable.
 
 ## V1 / V2 / V3 Boundaries
 
-- V1: data pipelines, first dataset build, baseline models, calibration, FastAPI scoring, extension overlay, blur/hide, feedback capture, simple explanations
-- V2: channel history, VAE anomaly signal, transcript-title mismatch, personalization, replay simulator
-- V3: RL action policy, Bellman optimization, evolutionary search, cross-platform support, moderation-grade analytics
+- V1: data pipelines, first dataset build, baseline explicit-feature models, calibration, FastAPI scoring, extension overlay, blur/hide, feedback capture, simple explanations
+- V2: optional sentence-transformer text path, optional tiny-CNN thumbnail path, optional LSTM history path, VAE anomaly signal, transcript-title mismatch, personalization, replay simulator
+- V3: stronger ViT-scale vision encoders, richer video understanding, RL action policy, Bellman optimization, evolutionary search, cross-platform support, moderation-grade analytics
 
 ## Subagent-Friendly Boundaries
 

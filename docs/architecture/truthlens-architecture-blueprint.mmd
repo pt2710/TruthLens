@@ -10,8 +10,8 @@
   "flowchart": {
     "curve": "linear",
     "htmlLabels": true,
-    "nodeSpacing": 28,
-    "rankSpacing": 42
+    "nodeSpacing": 30,
+    "rankSpacing": 44
   }
 }}%%
 flowchart TB
@@ -69,8 +69,9 @@ subgraph features["3. Feature Extraction"]
   vision_features["Vision-v2 thumbnail features"]
   metadata_features["Handcrafted metadata features"]
   history_features["Sequence-summary history features"]
+  packaging_features["Combined packaging feature matrix"]
 end
-class text_features,vision_features,metadata_features,history_features implemented
+class text_features,vision_features,metadata_features,history_features,packaging_features implemented
 
 title --> text_features
 thumb --> vision_features
@@ -79,58 +80,82 @@ title --> metadata_features
 desc --> metadata_features
 caps --> metadata_features
 channel --> history_features
+vision_features --> packaging_features
+metadata_features --> packaging_features
 
 subgraph taxonomy["4. AI / ML Layer Taxonomy"]
-  text_repr["Current text representation layer<br/>sparse CountVectorizer bigrams<br/>not a learned embedding layer"]
-  vision_repr["Current vision representation layer<br/>vision-v2 engineered thumbnail features<br/>no exposed CNN / ViT stack in the shipped scorer"]
-  metadata_repr["Current metadata representation layer<br/>handcrafted tabular feature assembly"]
-  temporal_repr["Current temporal context layer<br/>sequence-summary aggregation<br/>not an LSTM / GRU layer"]
-  llm_assist["Current LLM-assist layer<br/>Gemini draft suggestion / optimization only<br/>outside the classifier path"]
-  future_text_repr["Future text embedding / transformer encoder"]
-  future_vision_repr["Future CNN / ViT vision encoder"]
-  future_vae["Future VAE anomaly head"]
-  future_temporal_repr["Future LSTM / temporal encoder"]
+  text_sparse["Baseline text representation<br/>CountVectorizer bigrams"]
+  text_embed["Optional text embedding layer<br/>sentence-transformer"]
+  vision_engineered["Baseline vision representation<br/>vision-v2 engineered thumbnail features"]
+  vision_cnn["Optional tiny CNN thumbnail encoder"]
+  metadata_repr["Metadata representation layer<br/>handcrafted tabular assembly"]
+  temporal_summary["Baseline temporal summary layer<br/>sequence-summary aggregation"]
+  temporal_lstm["Optional temporal encoder<br/>LSTM sequence path"]
+  vae_repr["Packaging anomaly encoder<br/>VAE over thumbnail + metadata"]
+  llm_assist["LLM assist layer<br/>Gemini drafting / optimization only"]
+  future_text["Future stronger text transformers"]
+  future_vision["Future ViT-scale thumbnail encoder"]
+  future_video["Future richer video / transcript understanding"]
 end
-class text_repr,vision_repr,metadata_repr,temporal_repr,llm_assist implemented
-class future_text_repr,future_vision_repr,future_vae,future_temporal_repr future
+class text_sparse,text_embed,vision_engineered,vision_cnn,metadata_repr,temporal_summary,temporal_lstm,vae_repr,llm_assist implemented
+class future_text,future_vision,future_video future
 
-text_features --> text_repr
-vision_features --> vision_repr
+text_features --> text_sparse
+text_features --> text_embed
+vision_features --> vision_engineered
+thumb --> vision_cnn
 metadata_features --> metadata_repr
-history_features --> temporal_repr
+history_features --> temporal_summary
+history_features --> temporal_lstm
+packaging_features --> vae_repr
+text_embed -.-> future_text
+vision_cnn -.-> future_vision
+caps -.-> future_video
 
 subgraph model_stack["5. Multimodal Model Stack"]
   trainer["Offline trainer<br/>fit heads, fusion, calibration<br/>export model artifacts"]
-  text_head["Text head<br/>title-encoder<br/>sklearn logistic regression"]
-  vision_head["Vision head<br/>thumbnail-feature-head<br/>sklearn logistic regression"]
-  metadata_head["Metadata head<br/>tabular-risk-head<br/>sklearn logistic regression"]
-  history_head["History head<br/>temporal-channel-head<br/>sklearn logistic regression"]
-  fusion_head["Fusion head<br/>multimodal-fusion-head<br/>sklearn logistic regression"]
-  calibration_head["Calibration head<br/>probability-calibration-head<br/>Platt-style logistic calibration"]
-  model_note["Runtime head note<br/>probability-producing sigmoid classifiers<br/>trained through scikit-learn logistic regression"]
+  text_head_sparse["Text head (baseline)<br/>sklearn logistic regression"]
+  text_head_embed["Text head (optional)<br/>sentence-transformer → logistic regression"]
+  vision_head_engineered["Vision head (baseline)<br/>engineered features → logistic regression"]
+  vision_head_cnn["Vision head (optional)<br/>tiny CNN probability path"]
+  metadata_head["Metadata head<br/>sklearn logistic regression"]
+  history_head_summary["History head (baseline)<br/>summary → logistic regression"]
+  history_head_lstm["History head (optional)<br/>LSTM sequence probability path"]
+  anomaly_head["Anomaly head<br/>VAE reconstruction anomaly"]
+  fusion_head["Fusion head<br/>multimodal logistic fusion"]
+  calibration_head["Calibration head<br/>Platt-style logistic calibration"]
+  model_note["Runtime note<br/>explicit contracts + auditable fallback paths"]
 end
-class trainer,text_head,vision_head,metadata_head,history_head,fusion_head,calibration_head,model_note implemented
+class trainer,text_head_sparse,text_head_embed,vision_head_engineered,vision_head_cnn,metadata_head,history_head_summary,history_head_lstm,anomaly_head,fusion_head,calibration_head,model_note implemented
 
 gate --> trainer
-text_repr --> text_head
-vision_repr --> vision_head
+text_sparse --> text_head_sparse
+text_embed --> text_head_embed
+vision_engineered --> vision_head_engineered
+vision_cnn --> vision_head_cnn
 metadata_repr --> metadata_head
-temporal_repr --> history_head
-trainer --> text_head
-trainer --> vision_head
+temporal_summary --> history_head_summary
+temporal_lstm --> history_head_lstm
+vae_repr --> anomaly_head
+trainer --> text_head_sparse
+trainer --> text_head_embed
+trainer --> vision_head_engineered
+trainer --> vision_head_cnn
 trainer --> metadata_head
-trainer --> history_head
-text_head --> fusion_head
-vision_head --> fusion_head
+trainer --> history_head_summary
+trainer --> history_head_lstm
+trainer --> anomaly_head
+
+text_head_sparse --> fusion_head
+text_head_embed --> fusion_head
+vision_head_engineered --> fusion_head
+vision_head_cnn --> fusion_head
 metadata_head --> fusion_head
-history_head --> fusion_head
+history_head_summary --> fusion_head
+history_head_lstm --> fusion_head
+anomaly_head --> fusion_head
 fusion_head --> calibration_head
 calibration_head --> model_note
-draft -.-> llm_assist
-text_repr -.-> future_text_repr
-vision_repr -.-> future_vision_repr
-vision_repr -.-> future_vae
-temporal_repr -.-> future_temporal_repr
 
 subgraph outputs["6. Inference Output Contract"]
   model_signal["Core model signal<br/>risk_score<br/>confidence<br/>uncertainty"]
@@ -160,14 +185,18 @@ user_bias --> action_map
 action_map --> score_contract
 
 subgraph explain["8. Explanation Layer"]
-  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware explanation adjustments"]
+  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware adjustments"]
 end
 class explainer implemented
 
-text_head --> explainer
-vision_head --> explainer
+text_head_sparse --> explainer
+text_head_embed --> explainer
+vision_head_engineered --> explainer
+vision_head_cnn --> explainer
 metadata_head --> explainer
-history_head --> explainer
+history_head_summary --> explainer
+history_head_lstm --> explainer
+anomaly_head --> explainer
 fusion_head --> explainer
 model_signal --> explainer
 explainer --> score_contract
@@ -189,6 +218,7 @@ prompt_verify --> draft
 draft --> gemini
 gemini --> youtube
 gemini --> local_feedback
+draft --> llm_assist
 
 subgraph loops["10. Feedback / Learning Loops"]
   feedback_store["Feedback event store"]
@@ -243,7 +273,7 @@ end
 class stronger_models,richer_video,cross_platform,android,analytics future
 
 trainer -.-> stronger_models
-explainer -.-> richer_video
+future_video -.-> richer_video
 review -.-> cross_platform
 cross_platform -.-> android
 loops -.-> analytics
