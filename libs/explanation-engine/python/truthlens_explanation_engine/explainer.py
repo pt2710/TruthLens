@@ -179,6 +179,10 @@ def build_explanation(
             "history_top_contributors",
             prefix="Top history contributors",
         )
+        if details is None:
+            history_note = signals.feature_summary.get("history_sequence_note")
+            if isinstance(history_note, str):
+                details = history_note
         _append_evidence(
             evidence,
             "history",

@@ -13,6 +13,15 @@ from .registry import (
     summarize_score_events,
 )
 from .scorer import ModelSignals, describe_model, predict_item_signals
+from .temporal import (
+    CHANNEL_SEQUENCE_FEATURE_NAMES,
+    HistorySequenceArtifacts,
+    temporal_artifacts_from_payload,
+    temporal_artifacts_to_payload,
+    temporal_available,
+    temporal_history_scores_from_artifacts,
+    train_temporal_history_encoder,
+)
 from .vae import (
     PACKAGING_VAE_FEATURE_NAMES,
     PackagingVAEArtifacts,
@@ -26,7 +35,9 @@ from .vae import (
 __all__ = [
     "HEAD_SPEC_VERSION",
     "ARCHITECTURE_PLAN_VERSION",
+    "CHANNEL_SEQUENCE_FEATURE_NAMES",
     "ModelSignals",
+    "HistorySequenceArtifacts",
     "PACKAGING_VAE_FEATURE_NAMES",
     "PackagingVAEArtifacts",
     "append_feedback_event",
@@ -44,6 +55,11 @@ __all__ = [
     "runtime_head_specs",
     "summarize_feedback_events",
     "summarize_score_events",
+    "temporal_artifacts_from_payload",
+    "temporal_artifacts_to_payload",
+    "temporal_available",
+    "temporal_history_scores_from_artifacts",
     "train_packaging_vae",
+    "train_temporal_history_encoder",
     "vae_available",
 ]

@@ -137,13 +137,13 @@
       "component_id": "text-embedding-transformer",
       "label": "Text embedding / transformer encoder",
       "phase": "V2",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "embedding-layer",
       "family": "text-encoder-next",
       "encoder": "sentence-transformer-or-transformer",
       "backend": "torch-transformers",
-      "runtime_path": "future-core-inference",
-      "notes": "Planned replacement or supplement for sparse title projection."
+      "runtime_path": "core-inference",
+      "notes": "Optional sentence-transformer path is implemented; sparse title projection remains the fallback path."
     },
     {
       "component_id": "vision-cnn-vit",
@@ -161,25 +161,25 @@
       "component_id": "vae-anomaly-head",
       "label": "VAE anomaly signal",
       "phase": "V2",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "anomaly-head",
       "family": "thumbnail-or-metadata-vae",
       "encoder": "variational-autoencoder",
       "backend": "torch",
-      "runtime_path": "future-core-inference",
-      "notes": "Planned anomaly-oriented head called out in the architecture boundary notes."
+      "runtime_path": "core-inference",
+      "notes": "Implemented packaging-anomaly head over combined thumbnail and metadata features."
     },
     {
       "component_id": "temporal-lstm-encoder",
       "label": "LSTM temporal encoder",
       "phase": "V2",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "temporal-encoder",
       "family": "channel-history-next",
       "encoder": "lstm-or-gru",
       "backend": "torch",
-      "runtime_path": "future-core-inference",
-      "notes": "Planned richer sequential encoder for channel trajectories and repeated patterns."
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional temporal LSTM path trained on recent channel-item sequences, with summary-derived runtime proxy when explicit sequence history is unavailable."
     },
     {
       "component_id": "rl-action-policy",

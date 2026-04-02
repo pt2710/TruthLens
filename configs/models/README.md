@@ -7,3 +7,5 @@ architecture-layer roadmap belong here.
   components are implemented now versus still planned.
 - `text_encoder.json` configures the requested text representation path and
   fallback behavior for the training/runtime text head.
+- `history_encoder.json` configures the requested temporal history encoder path
+  and fallback behavior for the history head.

@@ -20,6 +20,11 @@ from truthlens_feature_extractors import (
     uppercase_ratio,
 )
 from truthlens_model_serving.registry import load_model_bundle, load_model_info
+from truthlens_model_serving.temporal import (
+    CHANNEL_SEQUENCE_FEATURE_NAMES,
+    temporal_artifacts_from_payload,
+    temporal_history_scores_from_artifacts,
+)
 from truthlens_model_serving.vae import (
     PACKAGING_VAE_FEATURE_NAMES,
     artifacts_from_payload,
@@ -268,6 +273,21 @@ def _text_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, Any])
     return {"actual_encoder": "count-vectorizer-bigrams"}
 
 
+def _history_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, Any]) -> dict[str, Any]:
+    payload = bundle.get("history_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    payload = model_info.get("history_encoder_resolution")
+    if isinstance(payload, dict):
+        return payload
+    return {
+        "actual_encoder": "sequence-summary-v1",
+        "sequence_length": 4,
+        "hidden_dim": 16,
+        "num_layers": 1,
+    }
+
+
 def _text_matrix(payload: ScoreItemRequest, bundle: dict[str, Any], model_info: dict[str, Any]) -> Any:
     resolution = _text_encoder_resolution(bundle, model_info)
     actual_encoder = str(resolution.get("actual_encoder", "count-vectorizer-bigrams"))
@@ -499,6 +519,51 @@ def _history_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[
     ]
 
 
+def _history_sequence_row(
+    payload: ScoreItemRequest,
+    summary: dict[str, Any],
+    *,
+    decay: float,
+) -> list[float]:
+    return [
+        round(float(summary.get("estimated_risk_seed", 0.0)) * decay, 4),
+        round(float(summary.get("transcript_mismatch_score", 0.0)) * decay, 4),
+        round(float(summary.get("token_hits", 0.0)) * decay, 4),
+        round(float(summary.get("repeat_template_rate", 0.0)) * decay, 4),
+        round(float(summary.get("recent_upload_velocity", 0.0)) * decay, 4),
+        round(1.0 + max(float(summary.get("engagement_anomaly", 1.0)) - 1.0, 0.0) * decay, 4),
+        round(float(summary.get("like_ratio", 0.0)) * decay, 4),
+    ]
+
+
+def _history_sequence_from_payload(
+    payload: ScoreItemRequest,
+    summary: dict[str, Any],
+    *,
+    sequence_length: int,
+) -> np.ndarray:
+    history = payload.channel.channel_history_features
+    explicit_rows: list[list[float]] = []
+    for step in range(sequence_length):
+        prefix = f"sequence_step_{step}_"
+        if all(f"{prefix}{feature}" in history for feature in CHANNEL_SEQUENCE_FEATURE_NAMES):
+            explicit_rows.append(
+                [float(history[f"{prefix}{feature}"]) for feature in CHANNEL_SEQUENCE_FEATURE_NAMES]
+            )
+    if explicit_rows:
+        summary["history_sequence_mode"] = "explicit-sequence"
+        rows = explicit_rows[-sequence_length:]
+        return np.asarray(rows, dtype=float).reshape(1, len(rows), len(CHANNEL_SEQUENCE_FEATURE_NAMES))
+
+    rows = []
+    for offset in range(sequence_length):
+        age = sequence_length - offset - 1
+        decay = max(0.25, 1.0 - age * 0.18)
+        rows.append(_history_sequence_row(payload, summary, decay=decay))
+    summary["history_sequence_mode"] = "summary-proxy"
+    return np.asarray(rows, dtype=float).reshape(1, sequence_length, len(CHANNEL_SEQUENCE_FEATURE_NAMES))
+
+
 def _packaging_vector(
     vision_vector: list[float],
     metadata_vector: list[float],
@@ -599,12 +664,19 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     _transcript_mismatch(payload, summary)
     model_info = load_model_info()
     text_resolution = _text_encoder_resolution(bundle, model_info)
+    history_resolution = _history_encoder_resolution(bundle, model_info)
     summary["text_encoder_actual"] = str(text_resolution.get("actual_encoder", "count-vectorizer-bigrams"))
     summary["text_encoder_requested"] = str(
         text_resolution.get("requested_encoder", summary["text_encoder_actual"])
     )
+    summary["history_encoder_actual"] = str(history_resolution.get("actual_encoder", "sequence-summary-v1"))
+    summary["history_encoder_requested"] = str(
+        history_resolution.get("requested_encoder", summary["history_encoder_actual"])
+    )
     if text_resolution.get("fallback_reason"):
         summary["text_encoder_fallback_reason"] = str(text_resolution["fallback_reason"])
+    if history_resolution.get("fallback_reason"):
+        summary["history_encoder_fallback_reason"] = str(history_resolution["fallback_reason"])
 
     bootstrap = _bootstrap_signals(payload)
     try:
@@ -621,11 +693,28 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
         metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
         history_model = bundle.get("history_model")
-        history_score = (
-            _safe_probability(history_model, history_vector)
-            if history_model is not None
-            else bootstrap.history_score
-        )
+        history_score = bootstrap.history_score
+        if summary["history_encoder_actual"] == "lstm-sequence":
+            sequence_payload = bundle.get("history_sequence_artifacts")
+            if isinstance(sequence_payload, dict):
+                history_artifacts = temporal_artifacts_from_payload(sequence_payload)
+                history_sequence = _history_sequence_from_payload(
+                    payload,
+                    summary,
+                    sequence_length=history_artifacts.sequence_length,
+                )
+                history_score = float(
+                    temporal_history_scores_from_artifacts(history_sequence, history_artifacts)[0]
+                )
+                summary["history_sequence_note"] = (
+                    "History score came from a temporal LSTM encoder over channel-sequence features."
+                    if summary.get("history_sequence_mode") == "explicit-sequence"
+                    else "History score came from a temporal LSTM encoder using a summary-derived sequence proxy."
+                )
+            elif history_model is not None:
+                history_score = _safe_probability(history_model, history_vector)
+        elif history_model is not None:
+            history_score = _safe_probability(history_model, history_vector)
         anomaly_payload = bundle.get("packaging_vae_artifacts")
         if isinstance(anomaly_payload, dict):
             anomaly_artifacts = artifacts_from_payload(anomaly_payload)
@@ -670,7 +759,7 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
                 HISTORY_FEATURE_NAMES,
                 history_vector,
             )
-            if history_model is not None
+            if history_model is not None and summary["history_encoder_actual"] != "lstm-sequence"
             else []
         )
         fusion_features = np.asarray(

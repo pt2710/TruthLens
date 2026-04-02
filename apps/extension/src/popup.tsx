@@ -60,6 +60,7 @@ function Popup() {
     (layer) => layer.status === 'planned',
   ).length;
   const textEncoderResolution = modelInfo?.text_encoder_resolution;
+  const historyEncoderResolution = modelInfo?.history_encoder_resolution;
 
   return (
     <main
@@ -181,6 +182,17 @@ function Popup() {
                   : textEncoderResolution.requested_encoder !==
                       textEncoderResolution.actual_encoder
                     ? ` (requested ${textEncoderResolution.requested_encoder})`
+                    : ''}
+              </span>
+            ) : null}
+            {historyEncoderResolution ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                history encoder {historyEncoderResolution.actual_encoder}
+                {historyEncoderResolution.fallback_used
+                  ? ` (fallback from ${historyEncoderResolution.requested_encoder})`
+                  : historyEncoderResolution.requested_encoder !==
+                      historyEncoderResolution.actual_encoder
+                    ? ` (requested ${historyEncoderResolution.requested_encoder})`
                     : ''}
               </span>
             ) : null}

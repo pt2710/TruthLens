@@ -1,0 +1,9 @@
+{
+  "requested_encoder": "lstm-sequence",
+  "fallback_encoder": "sequence-summary-v1",
+  "sequence_length": 4,
+  "hidden_dim": 16,
+  "num_layers": 1,
+  "epochs": 60,
+  "learning_rate": 0.01
+}

@@ -62,6 +62,15 @@ export type ModelInfo = {
     sentence_transformer_model?: string | null;
     fallback_reason?: string | null;
   };
+  history_encoder_resolution?: {
+    requested_encoder: string;
+    actual_encoder: string;
+    fallback_used: boolean;
+    sequence_length: number;
+    hidden_dim: number;
+    num_layers: number;
+    fallback_reason?: string | null;
+  };
 };
 
 export type PolicyInfo = {

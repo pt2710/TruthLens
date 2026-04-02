@@ -18,6 +18,9 @@ from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
 from truthlens_feature_extractors import (
     fallback_text_encoder_resolution,
+    fallback_history_encoder_resolution,
+    history_encoder_resolution_payload,
+    resolve_history_encoder,
     resolve_text_encoder,
     sentence_transformer_matrix,
     text_encoder_resolution_payload,
@@ -29,6 +32,12 @@ from truthlens_model_serving.registry import (
     VISION_FEATURE_VERSION,
     runtime_architecture_layers,
     runtime_head_specs,
+)
+from truthlens_model_serving.temporal import (
+    temporal_artifacts_to_payload,
+    temporal_available,
+    temporal_history_scores_from_artifacts,
+    train_temporal_history_encoder,
 )
 from truthlens_model_serving.vae import (
     artifacts_to_payload,
@@ -110,6 +119,46 @@ def _history_matrix(records: list[dict[str, Any]]) -> np.ndarray:
             ]
         )
     return np.asarray(rows, dtype=float)
+
+
+def _history_sequence_feature_row(record: dict[str, Any]) -> list[float]:
+    metadata = record["metadata"]
+    features = record["features"]
+    history = record["history"]["channel_history_features"]
+    view_count = float(metadata.get("view_count", 0.0))
+    like_count = float(metadata.get("like_count", 0.0))
+    return [
+        float(metadata.get("risk_seed", 0.0)),
+        float(features.get("transcript_mismatch_score", 0.0)),
+        float(features.get("sensational_count", 0.0)),
+        float(history.get("repeat_template_rate", 0.0)),
+        float(history.get("recent_upload_velocity", history.get("publishing_velocity", 0.0))),
+        float(history.get("engagement_anomaly", 1.0)),
+        float(like_count / max(view_count, 1.0)),
+    ]
+
+
+def _history_sequence_tensor(
+    records: list[dict[str, Any]],
+    *,
+    sequence_length: int,
+) -> np.ndarray:
+    channel_groups: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for index, record in enumerate(records):
+        channel_groups.setdefault(record["channel_name"], []).append((index, record))
+    sequences: list[np.ndarray | None] = [None] * len(records)
+    for channel_records in channel_groups.values():
+        ordered = sorted(channel_records, key=lambda item: str(item[1].get("collected_at", "")))
+        feature_rows = [_history_sequence_feature_row(record) for _, record in ordered]
+        feature_dim = len(feature_rows[0]) if feature_rows else 7
+        zero_row = np.zeros(feature_dim, dtype=float)
+        for position, (original_index, _) in enumerate(ordered):
+            window = feature_rows[max(0, position - sequence_length + 1) : position + 1]
+            padded_rows = [zero_row.copy() for _ in range(max(sequence_length - len(window), 0))]
+            padded_rows.extend(np.asarray(row, dtype=float) for row in window)
+            sequences[original_index] = np.asarray(padded_rows, dtype=float)
+    default_sequence = np.zeros((sequence_length, 7), dtype=float)
+    return np.asarray([sequence if sequence is not None else default_sequence for sequence in sequences], dtype=float)
 
 
 def _packaging_matrix(records: list[dict[str, Any]]) -> np.ndarray:
@@ -218,6 +267,46 @@ def main() -> None:
 
     history_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     history_model.fit(_history_matrix(train_records), train_labels)
+    history_encoder_resolution = resolve_history_encoder()
+    history_sequence_artifacts = None
+    train_history_sequences = _history_sequence_tensor(
+        train_records,
+        sequence_length=history_encoder_resolution.sequence_length,
+    )
+    validation_history_sequences = _history_sequence_tensor(
+        validation_records,
+        sequence_length=history_encoder_resolution.sequence_length,
+    )
+    test_history_sequences = _history_sequence_tensor(
+        test_records,
+        sequence_length=history_encoder_resolution.sequence_length,
+    )
+    validation_history_scores = history_model.predict_proba(_history_matrix(validation_records))[:, 1]
+    test_history_scores = history_model.predict_proba(_history_matrix(test_records))[:, 1]
+    if history_encoder_resolution.actual_encoder == "lstm-sequence" and temporal_available():
+        try:
+            temporal_history = train_temporal_history_encoder(
+                train_history_sequences,
+                train_labels,
+                hidden_dim=history_encoder_resolution.hidden_dim,
+                num_layers=history_encoder_resolution.num_layers,
+                epochs=history_encoder_resolution.epochs,
+                learning_rate=history_encoder_resolution.learning_rate,
+            )
+            history_sequence_artifacts = temporal_artifacts_to_payload(temporal_history)
+            validation_history_scores = temporal_history_scores_from_artifacts(
+                validation_history_sequences,
+                temporal_history,
+            )
+            test_history_scores = temporal_history_scores_from_artifacts(
+                test_history_sequences,
+                temporal_history,
+            )
+        except Exception as error:
+            history_encoder_resolution = fallback_history_encoder_resolution(
+                history_encoder_resolution,
+                reason=f"lstm history path failed during training: {error}",
+            )
 
     packaging_vae_artifacts = None
     validation_anomaly_scores = np.zeros(len(validation_records), dtype=float)
@@ -243,7 +332,7 @@ def main() -> None:
             text_model.predict_proba(validation_text)[:, 1],
             vision_model.predict_proba(_vision_matrix(validation_records))[:, 1],
             metadata_model.predict_proba(_metadata_matrix(validation_records))[:, 1],
-            history_model.predict_proba(_history_matrix(validation_records))[:, 1],
+            validation_history_scores,
             validation_anomaly_scores,
         ]
     )
@@ -270,7 +359,6 @@ def main() -> None:
     test_text_scores = text_model.predict_proba(test_text)[:, 1]
     test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
     test_metadata_scores = metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1]
-    test_history_scores = history_model.predict_proba(_history_matrix(test_records))[:, 1]
     test_base_scores = np.column_stack(
         [
             test_text_scores,
@@ -313,9 +401,12 @@ def main() -> None:
         "fusion_model": fusion_model,
         "calibration_model": calibration_model,
         "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
+        "history_encoder_resolution": history_encoder_resolution_payload(history_encoder_resolution),
     }
     if text_vectorizer is not None:
         bundle["text_vectorizer"] = text_vectorizer
+    if history_sequence_artifacts is not None:
+        bundle["history_sequence_artifacts"] = history_sequence_artifacts
     if packaging_vae_artifacts is not None:
         bundle["packaging_vae_artifacts"] = packaging_vae_artifacts
     with (model_dir / "model_bundle.pkl").open("wb") as handle:
@@ -326,10 +417,14 @@ def main() -> None:
         "trained_at": manifest["generated_at"],
         "build_id": manifest["build_id"],
         "head_spec_version": HEAD_SPEC_VERSION,
-        "head_specs": runtime_head_specs(text_encoder_override=text_encoder_resolution.actual_encoder),
+        "head_specs": runtime_head_specs(
+            text_encoder_override=text_encoder_resolution.actual_encoder,
+            history_encoder_override=history_encoder_resolution.actual_encoder,
+        ),
         "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
         "architecture_layers": runtime_architecture_layers(),
         "text_encoder_resolution": text_encoder_resolution_payload(text_encoder_resolution),
+        "history_encoder_resolution": history_encoder_resolution_payload(history_encoder_resolution),
         "training_library_versions": {
             "scikit_learn": sklearn_version,
         },

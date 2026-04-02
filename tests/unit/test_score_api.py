@@ -27,6 +27,7 @@ def test_info_endpoints() -> None:
     assert "architecture_layers" in model_response.json()
     assert "architecture_plan_version" in model_response.json()
     assert "text_encoder_resolution" in model_response.json()
+    assert "history_encoder_resolution" in model_response.json()
 
     assert policy_response.status_code == 200
     assert "effective_thresholds" in policy_response.json()
@@ -331,6 +332,10 @@ def test_model_info_exposes_current_and_planned_architecture_layers() -> None:
     assert any(layer["status"] == "planned" for layer in payload["architecture_layers"])
     assert any(layer["layer_type"] == "llm-assist" for layer in payload["architecture_layers"])
     assert any(head["name"] == "anomaly" for head in payload["head_specs"])
+    assert payload["history_encoder_resolution"]["actual_encoder"] in {
+        "lstm-sequence",
+        "sequence-summary-v1",
+    }
     assert payload["text_encoder_resolution"]["requested_encoder"] in {
         "sentence-transformer",
         "count-vectorizer-bigrams",

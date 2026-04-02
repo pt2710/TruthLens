@@ -16,7 +16,12 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     torch_version = None
 
-from truthlens_feature_extractors import resolve_text_encoder, text_encoder_resolution_payload
+from truthlens_feature_extractors import (
+    history_encoder_resolution_payload,
+    resolve_history_encoder,
+    resolve_text_encoder,
+    text_encoder_resolution_payload,
+)
 
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
@@ -80,11 +85,25 @@ def runtime_architecture_layers() -> list[dict[str, Any]]:
     return [component for component in components if isinstance(component, dict)]
 
 
-def runtime_head_specs(*, text_encoder_override: str | None = None) -> list[dict[str, Any]]:
+def runtime_head_specs(
+    *,
+    text_encoder_override: str | None = None,
+    history_encoder_override: str | None = None,
+) -> list[dict[str, Any]]:
     text_encoder = text_encoder_override or "count-vectorizer-bigrams"
+    history_encoder = history_encoder_override or "sequence-summary-v1"
     text_artifact_keys = ["text_model"]
     if text_encoder == "count-vectorizer-bigrams":
         text_artifact_keys = ["text_vectorizer", "text_model"]
+    history_backend = "sklearn-logistic-regression"
+    history_artifact_keys = ["history_model"]
+    history_supports_attribution = True
+    history_supports_counterfactuals = True
+    if history_encoder == "lstm-sequence":
+        history_backend = "torch-lstm"
+        history_artifact_keys = ["history_sequence_artifacts", "history_model"]
+        history_supports_attribution = False
+        history_supports_counterfactuals = False
     return [
         {
             "name": "text",
@@ -120,11 +139,11 @@ def runtime_head_specs(*, text_encoder_override: str | None = None) -> list[dict
         {
             "name": "history",
             "family": "temporal-channel-head",
-            "backend": "sklearn-logistic-regression",
-            "encoder": "sequence-summary-v1",
-            "artifact_keys": ["history_model"],
-            "supports_attribution": True,
-            "supports_counterfactuals": True,
+            "backend": history_backend,
+            "encoder": history_encoder,
+            "artifact_keys": history_artifact_keys,
+            "supports_attribution": history_supports_attribution,
+            "supports_counterfactuals": history_supports_counterfactuals,
             "supports_sequence": True,
         },
         {
@@ -184,7 +203,14 @@ def _artifact_status(model_info: dict[str, Any]) -> str:
     if trained_head_spec_version != runtime_model_contracts()["head_spec_version"]:
         return "incompatible"
     trained_heads = model_info.get("head_specs", [])
-    runtime_heads = runtime_head_specs()
+    runtime_heads = runtime_head_specs(
+        text_encoder_override=str(
+            model_info.get("text_encoder_resolution", {}).get("actual_encoder", "count-vectorizer-bigrams")
+        ),
+        history_encoder_override=str(
+            model_info.get("history_encoder_resolution", {}).get("actual_encoder", "sequence-summary-v1")
+        ),
+    )
     if not isinstance(trained_heads, list) or len(trained_heads) != len(runtime_heads):
         return "incompatible"
     trained_head_names = [str(head.get("name", "")) for head in trained_heads if isinstance(head, dict)]
@@ -215,16 +241,22 @@ def load_model_bundle() -> dict[str, Any] | None:
 def load_model_info() -> dict[str, Any]:
     info_path = model_dir() / "model_info.json"
     if not info_path.exists():
+        text_resolution = text_encoder_resolution_payload(resolve_text_encoder())
+        history_resolution = history_encoder_resolution_payload(resolve_history_encoder())
         return {
             "mode": "bootstrap",
             "model_version": "bootstrap-v0",
             "trained_at": None,
             "artifact_status": "missing",
-            "head_specs": runtime_head_specs(),
+            "head_specs": runtime_head_specs(
+                text_encoder_override=str(text_resolution.get("actual_encoder", "count-vectorizer-bigrams")),
+                history_encoder_override=str(history_resolution.get("actual_encoder", "sequence-summary-v1")),
+            ),
             "head_spec_version": HEAD_SPEC_VERSION,
             "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
             "architecture_layers": runtime_architecture_layers(),
-            "text_encoder_resolution": text_encoder_resolution_payload(resolve_text_encoder()),
+            "text_encoder_resolution": text_resolution,
+            "history_encoder_resolution": history_resolution,
             "fusion_profile": {
                 "head_weights": {
                     "text": 0.32,
@@ -243,9 +275,14 @@ def load_model_info() -> dict[str, Any]:
     encoder_payload = payload.get("text_encoder_resolution")
     if not isinstance(encoder_payload, dict):
         encoder_payload = text_encoder_resolution_payload(resolve_text_encoder())
+    history_encoder_payload = payload.get("history_encoder_resolution")
+    if not isinstance(history_encoder_payload, dict):
+        history_encoder_payload = history_encoder_resolution_payload(resolve_history_encoder())
     payload["text_encoder_resolution"] = encoder_payload
+    payload["history_encoder_resolution"] = history_encoder_payload
     payload["head_specs"] = runtime_head_specs(
-        text_encoder_override=str(encoder_payload.get("actual_encoder", "count-vectorizer-bigrams"))
+        text_encoder_override=str(encoder_payload.get("actual_encoder", "count-vectorizer-bigrams")),
+        history_encoder_override=str(history_encoder_payload.get("actual_encoder", "sequence-summary-v1")),
     )
     payload["head_spec_version"] = HEAD_SPEC_VERSION
     payload["architecture_plan_version"] = ARCHITECTURE_PLAN_VERSION
