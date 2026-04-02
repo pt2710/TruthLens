@@ -23,6 +23,8 @@ That runtime loop is only one part of the system. The repository also contains t
 
 The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions.
 
+For AI/ML readers, the diagram now distinguishes the currently shipped layer taxonomy from planned neural extensions. That distinction is deliberate: the current scorer is explicit, feature-driven, and logistic-regression-based, while several deeper neural components remain roadmap items rather than live runtime claims.
+
 - [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
 - [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
 - [PNG render](docs/architecture/truthlens-architecture-blueprint.png)
@@ -39,7 +41,27 @@ TruthLens currently ships a six-head multimodal scoring stack backed by scikit-l
 - `fusion`: `multimodal-fusion-head` combining head probabilities into a unified risk signal
 - `calibration`: `probability-calibration-head` applying Platt-style probability calibration
 
-These are probability-producing sigmoid classifiers, not deep end-to-end transformer stacks. That matters because the current system is intentionally explicit and inspectable: feature families, head contributions, fusion behavior, counterfactual summaries, and threshold decisions are all meant to stay auditable.
+In more explicit layer terminology, the currently implemented runtime path is:
+
+- text representation layer: sparse `CountVectorizer` bigram projection over the title surface
+- vision representation layer: `vision-v2` engineered thumbnail features consumed by a logistic head
+- metadata representation layer: handcrafted tabular feature assembly
+- temporal context layer: sequence-summary aggregation over channel/history inputs
+- classifier heads: per-modality scikit-learn logistic-regression sigmoid heads
+- fusion layer: logistic fusion over head probability stacks
+- calibration layer: Platt-style logistic calibration over the fused probability
+
+What the shipped scorer does **not** currently expose as runtime layers:
+
+- no learned embedding layer in the current text scorer
+- no CNN or ViT stack exposed in the current thumbnail scorer
+- no VAE anomaly head in the current shipped runtime path
+- no LSTM / GRU temporal encoder in the current history scorer
+- no LLM inside the scoring classifier itself
+
+That last distinction matters because Gemini is present in the system, but only in the human-review path for manual report drafting and wording optimization. It is not the core inference model that produces `risk_score` or `recommended_action`.
+
+This means the current system should be read as an inspectable probabilistic multimodal stack, not as a deep end-to-end transformer architecture. Feature families, head contributions, fusion behavior, counterfactual summaries, and threshold decisions are all meant to stay auditable.
 
 The runtime output contract includes:
 
@@ -96,6 +118,14 @@ TruthLens also includes a simulation and search layer that is already represente
 - drift reporting
 
 This policy layer matters because TruthLens is explicitly not meant to trigger moderation-like decisions from raw score alone. Runtime actions are policy-gated and context-aware.
+
+Planned next-step model families remain clearly separate from the shipped runtime stack:
+
+- stronger text embedding or transformer encoders
+- stronger CNN / ViT vision encoders
+- the VAE anomaly signal called out in the architecture boundary notes
+- richer temporal encoders such as LSTM-style sequence modeling
+- deeper transcript / video understanding
 
 ## Human Review and Reporting
 

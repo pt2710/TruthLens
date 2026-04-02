@@ -80,7 +80,26 @@ desc --> metadata_features
 caps --> metadata_features
 channel --> history_features
 
-subgraph model_stack["4. Multimodal Model Stack"]
+subgraph taxonomy["4. AI / ML Layer Taxonomy"]
+  text_repr["Current text representation layer<br/>sparse CountVectorizer bigrams<br/>not a learned embedding layer"]
+  vision_repr["Current vision representation layer<br/>vision-v2 engineered thumbnail features<br/>no exposed CNN / ViT stack in the shipped scorer"]
+  metadata_repr["Current metadata representation layer<br/>handcrafted tabular feature assembly"]
+  temporal_repr["Current temporal context layer<br/>sequence-summary aggregation<br/>not an LSTM / GRU layer"]
+  llm_assist["Current LLM-assist layer<br/>Gemini draft suggestion / optimization only<br/>outside the classifier path"]
+  future_text_repr["Future text embedding / transformer encoder"]
+  future_vision_repr["Future CNN / ViT vision encoder"]
+  future_vae["Future VAE anomaly head"]
+  future_temporal_repr["Future LSTM / temporal encoder"]
+end
+class text_repr,vision_repr,metadata_repr,temporal_repr,llm_assist implemented
+class future_text_repr,future_vision_repr,future_vae,future_temporal_repr future
+
+text_features --> text_repr
+vision_features --> vision_repr
+metadata_features --> metadata_repr
+history_features --> temporal_repr
+
+subgraph model_stack["5. Multimodal Model Stack"]
   trainer["Offline trainer<br/>fit heads, fusion, calibration<br/>export model artifacts"]
   text_head["Text head<br/>title-encoder<br/>sklearn logistic regression"]
   vision_head["Vision head<br/>thumbnail-feature-head<br/>sklearn logistic regression"]
@@ -93,10 +112,10 @@ end
 class trainer,text_head,vision_head,metadata_head,history_head,fusion_head,calibration_head,model_note implemented
 
 gate --> trainer
-text_features --> text_head
-vision_features --> vision_head
-metadata_features --> metadata_head
-history_features --> history_head
+text_repr --> text_head
+vision_repr --> vision_head
+metadata_repr --> metadata_head
+temporal_repr --> history_head
 trainer --> text_head
 trainer --> vision_head
 trainer --> metadata_head
@@ -107,8 +126,13 @@ metadata_head --> fusion_head
 history_head --> fusion_head
 fusion_head --> calibration_head
 calibration_head --> model_note
+draft -.-> llm_assist
+text_repr -.-> future_text_repr
+vision_repr -.-> future_vision_repr
+vision_repr -.-> future_vae
+temporal_repr -.-> future_temporal_repr
 
-subgraph outputs["5. Inference Output Contract"]
+subgraph outputs["6. Inference Output Contract"]
   model_signal["Core model signal<br/>risk_score<br/>confidence<br/>uncertainty"]
   score_contract["Final score contract<br/>recommended_action<br/>reasons<br/>explanation_id<br/>explanation_summary<br/>evidence"]
 end
@@ -116,7 +140,7 @@ class model_signal,score_contract contract
 
 calibration_head --> model_signal
 
-subgraph policy["6. Policy + Personalization Layer"]
+subgraph policy["7. Policy + Personalization Layer"]
   base_thresholds["Base thresholds"]
   feedback_bias["Feedback bias"]
   bandit_offsets["Contextual-bandit threshold offsets"]
@@ -135,7 +159,7 @@ channel_bias --> action_map
 user_bias --> action_map
 action_map --> score_contract
 
-subgraph explain["7. Explanation Layer"]
+subgraph explain["8. Explanation Layer"]
   explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware explanation adjustments"]
 end
 class explainer implemented
@@ -148,7 +172,7 @@ fusion_head --> explainer
 model_signal --> explainer
 explainer --> score_contract
 
-subgraph review["8. Human-in-the-Loop Review Layer"]
+subgraph review["9. Human-in-the-Loop Review Layer"]
   prompt_report["Report prompt"]
   prompt_verify["Verify-transparent prompt"]
   draft["Manual report drafting"]
@@ -166,7 +190,7 @@ draft --> gemini
 gemini --> youtube
 gemini --> local_feedback
 
-subgraph loops["9. Feedback / Learning Loops"]
+subgraph loops["10. Feedback / Learning Loops"]
   feedback_store["Feedback event store"]
   score_store["Score event store"]
   channel_profiles["Channel profile aggregation"]
@@ -182,7 +206,7 @@ channel_profiles --> threshold_inputs
 channel_profiles --> channel_bias
 threshold_inputs --> feedback_bias
 
-subgraph evaluation["10. Evaluation / Simulation / Search"]
+subgraph evaluation["11. Evaluation / Simulation / Search"]
   threshold_sweep["Threshold sweep"]
   qtable["Q-table build"]
   policy_derivation["Policy derivation"]
@@ -209,7 +233,7 @@ evolution --> base_thresholds
 bandit --> bandit_offsets
 drift --> trainer
 
-subgraph future_stack["11. Future Extensions"]
+subgraph future_stack["12. Future Extensions"]
   stronger_models["Stronger multimodal encoders"]
   richer_video["Richer transcript / video understanding"]
   cross_platform["Cross-platform clients"]
