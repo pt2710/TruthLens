@@ -248,8 +248,22 @@ def build_explanation(
             score=signals.calibrated_score,
             details=counterfactual,
         )
+    runtime_policy_note = signals.feature_summary.get("runtime_policy_note")
+    if isinstance(runtime_policy_note, str) and runtime_policy_note:
+        reasons.append(runtime_policy_note)
+        _append_evidence(
+            evidence,
+            "policy",
+            "Runtime RL policy override",
+            score=signals.calibrated_score,
+            details=runtime_policy_note,
+        )
     if action == RecommendedAction.ASK_REPORT:
-        reason = f"Risk score crossed the report-prompt threshold at {thresholds['report_prompt_threshold']:.2f}."
+        reason = (
+            runtime_policy_note
+            if isinstance(runtime_policy_note, str) and runtime_policy_note
+            else f"Risk score crossed the report-prompt threshold at {thresholds['report_prompt_threshold']:.2f}."
+        )
         reasons.append(reason)
         details = _contributor_details(
             signals.feature_summary,
@@ -259,12 +273,18 @@ def build_explanation(
         _append_evidence(
             evidence,
             "policy",
-            "Policy crossed the report threshold",
+            "Runtime RL policy requested manual report"
+            if isinstance(runtime_policy_note, str) and runtime_policy_note
+            else "Policy crossed the report threshold",
             score=signals.calibrated_score,
             details=counterfactual or details or reason,
         )
     if action == RecommendedAction.HIDE:
-        reason = "Risk and confidence crossed the local hide threshold for feed filtering."
+        reason = (
+            runtime_policy_note
+            if isinstance(runtime_policy_note, str) and runtime_policy_note
+            else "Risk and confidence crossed the local hide threshold for feed filtering."
+        )
         reasons.append(reason)
         details = _contributor_details(
             signals.feature_summary,
@@ -274,7 +294,9 @@ def build_explanation(
         _append_evidence(
             evidence,
             "policy",
-            "Policy crossed the local hide threshold",
+            "Runtime RL policy selected local hide"
+            if isinstance(runtime_policy_note, str) and runtime_policy_note
+            else "Policy crossed the local hide threshold",
             score=signals.calibrated_score,
             details=counterfactual or details or reason,
         )

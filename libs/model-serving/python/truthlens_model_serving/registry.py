@@ -15,6 +15,10 @@ try:
     from torch import __version__ as torch_version
 except ImportError:  # pragma: no cover - optional dependency
     torch_version = None
+try:
+    from transformers import __version__ as transformers_version
+except ImportError:  # pragma: no cover - optional dependency
+    transformers_version = None
 
 from truthlens_feature_extractors import (
     history_encoder_resolution_payload,
@@ -73,6 +77,8 @@ def runtime_library_versions() -> dict[str, str]:
     }
     if torch_version is not None:
         payload["torch"] = str(torch_version)
+    if transformers_version is not None:
+        payload["transformers"] = str(transformers_version)
     return payload
 
 
@@ -105,6 +111,11 @@ def runtime_head_specs(
     vision_supports_counterfactuals = True
     if vision_encoder == "tiny-cnn-thumbnail":
         vision_backend = "torch-cnn"
+        vision_artifact_keys = ["vision_encoder_artifacts", "vision_model"]
+        vision_supports_attribution = False
+        vision_supports_counterfactuals = False
+    elif vision_encoder == "vision-transformer":
+        vision_backend = "torch-transformers"
         vision_artifact_keys = ["vision_encoder_artifacts", "vision_model"]
         vision_supports_attribution = False
         vision_supports_counterfactuals = False
@@ -220,6 +231,9 @@ def _artifact_status(model_info: dict[str, Any]) -> str:
         text_encoder_override=str(
             model_info.get("text_encoder_resolution", {}).get("actual_encoder", "count-vectorizer-bigrams")
         ),
+        vision_encoder_override=str(
+            model_info.get("vision_encoder_resolution", {}).get("actual_encoder", VISION_FEATURE_VERSION)
+        ),
         history_encoder_override=str(
             model_info.get("history_encoder_resolution", {}).get("actual_encoder", "sequence-summary-v1")
         ),
@@ -300,6 +314,12 @@ def load_model_info() -> dict[str, Any]:
             "image_size": 32,
             "conv_channels": [8, 16],
             "hidden_dim": 32,
+            "patch_size": 8,
+            "transformer_hidden_size": 64,
+            "transformer_num_hidden_layers": 2,
+            "transformer_num_attention_heads": 4,
+            "transformer_intermediate_size": 128,
+            "transformer_pooling": "cls",
             "epochs": 0,
             "learning_rate": 0.0,
             "fallback_reason": "trained artifact predates explicit vision encoder metadata",

@@ -23,7 +23,11 @@ Current implemented optional neural paths that should now appear in the blueprin
 
 - sentence-transformer text embeddings
 - tiny CNN thumbnail encoder
+- ViT thumbnail encoder
 - VAE packaging-anomaly head
 - temporal LSTM history encoder
+- feature-flagged runtime RL action policy
+- cross-platform mobile review contract
+- Android Jetpack Compose companion/share client
 
-The blueprint should continue to keep those separate from still-planned extensions such as ViT-scale vision encoders, stronger end-to-end multimodal stacks, and cross-platform clients.
+The blueprint should continue to keep those separate from still-planned extensions such as richer end-to-end multimodal stacks, deeper transcript/video understanding, and broader cross-platform expansion beyond the current Android companion scope.

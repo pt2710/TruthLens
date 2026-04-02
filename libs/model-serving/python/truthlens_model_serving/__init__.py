@@ -34,10 +34,12 @@ from .vae import (
 from .vision import (
     VisionEncoderArtifacts,
     thumbnail_scores_from_artifacts,
+    train_vision_transformer_encoder,
     train_tiny_thumbnail_encoder,
     vision_artifacts_from_payload,
     vision_artifacts_to_payload,
     vision_available,
+    vision_transformer_available,
 )
 
 __all__ = [
@@ -71,9 +73,11 @@ __all__ = [
     "thumbnail_scores_from_artifacts",
     "train_packaging_vae",
     "train_temporal_history_encoder",
+    "train_vision_transformer_encoder",
     "train_tiny_thumbnail_encoder",
     "vae_available",
     "vision_artifacts_from_payload",
     "vision_artifacts_to_payload",
     "vision_available",
+    "vision_transformer_available",
 ]

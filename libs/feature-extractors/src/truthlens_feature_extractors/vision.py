@@ -22,6 +22,12 @@ DEFAULT_VISION_ENCODER_CONFIG = {
     "hidden_dim": 32,
     "epochs": 18,
     "learning_rate": 0.003,
+    "patch_size": 8,
+    "transformer_hidden_size": 64,
+    "transformer_num_hidden_layers": 2,
+    "transformer_num_attention_heads": 4,
+    "transformer_intermediate_size": 128,
+    "transformer_pooling": "cls",
 }
 
 
@@ -53,6 +59,12 @@ class VisionEncoderResolution:
     hidden_dim: int
     epochs: int
     learning_rate: float
+    patch_size: int
+    transformer_hidden_size: int
+    transformer_num_hidden_layers: int
+    transformer_num_attention_heads: int
+    transformer_intermediate_size: int
+    transformer_pooling: str
     fallback_reason: str | None = None
 
 
@@ -71,6 +83,10 @@ def vision_stack_available() -> bool:
     return importlib.util.find_spec("torch") is not None and Image is not None
 
 
+def vision_transformer_available() -> bool:
+    return vision_stack_available() and importlib.util.find_spec("transformers") is not None
+
+
 def resolve_vision_encoder() -> VisionEncoderResolution:
     config = load_vision_encoder_config()
     requested_encoder = str(config.get("requested_encoder", "vision-v2")).strip()
@@ -80,32 +96,14 @@ def resolve_vision_encoder() -> VisionEncoderResolution:
     hidden_dim = int(config.get("hidden_dim", 32))
     epochs = int(config.get("epochs", 18))
     learning_rate = float(config.get("learning_rate", 0.003))
+    patch_size = int(config.get("patch_size", 8))
+    transformer_hidden_size = int(config.get("transformer_hidden_size", 64))
+    transformer_num_hidden_layers = int(config.get("transformer_num_hidden_layers", 2))
+    transformer_num_attention_heads = int(config.get("transformer_num_attention_heads", 4))
+    transformer_intermediate_size = int(config.get("transformer_intermediate_size", 128))
+    transformer_pooling = str(config.get("transformer_pooling", "cls")).strip() or "cls"
 
-    if requested_encoder == "tiny-cnn-thumbnail":
-        if vision_stack_available():
-            return VisionEncoderResolution(
-                requested_encoder=requested_encoder,
-                actual_encoder="tiny-cnn-thumbnail",
-                fallback_used=False,
-                image_size=image_size,
-                conv_channels=conv_channels,
-                hidden_dim=hidden_dim,
-                epochs=epochs,
-                learning_rate=learning_rate,
-            )
-        return VisionEncoderResolution(
-            requested_encoder=requested_encoder,
-            actual_encoder=fallback_encoder,
-            fallback_used=True,
-            image_size=image_size,
-            conv_channels=conv_channels,
-            hidden_dim=hidden_dim,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            fallback_reason="torch or Pillow is not installed in the active environment",
-        )
-
-    return VisionEncoderResolution(
+    resolution = VisionEncoderResolution(
         requested_encoder=requested_encoder,
         actual_encoder=requested_encoder,
         fallback_used=False,
@@ -114,7 +112,39 @@ def resolve_vision_encoder() -> VisionEncoderResolution:
         hidden_dim=hidden_dim,
         epochs=epochs,
         learning_rate=learning_rate,
+        patch_size=patch_size,
+        transformer_hidden_size=transformer_hidden_size,
+        transformer_num_hidden_layers=transformer_num_hidden_layers,
+        transformer_num_attention_heads=transformer_num_attention_heads,
+        transformer_intermediate_size=transformer_intermediate_size,
+        transformer_pooling=transformer_pooling,
     )
+
+    if requested_encoder == "vision-transformer":
+        if vision_transformer_available():
+            return resolution
+        if vision_stack_available():
+            return fallback_vision_encoder_resolution(
+                resolution,
+                reason="transformers is not installed in the active environment",
+                fallback_encoder="tiny-cnn-thumbnail",
+            )
+        return fallback_vision_encoder_resolution(
+            resolution,
+            reason="torch, transformers, or Pillow is not installed in the active environment",
+            fallback_encoder=fallback_encoder,
+        )
+
+    if requested_encoder == "tiny-cnn-thumbnail":
+        if vision_stack_available():
+            return resolution
+        return fallback_vision_encoder_resolution(
+            resolution,
+            reason="torch or Pillow is not installed in the active environment",
+            fallback_encoder=fallback_encoder,
+        )
+
+    return resolution
 
 
 def fallback_vision_encoder_resolution(
@@ -132,6 +162,12 @@ def fallback_vision_encoder_resolution(
         hidden_dim=resolution.hidden_dim,
         epochs=resolution.epochs,
         learning_rate=resolution.learning_rate,
+        patch_size=resolution.patch_size,
+        transformer_hidden_size=resolution.transformer_hidden_size,
+        transformer_num_hidden_layers=resolution.transformer_num_hidden_layers,
+        transformer_num_attention_heads=resolution.transformer_num_attention_heads,
+        transformer_intermediate_size=resolution.transformer_intermediate_size,
+        transformer_pooling=resolution.transformer_pooling,
         fallback_reason=reason,
     )
 

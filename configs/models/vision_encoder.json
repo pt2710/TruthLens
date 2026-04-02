@@ -1,9 +1,15 @@
 {
-  "requested_encoder": "tiny-cnn-thumbnail",
+  "requested_encoder": "vision-transformer",
   "fallback_encoder": "vision-v2",
   "image_size": 32,
   "conv_channels": [8, 16],
   "hidden_dim": 32,
-  "epochs": 18,
-  "learning_rate": 0.003
+  "epochs": 14,
+  "learning_rate": 0.002,
+  "patch_size": 8,
+  "transformer_hidden_size": 64,
+  "transformer_num_hidden_layers": 2,
+  "transformer_num_attention_heads": 4,
+  "transformer_intermediate_size": 128,
+  "transformer_pooling": "cls"
 }

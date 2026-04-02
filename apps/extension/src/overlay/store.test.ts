@@ -23,7 +23,10 @@ describe('overlay store', () => {
       flaggedCount: 0,
       lastScore: null,
       scoresByItemId: {},
+      manualReportTarget: null,
       recordScore: useOverlayStore.getState().recordScore,
+      openManualReport: useOverlayStore.getState().openManualReport,
+      closeManualReport: useOverlayStore.getState().closeManualReport,
     });
   });
 
@@ -38,5 +41,28 @@ describe('overlay store', () => {
     expect(state.itemCount).toBe(2);
     expect(state.flaggedCount).toBe(1);
     expect(state.lastScore?.recommended_action).toBe('blur');
+  });
+
+  it('opens and closes the manual report target', () => {
+    const { openManualReport, closeManualReport } = useOverlayStore.getState();
+
+    openManualReport({
+      itemId: 'item-3',
+      workflowMode: 'report',
+      title: 'Secret lab leak exposed in new footage',
+      channelName: 'Signal Watch Europe',
+      channelUrl: 'https://www.youtube.com/@signalwatcheurope',
+      linkUrl: 'https://www.youtube.com/watch?v=item-3',
+      thumbnailRef: 'https://example.com/thumb-3.jpg',
+      descriptionSnapshot: 'Metadata snippet referencing the claimed leak.',
+      transcriptExcerpt: 'Short transcript excerpt with vague claims.',
+      score: score('ask-report'),
+    });
+
+    expect(useOverlayStore.getState().manualReportTarget?.itemId).toBe('item-3');
+
+    closeManualReport();
+
+    expect(useOverlayStore.getState().manualReportTarget).toBeNull();
   });
 });

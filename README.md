@@ -1,6 +1,6 @@
 # TruthLens
 
-TruthLens is a multimodal browser plugin and backend system for detecting, explaining, filtering, and supporting semi-automated reporting of misleading video packaging. The current implementation combines thumbnail, title, metadata, transcript-derived, anomaly, and channel-history signals with a policy layer that decides whether content should stay untouched, receive a badge, blur, trigger a review prompt, or be hidden locally.
+TruthLens is a multimodal browser plugin, backend system, and Android companion client for detecting, explaining, filtering, and supporting semi-automated review of misleading video packaging. The current implementation combines thumbnail, title, metadata, transcript-derived, anomaly, and channel-history signals with a policy layer that decides whether content should stay untouched, receive a badge, blur, trigger a review prompt, or be hidden locally.
 
 ## Why TruthLens Exists
 
@@ -13,15 +13,15 @@ TruthLens exists to make that packaging legible. The project is designed around 
 
 ## How TruthLens Works
 
-At runtime, the extension observes YouTube feed cards and watch-page context, extracts available title, thumbnail, metadata, transcript, channel, and user-preference signals, and sends them through the local scoring stack. The model layer produces calibrated risk, confidence, and uncertainty estimates. A policy layer then applies thresholds, feedback bias, channel bias, contextual-bandit offsets, and user personalization to decide the recommended action.
+At runtime, TruthLens can operate from two primary entry surfaces: the browser extension watching YouTube feed/watch-page context, and the Android companion app receiving shared YouTube URLs. Both surfaces resolve the same normalized watch context, extract available title, thumbnail, metadata, transcript, channel, and user-preference signals, and send them through the local scoring stack. The model layer produces calibrated risk, confidence, and uncertainty estimates. A policy layer then applies thresholds, feedback bias, channel bias, contextual-bandit offsets, and user personalization to decide the recommended action.
 
-That runtime loop is only one part of the system. The repository also contains the offline data-build, training, evaluation, and simulation stack that produces model artifacts, threshold profiles, drift reports, and replay-search outputs. Human feedback closes the loop through report/verify flows, score event logging, feedback event logging, channel profile aggregation, and later threshold adaptation.
+That runtime loop is only one part of the system. The repository also contains the offline data-build, training, evaluation, and simulation stack that produces model artifacts, threshold profiles, RL policy artifacts, drift reports, and replay-search outputs. Human feedback closes the loop through report/verify flows, score event logging, feedback event logging, channel profile aggregation, and later threshold adaptation.
 
 ## Architecture Blueprint
 
 ![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.svg)
 
-The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions. The current visual now distinguishes baseline explicit feature paths from the implemented optional learned paths that can be activated by environment and config.
+The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions. The current visual distinguishes baseline explicit feature paths from the implemented optional learned paths, and it now also shows the feature-flagged runtime RL policy plus the cross-platform mobile contract and Android companion client.
 
 For AI/ML readers, the diagram now distinguishes the currently shipped layer taxonomy from planned neural extensions. That distinction is deliberate: the current scorer is a hybrid stack with explicit engineered features, optional bounded neural encoders, logistic fusion/calibration, and clear fallback behavior, while stronger end-to-end neural components remain roadmap items rather than live runtime claims.
 
@@ -49,7 +49,9 @@ Implemented today:
 - text baseline path: sparse `CountVectorizer` bigrams feeding a scikit-learn logistic text head
 - text learned option: `sentence-transformer` embeddings feeding the same logistic text-head contract
 - vision baseline path: `vision-v2` engineered thumbnail features feeding a logistic vision head
-- vision learned option: `tiny-cnn-thumbnail` feeding the vision score directly when real thumbnail bytes are available at runtime
+- vision learned options:
+  - `tiny-cnn-thumbnail` for a lightweight learned thumbnail path
+  - `vision-transformer` for an optional ViT thumbnail encoder that takes priority when compatible artifacts are present
 - metadata path: handcrafted tabular feature assembly feeding a logistic metadata head
 - history baseline path: sequence-summary channel features feeding a logistic history head
 - history learned option: `lstm-sequence` temporal encoder trained over recent per-channel sequences
@@ -61,7 +63,6 @@ The current implementation is therefore no longer “purely logistic everywhere,
 
 The scoring stack still does **not** claim:
 
-- a ViT-based thumbnail encoder
 - a full end-to-end multimodal transformer
 - an LLM inside the scoring classifier
 - autonomous hidden reporting from raw score alone
@@ -124,6 +125,14 @@ TruthLens also includes a simulation and search layer that is already represente
 - contextual bandit threshold adjustments
 - drift reporting
 
+Those artifacts now feed a feature-flagged runtime action policy with three explicit modes:
+
+- `threshold-default`
+- `rl-shadow`
+- `rl-live`
+
+`rl-shadow` computes the RL recommendation and tracks divergences without changing the user-facing action. `rl-live` only takes over when compatible artifacts exist and guardrails pass for confidence, uncertainty, runtime inputs, and artifact freshness. If any guardrail fails, the runtime falls back to the threshold policy automatically.
+
 This policy layer matters because TruthLens is explicitly not meant to trigger moderation-like decisions from raw score alone. Runtime actions are policy-gated and context-aware.
 
 Planned next-step model families remain clearly separate from the shipped runtime stack:
@@ -142,6 +151,8 @@ Today that means:
 - manual report suggestions with Gemini plus local heuristic fallback
 - transparent/non-clickbait verification flows
 - explainable report prompts and verify prompts in the extension
+- shared mobile review sessions exposed by `/mobile/analyze-share`
+- Android share-intake and manual URL analysis through the same backend contract
 - YouTube reporting support where the platform and account state allow it
 - structured local feedback capture for both negative and positive signals
 
@@ -156,7 +167,7 @@ The boundary is intentional:
 TruthLens is a monorepo organized around clear subsystem boundaries:
 
 - `apps/`
-  - runnable surfaces such as the API, extension, trainer, and labeling UI
+  - runnable surfaces such as the API, extension, Android companion app, trainer, and labeling UI
 - `libs/`
   - shared schemas, feature extraction, model serving, explanation, policy, evaluation, governance, and data pipeline logic
 - `configs/`
@@ -207,6 +218,10 @@ pnpm build
 pnpm docs:render-architecture
 ```
 
+### Android
+
+Open [apps/android-client](/C:/Users/PT-Xb/.codex/worktrees/3a13/TruthLens/apps/android-client) in Android Studio and run the `app` target as a standard Jetpack Compose application. The default emulator-friendly API base URL is `http://10.0.2.2:8000/`, so the backend should be running locally before you test share-intake or manual URL analysis.
+
 ### Smoke Validation
 
 ```powershell
@@ -237,10 +252,17 @@ This runs dataset build, model training, simulation, and API endpoint validation
 - stronger local personalization and verification/report prompting
 - better handling of domain-specific content types such as music, synthetic spam, and recurring template channels
 
-### Phase 3: Cross-Platform and Deeper Moderation Analytics
+### Phase 3: Cross-Platform Runtime Completion
 
-- cross-platform TruthLens clients
-- Android support
-- richer moderation analytics and reporting surfaces
-- stronger multimodal encoders and deeper video understanding beyond the current optional neural paths
+- optional ViT thumbnail encoder with runtime priority over the tiny CNN and engineered fallback
+- feature-flagged `threshold-default`, `rl-shadow`, and `rl-live` action policy modes
+- cross-platform review-session contract and `/mobile/analyze-share`
+- native Android Jetpack Compose companion/share client with local settings and history
+
+### Phase 4: Next Expansion
+
+- stronger end-to-end multimodal encoders beyond the current bounded optional paths
+- richer transcript and video understanding
+- deeper moderation analytics and operator tooling
 - more advanced learning loops layered on top of the current explicit policy system
+- broader cross-platform expansion beyond the current Android companion scope

@@ -1,20 +1,10 @@
-.truthlens-panel {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 2147483647;
-  width: 220px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(10, 17, 29, 0.92);
-  color: #f2f5f8;
-  font-family: "Segoe UI", sans-serif;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
-}
-
 .truthlens-card-flag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
   display: inline-flex;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 4px 8px;
   border-radius: 999px;
   background: #ffdd57;
@@ -23,19 +13,90 @@
   font-weight: 700;
 }
 
+.truthlens-review-prompt {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+}
+
+.truthlens-review-prompt-report {
+  background: #8a3a14;
+  color: #fff7ef;
+}
+
+.truthlens-review-prompt-verify-transparent {
+  background: #0d4b26;
+  color: #f4fff6;
+}
+
+.truthlens-card-flag-high {
+  background: #b7f0c5;
+  color: #0d4b26;
+}
+
+.truthlens-card-flag-medium {
+  background: #ffdd57;
+  color: #352600;
+}
+
+.truthlens-card-flag-low {
+  background: #ffb0a8;
+  color: #7a1208;
+}
+
+.truthlens-card-flag-boosted {
+  box-shadow: 0 0 0 1px rgba(13, 75, 38, 0.14);
+}
+
+.truthlens-card-flag-steady {
+  box-shadow: 0 0 0 1px rgba(53, 38, 0, 0.1);
+}
+
+.truthlens-card-flag-downranked {
+  box-shadow: 0 0 0 1px rgba(122, 18, 8, 0.12);
+}
+
+.truthlens-card-boosted,
+.truthlens-card-steady,
+.truthlens-card-downranked {
+  position: relative;
+  transition:
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.truthlens-card-boosted {
+  box-shadow:
+    0 14px 30px rgba(16, 124, 65, 0.12),
+    0 0 0 1px rgba(16, 124, 65, 0.08);
+}
+
+.truthlens-card-steady {
+  box-shadow: 0 0 0 1px rgba(18, 37, 63, 0.12);
+}
+
+.truthlens-card-downranked {
+  box-shadow:
+    0 10px 24px rgba(168, 42, 24, 0.08),
+    0 0 0 1px rgba(168, 42, 24, 0.06);
+  opacity: 0.82;
+}
+
 .truthlens-card-blur img {
   filter: blur(12px);
 }
 
 .truthlens-card-hidden {
-  display: none !important;
-}
-
-.truthlens-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .truthlens-action-button {
@@ -76,4 +137,338 @@
 
 .truthlens-evidence-list li + li {
   margin-top: 4px;
+}
+
+.truthlens-report-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 12, 21, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.truthlens-report-card {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border-radius: 20px;
+  background: #f4efe4;
+  color: #142031;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+  font-family: "Segoe UI", sans-serif;
+}
+
+.truthlens-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.truthlens-report-header h2 {
+  margin: 4px 0 6px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.truthlens-report-kicker,
+.truthlens-report-channel,
+.truthlens-report-intro,
+.truthlens-preview-label,
+.truthlens-preview-meta,
+.truthlens-status {
+  margin: 0;
+}
+
+.truthlens-report-kicker {
+  color: #8a3a14;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.truthlens-report-channel,
+.truthlens-report-intro,
+.truthlens-preview-meta {
+  color: #4f5f73;
+}
+
+.truthlens-report-intro {
+  margin-top: 14px;
+}
+
+.truthlens-close-button,
+.truthlens-primary-button,
+.truthlens-secondary-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.truthlens-close-button,
+.truthlens-secondary-button {
+  background: #d9dfd5;
+  color: #142031;
+}
+
+.truthlens-primary-button {
+  background: #8a3a14;
+  color: #fff7ef;
+}
+
+.truthlens-primary-button:disabled,
+.truthlens-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.truthlens-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.truthlens-issue-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(20, 32, 49, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.truthlens-issue-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.truthlens-issue-comment {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid rgba(20, 32, 49, 0.18);
+  border-radius: 12px;
+  background: #fffdf9;
+  color: #142031;
+  font: inherit;
+}
+
+.truthlens-optimize-choice {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.truthlens-optimize-choice legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.truthlens-optimize-choice label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.truthlens-report-preview {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(20, 32, 49, 0.08);
+}
+
+.truthlens-platform-status {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(20, 32, 49, 0.08);
+}
+
+.truthlens-live-status {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(20, 32, 49, 0.08);
+}
+
+.truthlens-live-status-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.truthlens-live-status-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #304154;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.truthlens-live-status-item-success {
+  background: rgba(34, 114, 79, 0.12);
+  color: #225f42;
+}
+
+.truthlens-live-status-item-error {
+  background: rgba(168, 42, 24, 0.12);
+  color: #8a1d10;
+}
+
+.truthlens-preview-label {
+  margin-bottom: 8px;
+  color: #8a3a14;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.truthlens-preview-section + .truthlens-preview-section {
+  margin-top: 14px;
+}
+
+.truthlens-preview-section-title,
+.truthlens-preview-title,
+.truthlens-preview-channel,
+.truthlens-preview-empty,
+.truthlens-preview-issue-label,
+.truthlens-preview-issue-comment,
+.truthlens-preview-text {
+  margin: 0;
+}
+
+.truthlens-preview-section-title {
+  margin-bottom: 6px;
+  color: #4f5f73;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.truthlens-preview-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.truthlens-preview-channel,
+.truthlens-preview-empty {
+  color: #4f5f73;
+}
+
+.truthlens-preview-issue-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.truthlens-preview-issue-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.truthlens-preview-issue-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.truthlens-preview-issue-comment {
+  margin-top: 4px;
+  color: #304154;
+  line-height: 1.45;
+}
+
+.truthlens-preview-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #142031;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.truthlens-preview-meta {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.truthlens-platform-message {
+  margin: 0;
+  color: #304154;
+  line-height: 1.5;
+}
+
+.truthlens-platform-status .truthlens-secondary-button {
+  margin-top: 10px;
+}
+
+.truthlens-status {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.truthlens-status-error {
+  background: rgba(168, 42, 24, 0.12);
+  color: #8a1d10;
+}
+
+.truthlens-status-success {
+  background: rgba(34, 114, 79, 0.12);
+  color: #225f42;
+}
+
+.truthlens-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .truthlens-report-card {
+    padding: 16px;
+  }
+
+  .truthlens-report-header {
+    flex-direction: column;
+  }
+
+  .truthlens-report-actions {
+    flex-direction: column-reverse;
+  }
+
+  .truthlens-primary-button,
+  .truthlens-secondary-button,
+  .truthlens-close-button {
+    width: 100%;
+  }
 }

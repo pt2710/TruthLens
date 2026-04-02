@@ -25,6 +25,7 @@ from .vision import (
     thumbnail_array_from_path,
     vision_encoder_resolution_payload,
     vision_stack_available,
+    vision_transformer_available,
 )
 from .text import (
     SENSATIONAL_TOKENS,
@@ -65,4 +66,5 @@ __all__ = [
     "uppercase_ratio",
     "vision_encoder_resolution_payload",
     "vision_stack_available",
+    "vision_transformer_available",
 ]

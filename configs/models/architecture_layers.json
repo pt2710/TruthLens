@@ -23,7 +23,7 @@
       "encoder": "vision-v2",
       "backend": "scikit-learn",
       "runtime_path": "core-inference",
-      "notes": "Handcrafted thumbnail feature extraction; no exposed CNN or ViT stack in the shipped scorer."
+      "notes": "Handcrafted thumbnail feature extraction remains the explicit baseline representation and safe fallback when the optional tiny CNN or ViT paths are unavailable."
     },
     {
       "component_id": "metadata-representation",
@@ -161,13 +161,13 @@
       "component_id": "vision-vit-encoder",
       "label": "ViT thumbnail encoder",
       "phase": "V3",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "vision-encoder",
       "family": "thumbnail-encoder-next",
       "encoder": "vision-transformer",
       "backend": "torch-transformers",
-      "runtime_path": "future-core-inference",
-      "notes": "Planned richer thumbnail transformer path beyond the currently implemented tiny CNN."
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional ViT thumbnail path with runtime priority over the tiny CNN and engineered vision fallback."
     },
     {
       "component_id": "vae-anomaly-head",
@@ -197,37 +197,73 @@
       "component_id": "rl-action-policy",
       "label": "Reinforcement-learned action policy",
       "phase": "V3",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "policy-optimizer",
       "family": "rl-policy-next",
       "encoder": "q-learning-plus-search",
       "backend": "simulation-and-policy-stack",
-      "runtime_path": "future-policy-layer",
-      "notes": "Planned promotion of the current evaluation-time search stack into a stronger runtime policy optimizer."
+      "runtime_path": "policy-layer",
+      "notes": "Implemented feature-flagged threshold-default, rl-shadow, and rl-live modes backed by simulation artifacts plus runtime guardrails."
     },
     {
       "component_id": "cross-platform-client",
       "label": "Cross-platform TruthLens client",
       "phase": "V3",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "product-surface",
       "family": "client-expansion",
       "encoder": "n/a",
-      "backend": "tbd",
-      "runtime_path": "future-surface",
-      "notes": "Planned expansion beyond the current browser extension."
+      "backend": "api-plus-shared-session-contract",
+      "runtime_path": "surface-and-api",
+      "notes": "Implemented platform-neutral mobile analyze/review contract so non-extension clients can consume resolved watch context, scoring, prompt state, and draft suggestions."
     },
     {
       "component_id": "android-client",
       "label": "Android client",
       "phase": "V3",
-      "status": "planned",
+      "status": "implemented",
       "layer_type": "product-surface",
       "family": "android-expansion",
       "encoder": "n/a",
       "backend": "android",
-      "runtime_path": "future-surface",
-      "notes": "Planned Android delivery surface called out in the product roadmap."
+      "runtime_path": "surface",
+      "notes": "Implemented native Jetpack Compose Android MVP companion/share client for share-intake, analyze, optimize, report, verify, and local session persistence."
+    },
+    {
+      "component_id": "future-multimodal-stack",
+      "label": "Stronger end-to-end multimodal encoder stack",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "multimodal-encoder",
+      "family": "multimodal-next",
+      "encoder": "end-to-end-multimodal-transformer",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned future work beyond the current bounded optional encoder paths."
+    },
+    {
+      "component_id": "future-video-understanding",
+      "label": "Richer transcript and video understanding",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "video-understanding",
+      "family": "context-next",
+      "encoder": "video-plus-transcript-understanding",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned deeper video/timeline reasoning beyond thumbnail, watch metadata, and transcript excerpts."
+    },
+    {
+      "component_id": "future-moderation-analytics",
+      "label": "Deeper moderation analytics",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "analytics-surface",
+      "family": "operator-tooling-next",
+      "encoder": "n/a",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned operator and analytics tooling beyond the current extension, API, and Android companion scope."
     }
   ]
 }

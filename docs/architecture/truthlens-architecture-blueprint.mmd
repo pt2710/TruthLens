@@ -10,8 +10,8 @@
   "flowchart": {
     "curve": "linear",
     "htmlLabels": true,
-    "nodeSpacing": 30,
-    "rankSpacing": 44
+    "nodeSpacing": 32,
+    "rankSpacing": 42
   }
 }}%%
 flowchart TB
@@ -29,8 +29,18 @@ end
 class legend_impl_a,legend_impl_b implemented
 class legend_future_a,legend_future_b future
 
-subgraph runtime["1. Runtime Inputs"]
-  feed["YouTube feed cards<br/>watch-page metadata"]
+subgraph clients["1. Client Surfaces"]
+  extension["Browser extension<br/>feed + watch-page observer"]
+  mobile_client["Android companion / share client<br/>Jetpack Compose"]
+  shared_contract["Cross-platform client contract<br/>shared review-session schemas<br/>/mobile/analyze-share"]
+end
+class extension,mobile_client,shared_contract implemented
+
+extension --> shared_contract
+mobile_client --> shared_contract
+
+subgraph runtime["2. Runtime Inputs"]
+  feed["YouTube feed cards / watch-page metadata"]
   thumb["Thumbnail image"]
   title["Title"]
   desc["Description snippet"]
@@ -40,13 +50,16 @@ subgraph runtime["1. Runtime Inputs"]
 end
 class feed,thumb,title,desc,caps,channel,prefs implemented
 
+extension --> feed
+mobile_client --> feed
 feed --> thumb
 feed --> title
 feed --> desc
 feed --> caps
 feed --> channel
+shared_contract --> prefs
 
-subgraph governance["2. Data + Governance Pipeline"]
+subgraph governance["3. Data + Governance Pipeline"]
   discovery["Discovery"]
   acquisition["Acquisition"]
   normalization["Normalization"]
@@ -64,9 +77,9 @@ split --> audit
 dataset_card --> gate
 audit --> gate
 
-subgraph features["3. Feature Extraction"]
+subgraph features["4. Feature Extraction"]
   text_features["Text / title features"]
-  vision_features["Vision-v2 thumbnail features"]
+  vision_features["Thumbnail feature extraction"]
   metadata_features["Handcrafted metadata features"]
   history_features["Sequence-summary history features"]
   packaging_features["Combined packaging feature matrix"]
@@ -83,64 +96,69 @@ channel --> history_features
 vision_features --> packaging_features
 metadata_features --> packaging_features
 
-subgraph taxonomy["4. AI / ML Layer Taxonomy"]
+subgraph taxonomy["5. AI / ML Layer Taxonomy"]
   text_sparse["Baseline text representation<br/>CountVectorizer bigrams"]
   text_embed["Optional text embedding layer<br/>sentence-transformer"]
   vision_engineered["Baseline vision representation<br/>vision-v2 engineered thumbnail features"]
-  vision_cnn["Optional tiny CNN thumbnail encoder"]
+  vision_cnn["Optional vision encoder<br/>tiny CNN thumbnail path"]
+  vision_vit["Optional vision encoder<br/>ViT thumbnail path"]
   metadata_repr["Metadata representation layer<br/>handcrafted tabular assembly"]
   temporal_summary["Baseline temporal summary layer<br/>sequence-summary aggregation"]
   temporal_lstm["Optional temporal encoder<br/>LSTM sequence path"]
   vae_repr["Packaging anomaly encoder<br/>VAE over thumbnail + metadata"]
   llm_assist["LLM assist layer<br/>Gemini drafting / optimization only"]
   future_text["Future stronger text transformers"]
-  future_vision["Future ViT-scale thumbnail encoder"]
   future_video["Future richer video / transcript understanding"]
+  future_analytics["Future deeper moderation analytics"]
 end
-class text_sparse,text_embed,vision_engineered,vision_cnn,metadata_repr,temporal_summary,temporal_lstm,vae_repr,llm_assist implemented
-class future_text,future_vision,future_video future
+class text_sparse,text_embed,vision_engineered,vision_cnn,vision_vit,metadata_repr,temporal_summary,temporal_lstm,vae_repr,llm_assist implemented
+class future_text,future_video,future_analytics future
 
 text_features --> text_sparse
 text_features --> text_embed
 vision_features --> vision_engineered
 thumb --> vision_cnn
+thumb --> vision_vit
 metadata_features --> metadata_repr
 history_features --> temporal_summary
 history_features --> temporal_lstm
 packaging_features --> vae_repr
 text_embed -.-> future_text
-vision_cnn -.-> future_vision
 caps -.-> future_video
 
-subgraph model_stack["5. Multimodal Model Stack"]
-  trainer["Offline trainer<br/>fit heads, fusion, calibration<br/>export model artifacts"]
+subgraph model_stack["6. Multimodal Model Stack"]
+  trainer["Offline trainer<br/>fit heads, fusion, calibration<br/>export model and policy artifacts"]
   text_head_sparse["Text head (baseline)<br/>sklearn logistic regression"]
   text_head_embed["Text head (optional)<br/>sentence-transformer → logistic regression"]
   vision_head_engineered["Vision head (baseline)<br/>engineered features → logistic regression"]
   vision_head_cnn["Vision head (optional)<br/>tiny CNN probability path"]
+  vision_head_vit["Vision head (optional)<br/>ViT probability path"]
   metadata_head["Metadata head<br/>sklearn logistic regression"]
   history_head_summary["History head (baseline)<br/>summary → logistic regression"]
   history_head_lstm["History head (optional)<br/>LSTM sequence probability path"]
   anomaly_head["Anomaly head<br/>VAE reconstruction anomaly"]
   fusion_head["Fusion head<br/>multimodal logistic fusion"]
   calibration_head["Calibration head<br/>Platt-style logistic calibration"]
-  model_note["Runtime note<br/>explicit contracts + auditable fallback paths"]
+  model_note["Runtime note<br/>bounded learned paths + explicit fallbacks"]
 end
-class trainer,text_head_sparse,text_head_embed,vision_head_engineered,vision_head_cnn,metadata_head,history_head_summary,history_head_lstm,anomaly_head,fusion_head,calibration_head,model_note implemented
+class trainer,text_head_sparse,text_head_embed,vision_head_engineered,vision_head_cnn,vision_head_vit,metadata_head,history_head_summary,history_head_lstm,anomaly_head,fusion_head,calibration_head,model_note implemented
 
 gate --> trainer
 text_sparse --> text_head_sparse
 text_embed --> text_head_embed
 vision_engineered --> vision_head_engineered
 vision_cnn --> vision_head_cnn
+vision_vit --> vision_head_vit
 metadata_repr --> metadata_head
 temporal_summary --> history_head_summary
 temporal_lstm --> history_head_lstm
 vae_repr --> anomaly_head
+
 trainer --> text_head_sparse
 trainer --> text_head_embed
 trainer --> vision_head_engineered
 trainer --> vision_head_cnn
+trainer --> vision_head_vit
 trainer --> metadata_head
 trainer --> history_head_summary
 trainer --> history_head_lstm
@@ -150,6 +168,7 @@ text_head_sparse --> fusion_head
 text_head_embed --> fusion_head
 vision_head_engineered --> fusion_head
 vision_head_cnn --> fusion_head
+vision_head_vit --> fusion_head
 metadata_head --> fusion_head
 history_head_summary --> fusion_head
 history_head_lstm --> fusion_head
@@ -157,7 +176,7 @@ anomaly_head --> fusion_head
 fusion_head --> calibration_head
 calibration_head --> model_note
 
-subgraph outputs["6. Inference Output Contract"]
+subgraph outputs["7. Inference Output Contract"]
   model_signal["Core model signal<br/>risk_score<br/>confidence<br/>uncertainty"]
   score_contract["Final score contract<br/>recommended_action<br/>reasons<br/>explanation_id<br/>explanation_summary<br/>evidence"]
 end
@@ -165,27 +184,46 @@ class model_signal,score_contract contract
 
 calibration_head --> model_signal
 
-subgraph policy["7. Policy + Personalization Layer"]
+subgraph policy["8. Policy + Personalization Layer"]
   base_thresholds["Base thresholds"]
   feedback_bias["Feedback bias"]
   bandit_offsets["Contextual-bandit threshold offsets"]
   channel_bias["Channel-specific bias"]
   user_bias["User strictness<br/>prior corrections<br/>muted channels"]
+  threshold_mode["Runtime mode<br/>threshold-default"]
+  shadow_mode["Runtime mode<br/>rl-shadow"]
+  live_mode["Runtime mode<br/>rl-live"]
+  guardrails["RL guardrails<br/>artifact compatibility<br/>confidence floor<br/>uncertainty ceiling<br/>staleness checks"]
   action_map["Action mapping<br/>none → badge → blur → ask-report → hide"]
 end
-class base_thresholds,feedback_bias,bandit_offsets,channel_bias,user_bias,action_map emphasis
+class base_thresholds,feedback_bias,bandit_offsets,channel_bias,user_bias,threshold_mode,shadow_mode,live_mode,guardrails,action_map emphasis
 
-model_signal --> action_map
+model_signal --> threshold_mode
+model_signal --> shadow_mode
+model_signal --> live_mode
 prefs --> user_bias
-base_thresholds --> action_map
-feedback_bias --> action_map
-bandit_offsets --> action_map
-channel_bias --> action_map
-user_bias --> action_map
+base_thresholds --> threshold_mode
+base_thresholds --> shadow_mode
+base_thresholds --> live_mode
+feedback_bias --> threshold_mode
+feedback_bias --> shadow_mode
+feedback_bias --> live_mode
+bandit_offsets --> shadow_mode
+bandit_offsets --> live_mode
+channel_bias --> threshold_mode
+channel_bias --> shadow_mode
+channel_bias --> live_mode
+user_bias --> threshold_mode
+user_bias --> shadow_mode
+user_bias --> live_mode
+guardrails --> live_mode
+threshold_mode --> action_map
+shadow_mode --> action_map
+live_mode --> action_map
 action_map --> score_contract
 
-subgraph explain["8. Explanation Layer"]
-  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware adjustments"]
+subgraph explain["9. Explanation Layer"]
+  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware adjustments<br/>RL override note when applicable"]
 end
 class explainer implemented
 
@@ -193,34 +231,52 @@ text_head_sparse --> explainer
 text_head_embed --> explainer
 vision_head_engineered --> explainer
 vision_head_cnn --> explainer
+vision_head_vit --> explainer
 metadata_head --> explainer
 history_head_summary --> explainer
 history_head_lstm --> explainer
 anomaly_head --> explainer
 fusion_head --> explainer
+action_map --> explainer
 model_signal --> explainer
 explainer --> score_contract
 
-subgraph review["9. Human-in-the-Loop Review Layer"]
+subgraph review["10. Human-in-the-Loop Review Layer"]
   prompt_report["Report prompt"]
   prompt_verify["Verify-transparent prompt"]
   draft["Manual report drafting"]
-  gemini["Gemini suggestion / optimization"]
+  optimize["Gemini suggestion / optimization<br/>heuristic fallback"]
   youtube["YouTube report submission support"]
   local_feedback["Local positive / negative feedback capture"]
 end
-class prompt_report,prompt_verify,draft,gemini,youtube,local_feedback implemented
+class prompt_report,prompt_verify,draft,optimize,youtube,local_feedback implemented
 
 score_contract --> prompt_report
 score_contract --> prompt_verify
 prompt_report --> draft
 prompt_verify --> draft
-draft --> gemini
-gemini --> youtube
-gemini --> local_feedback
+draft --> optimize
+optimize --> youtube
+optimize --> local_feedback
 draft --> llm_assist
 
-subgraph loops["10. Feedback / Learning Loops"]
+subgraph cross_platform["11. Cross-Platform Review Session"]
+  mobile_analyze["/mobile/analyze-share<br/>normalize watch context<br/>score + explanation bundle<br/>review prompt state"]
+  shared_review["Shared review-session schemas<br/>report / verify payloads<br/>status-stream semantics"]
+  android_flow["Android analyze → suggest → optimize → submit"]
+  extension_flow["Extension review / verify flow"]
+end
+class mobile_analyze,shared_review,android_flow,extension_flow implemented
+
+shared_contract --> mobile_analyze
+mobile_analyze --> shared_review
+shared_review --> android_flow
+shared_review --> extension_flow
+optimize --> mobile_analyze
+android_flow --> local_feedback
+extension_flow --> local_feedback
+
+subgraph loops["12. Feedback / Learning Loops"]
   feedback_store["Feedback event store"]
   score_store["Score event store"]
   channel_profiles["Channel profile aggregation"]
@@ -236,7 +292,7 @@ channel_profiles --> threshold_inputs
 channel_profiles --> channel_bias
 threshold_inputs --> feedback_bias
 
-subgraph evaluation["11. Evaluation / Simulation / Search"]
+subgraph evaluation["13. Evaluation / Simulation / Search"]
   threshold_sweep["Threshold sweep"]
   qtable["Q-table build"]
   policy_derivation["Policy derivation"]
@@ -244,9 +300,10 @@ subgraph evaluation["11. Evaluation / Simulation / Search"]
   replay["Replay simulation"]
   evolution["Evolutionary threshold search"]
   bandit["Contextual bandit"]
+  rl_artifact["Runtime RL policy artifact"]
   drift["Drift report"]
 end
-class threshold_sweep,qtable,policy_derivation,bellman,replay,evolution,bandit,drift supporting
+class threshold_sweep,qtable,policy_derivation,bellman,replay,evolution,bandit,rl_artifact,drift supporting
 
 split --> threshold_sweep
 split --> drift
@@ -258,22 +315,24 @@ qtable --> bellman
 policy_derivation --> replay
 threshold_sweep --> evolution
 threshold_sweep --> bandit
-replay --> base_thresholds
-evolution --> base_thresholds
-bandit --> bandit_offsets
+replay --> rl_artifact
+evolution --> rl_artifact
+bandit --> rl_artifact
+rl_artifact --> shadow_mode
+rl_artifact --> live_mode
+rl_artifact --> bandit_offsets
 drift --> trainer
 
-subgraph future_stack["12. Future Extensions"]
-  stronger_models["Stronger multimodal encoders"]
+subgraph future_stack["14. Future Extensions"]
+  stronger_models["Stronger end-to-end multimodal encoders"]
   richer_video["Richer transcript / video understanding"]
-  cross_platform["Cross-platform clients"]
-  android["Android support"]
-  analytics["More advanced moderation analytics"]
+  broader_clients["Broader cross-platform expansion"]
+  analytics["Deeper moderation analytics"]
 end
-class stronger_models,richer_video,cross_platform,android,analytics future
+class stronger_models,richer_video,broader_clients,analytics future
 
 trainer -.-> stronger_models
 future_video -.-> richer_video
-review -.-> cross_platform
-cross_platform -.-> android
-loops -.-> analytics
+shared_contract -.-> broader_clients
+threshold_inputs -.-> analytics
+future_analytics -.-> analytics

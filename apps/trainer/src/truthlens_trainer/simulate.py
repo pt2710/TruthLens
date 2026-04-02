@@ -17,6 +17,7 @@ from truthlens_evaluation import (
     run_threshold_sweep,
     search_threshold_family,
 )
+from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPEC_VERSION
 
 
 def _label(record: dict[str, Any]) -> int:
@@ -108,6 +109,28 @@ def main() -> None:
     )
     (thresholds_dir / "contextual-bandit.json").write_text(
         json.dumps(bandit_threshold_adjustments, indent=2, ensure_ascii=True),
+        encoding="utf-8",
+    )
+    (thresholds_dir / "rl-policy.json").write_text(
+        json.dumps(
+            {
+                "policy_version": "rl-action-policy-v1",
+                "generated_at": manifest["generated_at"],
+                "build_id": manifest["build_id"],
+                "head_spec_version": HEAD_SPEC_VERSION,
+                "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
+                "policy": policy,
+                "q_table": q_table,
+                "bellman_state_values": state_values,
+                "replay_summary": replay_summary,
+                "recommended_thresholds": thresholds,
+                "evolutionary_search": evolutionary_search,
+                "contextual_bandit": contextual_bandit,
+                "bandit_threshold_adjustments": bandit_threshold_adjustments,
+            },
+            indent=2,
+            ensure_ascii=True,
+        ),
         encoding="utf-8",
     )
     print(manifest["build_id"])

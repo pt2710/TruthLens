@@ -58,6 +58,183 @@ export const explanationEvidenceSchema = z.object({
   details: z.string().optional().nullable(),
 });
 
+export const manualReportIssueTypeSchema = z.enum([
+  'thumbnail',
+  'title',
+  'description',
+  'transcript',
+  'channel',
+  'other',
+]);
+
+export const manualReportWorkflowModeSchema = z.enum([
+  'report',
+  'verify-transparent',
+]);
+export const manualReportRequestedOutcomeSchema = z.enum([
+  'moderate',
+  'remove',
+]);
+
+export const manualReportIssueSchema = z.object({
+  issue_type: manualReportIssueTypeSchema,
+  comment: z.string().min(1),
+  original_comment: z.string().optional().nullable(),
+});
+
+export const manualReportSchema = z.object({
+  workflow_mode: manualReportWorkflowModeSchema.default('report'),
+  target_url: z.string().url().optional().nullable(),
+  thumbnail_ref: z.string().optional().nullable(),
+  title_snapshot: z.string().min(1),
+  transcript_excerpt: z.string().optional().nullable(),
+  issues: z.array(manualReportIssueSchema).min(1),
+  requested_outcome: manualReportRequestedOutcomeSchema.default('moderate'),
+  optimize_requested: z.boolean().default(false),
+  optimize_applied: z.boolean().default(false),
+  optimization_model: z.string().optional().nullable(),
+  report_text: z.string().min(1),
+});
+
+export const manualReportOptimizationRequestSchema = z.object({
+  workflow_mode: manualReportWorkflowModeSchema.default('report'),
+  target_url: z.string().url().optional().nullable(),
+  title_snapshot: z.string().min(1),
+  channel_name: z.string().min(1),
+  transcript_excerpt: z.string().optional().nullable(),
+  requested_outcome: manualReportRequestedOutcomeSchema.default('moderate'),
+  issues: z
+    .array(
+      z.object({
+        issue_type: manualReportIssueTypeSchema,
+        comment: z.string().min(1),
+      }),
+    )
+    .min(1),
+});
+
+export const manualReportOptimizationResponseSchema = z.object({
+  issues: z.array(
+    z.object({
+      issue_type: manualReportIssueTypeSchema,
+      comment: z.string().min(1),
+    }),
+  ),
+  optimization_model: z.string().min(1),
+  report_text: z.string().min(1),
+});
+
+export const manualReportSuggestionIssueSchema = z.object({
+  issue_type: manualReportIssueTypeSchema,
+  suggested: z.boolean(),
+  comment: z.string(),
+});
+
+export const manualReportSuggestionRequestSchema = z.object({
+  workflow_mode: manualReportWorkflowModeSchema.default('report'),
+  target_url: z.string().url().optional().nullable(),
+  thumbnail_ref: z.string().optional().nullable(),
+  title_snapshot: z.string().min(1),
+  channel_name: z.string().min(1),
+  channel_url: z.string().url().optional().nullable(),
+  channel_context: z.string().optional().nullable(),
+  description_snapshot: z.string().optional().nullable(),
+  transcript_excerpt: z.string().optional().nullable(),
+  transcript_available: z.boolean().optional().nullable(),
+  explanation_summary: z.string().optional().nullable(),
+  reasons: z.array(z.string()).default([]),
+});
+
+export const manualReportSuggestionResponseSchema = z.object({
+  issues: z.array(manualReportSuggestionIssueSchema).length(6),
+  suggested_outcome: manualReportRequestedOutcomeSchema,
+  suggestion_model: z.string().min(1),
+});
+
+export const reviewPromptStateSchema = z.object({
+  workflow_mode: manualReportWorkflowModeSchema,
+  label: z.string().min(1),
+  reason: z.string().min(1),
+  auto_open: z.boolean().default(false),
+});
+
+export const reviewStatusEventSchema = z.object({
+  phase: z.enum([
+    'resolve-share',
+    'fetch-watch-metadata',
+    'score-item',
+    'draft-review',
+    'youtube-auth',
+  ]),
+  label: z.string().min(1),
+  status: z.literal('completed'),
+  details: z.string().optional().nullable(),
+});
+
+export const explanationBundlePayloadSchema = z.object({
+  explanation_id: z.string().optional().nullable(),
+  explanation_summary: z.string().optional().nullable(),
+  reasons: z.array(z.string()).default([]),
+  evidence: z.array(explanationEvidenceSchema).default([]),
+});
+
+export const mobileResolvedWatchContextSchema = z.object({
+  target_url: z.string().min(1),
+  video_id: z.string().min(1),
+  title: z.string().min(1),
+  thumbnail_ref: z.string().optional().nullable(),
+  channel_name: z.string().min(1),
+  channel_url: z.string().optional().nullable(),
+  description_snapshot: z.string().optional().nullable(),
+  transcript_excerpt: z.string().optional().nullable(),
+  transcript_available: z.boolean().default(false),
+  channel_context: z.string().optional().nullable(),
+  music_likelihood: z.number().min(0).max(1).default(0),
+  metadata: itemMetadataSchema.default({}),
+});
+
+export const mobileAnalyzeShareRequestSchema = z.object({
+  target_url: z.string().min(1),
+  user_context: userContextSchema.default({
+    strict_mode: false,
+    muted_channels: [],
+    prior_corrections: 0,
+  }),
+});
+
+export const mobileAnalyzeShareResponseSchema = z.object({
+  model_version: z.string().min(1),
+  policy_version: z.string().min(1),
+  watch_context: mobileResolvedWatchContextSchema,
+  score: z.lazy(() => scoreResultSchema),
+  explanation: explanationBundlePayloadSchema,
+  review_prompt: reviewPromptStateSchema.optional().nullable(),
+  draft_suggestion: manualReportSuggestionResponseSchema,
+  youtube_auth: z.lazy(() => youtubeAuthStatusSchema),
+  status_stream: z.array(reviewStatusEventSchema).default([]),
+});
+
+export const youtubeAuthStatusSchema = z.object({
+  configured: z.boolean(),
+  connected: z.boolean(),
+  auth_url: z.string().url().optional().nullable(),
+  channel_name: z.string().optional().nullable(),
+});
+
+export const youtubeReportRequestSchema = z.object({
+  target_url: z.string().url(),
+  report_text: z.string().min(1),
+  issue_types: z.array(manualReportIssueTypeSchema).min(1),
+});
+
+export const youtubeReportResponseSchema = z.object({
+  status: z.literal('reported'),
+  reason_id: z.string().min(1),
+  reason_label: z.string().min(1),
+  secondary_reason_id: z.string().optional().nullable(),
+  secondary_reason_label: z.string().optional().nullable(),
+});
+
 export const scoreResultSchema = z
   .object({
     risk_score: z.number().min(0).max(1),
@@ -113,6 +290,7 @@ export const feedbackEventSchema = z.object({
   before_score: z.number().min(0).max(1).optional().nullable(),
   after_score: z.number().min(0).max(1).optional().nullable(),
   timestamp: z.string().min(1),
+  manual_report: manualReportSchema.optional().nullable(),
 });
 
 export const datasetRecordSchema = z.object({
@@ -145,3 +323,44 @@ export type ExplanationEvidence = z.infer<typeof explanationEvidenceSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;
+export type ManualReportIssueType = z.infer<typeof manualReportIssueTypeSchema>;
+export type ManualReportWorkflowMode = z.infer<
+  typeof manualReportWorkflowModeSchema
+>;
+export type ManualReportRequestedOutcome = z.infer<
+  typeof manualReportRequestedOutcomeSchema
+>;
+export type ManualReportIssue = z.infer<typeof manualReportIssueSchema>;
+export type ManualReport = z.infer<typeof manualReportSchema>;
+export type ManualReportOptimizationRequest = z.infer<
+  typeof manualReportOptimizationRequestSchema
+>;
+export type ManualReportOptimizationResponse = z.infer<
+  typeof manualReportOptimizationResponseSchema
+>;
+export type ManualReportSuggestionIssue = z.infer<
+  typeof manualReportSuggestionIssueSchema
+>;
+export type ManualReportSuggestionRequest = z.infer<
+  typeof manualReportSuggestionRequestSchema
+>;
+export type ManualReportSuggestionResponse = z.infer<
+  typeof manualReportSuggestionResponseSchema
+>;
+export type ReviewPromptState = z.infer<typeof reviewPromptStateSchema>;
+export type ReviewStatusEvent = z.infer<typeof reviewStatusEventSchema>;
+export type ExplanationBundlePayload = z.infer<
+  typeof explanationBundlePayloadSchema
+>;
+export type MobileResolvedWatchContext = z.infer<
+  typeof mobileResolvedWatchContextSchema
+>;
+export type MobileAnalyzeShareRequest = z.infer<
+  typeof mobileAnalyzeShareRequestSchema
+>;
+export type MobileAnalyzeShareResponse = z.infer<
+  typeof mobileAnalyzeShareResponseSchema
+>;
+export type YouTubeAuthStatus = z.infer<typeof youtubeAuthStatusSchema>;
+export type YouTubeReportRequest = z.infer<typeof youtubeReportRequestSchema>;
+export type YouTubeReportResponse = z.infer<typeof youtubeReportResponseSchema>;

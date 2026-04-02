@@ -305,6 +305,12 @@ def _vision_encoder_resolution(bundle: dict[str, Any], model_info: dict[str, Any
         "image_size": 32,
         "conv_channels": [8, 16],
         "hidden_dim": 32,
+        "patch_size": 8,
+        "transformer_hidden_size": 64,
+        "transformer_num_hidden_layers": 2,
+        "transformer_num_attention_heads": 4,
+        "transformer_intermediate_size": 128,
+        "transformer_pooling": "cls",
     }
 
 
@@ -746,8 +752,8 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         packaging_vector = np.asarray([packaging_values], dtype=float)
         text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
-        vision_used_cnn = False
-        if summary["vision_encoder_actual"] == "tiny-cnn-thumbnail":
+        vision_used_learned_encoder = False
+        if summary["vision_encoder_actual"] in {"tiny-cnn-thumbnail", "vision-transformer"}:
             vision_payload = bundle.get("vision_encoder_artifacts")
             if isinstance(vision_payload, dict):
                 vision_artifacts = vision_artifacts_from_payload(vision_payload)
@@ -762,9 +768,11 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
                             vision_artifacts,
                         )[0]
                     )
-                    vision_used_cnn = True
+                    vision_used_learned_encoder = True
                     summary["vision_embedding_note"] = (
-                        "Vision score came from the optional tiny CNN thumbnail encoder."
+                        "Vision score came from the optional ViT thumbnail encoder."
+                        if summary["vision_encoder_actual"] == "vision-transformer"
+                        else "Vision score came from the optional tiny CNN thumbnail encoder."
                     )
                 else:
                     summary["vision_encoder_runtime_fallback"] = (
@@ -824,7 +832,7 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
             )
         summary["vision_top_contributors"] = (
             []
-            if vision_used_cnn
+            if vision_used_learned_encoder
             else _top_dense_contributors(
                 bundle["vision_model"],
                 VISION_FEATURE_NAMES,

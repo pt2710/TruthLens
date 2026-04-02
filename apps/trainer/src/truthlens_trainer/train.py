@@ -51,9 +51,11 @@ from truthlens_model_serving.vae import (
 )
 from truthlens_model_serving.vision import (
     thumbnail_scores_from_artifacts,
+    train_vision_transformer_encoder,
     train_tiny_thumbnail_encoder,
     vision_artifacts_to_payload,
     vision_available,
+    vision_transformer_available,
 )
 
 
@@ -284,7 +286,10 @@ def main() -> None:
     vision_encoder_artifacts = None
     validation_vision_scores = vision_model.predict_proba(_vision_matrix(validation_records))[:, 1]
     test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
-    if vision_encoder_resolution.actual_encoder == "tiny-cnn-thumbnail" and vision_available():
+    if (
+        vision_encoder_resolution.actual_encoder in {"tiny-cnn-thumbnail", "vision-transformer"}
+        and vision_available()
+    ):
         train_images, train_image_mask = _thumbnail_image_batch(
             train_records,
             image_size=vision_encoder_resolution.image_size,
@@ -305,18 +310,44 @@ def main() -> None:
         if int(train_image_mask.sum()) < 8 or len(set(available_train_labels)) < 2:
             vision_encoder_resolution = fallback_vision_encoder_resolution(
                 vision_encoder_resolution,
-                reason="insufficient binary thumbnail coverage for the tiny CNN training path",
+                reason=(
+                    "insufficient binary thumbnail coverage for the learned thumbnail encoder path"
+                ),
+                fallback_encoder=(
+                    "tiny-cnn-thumbnail"
+                    if vision_encoder_resolution.actual_encoder == "vision-transformer"
+                    and vision_available()
+                    else "vision-v2"
+                ),
             )
         else:
             try:
-                trained_vision_encoder = train_tiny_thumbnail_encoder(
-                    train_images[train_image_mask],
-                    available_train_labels,
-                    conv_channels=tuple(vision_encoder_resolution.conv_channels[:2]),
-                    hidden_dim=vision_encoder_resolution.hidden_dim,
-                    epochs=vision_encoder_resolution.epochs,
-                    learning_rate=vision_encoder_resolution.learning_rate,
-                )
+                if (
+                    vision_encoder_resolution.actual_encoder == "vision-transformer"
+                    and vision_transformer_available()
+                ):
+                    trained_vision_encoder = train_vision_transformer_encoder(
+                        train_images[train_image_mask],
+                        available_train_labels,
+                        patch_size=vision_encoder_resolution.patch_size,
+                        transformer_hidden_size=vision_encoder_resolution.transformer_hidden_size,
+                        transformer_num_hidden_layers=vision_encoder_resolution.transformer_num_hidden_layers,
+                        transformer_num_attention_heads=vision_encoder_resolution.transformer_num_attention_heads,
+                        transformer_intermediate_size=vision_encoder_resolution.transformer_intermediate_size,
+                        hidden_dim=vision_encoder_resolution.hidden_dim,
+                        pooling=vision_encoder_resolution.transformer_pooling,
+                        epochs=vision_encoder_resolution.epochs,
+                        learning_rate=vision_encoder_resolution.learning_rate,
+                    )
+                else:
+                    trained_vision_encoder = train_tiny_thumbnail_encoder(
+                        train_images[train_image_mask],
+                        available_train_labels,
+                        conv_channels=tuple(vision_encoder_resolution.conv_channels[:2]),
+                        hidden_dim=vision_encoder_resolution.hidden_dim,
+                        epochs=vision_encoder_resolution.epochs,
+                        learning_rate=vision_encoder_resolution.learning_rate,
+                    )
                 vision_encoder_artifacts = vision_artifacts_to_payload(trained_vision_encoder)
                 if bool(validation_image_mask.any()):
                     validation_vision_scores[validation_image_mask] = thumbnail_scores_from_artifacts(
@@ -329,10 +360,51 @@ def main() -> None:
                         trained_vision_encoder,
                     )
             except Exception as error:
-                vision_encoder_resolution = fallback_vision_encoder_resolution(
-                    vision_encoder_resolution,
-                    reason=f"tiny CNN vision path failed during training: {error}",
-                )
+                if (
+                    vision_encoder_resolution.actual_encoder == "vision-transformer"
+                    and vision_available()
+                ):
+                    fallback_resolution = fallback_vision_encoder_resolution(
+                        vision_encoder_resolution,
+                        reason=f"vision transformer path failed during training: {error}",
+                        fallback_encoder="tiny-cnn-thumbnail",
+                    )
+                    try:
+                        trained_vision_encoder = train_tiny_thumbnail_encoder(
+                            train_images[train_image_mask],
+                            available_train_labels,
+                            conv_channels=tuple(fallback_resolution.conv_channels[:2]),
+                            hidden_dim=fallback_resolution.hidden_dim,
+                            epochs=fallback_resolution.epochs,
+                            learning_rate=fallback_resolution.learning_rate,
+                        )
+                        vision_encoder_resolution = fallback_resolution
+                        vision_encoder_artifacts = vision_artifacts_to_payload(trained_vision_encoder)
+                        if bool(validation_image_mask.any()):
+                            validation_vision_scores[validation_image_mask] = thumbnail_scores_from_artifacts(
+                                validation_images[validation_image_mask],
+                                trained_vision_encoder,
+                            )
+                        if bool(test_image_mask.any()):
+                            test_vision_scores[test_image_mask] = thumbnail_scores_from_artifacts(
+                                test_images[test_image_mask],
+                                trained_vision_encoder,
+                            )
+                    except Exception as fallback_error:
+                        vision_encoder_resolution = fallback_vision_encoder_resolution(
+                            fallback_resolution,
+                            reason=(
+                                "vision transformer training failed and the tiny CNN fallback also failed: "
+                                f"{fallback_error}"
+                            ),
+                            fallback_encoder="vision-v2",
+                        )
+                else:
+                    vision_encoder_resolution = fallback_vision_encoder_resolution(
+                        vision_encoder_resolution,
+                        reason=f"tiny CNN vision path failed during training: {error}",
+                        fallback_encoder="vision-v2",
+                    )
 
     metadata_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     metadata_model.fit(_metadata_matrix(train_records), train_labels)

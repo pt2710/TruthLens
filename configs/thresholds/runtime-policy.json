@@ -1,0 +1,6 @@
+{
+  "policy_mode": "threshold-default",
+  "rl_min_confidence": 0.72,
+  "rl_max_uncertainty": 0.35,
+  "rl_artifact_max_age_hours": 168
+}

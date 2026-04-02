@@ -5,10 +5,14 @@ from typing import Any
 ACTIONS = ["none", "badge", "blur", "ask-report", "hide"]
 
 
-def _state_key(score: float, uncertainty: float) -> str:
+def state_key_for_score(score: float, uncertainty: float) -> str:
     score_bucket = min(int(score * 4), 3)
     uncertainty_bucket = min(int(uncertainty * 4), 3)
     return f"s{score_bucket}:u{uncertainty_bucket}"
+
+
+def _state_key(score: float, uncertainty: float) -> str:
+    return state_key_for_score(score, uncertainty)
 
 
 def _reward(action: str, label: int, uncertainty: float) -> float:

@@ -34,6 +34,28 @@
         border-radius: 12px;
         background: linear-gradient(135deg, #15263f, #36507b);
       }
+
+      .youtube-card-menu {
+        display: grid;
+        gap: 8px;
+        justify-items: start;
+      }
+
+      .youtube-report-menu,
+      .youtube-report-dialog {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border: 1px solid #d7d7d7;
+        border-radius: 12px;
+        background: #f5f7fb;
+      }
+
+      .youtube-report-dialog [data-step][hidden],
+      .youtube-report-menu[hidden],
+      .youtube-report-dialog[hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -45,6 +67,25 @@
         <h3 id="video-title">Breaking aliens confirmed over Europe</h3>
         <div id="channel-name">OpenSky Alerts</div>
         <div class="metadata-snippet">Calm maintenance segment discussing observatory scheduling and instrument checks.</div>
+        <div class="youtube-card-menu">
+          <button type="button" aria-label="Action menu">More</button>
+          <div class="youtube-report-menu" role="menu" hidden>
+            <button type="button" role="menuitem">Share</button>
+            <button type="button" role="menuitem" data-report-entry>Report</button>
+          </div>
+          <div class="youtube-report-dialog" role="dialog" hidden>
+            <div data-step="primary">
+              <button type="button" role="radio">Spam or misleading</button>
+              <button type="button" role="radio">Harassment or bullying</button>
+              <button type="button" data-next-button>Næste</button>
+            </div>
+            <div data-step="secondary" hidden>
+              <button type="button" role="radio">Misleading thumbnail</button>
+              <button type="button" role="radio">Other misleading info</button>
+              <button type="button" data-submit-button>Rapportér</button>
+            </div>
+          </div>
+        </div>
       </article>
       <article data-truthlens-card>
         <a id="thumbnail" href="/watch?v=fixture-item-2">
@@ -53,6 +94,25 @@
         <h3 id="video-title">Weekly launch schedule and mission recap</h3>
         <div id="channel-name">Context First Media</div>
         <div class="metadata-snippet">Routine mission recap with cited launch windows and stable, low-risk framing.</div>
+        <div class="youtube-card-menu">
+          <button type="button" aria-label="Action menu">More</button>
+          <div class="youtube-report-menu" role="menu" hidden>
+            <button type="button" role="menuitem">Share</button>
+            <button type="button" role="menuitem" data-report-entry>Report</button>
+          </div>
+          <div class="youtube-report-dialog" role="dialog" hidden>
+            <div data-step="primary">
+              <button type="button" role="radio">Spam or misleading</button>
+              <button type="button" role="radio">Harassment or bullying</button>
+              <button type="button" data-next-button>Næste</button>
+            </div>
+            <div data-step="secondary" hidden>
+              <button type="button" role="radio">Misleading thumbnail</button>
+              <button type="button" role="radio">Other misleading info</button>
+              <button type="button" data-submit-button>Rapportér</button>
+            </div>
+          </div>
+        </div>
       </article>
       <article data-truthlens-card>
         <a id="thumbnail" href="/watch?v=fixture-item-3">
@@ -61,7 +121,79 @@
         <h3 id="video-title">Secret lab leak exposed in new footage</h3>
         <div id="channel-name">Signal Watch Europe</div>
         <div class="metadata-snippet">Short transcript excerpt with vague claims and escalating urgency language.</div>
+        <div class="youtube-card-menu">
+          <button type="button" aria-label="Action menu">More</button>
+          <div class="youtube-report-menu" role="menu" hidden>
+            <button type="button" role="menuitem">Share</button>
+            <button type="button" role="menuitem" data-report-entry>Report</button>
+          </div>
+          <div class="youtube-report-dialog" role="dialog" hidden>
+            <div data-step="primary">
+              <button type="button" role="radio">Spam or misleading</button>
+              <button type="button" role="radio">Harassment or bullying</button>
+              <button type="button" data-next-button>Næste</button>
+            </div>
+            <div data-step="secondary" hidden>
+              <button type="button" role="radio">Misleading thumbnail</button>
+              <button type="button" role="radio">Other misleading info</button>
+              <button type="button" data-submit-button>Rapportér</button>
+            </div>
+          </div>
+        </div>
       </article>
     </div>
+    <script>
+      document.querySelectorAll('[data-truthlens-card]').forEach((card) => {
+        const menuButton = card.querySelector('button[aria-label="Action menu"]');
+        const menu = card.querySelector('.youtube-report-menu');
+        const reportEntry = card.querySelector('[data-report-entry]');
+        const dialog = card.querySelector('.youtube-report-dialog');
+        const primaryStep = dialog?.querySelector('[data-step="primary"]');
+        const secondaryStep = dialog?.querySelector('[data-step="secondary"]');
+        const nextButton = dialog?.querySelector('[data-next-button]');
+        const submitButton = dialog?.querySelector('[data-submit-button]');
+
+        menuButton?.addEventListener('click', () => {
+          menu.hidden = false;
+        });
+
+        reportEntry?.addEventListener('click', () => {
+          menu.hidden = true;
+          dialog.hidden = false;
+          primaryStep.hidden = false;
+          secondaryStep.hidden = true;
+        });
+
+        primaryStep?.querySelectorAll('[role="radio"]').forEach((button) => {
+          button.addEventListener('click', () => {
+            primaryStep.dataset.selected = button.textContent?.trim() ?? '';
+          });
+        });
+
+        nextButton?.addEventListener('click', () => {
+          if (!primaryStep.dataset.selected) {
+            return;
+          }
+          primaryStep.hidden = true;
+          secondaryStep.hidden = false;
+        });
+
+        secondaryStep?.querySelectorAll('[role="radio"]').forEach((button) => {
+          button.addEventListener('click', () => {
+            secondaryStep.dataset.selected = button.textContent?.trim() ?? '';
+          });
+        });
+
+        submitButton?.addEventListener('click', () => {
+          if (!secondaryStep.dataset.selected) {
+            return;
+          }
+          dialog.hidden = true;
+          card.setAttribute('data-youtube-report-submitted', 'true');
+          card.setAttribute('data-youtube-report-primary', primaryStep.dataset.selected);
+          card.setAttribute('data-youtube-report-secondary', secondaryStep.dataset.selected);
+        });
+      });
+    </script>
   </body>
 </html>

@@ -70,6 +70,217 @@ class ExplanationEvidence(BaseModel):
     details: str | None = None
 
 
+class ManualReportIssue(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issue_type: Literal[
+        "thumbnail",
+        "title",
+        "description",
+        "transcript",
+        "channel",
+        "other",
+    ]
+    comment: str = Field(min_length=1)
+    original_comment: str | None = None
+
+
+class ManualReportRequestedOutcome(str, Enum):
+    MODERATE = "moderate"
+    REMOVE = "remove"
+
+
+class ManualReportWorkflowMode(str, Enum):
+    REPORT = "report"
+    VERIFY_TRANSPARENT = "verify-transparent"
+
+
+class ManualReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    workflow_mode: ManualReportWorkflowMode = ManualReportWorkflowMode.REPORT
+    target_url: str | None = None
+    thumbnail_ref: str | None = None
+    title_snapshot: str = Field(min_length=1)
+    transcript_excerpt: str | None = None
+    issues: list[ManualReportIssue] = Field(min_length=1)
+    requested_outcome: ManualReportRequestedOutcome = ManualReportRequestedOutcome.MODERATE
+    optimize_requested: bool = False
+    optimize_applied: bool = False
+    optimization_model: str | None = None
+    report_text: str = Field(min_length=1)
+
+
+class ManualReportOptimizationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    workflow_mode: ManualReportWorkflowMode = ManualReportWorkflowMode.REPORT
+    target_url: str | None = None
+    title_snapshot: str = Field(min_length=1)
+    channel_name: str = Field(min_length=1)
+    transcript_excerpt: str | None = None
+    requested_outcome: ManualReportRequestedOutcome = ManualReportRequestedOutcome.MODERATE
+    issues: list[ManualReportIssue] = Field(min_length=1)
+
+
+class ManualReportOptimizationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issues: list[ManualReportIssue] = Field(min_length=1)
+    optimization_model: str = Field(min_length=1)
+    report_text: str = Field(min_length=1)
+
+
+class ManualReportSuggestionIssue(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issue_type: Literal[
+        "thumbnail",
+        "title",
+        "description",
+        "transcript",
+        "channel",
+        "other",
+    ]
+    suggested: bool
+    comment: str = ""
+
+
+class ManualReportSuggestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    workflow_mode: ManualReportWorkflowMode = ManualReportWorkflowMode.REPORT
+    target_url: str | None = None
+    thumbnail_ref: str | None = None
+    title_snapshot: str = Field(min_length=1)
+    channel_name: str = Field(min_length=1)
+    channel_url: str | None = None
+    channel_context: str | None = None
+    description_snapshot: str | None = None
+    transcript_excerpt: str | None = None
+    transcript_available: bool | None = None
+    explanation_summary: str | None = None
+    reasons: list[str] = Field(default_factory=list)
+
+
+class ManualReportSuggestionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issues: list[ManualReportSuggestionIssue] = Field(min_length=6, max_length=6)
+    suggested_outcome: ManualReportRequestedOutcome
+    suggestion_model: str = Field(min_length=1)
+
+
+class ReviewPromptState(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    workflow_mode: ManualReportWorkflowMode
+    label: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    auto_open: bool = False
+
+
+ReviewPhase = Literal[
+    "resolve-share",
+    "fetch-watch-metadata",
+    "score-item",
+    "draft-review",
+    "youtube-auth",
+]
+
+
+class ReviewStatusEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    phase: ReviewPhase
+    label: str = Field(min_length=1)
+    status: Literal["completed"]
+    details: str | None = None
+
+
+class ExplanationBundlePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    explanation_id: str | None = None
+    explanation_summary: str | None = None
+    reasons: list[str] = Field(default_factory=list)
+    evidence: list[ExplanationEvidence] = Field(default_factory=list)
+
+
+class MobileResolvedWatchContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_url: str = Field(min_length=1)
+    video_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    thumbnail_ref: str | None = None
+    channel_name: str = Field(min_length=1)
+    channel_url: str | None = None
+    description_snapshot: str | None = None
+    transcript_excerpt: str | None = None
+    transcript_available: bool = False
+    channel_context: str | None = None
+    music_likelihood: float = Field(default=0.0, ge=0.0, le=1.0)
+    metadata: ItemMetadata = Field(default_factory=ItemMetadata)
+
+
+class MobileAnalyzeShareRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_url: str = Field(min_length=1)
+    user_context: UserContext = Field(default_factory=UserContext)
+
+
+class MobileAnalyzeShareResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model_version: str = Field(min_length=1)
+    policy_version: str = Field(min_length=1)
+    watch_context: MobileResolvedWatchContext
+    score: ScoreResult
+    explanation: ExplanationBundlePayload
+    review_prompt: ReviewPromptState | None = None
+    draft_suggestion: ManualReportSuggestionResponse
+    youtube_auth: YouTubeAuthStatus
+    status_stream: list[ReviewStatusEvent] = Field(default_factory=list)
+
+
+class YouTubeAuthStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    configured: bool
+    connected: bool
+    auth_url: str | None = None
+    channel_name: str | None = None
+
+
+class YouTubeReportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_url: str = Field(min_length=1)
+    report_text: str = Field(min_length=1)
+    issue_types: list[
+        Literal[
+            "thumbnail",
+            "title",
+            "description",
+            "transcript",
+            "channel",
+            "other",
+        ]
+    ] = Field(min_length=1)
+
+
+class YouTubeReportResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["reported"]
+    reason_id: str = Field(min_length=1)
+    reason_label: str = Field(min_length=1)
+    secondary_reason_id: str | None = None
+    secondary_reason_label: str | None = None
+
+
 class ScoreResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -122,6 +333,7 @@ class FeedbackEvent(BaseModel):
     before_score: float | None = Field(default=None, ge=0.0, le=1.0)
     after_score: float | None = Field(default=None, ge=0.0, le=1.0)
     timestamp: str = Field(min_length=1)
+    manual_report: ManualReport | None = None
 
 
 class DatasetRecord(BaseModel):

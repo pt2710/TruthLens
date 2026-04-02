@@ -65,11 +65,13 @@ def test_training_and_simulation_generate_artifacts(
     assert any(layer["component_id"] == "vae-anomaly-head" for layer in model_info["architecture_layers"])
     assert any(layer["component_id"] == "temporal-lstm-encoder" for layer in model_info["architecture_layers"])
     assert any(layer["component_id"] == "vision-cnn-encoder" for layer in model_info["architecture_layers"])
+    assert any(layer["component_id"] == "vision-vit-encoder" for layer in model_info["architecture_layers"])
     assert model_info["text_encoder_resolution"]["actual_encoder"] in {
         "sentence-transformer",
         "count-vectorizer-bigrams",
     }
     assert model_info["vision_encoder_resolution"]["actual_encoder"] in {
+        "vision-transformer",
         "tiny-cnn-thumbnail",
         "vision-v2",
     }
@@ -104,6 +106,7 @@ def test_training_and_simulation_generate_artifacts(
     assert "parser_failure_rate" in audit_report
     assert (repo_root() / "configs/thresholds/contextual-bandit.json").exists()
     assert (repo_root() / "configs/thresholds/evolutionary-search.json").exists()
+    assert (repo_root() / "configs/thresholds/rl-policy.json").exists()
 
 
 def test_trained_scoring_surfaces_model_contributor_details(

@@ -5,9 +5,13 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
+const browserDefines = {
+  'process.env.NODE_ENV': JSON.stringify('production'),
+};
 
 export default defineConfig({
   plugins: [react()],
+  define: browserDefines,
   resolve: {
     alias: {
       '@truthlens/shared-schemas': resolve(rootDir, '../../libs/shared-schemas/src'),

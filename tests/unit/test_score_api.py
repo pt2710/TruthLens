@@ -32,6 +32,9 @@ def test_info_endpoints() -> None:
 
     assert policy_response.status_code == 200
     assert "effective_thresholds" in policy_response.json()
+    assert "policy_mode" in policy_response.json()
+    assert "runtime_metrics" in policy_response.json()
+    assert "rl_artifact" in policy_response.json()
     assert ready_response.status_code == 200
     assert "ready" in ready_response.json()
 
@@ -334,6 +337,7 @@ def test_model_info_exposes_current_and_planned_architecture_layers() -> None:
     assert any(layer["layer_type"] == "llm-assist" for layer in payload["architecture_layers"])
     assert any(head["name"] == "anomaly" for head in payload["head_specs"])
     assert payload["vision_encoder_resolution"]["actual_encoder"] in {
+        "vision-transformer",
         "tiny-cnn-thumbnail",
         "vision-v2",
     }
@@ -520,6 +524,8 @@ def test_metrics_endpoint_exposes_score_and_feedback_counters(
     assert "truthlens_score_events_total 1" in response.text
     assert "truthlens_feedback_events_total 1" in response.text
     assert 'truthlens_feedback_action_total{action="report"} 1' in response.text
+    assert "truthlens_policy_fallback_rate" in response.text
+    assert "truthlens_policy_divergence_rate" in response.text
     assert 'truthlens_api_requests_total{path="/score-item"} 1' in response.text
 
 
