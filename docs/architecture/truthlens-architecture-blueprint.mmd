@@ -1,0 +1,225 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#334155",
+    "tertiaryColor": "#ffffff",
+    "background": "#ffffff"
+  },
+  "flowchart": {
+    "curve": "linear",
+    "htmlLabels": true,
+    "nodeSpacing": 28,
+    "rankSpacing": 42
+  }
+}}%%
+flowchart TB
+
+classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:1.5px,color:#0f172a;
+classDef supporting fill:#f8fafc,stroke:#475569,stroke-width:1.3px,color:#0f172a;
+classDef emphasis fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#0f172a;
+classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:1.5px,color:#0f172a;
+classDef future fill:#faf5ff,stroke:#7c3aed,stroke-width:1.5px,stroke-dasharray: 7 4,color:#0f172a;
+
+subgraph legend["Legend"]
+  legend_impl_a["Implemented block"] --> legend_impl_b["Implemented connection"]
+  legend_future_a["Future / planned block"] -.-> legend_future_b["Future / planned connection"]
+end
+class legend_impl_a,legend_impl_b implemented
+class legend_future_a,legend_future_b future
+
+subgraph runtime["1. Runtime Inputs"]
+  feed["YouTube feed cards<br/>watch-page metadata"]
+  thumb["Thumbnail image"]
+  title["Title"]
+  desc["Description snippet"]
+  caps["Transcript / captions<br/>when exposed"]
+  channel["Channel history / context"]
+  prefs["Local user preferences<br/>manual review actions"]
+end
+class feed,thumb,title,desc,caps,channel,prefs implemented
+
+feed --> thumb
+feed --> title
+feed --> desc
+feed --> caps
+feed --> channel
+
+subgraph governance["2. Data + Governance Pipeline"]
+  discovery["Discovery"]
+  acquisition["Acquisition"]
+  normalization["Normalization"]
+  dedup["Deduplication"]
+  split["Split manifest"]
+  dataset_card["Dataset card"]
+  audit["Audit report"]
+  gate["Model training gate<br/>governance artifacts must validate"]
+end
+class discovery,acquisition,normalization,dedup,split,dataset_card,audit,gate supporting
+
+discovery --> acquisition --> normalization --> dedup --> split
+split --> dataset_card
+split --> audit
+dataset_card --> gate
+audit --> gate
+
+subgraph features["3. Feature Extraction"]
+  text_features["Text / title features"]
+  vision_features["Vision-v2 thumbnail features"]
+  metadata_features["Handcrafted metadata features"]
+  history_features["Sequence-summary history features"]
+end
+class text_features,vision_features,metadata_features,history_features implemented
+
+title --> text_features
+thumb --> vision_features
+feed --> metadata_features
+title --> metadata_features
+desc --> metadata_features
+caps --> metadata_features
+channel --> history_features
+
+subgraph model_stack["4. Multimodal Model Stack"]
+  trainer["Offline trainer<br/>fit heads, fusion, calibration<br/>export model artifacts"]
+  text_head["Text head<br/>title-encoder<br/>sklearn logistic regression"]
+  vision_head["Vision head<br/>thumbnail-feature-head<br/>sklearn logistic regression"]
+  metadata_head["Metadata head<br/>tabular-risk-head<br/>sklearn logistic regression"]
+  history_head["History head<br/>temporal-channel-head<br/>sklearn logistic regression"]
+  fusion_head["Fusion head<br/>multimodal-fusion-head<br/>sklearn logistic regression"]
+  calibration_head["Calibration head<br/>probability-calibration-head<br/>Platt-style logistic calibration"]
+  model_note["Runtime head note<br/>probability-producing sigmoid classifiers<br/>trained through scikit-learn logistic regression"]
+end
+class trainer,text_head,vision_head,metadata_head,history_head,fusion_head,calibration_head,model_note implemented
+
+gate --> trainer
+text_features --> text_head
+vision_features --> vision_head
+metadata_features --> metadata_head
+history_features --> history_head
+trainer --> text_head
+trainer --> vision_head
+trainer --> metadata_head
+trainer --> history_head
+text_head --> fusion_head
+vision_head --> fusion_head
+metadata_head --> fusion_head
+history_head --> fusion_head
+fusion_head --> calibration_head
+calibration_head --> model_note
+
+subgraph outputs["5. Inference Output Contract"]
+  model_signal["Core model signal<br/>risk_score<br/>confidence<br/>uncertainty"]
+  score_contract["Final score contract<br/>recommended_action<br/>reasons<br/>explanation_id<br/>explanation_summary<br/>evidence"]
+end
+class model_signal,score_contract contract
+
+calibration_head --> model_signal
+
+subgraph policy["6. Policy + Personalization Layer"]
+  base_thresholds["Base thresholds"]
+  feedback_bias["Feedback bias"]
+  bandit_offsets["Contextual-bandit threshold offsets"]
+  channel_bias["Channel-specific bias"]
+  user_bias["User strictness<br/>prior corrections<br/>muted channels"]
+  action_map["Action mapping<br/>none → badge → blur → ask-report → hide"]
+end
+class base_thresholds,feedback_bias,bandit_offsets,channel_bias,user_bias,action_map emphasis
+
+model_signal --> action_map
+prefs --> user_bias
+base_thresholds --> action_map
+feedback_bias --> action_map
+bandit_offsets --> action_map
+channel_bias --> action_map
+user_bias --> action_map
+action_map --> score_contract
+
+subgraph explain["7. Explanation Layer"]
+  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware explanation adjustments"]
+end
+class explainer implemented
+
+text_head --> explainer
+vision_head --> explainer
+metadata_head --> explainer
+history_head --> explainer
+fusion_head --> explainer
+model_signal --> explainer
+explainer --> score_contract
+
+subgraph review["8. Human-in-the-Loop Review Layer"]
+  prompt_report["Report prompt"]
+  prompt_verify["Verify-transparent prompt"]
+  draft["Manual report drafting"]
+  gemini["Gemini suggestion / optimization"]
+  youtube["YouTube report submission support"]
+  local_feedback["Local positive / negative feedback capture"]
+end
+class prompt_report,prompt_verify,draft,gemini,youtube,local_feedback implemented
+
+score_contract --> prompt_report
+score_contract --> prompt_verify
+prompt_report --> draft
+prompt_verify --> draft
+draft --> gemini
+gemini --> youtube
+gemini --> local_feedback
+
+subgraph loops["9. Feedback / Learning Loops"]
+  feedback_store["Feedback event store"]
+  score_store["Score event store"]
+  channel_profiles["Channel profile aggregation"]
+  threshold_inputs["Threshold adaptation inputs"]
+end
+class feedback_store,score_store,channel_profiles,threshold_inputs supporting
+
+local_feedback --> feedback_store
+score_contract --> score_store
+feedback_store --> channel_profiles
+score_store --> channel_profiles
+channel_profiles --> threshold_inputs
+channel_profiles --> channel_bias
+threshold_inputs --> feedback_bias
+
+subgraph evaluation["10. Evaluation / Simulation / Search"]
+  threshold_sweep["Threshold sweep"]
+  qtable["Q-table build"]
+  policy_derivation["Policy derivation"]
+  bellman["Bellman state values"]
+  replay["Replay simulation"]
+  evolution["Evolutionary threshold search"]
+  bandit["Contextual bandit"]
+  drift["Drift report"]
+end
+class threshold_sweep,qtable,policy_derivation,bellman,replay,evolution,bandit,drift supporting
+
+split --> threshold_sweep
+split --> drift
+score_store --> threshold_sweep
+feedback_store --> qtable
+score_store --> qtable
+qtable --> policy_derivation
+qtable --> bellman
+policy_derivation --> replay
+threshold_sweep --> evolution
+threshold_sweep --> bandit
+replay --> base_thresholds
+evolution --> base_thresholds
+bandit --> bandit_offsets
+drift --> trainer
+
+subgraph future_stack["11. Future Extensions"]
+  stronger_models["Stronger multimodal encoders"]
+  richer_video["Richer transcript / video understanding"]
+  cross_platform["Cross-platform clients"]
+  android["Android support"]
+  analytics["More advanced moderation analytics"]
+end
+class stronger_models,richer_video,cross_platform,android,analytics future
+
+trainer -.-> stronger_models
+explainer -.-> richer_video
+review -.-> cross_platform
+cross_platform -.-> android
+loops -.-> analytics

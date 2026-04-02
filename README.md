@@ -1,13 +1,147 @@
 # TruthLens
 
-TruthLens is a multimodal browser-plugin and backend system for detection, filtering, explanation, and semi-automated reporting support for misleading video content.
+TruthLens is a multimodal browser plugin and backend system for detecting, explaining, filtering, and supporting semi-automated reporting of misleading video packaging. The current implementation combines thumbnail, title, metadata, transcript-derived, and channel-history signals with a policy layer that decides whether content should stay untouched, receive a badge, blur, trigger a review prompt, or be hidden locally.
 
-## Repository Goals
+## Why TruthLens Exists
 
-- Bootstrap a Codex-ready monorepo under `TruthLens/`
-- Provide a FastAPI scoring backend with explicit score and feedback contracts
-- Provide a browser extension shell with DOM observation, overlays, blur/hide flows, and feedback capture
-- Establish data discovery, acquisition, normalization, governance, and audit scaffolding before model training
+Video platforms are full of packaging decisions that users have to interpret quickly: thumbnails, titles, metadata snippets, channel history, and the occasional transcript cue. Misleading or clickbait framing rarely lives in one field alone. It usually emerges from the way several cues are combined.
+
+TruthLens exists to make that packaging legible. The project is designed around two beliefs:
+
+- Multimodal reasoning is necessary because misleading framing is often a mismatch between visual, textual, and historical context.
+- Human-in-the-loop review is necessary because score-driven automation alone is too blunt for moderation-like decisions.
+
+## How TruthLens Works
+
+At runtime, the extension observes YouTube feed cards and watch-page context, extracts available title, thumbnail, metadata, transcript, channel, and user-preference signals, and sends them through the local scoring stack. The model layer produces calibrated risk, confidence, and uncertainty estimates. A policy layer then applies thresholds, feedback bias, channel bias, contextual-bandit offsets, and user personalization to decide the recommended action.
+
+That runtime loop is only one part of the system. The repository also contains the offline data-build, training, evaluation, and simulation stack that produces model artifacts, threshold profiles, drift reports, and replay-search outputs. Human feedback closes the loop through report/verify flows, score event logging, feedback event logging, channel profile aggregation, and later threshold adaptation.
+
+## Architecture Blueprint
+
+![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.svg)
+
+The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions.
+
+- [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
+- [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
+- [PNG render](docs/architecture/truthlens-architecture-blueprint.png)
+- [Architecture visual notes](docs/architecture/README.md)
+
+## Current Implemented Model
+
+TruthLens currently ships a six-head multimodal scoring stack backed by scikit-learn logistic regression artifacts:
+
+- `text`: `title-encoder` using count-vectorizer bigrams over the title surface
+- `vision`: `thumbnail-feature-head` using `vision-v2` thumbnail features
+- `metadata`: `tabular-risk-head` using handcrafted metadata and mismatch features
+- `history`: `temporal-channel-head` using sequence-summary history features
+- `fusion`: `multimodal-fusion-head` combining head probabilities into a unified risk signal
+- `calibration`: `probability-calibration-head` applying Platt-style probability calibration
+
+These are probability-producing sigmoid classifiers, not deep end-to-end transformer stacks. That matters because the current system is intentionally explicit and inspectable: feature families, head contributions, fusion behavior, counterfactual summaries, and threshold decisions are all meant to stay auditable.
+
+The runtime output contract includes:
+
+- `risk_score`
+- `confidence`
+- `uncertainty`
+- `recommended_action`
+- `reasons`
+- `explanation_id`
+- `explanation_summary`
+- `evidence`
+
+The current default threshold profile in `configs/thresholds/default.json` is:
+
+- `badge_threshold`: `0.20`
+- `blur_threshold`: `0.45`
+- `report_prompt_threshold`: `0.65`
+- `hide_threshold`: `0.80`
+
+Those base thresholds are then adjusted by feedback bias, contextual-bandit offsets, channel-specific bias, strict-mode behavior, muted channels, and prior correction history before the extension applies actions locally.
+
+## Training and Policy Adaptation
+
+TruthLens is built around a gated pipeline rather than ad hoc model training.
+
+The data side currently follows this path:
+
+1. discovery
+2. acquisition
+3. normalization
+4. deduplication
+5. split manifest generation
+6. dataset card and audit output generation
+
+Model training is blocked until those governance artifacts exist and validate.
+
+The training and evaluation stack then:
+
+- fits the four base heads
+- trains the fusion head on validation-time probability stacks
+- trains the calibration head over fusion output
+- exports model artifacts and model metadata
+- writes evaluation outputs, calibration summaries, confusion metrics, and per-head reports
+
+TruthLens also includes a simulation and search layer that is already represented in code and artifacts:
+
+- threshold sweep
+- Q-table construction
+- policy derivation
+- Bellman state values
+- replay simulation
+- evolutionary threshold search
+- contextual bandit threshold adjustments
+- drift reporting
+
+This policy layer matters because TruthLens is explicitly not meant to trigger moderation-like decisions from raw score alone. Runtime actions are policy-gated and context-aware.
+
+## Human Review and Reporting
+
+TruthLens supports semi-automated review, not hidden autonomous moderation.
+
+Today that means:
+
+- manual report suggestions with Gemini plus local heuristic fallback
+- transparent/non-clickbait verification flows
+- explainable report prompts and verify prompts in the extension
+- YouTube reporting support where the platform and account state allow it
+- structured local feedback capture for both negative and positive signals
+
+The boundary is intentional:
+
+- raw model output does not silently submit reports on its own
+- policy can prompt the user to review
+- the user remains part of the final reporting or verification action
+
+## Repository Structure
+
+TruthLens is a monorepo organized around clear subsystem boundaries:
+
+- `apps/`
+  - runnable surfaces such as the API, extension, trainer, and labeling UI
+- `libs/`
+  - shared schemas, feature extraction, model serving, explanation, policy, evaluation, governance, and data pipeline logic
+- `configs/`
+  - threshold profiles, model metadata space, and other runtime/training configuration
+- `datasets/`
+  - tracked manifests plus the governance-oriented structure around dataset builds
+- `artifacts/`
+  - trained model bundles, evaluation runs, drift reports, score/feedback logs, and runtime reports
+- `docs/`
+  - architecture notes, API docs, workpacks, and subagent guidance
+- `infra/`
+  - infrastructure, CI, database, and deployment support
+- `tests/`
+  - unit, integration, and end-to-end coverage
+
+Core repository guidance lives in:
+
+- [AGENTS.md](AGENTS.md)
+- [CODEX_WORKFLOW.md](CODEX_WORKFLOW.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Quick Start
 
@@ -34,29 +168,39 @@ pnpm typecheck
 pnpm test
 pnpm test:e2e
 pnpm build
+pnpm docs:render-architecture
 ```
 
-## Core Documents
-
-- `AGENTS.md`
-- `CODEX_WORKFLOW.md`
-- `ARCHITECTURE.md`
-- `CONTRIBUTING.md`
-
-## Current End-to-End Bootstrap Flow
-
-1. `truthlens_trainer.pipeline` builds discovery, acquisition, normalization, label prep, deduplication, split manifests, dataset card, and audit outputs.
-2. `truthlens_trainer.train` trains bootstrap text, vision, metadata, fusion, and calibration heads and exports model artifacts.
-3. `truthlens_trainer.simulate` runs threshold sweep, Q-table policy bootstrap, threshold search, and drift reporting.
-4. `truthlens_api.main` serves scoring, batch scoring, feedback, health, model info, and policy info.
-5. The extension content script scores feed cards through the API with local fallback and captures user feedback events.
-
-## Smoke Validation
-
-Run the full local smoke chain in one command:
+### Smoke Validation
 
 ```powershell
 make smoke
 ```
 
-This runs dataset build, model training, simulation, and API endpoint validation in an isolated smoke root and writes a report to `artifacts/reports/smoke-summary.json` inside that isolated run.
+This runs dataset build, model training, simulation, and API endpoint validation in an isolated smoke root and writes a summary report under `artifacts/reports/`.
+
+## Roadmap
+
+### Phase 1: Current Baseline
+
+- multimodal browser extension with local overlay behavior
+- FastAPI scoring backend
+- explicit score/result contracts
+- explanation generation and feedback capture
+- governance-first data/build/training workflow
+- threshold tuning, replay simulation, and drift reporting
+
+### Phase 2: Stronger Context and Personalization
+
+- richer multimodal context modeling across thumbnail, description, transcript, and watch-page signals
+- more robust channel-pattern reasoning
+- stronger local personalization and verification/report prompting
+- better handling of domain-specific content types such as music, synthetic spam, and recurring template channels
+
+### Phase 3: Cross-Platform and Deeper Moderation Analytics
+
+- cross-platform TruthLens clients
+- Android support
+- richer moderation analytics and reporting surfaces
+- stronger multimodal encoders and deeper video understanding
+- more advanced learning loops layered on top of the current explicit policy system

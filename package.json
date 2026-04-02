@@ -9,13 +9,15 @@
     "test": "pnpm --filter @truthlens/shared-schemas test && pnpm --filter @truthlens/extension test && pnpm --filter @truthlens/labeling-ui test",
     "test:e2e": "pnpm --filter @truthlens/extension build && node tests/e2e/extension-fixture.mjs",
     "build": "pnpm --filter @truthlens/shared-schemas build && pnpm --filter @truthlens/extension build && pnpm --filter @truthlens/labeling-ui build",
-    "format": "pnpm exec prettier --check ."
+    "format": "pnpm exec prettier --check .",
+    "docs:render-architecture": "node scripts/render_architecture_diagram.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.0.0",
+    "mermaid": "^11.12.0",
     "playwright": "^1.53.0",
     "prettier": "^3.5.3",
     "typescript-eslint": "^8.26.1"
