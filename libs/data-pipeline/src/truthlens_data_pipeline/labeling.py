@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 from truthlens_data_pipeline.paths import relative_path, repo_root, write_json, write_jsonl
+from truthlens_feature_extractors import BENIGN_CONTENT_CLASSES, FACTUAL_CONTENT_CLASSES
 
 
 def _combine_label_score(record: dict[str, Any]) -> float:
@@ -37,6 +39,22 @@ def _queue_entry(
         "source_trust_flag": record["metadata"].get("source_trust_flag"),
         "template_cluster": record["features"].get("template_cluster"),
         "prior_flags": record["history"].get("prior_flags", 0),
+        "content_class": record["labels"].get("content_class"),
+        "content_class_confidence": record["features"].get("content_class_confidence"),
+        "dominant_bias_risk": record["features"].get("dominant_bias_risk"),
+        "bias_review_required": record["labels"].get("bias_review_required"),
+        "current_labels": {
+            "clickbait": bool(record["labels"].get("clickbait", False)),
+            "misleading_thumbnail": bool(record["labels"].get("misleading_thumbnail", False)),
+            "misleading_title": bool(record["labels"].get("misleading_title", False)),
+            "fearbait": bool(record["labels"].get("fearbait", False)),
+            "ai_mass_spam": bool(record["labels"].get("ai_mass_spam", False)),
+            "deceptive_divergence": bool(record["labels"].get("deceptive_divergence", False)),
+            "stylistic_divergence": bool(record["labels"].get("stylistic_divergence", False)),
+            "bias_review_required": bool(record["labels"].get("bias_review_required", False)),
+            "review_required": bool(record["labels"].get("review_required", False)),
+        },
+        "annotator_notes": list(record.get("annotator_notes", [])),
         "queue_reason": queue_reason,
     }
 
@@ -49,9 +67,20 @@ def prepare_label_batches(
     review_queue: list[dict[str, Any]] = []
     hard_negative_queue: list[dict[str, Any]] = []
     disagreement_queue: list[dict[str, Any]] = []
+    class_coverage: Counter[str] = Counter()
+    dominant_bias_coverage: Counter[str] = Counter()
 
     for record in normalized_records:
         weak_label_score = _combine_label_score(record)
+        content_class = str(record["features"].get("content_class", "unknown"))
+        content_class_confidence = float(record["features"].get("content_class_confidence", 0.0))
+        dominant_bias_risk = str(record["features"].get("dominant_bias_risk", "balanced-context"))
+        bias_primitives = record["features"].get("bias_primitives", {})
+        genre_confusion = float(bias_primitives.get("genre_confusion", 0.0))
+        channel_prior_dependency = float(bias_primitives.get("channel_prior_dependency", 0.0))
+        uncertainty_calibration = float(bias_primitives.get("uncertainty_calibration", 0.0))
+        transcript_mismatch = float(record["features"].get("transcript_mismatch_score", 0.0))
+        raw_transcript_mismatch = float(record["features"].get("raw_transcript_mismatch_score", 0.0))
         clickbait = bool(record["features"].get("sensational_count", 0) > 0)
         misleading_thumbnail = bool(record["metadata"].get("risk_seed", 0.0) > 0.7)
         misleading_title = bool(
@@ -63,7 +92,20 @@ def prepare_label_batches(
         )
         fearbait = bool(weak_label_score > 0.62)
         ai_mass_spam = bool(record["history"].get("prior_flags", 0) >= 3 and clickbait)
-        review_required = 0.35 <= weak_label_score <= 0.8 or ai_mass_spam
+        deceptive_divergence = bool(
+            content_class in FACTUAL_CONTENT_CLASSES
+            and max(transcript_mismatch, float(record["features"].get("mismatch_score", 0.0))) > 0.54
+        )
+        stylistic_divergence = bool(
+            content_class in BENIGN_CONTENT_CLASSES and raw_transcript_mismatch > transcript_mismatch + 0.08
+        )
+        bias_review_required = bool(
+            genre_confusion >= 0.5
+            or uncertainty_calibration >= 0.2
+            or (channel_prior_dependency >= 0.62 and content_class_confidence < 0.72)
+            or (content_class == "satire" and weak_label_score >= 0.28)
+        )
+        review_required = 0.35 <= weak_label_score <= 0.8 or ai_mass_spam or bias_review_required
 
         record["labels"] = {
             "clickbait": clickbait,
@@ -71,6 +113,10 @@ def prepare_label_batches(
             "misleading_title": misleading_title,
             "fearbait": fearbait,
             "ai_mass_spam": ai_mass_spam,
+            "content_class": content_class,
+            "deceptive_divergence": deceptive_divergence,
+            "stylistic_divergence": stylistic_divergence,
+            "bias_review_required": bias_review_required,
             "review_required": review_required,
         }
         record["metadata"]["weak_label_score"] = weak_label_score
@@ -82,16 +128,29 @@ def prepare_label_batches(
         )
 
         note = (
-            f"Weak label score={weak_label_score} template={record['features'].get('template_cluster', 'unknown')}"
+            " ".join(
+                [
+                    f"Weak label score={weak_label_score}",
+                    f"class={content_class}",
+                    f"bias={dominant_bias_risk}",
+                    f"template={record['features'].get('template_cluster', 'unknown')}",
+                ]
+            )
         )
         record["annotator_notes"] = [note]
         labeled_records.append(record)
+        class_coverage[content_class] += 1
+        dominant_bias_coverage[dominant_bias_risk] += 1
 
         if review_required:
             review_reason = (
                 "AI-mass-spam pattern requires manual review."
                 if ai_mass_spam
-                else "Weak-label score falls inside the manual-review uncertainty band."
+                else (
+                    "Bias-structured review is required because class ambiguity or channel-lock-in risk is elevated."
+                    if bias_review_required
+                    else "Weak-label score falls inside the manual-review uncertainty band."
+                )
             )
             review_queue.append(
                 _queue_entry(
@@ -131,7 +190,15 @@ def prepare_label_batches(
         "review_queue": review_queue,
         "hard_negative_queue": hard_negative_queue,
         "disagreement_queue": disagreement_queue,
-        "annotator_notes_fields": ["weak_label_score", "uncertainty_bucket", "source_trust_flag"],
+        "class_coverage": dict(sorted(class_coverage.items())),
+        "dominant_bias_coverage": dict(sorted(dominant_bias_coverage.items())),
+        "annotator_notes_fields": [
+            "weak_label_score",
+            "uncertainty_bucket",
+            "source_trust_flag",
+            "content_class",
+            "dominant_bias_risk",
+        ],
         "source_batch_path": relative_path(annotation_batch_path),
     }
     write_jsonl(weak_labels_path, labeled_records)
@@ -146,6 +213,8 @@ def prepare_label_batches(
         "review_count": len(review_queue),
         "hard_negative_count": len(hard_negative_queue),
         "disagreement_count": len(disagreement_queue),
+        "class_coverage": dict(sorted(class_coverage.items())),
+        "dominant_bias_coverage": dict(sorted(dominant_bias_coverage.items())),
     }
     annotation_manifest_path = root / "datasets" / "manifests" / "builds" / f"{run_id}-annotation.json"
     write_json(annotation_manifest_path, annotation_manifest)

@@ -1,4 +1,5 @@
 from .bandit import recommend_bandit_threshold_adjustments, run_contextual_bandit
+from .bseo import run_bseo_search
 from .drift import build_drift_report
 from .evolution import run_evolutionary_search, search_threshold_family
 from .metrics import compute_binary_metrics, confusion_counts, expected_calibration_error
@@ -14,6 +15,7 @@ __all__ = [
     "estimate_state_values",
     "expected_calibration_error",
     "recommend_bandit_threshold_adjustments",
+    "run_bseo_search",
     "run_evolutionary_search",
     "run_policy_replay",
     "run_contextual_bandit",

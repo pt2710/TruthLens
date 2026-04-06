@@ -84,7 +84,15 @@ export type ModelInfo = {
 
 export type PolicyInfo = {
   policy_version: string;
+  policy_mode?: string;
+  resolved_policy_mode?: string;
   effective_thresholds: Record<string, number>;
+  bseo_artifact?: {
+    available: boolean;
+    compatible: boolean;
+    stale?: boolean;
+    policy_version?: string;
+  };
   feedback_summary?: {
     total_events: number;
     correction_rate: number;

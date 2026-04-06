@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 from truthlens_data_pipeline.paths import (
@@ -30,6 +31,20 @@ def _dataset_card(build_id: str, splits: dict[str, list[dict[str, Any]]]) -> str
             ]
         )
     )
+    content_class_counts: Counter[str] = Counter()
+    dominant_bias_counts: Counter[str] = Counter()
+    for rows in splits.values():
+        for record in rows:
+            content_class_counts[str(record["features"].get("content_class", "unknown"))] += 1
+            dominant_bias_counts[str(record["features"].get("dominant_bias_risk", "balanced-context"))] += 1
+    class_lines = [
+        f"  - {content_class}: {count}"
+        for content_class, count in sorted(content_class_counts.items())
+    ] or ["  - unknown: 0"]
+    bias_lines = [
+        f"  - {bias_name}: {count}"
+        for bias_name, count in sorted(dominant_bias_counts.items())
+    ] or ["  - balanced-context: 0"]
     return "\n".join(
         [
             f"# TruthLens Dataset Card: {build_id}",
@@ -42,6 +57,10 @@ def _dataset_card(build_id: str, splits: dict[str, list[dict[str, Any]]]) -> str
             f"- Weakly flagged records: {flagged}",
             "- Split strategy: channel-first deterministic partitioning with explicit lineage keys.",
             "- Governance gates: schema validation, duplicate rate, channel leakage, provenance completeness.",
+            "- Content-class coverage:",
+            *class_lines,
+            "- Dominant bias-risk coverage:",
+            *bias_lines,
         ]
     )
 
@@ -75,7 +94,36 @@ def build_processed_dataset(
     gold_path = root / "datasets" / "labels" / "gold" / f"{build_id}.jsonl"
     write_jsonl(gold_path, gold_rows)
     adjudication_path = root / "datasets" / "labels" / "adjudication" / f"{build_id}.json"
-    write_json(adjudication_path, {"build_id": build_id, "gold_count": len(gold_rows)})
+    write_json(
+        adjudication_path,
+        {
+            "build_id": build_id,
+            "run_id": run_id,
+            "generated_at": utc_now(),
+            "gold_count": len(gold_rows),
+            "adjudicated_count": 0,
+            "unresolved_count": len(gold_rows),
+            "pending_items": [
+                {
+                    "item_id": record["item_id"],
+                    "title": record["title"],
+                    "channel_name": record["channel_name"],
+                    "content_class": str(record["features"].get("content_class", "unknown")),
+                    "content_class_confidence": float(
+                        record["features"].get("content_class_confidence", 0.0)
+                    ),
+                    "dominant_bias_risk": str(
+                        record["features"].get("dominant_bias_risk", "balanced-context")
+                    ),
+                    "labels": dict(record.get("labels", {})),
+                    "annotator_notes": list(record.get("annotator_notes", [])),
+                }
+                for record in gold_rows
+            ],
+            "adjudications": [],
+            "source_gold_path": relative_path(gold_path),
+        },
+    )
 
     dataset_card_dir = ensure_dir(root / "datasets" / "dataset_cards")
     dataset_card_path = dataset_card_dir / f"{build_id}.md"
@@ -104,6 +152,21 @@ def build_processed_dataset(
             "dataset_card": relative_path(dataset_card_path),
         },
         "counts": {name: len(rows) for name, rows in splits.items()},
+        "class_coverage": {
+            content_class: sum(
+                1
+                for rows in splits.values()
+                for record in rows
+                if str(record["features"].get("content_class", "unknown")) == content_class
+            )
+            for content_class in sorted(
+                {
+                    str(record["features"].get("content_class", "unknown"))
+                    for rows in splits.values()
+                    for record in rows
+                }
+            )
+        },
     }
     build_manifest_path = root / "datasets" / "manifests" / "builds" / f"{build_id}.json"
     latest_manifest_path = root / "datasets" / "manifests" / "builds" / "latest.json"

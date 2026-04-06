@@ -51,6 +51,8 @@ def _append_evidence(
         "transcript",
         "metadata",
         "policy",
+        "taxonomy",
+        "bias",
         "user-context",
         "uncertainty",
     ],
@@ -92,6 +94,63 @@ def build_explanation(
     reasons: list[str] = []
     evidence: list[ExplanationEvidence] = []
     music_likelihood = float(signals.feature_summary.get("music_likelihood", 0.0))
+    content_class = str(signals.feature_summary.get("content_class", "unknown"))
+    content_class_confidence = float(signals.feature_summary.get("content_class_confidence", 0.0))
+    bias_profile = signals.feature_summary.get("bias_profile", {})
+    guardrail = (
+        str(bias_profile.get("guardrail_applied"))
+        if isinstance(bias_profile, dict) and bias_profile.get("guardrail_applied")
+        else str(signals.feature_summary.get("taxonomy_guardrail", ""))
+    )
+    if content_class != "unknown":
+        _append_evidence(
+            evidence,
+            "taxonomy",
+            f"Content class detected: {content_class}",
+            score=content_class_confidence,
+            details=(
+                f"TruthLens inferred the item as '{content_class}' with confidence {content_class_confidence:.2f}."
+            ),
+        )
+    if guardrail:
+        _append_evidence(
+            evidence,
+            "taxonomy",
+            "Class-conditioned guardrail applied",
+            score=content_class_confidence if content_class != "unknown" else None,
+            details=(
+                f"Guardrail '{guardrail}' adjusted how cross-modal mismatch was interpreted for this class."
+            ),
+        )
+    if isinstance(bias_profile, dict):
+        positive_biases = [str(value) for value in bias_profile.get("positive_biases", []) if value]
+        negative_biases = [str(value) for value in bias_profile.get("negative_biases", []) if value]
+        if positive_biases:
+            _append_evidence(
+                evidence,
+                "bias",
+                "Preserved positive bias signal",
+                score=min(max(content_class_confidence, 0.0), 1.0),
+                details="Positive bias preserved: " + ", ".join(positive_biases) + ".",
+            )
+        if negative_biases:
+            reasons.append("Negative bias signals required stronger intervention.")
+            _append_evidence(
+                evidence,
+                "bias",
+                "Negative bias signal triggered intervention",
+                score=min(max(float(signals.calibrated_score), 0.0), 1.0),
+                details="Negative bias triggered: " + ", ".join(negative_biases) + ".",
+            )
+    parameter_frames = signals.feature_summary.get("bseo_parameter_frames", [])
+    if isinstance(parameter_frames, list) and parameter_frames:
+        _append_evidence(
+            evidence,
+            "bias",
+            "BSEO parameter frame activated",
+            score=min(max(content_class_confidence, 0.0), 1.0) if content_class != "unknown" else None,
+            details="Interpretation frame: " + ", ".join(str(frame) for frame in parameter_frames[:6]) + ".",
+        )
     muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
     if muted_channels and payload.channel.channel_name.strip().lower() in muted_channels:
         reason = "Channel is locally muted in the current user profile."
@@ -106,7 +165,7 @@ def build_explanation(
     if music_likelihood >= 0.55:
         _append_evidence(
             evidence,
-            "metadata",
+            "taxonomy",
             "Likely music-content context detected",
             score=music_likelihood,
             details="This item appears likely to be music content, so literal thumbnail-to-lyrics matching is weighted less heavily.",
@@ -214,11 +273,11 @@ def build_explanation(
             score=signals.feature_summary.get("thumbnail_text_density", 0.0),
             details=reason,
         )
-    transcript_threshold = 0.72 if music_likelihood >= 0.55 else 0.55
+    transcript_threshold = 0.72 if content_class in {"music", "art", "satire", "gaming"} else 0.55
     if signals.feature_summary.get("transcript_mismatch_score", 0.0) > transcript_threshold:
         reason = (
             "Available lyrics or spoken context still diverge from the packaging even after accounting for likely music-video framing."
-            if music_likelihood >= 0.55
+            if content_class in {"music", "art"}
             else "Title and transcript excerpt diverge in a way that suggests framing mismatch."
         )
         reasons.append(reason)
@@ -227,7 +286,11 @@ def build_explanation(
             "transcript",
             "Packaging diverges from transcript context",
             score=signals.feature_summary.get("transcript_mismatch_score", 0.0),
-            details=reason,
+            details=(
+                f"{reason} Guardrail: {guardrail}."
+                if guardrail
+                else reason
+            ),
         )
     if signals.uncertainty >= 0.35:
         reason = "Model uncertainty is elevated, so manual review is safer."
@@ -254,7 +317,7 @@ def build_explanation(
         _append_evidence(
             evidence,
             "policy",
-            "Runtime RL policy override",
+            "Runtime BSEO policy override",
             score=signals.calibrated_score,
             details=runtime_policy_note,
         )
@@ -273,7 +336,7 @@ def build_explanation(
         _append_evidence(
             evidence,
             "policy",
-            "Runtime RL policy requested manual report"
+            "Runtime BSEO policy requested manual report"
             if isinstance(runtime_policy_note, str) and runtime_policy_note
             else "Policy crossed the report threshold",
             score=signals.calibrated_score,
@@ -294,7 +357,7 @@ def build_explanation(
         _append_evidence(
             evidence,
             "policy",
-            "Runtime RL policy selected local hide"
+            "Runtime BSEO policy selected local hide"
             if isinstance(runtime_policy_note, str) and runtime_policy_note
             else "Policy crossed the local hide threshold",
             score=signals.calibrated_score,

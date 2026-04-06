@@ -34,6 +34,7 @@ def test_info_endpoints() -> None:
     assert "effective_thresholds" in policy_response.json()
     assert "policy_mode" in policy_response.json()
     assert "runtime_metrics" in policy_response.json()
+    assert "bseo_artifact" in policy_response.json()
     assert "rl_artifact" in policy_response.json()
     assert ready_response.status_code == 200
     assert "ready" in ready_response.json()
@@ -72,12 +73,16 @@ def test_score_item_contract() -> None:
         "risk_score",
         "confidence",
         "uncertainty",
+        "content_class",
+        "content_class_confidence",
+        "bias_profile",
         "recommended_action",
         "reasons",
         "explanation_id",
         "explanation_summary",
         "evidence",
     }
+    assert "metrics" in payload["bias_profile"]
     if payload["recommended_action"] != "none":
         assert payload["reasons"]
         assert payload["explanation_id"]
@@ -526,6 +531,9 @@ def test_metrics_endpoint_exposes_score_and_feedback_counters(
     assert 'truthlens_feedback_action_total{action="report"} 1' in response.text
     assert "truthlens_policy_fallback_rate" in response.text
     assert "truthlens_policy_divergence_rate" in response.text
+    assert "truthlens_policy_bseo_artifact_available" in response.text
+    assert "truthlens_policy_rl_artifact_available" in response.text
+    assert "# HELP truthlens_policy_fallback_rate Runtime BSEO fallback rate." in response.text
     assert 'truthlens_api_requests_total{path="/score-item"} 1' in response.text
 
 
@@ -638,3 +646,4 @@ def test_music_content_dampens_literal_mismatch_penalty() -> None:
         entry["label"] == "Likely music-content context detected"
         for entry in payload["evidence"]
     )
+    assert payload["content_class"] == "music"

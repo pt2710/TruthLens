@@ -3,7 +3,11 @@ import json
 import httpx
 from pathlib import Path
 
-from truthlens_api.manual_reports import optimize_manual_report, suggest_manual_report
+from truthlens_api.manual_reports import (
+    _build_suggestion_prompt,
+    optimize_manual_report,
+    suggest_manual_report,
+)
 from truthlens_model_serving import append_feedback_event
 from truthlens_shared_schemas.contracts import (
     ManualReportOptimizationRequest,
@@ -590,3 +594,77 @@ def test_suggest_manual_report_preserves_unsuggested_gemini_fields(
     assert issue_map["transcript"].comment == ""
     assert issue_map["channel"].suggested is False
     assert issue_map["channel"].comment == ""
+
+
+def test_suggest_manual_report_uses_satire_aware_heuristics(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "target_url": "https://www.youtube.com/watch?v=satire-demo",
+                "thumbnail_ref": "https://img.youtube.com/vi/satire-demo/default.jpg",
+                "title_snapshot": "Minister admits moon tax in emergency address",
+                "channel_name": "Parody Desk",
+                "channel_context": 'Recent public channel titles: "Budget hearing parody"; "Fake campaign sketch"; "Satire special"',
+                "description_snapshot": "Satirical commentary sketch about public policy panic.",
+                "transcript_excerpt": "The monologue plays as parody and jokes about an invented moon tax.",
+                "transcript_available": True,
+                "content_class": "satire",
+                "content_class_confidence": 0.77,
+                "bias_profile": {
+                    "metrics": {"genre_confusion": 0.64},
+                    "positive_biases": ["ambiguity-aware-caution"],
+                    "negative_biases": ["genre-confusion"],
+                    "guardrail_applied": "satire-context-prefers-review",
+                },
+                "explanation_summary": "Packaging remains ambiguous because the parody framing is not explicit enough.",
+                "reasons": ["Genre confusion remains elevated for this upload."],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert issue_map["title"].comment.lower().startswith("this appears to be satire content")
+    assert issue_map["other"].comment.lower().startswith("the overall packaging should be reviewed")
+    assert issue_map["channel"].suggested is True
+
+
+def test_build_suggestion_prompt_includes_taxonomy_and_bias_context() -> None:
+    prompt = _build_suggestion_prompt(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "target_url": "https://www.youtube.com/watch?v=music123",
+                "title_snapshot": "Moonlight Echoes (Official Audio)",
+                "channel_name": "Aurora Records",
+                "content_class": "music",
+                "content_class_confidence": 0.92,
+                "bias_profile": {
+                    "metrics": {"crossmodal_rigidity": 0.28},
+                    "positive_biases": ["stylistic-divergence-tolerance"],
+                    "negative_biases": [],
+                    "guardrail_applied": "music-context-dampens-crossmodal-rigidity",
+                },
+                "reasons": ["Class-conditioned guardrail reduced the mismatch penalty."],
+            }
+        )
+    )
+
+    assert "TruthLens content class: music (92% confidence)" in prompt
+    assert "TruthLens positive biases: stylistic-divergence-tolerance" in prompt
+    assert "TruthLens negative biases: None recorded." in prompt

@@ -26,7 +26,8 @@ Current implemented optional neural paths that should now appear in the blueprin
 - ViT thumbnail encoder
 - VAE packaging-anomaly head
 - temporal LSTM history encoder
-- feature-flagged runtime RL action policy
+- BSEO interpretation frames and class-conditioned guardrails
+- feature-flagged runtime BSEO action policy with RL compatibility export
 - cross-platform mobile review contract
 - Android Jetpack Compose companion/share client
 

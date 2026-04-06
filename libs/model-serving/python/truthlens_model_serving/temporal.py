@@ -28,7 +28,10 @@ def temporal_available() -> bool:
     return torch is not None and nn is not None
 
 
-class TemporalHistoryLSTM(nn.Module):  # type: ignore[misc]
+_TemporalModuleBase = nn.Module if nn is not None else object
+
+
+class TemporalHistoryLSTM(_TemporalModuleBase):  # type: ignore[misc]
     def __init__(self, input_dim: int, hidden_dim: int = 16, num_layers: int = 1) -> None:
         super().__init__()
         self.lstm = nn.LSTM(  # type: ignore[union-attr]

@@ -1,3 +1,14 @@
+from .bias import (
+    BENIGN_CONTENT_CLASSES,
+    CONTENT_CLASSES,
+    FACTUAL_CONTENT_CLASSES,
+    build_bias_primitives,
+    build_bias_profile,
+    class_adjusted_mismatch,
+    dominant_bias_name,
+    infer_bseo_prior_frames,
+    infer_content_taxonomy,
+)
 from .embeddings import (
     TextEncoderResolution,
     fallback_text_encoder_resolution,
@@ -37,9 +48,16 @@ from .text import (
 )
 
 __all__ = [
+    "BENIGN_CONTENT_CLASSES",
+    "CONTENT_CLASSES",
+    "FACTUAL_CONTENT_CLASSES",
     "TextEncoderResolution",
     "HistoryEncoderResolution",
     "VisionEncoderResolution",
+    "build_bias_primitives",
+    "build_bias_profile",
+    "class_adjusted_mismatch",
+    "dominant_bias_name",
     "fallback_text_encoder_resolution",
     "fallback_history_encoder_resolution",
     "fallback_vision_encoder_resolution",
@@ -57,6 +75,8 @@ __all__ = [
     "normalize_text",
     "sentence_transformer_matrix",
     "sentence_transformers_available",
+    "infer_content_taxonomy",
+    "infer_bseo_prior_frames",
     "temporal_torch_available",
     "thumbnail_array_batch",
     "thumbnail_array_from_path",

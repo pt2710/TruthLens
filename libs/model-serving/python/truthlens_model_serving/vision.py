@@ -27,7 +27,10 @@ def vision_transformer_available() -> bool:
     return vision_available() and ViTConfig is not None and ViTModel is not None
 
 
-class TinyThumbnailCNN(nn.Module):  # type: ignore[misc]
+_VisionModuleBase = nn.Module if nn is not None else object
+
+
+class TinyThumbnailCNN(_VisionModuleBase):  # type: ignore[misc]
     def __init__(
         self,
         image_size: int,

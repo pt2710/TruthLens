@@ -13,15 +13,15 @@ TruthLens exists to make that packaging legible. The project is designed around 
 
 ## How TruthLens Works
 
-At runtime, TruthLens can operate from two primary entry surfaces: the browser extension watching YouTube feed/watch-page context, and the Android companion app receiving shared YouTube URLs. Both surfaces resolve the same normalized watch context, extract available title, thumbnail, metadata, transcript, channel, and user-preference signals, and send them through the local scoring stack. The model layer produces calibrated risk, confidence, and uncertainty estimates. A policy layer then applies thresholds, feedback bias, channel bias, contextual-bandit offsets, and user personalization to decide the recommended action.
+At runtime, TruthLens can operate from two primary entry surfaces: the browser extension watching YouTube feed/watch-page context, and the Android companion app receiving shared YouTube URLs. Both surfaces resolve the same normalized watch context, extract available title, thumbnail, metadata, transcript, channel, and user-preference signals, and send them through the local scoring stack. The model layer produces calibrated risk, confidence, and uncertainty estimates. A BSEO-guided policy layer then applies class-conditioned thresholds, guardrails, feedback bias, channel bias, contextual-bandit offsets, and user personalization to decide the recommended action.
 
-That runtime loop is only one part of the system. The repository also contains the offline data-build, training, evaluation, and simulation stack that produces model artifacts, threshold profiles, RL policy artifacts, drift reports, and replay-search outputs. Human feedback closes the loop through report/verify flows, score event logging, feedback event logging, channel profile aggregation, and later threshold adaptation.
+That runtime loop is only one part of the system. The repository also contains the offline data-build, training, evaluation, and simulation stack that produces model artifacts, threshold profiles, BSEO policy artifacts, mutation-lineage reports, mutation-bias atlases, drift reports, and compatibility RL exports. Human feedback closes the loop through report/verify flows, score event logging, feedback event logging, channel profile aggregation, and later threshold adaptation.
 
 ## Architecture Blueprint
 
 ![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.svg)
 
-The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions. The current visual distinguishes baseline explicit feature paths from the implemented optional learned paths, and it now also shows the feature-flagged runtime RL policy plus the cross-platform mobile contract and Android companion client.
+The blueprint above is the visual companion to the authoritative architecture contract in [ARCHITECTURE.md](ARCHITECTURE.md). Solid blocks and arrows represent implemented architecture. Dashed blocks and arrows represent planned or future extensions. The current visual distinguishes baseline explicit feature paths from the implemented optional learned paths, and it now also shows the feature-flagged runtime BSEO policy plus the cross-platform mobile contract and Android companion client.
 
 For AI/ML readers, the diagram now distinguishes the currently shipped layer taxonomy from planned neural extensions. That distinction is deliberate: the current scorer is a hybrid stack with explicit engineered features, optional bounded neural encoders, logistic fusion/calibration, and clear fallback behavior, while stronger end-to-end neural components remain roadmap items rather than live runtime claims.
 
@@ -117,23 +117,46 @@ The training and evaluation stack then:
 TruthLens also includes a simulation and search layer that is already represented in code and artifacts:
 
 - threshold sweep
-- Q-table construction
-- policy derivation
-- Bellman state values
 - replay simulation
-- evolutionary threshold search
+- BSEO control-genome search
+- mutation lineage logging
+- mutation-bias atlas generation
 - contextual bandit threshold adjustments
+- RL compatibility export
 - drift reporting
 
 Those artifacts now feed a feature-flagged runtime action policy with three explicit modes:
 
 - `threshold-default`
-- `rl-shadow`
-- `rl-live`
+- `bseo-shadow`
+- `bseo-live`
 
-`rl-shadow` computes the RL recommendation and tracks divergences without changing the user-facing action. `rl-live` only takes over when compatible artifacts exist and guardrails pass for confidence, uncertainty, runtime inputs, and artifact freshness. If any guardrail fails, the runtime falls back to the threshold policy automatically.
+`bseo-shadow` computes the BSEO recommendation and tracks divergences without changing the user-facing action. `bseo-live` only takes over when compatible artifacts exist and guardrails pass for confidence, uncertainty, runtime inputs, and artifact freshness. If any guardrail fails, the runtime falls back to the threshold policy automatically. `rl-shadow` and `rl-live` remain temporary compatibility aliases while old artifacts age out.
 
 This policy layer matters because TruthLens is explicitly not meant to trigger moderation-like decisions from raw score alone. Runtime actions are policy-gated and context-aware.
+
+## BSEO Interpretation Frame
+
+Bias-Structured Evolutionary Optimization is not a naive rule engine. It is the interpretation frame that decides when the system should be more lenient and when it should be more suspicious across `Thumbnail`, `Title`, `Description`, `Transcription`, `Channel`, and `Other`.
+
+TruthLens maintains two high-level prior lists:
+
+- not inherently clickbait: music, tutorials/how-to, gaming, sports, legitimate promotion, news, satire, documentary work, reviews/comparisons, education, official trailers, and user-verified content
+- presumptively clickbait: false thumbnail/title promises, empty shock framing, false urgency, fake authority markers such as `official` or `breaking`, deceptive celebrity/brand use, transcript-level delivery failure, mass-produced sensational AI spam, manipulated context, fake giveaways, and systematic deceptive channel history
+
+Those priors are mapped into the current fixed runtime taxonomy:
+
+- `news`
+- `commentary`
+- `documentary`
+- `music`
+- `art`
+- `satire`
+- `gaming`
+- `promo`
+- `unknown`
+
+The point is not to excuse misleading content inside benign genres. The point is to separate acceptable genre-typical stylization from deceptive mismatch. For example, music artwork and satire exaggeration should dampen literal cross-modal rigidity, while false urgency, fake `official` framing, or systematic channel deception should amplify skepticism.
 
 Planned next-step model families remain clearly separate from the shipped runtime stack:
 
@@ -220,7 +243,7 @@ pnpm docs:render-architecture
 
 ### Android
 
-Open [apps/android-client](/C:/Users/PT-Xb/.codex/worktrees/3a13/TruthLens/apps/android-client) in Android Studio and run the `app` target as a standard Jetpack Compose application. The default emulator-friendly API base URL is `http://10.0.2.2:8000/`, so the backend should be running locally before you test share-intake or manual URL analysis.
+Open `apps/android-client` in Android Studio and run the `app` target as a standard Jetpack Compose application. The default emulator-friendly API base URL is `http://10.0.2.2:8000/`, so the backend should be running locally before you test share-intake or manual URL analysis.
 
 ### Smoke Validation
 
@@ -255,7 +278,7 @@ This runs dataset build, model training, simulation, and API endpoint validation
 ### Phase 3: Cross-Platform Runtime Completion
 
 - optional ViT thumbnail encoder with runtime priority over the tiny CNN and engineered fallback
-- feature-flagged `threshold-default`, `rl-shadow`, and `rl-live` action policy modes
+- feature-flagged `threshold-default`, `bseo-shadow`, and `bseo-live` action policy modes
 - cross-platform review-session contract and `/mobile/analyze-share`
 - native Android Jetpack Compose companion/share client with local settings and history
 

@@ -82,9 +82,10 @@ subgraph features["4. Feature Extraction"]
   vision_features["Thumbnail feature extraction"]
   metadata_features["Handcrafted metadata features"]
   history_features["Sequence-summary history features"]
+  bseo_frames["BSEO interpretation frames<br/>positive / negative priors<br/>Thumbnail / Title / Description / Transcription / Channel / Other"]
   packaging_features["Combined packaging feature matrix"]
 end
-class text_features,vision_features,metadata_features,history_features,packaging_features implemented
+class text_features,vision_features,metadata_features,history_features,bseo_frames,packaging_features implemented
 
 title --> text_features
 thumb --> vision_features
@@ -93,6 +94,13 @@ title --> metadata_features
 desc --> metadata_features
 caps --> metadata_features
 channel --> history_features
+bseo_frames --> packaging_features
+title --> bseo_frames
+thumb --> bseo_frames
+desc --> bseo_frames
+caps --> bseo_frames
+channel --> bseo_frames
+prefs --> bseo_frames
 vision_features --> packaging_features
 metadata_features --> packaging_features
 
@@ -186,25 +194,30 @@ calibration_head --> model_signal
 
 subgraph policy["8. Policy + Personalization Layer"]
   base_thresholds["Base thresholds"]
+  bseo_control["BSEO control genome<br/>class-conditioned thresholds<br/>mismatch dampening / amplification<br/>channel-prior temperature"]
   feedback_bias["Feedback bias"]
   bandit_offsets["Contextual-bandit threshold offsets"]
   channel_bias["Channel-specific bias"]
   user_bias["User strictness<br/>prior corrections<br/>muted channels"]
   threshold_mode["Runtime mode<br/>threshold-default"]
-  shadow_mode["Runtime mode<br/>rl-shadow"]
-  live_mode["Runtime mode<br/>rl-live"]
-  guardrails["RL guardrails<br/>artifact compatibility<br/>confidence floor<br/>uncertainty ceiling<br/>staleness checks"]
+  shadow_mode["Runtime mode<br/>bseo-shadow"]
+  live_mode["Runtime mode<br/>bseo-live"]
+  guardrails["BSEO guardrails<br/>artifact compatibility<br/>confidence floor<br/>uncertainty ceiling<br/>staleness checks"]
   action_map["Action mapping<br/>none → badge → blur → ask-report → hide"]
 end
-class base_thresholds,feedback_bias,bandit_offsets,channel_bias,user_bias,threshold_mode,shadow_mode,live_mode,guardrails,action_map emphasis
+class base_thresholds,bseo_control,feedback_bias,bandit_offsets,channel_bias,user_bias,threshold_mode,shadow_mode,live_mode,guardrails,action_map emphasis
 
 model_signal --> threshold_mode
 model_signal --> shadow_mode
 model_signal --> live_mode
+bseo_frames --> bseo_control
 prefs --> user_bias
 base_thresholds --> threshold_mode
 base_thresholds --> shadow_mode
 base_thresholds --> live_mode
+bseo_control --> threshold_mode
+bseo_control --> shadow_mode
+bseo_control --> live_mode
 feedback_bias --> threshold_mode
 feedback_bias --> shadow_mode
 feedback_bias --> live_mode
@@ -223,7 +236,7 @@ live_mode --> action_map
 action_map --> score_contract
 
 subgraph explain["9. Explanation Layer"]
-  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>music-aware adjustments<br/>RL override note when applicable"]
+  explainer["Explanation engine<br/>reasons<br/>evidence buckets<br/>top contributors<br/>counterfactual summaries<br/>BSEO parameter frames<br/>class-conditioned guardrails<br/>BSEO override note when applicable"]
 end
 class explainer implemented
 
@@ -237,6 +250,7 @@ history_head_summary --> explainer
 history_head_lstm --> explainer
 anomaly_head --> explainer
 fusion_head --> explainer
+bseo_frames --> explainer
 action_map --> explainer
 model_signal --> explainer
 explainer --> score_contract
@@ -298,12 +312,14 @@ subgraph evaluation["13. Evaluation / Simulation / Search"]
   policy_derivation["Policy derivation"]
   bellman["Bellman state values"]
   replay["Replay simulation"]
-  evolution["Evolutionary threshold search"]
+  bseo_search["BSEO control-genome search"]
+  lineage["Mutation lineage log"]
+  atlas["Mutation-bias atlas"]
   bandit["Contextual bandit"]
-  rl_artifact["Runtime RL policy artifact"]
+  policy_artifact["Runtime BSEO policy artifact<br/>plus rl-policy compatibility export"]
   drift["Drift report"]
 end
-class threshold_sweep,qtable,policy_derivation,bellman,replay,evolution,bandit,rl_artifact,drift supporting
+class threshold_sweep,qtable,policy_derivation,bellman,replay,bseo_search,lineage,atlas,bandit,policy_artifact,drift supporting
 
 split --> threshold_sweep
 split --> drift
@@ -313,14 +329,16 @@ score_store --> qtable
 qtable --> policy_derivation
 qtable --> bellman
 policy_derivation --> replay
-threshold_sweep --> evolution
+threshold_sweep --> bseo_search
 threshold_sweep --> bandit
-replay --> rl_artifact
-evolution --> rl_artifact
-bandit --> rl_artifact
-rl_artifact --> shadow_mode
-rl_artifact --> live_mode
-rl_artifact --> bandit_offsets
+bseo_search --> lineage
+bseo_search --> atlas
+replay --> policy_artifact
+bseo_search --> policy_artifact
+bandit --> policy_artifact
+policy_artifact --> shadow_mode
+policy_artifact --> live_mode
+policy_artifact --> bandit_offsets
 drift --> trainer
 
 subgraph future_stack["14. Future Extensions"]

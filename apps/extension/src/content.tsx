@@ -71,6 +71,41 @@ const NON_MUSIC_MARKERS = [
   'gameplay',
   'reaction',
 ];
+const TAXONOMY_HINT_MARKERS: Record<string, readonly string[]> = {
+  news: ['breaking', 'news', 'alert', 'live', 'bulletin', 'officials', 'report', 'update', 'transfer', 'injury'],
+  commentary: [
+    'commentary',
+    'analysis',
+    'opinion',
+    'reaction',
+    'breakdown',
+    'editorial',
+    'review',
+    'comparison',
+    'tutorial',
+    'how to',
+    'how-to',
+    'hands on',
+    'hands-on',
+  ],
+  documentary: [
+    'documentary',
+    'explainer',
+    'history',
+    'investigation',
+    'deep dive',
+    'episode',
+    'lecture',
+    'lesson',
+    'course',
+    'case study',
+  ],
+  music: MUSIC_TITLE_MARKERS,
+  art: ['art', 'artwork', 'gallery', 'painting', 'illustration', 'concept art', 'exhibition'],
+  satire: ['satire', 'parody', 'spoof', 'sketch', 'meme', 'comedy'],
+  gaming: ['gameplay', 'gaming', 'walkthrough', "let's play", 'speedrun', 'build guide'],
+  promo: ['trailer', 'teaser', 'promo', 'preorder', 'sale', 'discount', 'launch trailer', 'official trailer', 'reveal trailer', 'sponsored'],
+};
 let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
@@ -195,7 +230,7 @@ function isUnknownChannelName(channelName: string | null | undefined): boolean {
   return !channelName || normalizeChannelKey(channelName) === UNKNOWN_CHANNEL_NAME.toLowerCase();
 }
 
-function estimateMusicSignals(
+function estimateTaxonomyHints(
   title: string,
   channelName: string,
   descriptionSnapshot: string | null,
@@ -213,11 +248,27 @@ function estimateMusicSignals(
     0,
     1,
   );
+  const taxonomyHints = Object.fromEntries(
+    Object.entries(TAXONOMY_HINT_MARKERS).map(([contentClass, markers]) => {
+      const titleSignal = countPhraseHits(normalizedTitle, markers);
+      const channelSignal = countPhraseHits(normalizedChannel, markers);
+      const descriptionSignal = countPhraseHits(normalizedDescription, markers);
+      const hintScore = clamp(
+        titleSignal * 0.24 + channelSignal * 0.1 + descriptionSignal * 0.12,
+        0,
+        1,
+      );
+      return [`taxonomy_hint_${contentClass}`, Number(hintScore.toFixed(4))];
+    }),
+  ) as Record<string, number>;
+  const strongestHint = Math.max(0, ...Object.values(taxonomyHints));
 
   return {
     music_likelihood: Number(musicLikelihood.toFixed(4)),
     title_music_signal: Number(clamp(titleHits / 2, 0, 1).toFixed(4)),
     channel_music_signal: Number(clamp((channelHits + descriptionHits) / 3, 0, 1).toFixed(4)),
+    ...taxonomyHints,
+    taxonomy_hint_unknown: Number(clamp(1 - strongestHint, 0, 1).toFixed(4)),
   };
 }
 
@@ -389,7 +440,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   const uploadTime = metadataLineSpans[1]?.textContent?.trim() || null;
   const itemId = buildItemId(card, index);
   const signature = buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt);
-  const musicSignals = estimateMusicSignals(title, channelName, descriptionSnapshot);
+  const taxonomyHints = estimateTaxonomyHints(title, channelName, descriptionSnapshot);
   return {
     card,
     itemId,
@@ -410,7 +461,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
         channel_name: channelName,
         channel_url: channelUrl,
         prior_flags: 0,
-        channel_history_features: musicSignals,
+        channel_history_features: taxonomyHints,
       },
       metadata: {
         duration_seconds: durationSeconds,
@@ -620,6 +671,22 @@ function attachActions(
     idLabel.className = 'truthlens-details-meta';
     idLabel.textContent = `Explanation ID: ${score.explanation_id}`;
     details.appendChild(idLabel);
+  }
+  const classLabel = document.createElement('p');
+  classLabel.className = 'truthlens-details-meta';
+  classLabel.textContent = `Class: ${score.content_class} (${Math.round(score.content_class_confidence * 100)}%)`;
+  details.appendChild(classLabel);
+  if (score.bias_profile.guardrail_applied) {
+    const guardrailLabel = document.createElement('p');
+    guardrailLabel.className = 'truthlens-details-meta';
+    guardrailLabel.textContent = `Guardrail: ${score.bias_profile.guardrail_applied}`;
+    details.appendChild(guardrailLabel);
+  }
+  if (score.bias_profile.negative_biases.length > 0) {
+    const biasLabel = document.createElement('p');
+    biasLabel.className = 'truthlens-details-meta';
+    biasLabel.textContent = `Negative bias: ${score.bias_profile.negative_biases.join(', ')}`;
+    details.appendChild(biasLabel);
   }
 
   whyButton.addEventListener('click', () => {

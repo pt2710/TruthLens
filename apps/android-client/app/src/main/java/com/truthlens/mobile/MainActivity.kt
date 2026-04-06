@@ -227,6 +227,25 @@ private fun AnalysisSection(
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(analysis.watchContext.title, style = MaterialTheme.typography.titleMedium)
             Text("Score ${analysis.score.riskScore} • ${analysis.score.recommendedAction}")
+            Text(
+                "Class ${analysis.score.contentClass} • confidence ${analysis.score.contentClassConfidence}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            analysis.score.biasProfile.guardrailApplied?.let { guardrail ->
+                Text("Guardrail: $guardrail", style = MaterialTheme.typography.bodySmall)
+            }
+            if (analysis.score.biasProfile.negativeBiases.isNotEmpty()) {
+                Text(
+                    "Negative bias: ${analysis.score.biasProfile.negativeBiases.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (analysis.score.biasProfile.positiveBiases.isNotEmpty()) {
+                Text(
+                    "Preserved bias: ${analysis.score.biasProfile.positiveBiases.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             Text(analysis.explanation.explanationSummary ?: "No explanation summary.")
 
             if (state.settings.showDebugInfo) {

@@ -16,6 +16,12 @@ from truthlens_api.manual_reports import (
     optimize_manual_report,
     suggest_manual_report,
 )
+from truthlens_api.annotation_review import (
+    SaveAnnotationAdjudicationsRequest,
+    SaveAnnotationAdjudicationsResponse,
+    build_annotation_batch_response,
+    save_annotation_adjudications,
+)
 from truthlens_api.mobile import (
     completed_status_event,
     infer_review_prompt_state,
@@ -232,6 +238,35 @@ def feedback(payload: FeedbackEvent) -> dict[str, str]:
     return {"status": "accepted", "feedback_log_path": settings.feedback_log_path}
 
 
+@app.get("/annotation-batch/latest")
+def annotation_batch_latest() -> dict[str, Any]:
+    try:
+        return build_annotation_batch_response()
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@app.post("/annotation-batch/adjudications", response_model=SaveAnnotationAdjudicationsResponse)
+def annotation_batch_adjudications(
+    payload: SaveAnnotationAdjudicationsRequest,
+) -> SaveAnnotationAdjudicationsResponse:
+    try:
+        return save_annotation_adjudications(payload)
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
+
+
 @app.post("/mobile/analyze-share", response_model=MobileAnalyzeShareResponse)
 def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeShareResponse:
     status_stream = []
@@ -278,6 +313,7 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
         item_id=watch_context.video_id,
         title=watch_context.title,
         thumbnail_ref=watch_context.thumbnail_ref,
+        description_snapshot=watch_context.description_snapshot,
         transcript_excerpt=watch_context.transcript_excerpt,
         metadata=watch_context.metadata,
         channel={
@@ -298,7 +334,13 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
     model_version = str(describe_model().get("model_version", "bootstrap-v0"))
     policy_version = str(get_policy_profile().get("policy_version", "adaptive-threshold-v1"))
     music_likelihood = float(signals.feature_summary.get("music_likelihood", 0.0))
-    watch_context = watch_context.model_copy(update={"music_likelihood": music_likelihood})
+    watch_context = watch_context.model_copy(
+        update={
+            "music_likelihood": music_likelihood,
+            "content_class": score_result.content_class,
+            "content_class_confidence": score_result.content_class_confidence,
+        }
+    )
     status_stream.append(
         completed_status_event(
             "score-item",
@@ -326,6 +368,9 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
         transcript_available=watch_context.transcript_available,
         explanation_summary=score_result.explanation_summary,
         reasons=score_result.reasons,
+        content_class=score_result.content_class,
+        content_class_confidence=score_result.content_class_confidence,
+        bias_profile=score_result.bias_profile,
     )
     if gemini_available():
         try:
@@ -505,6 +550,7 @@ def metrics() -> str:
     feedback_summary_payload = summarize_feedback_events()
     policy_profile_payload = get_policy_profile()
     runtime_metrics = policy_profile_payload.get("runtime_metrics", {})
+    bseo_artifact = policy_profile_payload.get("bseo_artifact", {})
     rl_artifact = policy_profile_payload.get("rl_artifact", {})
     lines = [
         "# HELP truthlens_score_events_total Total scored items recorded by the API.",
@@ -519,12 +565,15 @@ def metrics() -> str:
         "# HELP truthlens_score_average_uncertainty Average uncertainty over scored items.",
         "# TYPE truthlens_score_average_uncertainty gauge",
         f"truthlens_score_average_uncertainty {score_summary['average_uncertainty']}",
-        "# HELP truthlens_policy_fallback_rate Runtime RL fallback rate.",
+        "# HELP truthlens_policy_fallback_rate Runtime BSEO fallback rate.",
         "# TYPE truthlens_policy_fallback_rate gauge",
         f"truthlens_policy_fallback_rate {runtime_metrics.get('fallback_rate', 0.0)}",
-        "# HELP truthlens_policy_divergence_rate Runtime RL shadow divergence rate.",
+        "# HELP truthlens_policy_divergence_rate Runtime BSEO shadow divergence rate.",
         "# TYPE truthlens_policy_divergence_rate gauge",
         f"truthlens_policy_divergence_rate {runtime_metrics.get('divergence_rate', 0.0)}",
+        "# HELP truthlens_policy_bseo_artifact_available Whether a BSEO policy artifact is available.",
+        "# TYPE truthlens_policy_bseo_artifact_available gauge",
+        f"truthlens_policy_bseo_artifact_available {1 if bseo_artifact.get('available') else 0}",
         "# HELP truthlens_policy_rl_artifact_available Whether an RL policy artifact is available.",
         "# TYPE truthlens_policy_rl_artifact_available gauge",
         f"truthlens_policy_rl_artifact_available {1 if rl_artifact.get('available') else 0}",

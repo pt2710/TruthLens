@@ -12,8 +12,13 @@ from urllib.request import urlopen
 import numpy as np
 
 from truthlens_feature_extractors import (
+    build_bias_primitives,
+    build_bias_profile,
+    class_adjusted_mismatch,
     count_sensational_tokens,
     extract_thumbnail_features,
+    infer_bseo_prior_frames,
+    infer_content_taxonomy,
     thumbnail_array_from_path,
     sentence_transformer_matrix,
     transcript_mismatch_score,
@@ -342,52 +347,113 @@ def _count_phrase_hits(text: str, phrases: tuple[str, ...]) -> int:
 
 
 def _music_context(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
-    title = payload.title.lower()
-    channel_name = payload.channel.channel_name.lower()
-    transcript = (payload.transcript_excerpt or "").lower()
-    history = payload.channel.channel_history_features
-    title_hits = _count_phrase_hits(title, MUSIC_TITLE_MARKERS)
-    channel_hits = _count_phrase_hits(channel_name, MUSIC_CHANNEL_MARKERS)
-    transcript_hits = _count_phrase_hits(transcript, MUSIC_TRANSCRIPT_MARKERS)
-    non_music_hits = _count_phrase_hits(f"{title} {transcript}", NON_MUSIC_MARKERS)
-    history_music_signal = float(history.get("music_likelihood", 0.0))
-    title_music_signal = float(history.get("title_music_signal", 0.0))
-    channel_music_signal = float(history.get("channel_music_signal", 0.0))
-    likelihood = max(
-        0.0,
-        min(
-            1.0,
-            title_hits * 0.42
-            + channel_hits * 0.2
-            + transcript_hits * 0.12
-            + history_music_signal * 0.5
-            + title_music_signal * 0.18
-            + channel_music_signal * 0.1
-            - non_music_hits * 0.18,
-        ),
+    history = dict(payload.channel.channel_history_features)
+    history.setdefault("prior_flags", float(payload.channel.prior_flags))
+    taxonomy = infer_content_taxonomy(
+        title=payload.title,
+        description=payload.description_snapshot,
+        transcript=payload.transcript_excerpt,
+        channel_name=payload.channel.channel_name,
+        channel_history_features=history,
     )
-    summary["music_likelihood"] = round(likelihood, 4)
-    summary["music_title_hits"] = float(title_hits)
-    summary["music_channel_hits"] = float(channel_hits)
-    summary["music_transcript_hits"] = float(transcript_hits)
-    return likelihood
+    summary["music_likelihood"] = float(taxonomy["music_likelihood"])
+    summary["content_class"] = str(taxonomy["content_class"])
+    summary["content_class_confidence"] = float(taxonomy["content_class_confidence"])
+    summary["content_class_scores"] = dict(taxonomy["content_class_scores"])
+    summary["taxonomy_guardrail"] = str(taxonomy["guardrail"])
+    summary["music_title_hits"] = float(_count_phrase_hits(payload.title.lower(), MUSIC_TITLE_MARKERS))
+    summary["music_channel_hits"] = float(
+        _count_phrase_hits(payload.channel.channel_name.lower(), MUSIC_CHANNEL_MARKERS)
+    )
+    summary["music_transcript_hits"] = float(
+        _count_phrase_hits((payload.transcript_excerpt or "").lower(), MUSIC_TRANSCRIPT_MARKERS)
+    )
+    return float(taxonomy["music_likelihood"])
 
 
 def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
     transcript = payload.transcript_excerpt or ""
     if not transcript:
         summary["transcript_title_overlap"] = 0.0
+        summary["raw_transcript_mismatch_score"] = 0.0
         summary["transcript_mismatch_score"] = 0.0
         return 0.0
 
     overlap = transcript_overlap(payload.title, transcript)
-    mismatch = transcript_mismatch_score(payload.title, transcript, summary["token_hits"])
-    music_likelihood = float(summary.get("music_likelihood", 0.0))
-    if music_likelihood > 0.0:
-        mismatch *= max(0.25, 1.0 - music_likelihood * 0.7)
+    raw_mismatch = transcript_mismatch_score(payload.title, transcript, summary["token_hits"])
+    mismatch, guardrail = class_adjusted_mismatch(
+        raw_mismatch,
+        str(summary.get("content_class", "unknown")),
+    )
     summary["transcript_title_overlap"] = round(overlap, 4)
+    summary["raw_transcript_mismatch_score"] = round(raw_mismatch, 4)
     summary["transcript_mismatch_score"] = round(mismatch, 4)
+    summary["taxonomy_guardrail"] = guardrail
     return mismatch
+
+
+def _bias_profile_summary(
+    payload: ScoreItemRequest,
+    summary: dict[str, Any],
+    *,
+    uncertainty: float,
+) -> dict[str, Any]:
+    metrics = build_bias_primitives(
+        title=payload.title,
+        description=payload.description_snapshot,
+        transcript=payload.transcript_excerpt,
+        channel_name=payload.channel.channel_name,
+        raw_transcript_mismatch=float(summary.get("raw_transcript_mismatch_score", 0.0)),
+        adjusted_transcript_mismatch=float(summary.get("transcript_mismatch_score", 0.0)),
+        content_class=str(summary.get("content_class", "unknown")),
+        content_class_confidence=float(summary.get("content_class_confidence", 0.0)),
+        prior_flags=int(payload.channel.prior_flags),
+        channel_risk_mean=float(summary.get("channel_risk_mean", 0.0)),
+        repeat_template_rate=float(summary.get("repeat_template_rate", 0.0)),
+        channel_history_features=dict(payload.channel.channel_history_features),
+        uncertainty=uncertainty,
+    )
+    prior_frames = infer_bseo_prior_frames(
+        title=payload.title,
+        description=payload.description_snapshot,
+        transcript=payload.transcript_excerpt,
+        channel_name=payload.channel.channel_name,
+        content_class=str(summary.get("content_class", "unknown")),
+        content_class_confidence=float(summary.get("content_class_confidence", 0.0)),
+        metrics=metrics,
+        prior_flags=int(payload.channel.prior_flags),
+        channel_risk_mean=float(summary.get("channel_risk_mean", 0.0)),
+        repeat_template_rate=float(summary.get("repeat_template_rate", 0.0)),
+        channel_history_features=dict(payload.channel.channel_history_features),
+        thumbnail_text_density=float(summary.get("thumbnail_text_density", 0.0)),
+        thumbnail_shock_indicator=float(summary.get("thumbnail_shock_indicator", 0.0)),
+    )
+    profile = build_bias_profile(
+        metrics=metrics,
+        content_class=str(summary.get("content_class", "unknown")),
+        content_class_confidence=float(summary.get("content_class_confidence", 0.0)),
+        raw_transcript_mismatch=float(summary.get("raw_transcript_mismatch_score", 0.0)),
+        adjusted_transcript_mismatch=float(summary.get("transcript_mismatch_score", 0.0)),
+        title=payload.title,
+        description=payload.description_snapshot,
+        transcript=payload.transcript_excerpt,
+        channel_name=payload.channel.channel_name,
+        prior_flags=int(payload.channel.prior_flags),
+        channel_risk_mean=float(summary.get("channel_risk_mean", 0.0)),
+        repeat_template_rate=float(summary.get("repeat_template_rate", 0.0)),
+        channel_history_features=dict(payload.channel.channel_history_features),
+        thumbnail_text_density=float(summary.get("thumbnail_text_density", 0.0)),
+        thumbnail_shock_indicator=float(summary.get("thumbnail_shock_indicator", 0.0)),
+        prior_frames=prior_frames,
+        uncertainty=uncertainty,
+    )
+    summary["bias_primitives"] = metrics
+    summary["bias_profile"] = profile
+    summary["dominant_bias_risk"] = str(profile.get("dominant_bias", "balanced-context"))
+    summary["bseo_positive_contexts"] = list(prior_frames["positive_contexts"])
+    summary["bseo_negative_contexts"] = list(prior_frames["negative_contexts"])
+    summary["bseo_parameter_frames"] = dict(prior_frames["parameter_frames"])
+    return profile
 
 
 def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
@@ -692,6 +758,7 @@ def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
     )
     confidence = round(min(0.52 + fusion_score * 0.43, 0.97), 4)
     uncertainty = round(max(0.03, 1.0 - confidence), 4)
+    _bias_profile_summary(payload, summary, uncertainty=uncertainty)
     return ModelSignals(
         text_score=round(text_score, 4),
         vision_score=round(vision_score, 4),
@@ -878,6 +945,7 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         return bootstrap
     confidence = round(min(0.58 + calibrated_score * 0.38, 0.98), 4)
     uncertainty = round(max(0.02, 1.0 - confidence), 4)
+    _bias_profile_summary(payload, summary, uncertainty=uncertainty)
     return ModelSignals(
         text_score=round(text_score, 4),
         vision_score=round(vision_score, 4),

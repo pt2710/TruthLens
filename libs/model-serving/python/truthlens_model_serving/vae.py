@@ -41,7 +41,10 @@ def vae_available() -> bool:
     return torch is not None and nn is not None
 
 
-class PackagingVAE(nn.Module):  # type: ignore[misc]
+_VAEModuleBase = nn.Module if nn is not None else object
+
+
+class PackagingVAE(_VAEModuleBase):  # type: ignore[misc]
     def __init__(self, input_dim: int, hidden_dim: int = 24, latent_dim: int = 4) -> None:
         super().__init__()
         self.encoder = nn.Sequential(  # type: ignore[union-attr]

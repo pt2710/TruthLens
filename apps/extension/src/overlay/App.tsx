@@ -274,6 +274,14 @@ export function App() {
         transcript_available: transcriptAvailable,
         explanation_summary: manualReportTarget.score?.explanation_summary ?? null,
         reasons: manualReportTarget.score?.reasons ?? [],
+        content_class: manualReportTarget.score?.content_class ?? 'unknown',
+        content_class_confidence: manualReportTarget.score?.content_class_confidence ?? 0,
+        bias_profile: manualReportTarget.score?.bias_profile ?? {
+          metrics: {},
+          positive_biases: [],
+          negative_biases: [],
+          guardrail_applied: null,
+        },
       });
     })()
       .then((draft) => {
@@ -560,6 +568,39 @@ export function App() {
                 ? 'Mark what appears transparent and consistent. A note field appears under each checked area.'
                 : 'Mark what looks wrong. A note field appears under each checked issue.'}
             </p>
+
+            {manualReportTarget.score ? (
+              <div className="truthlens-score-summary">
+                <p className="truthlens-preview-label">TruthLens context</p>
+                <div className="truthlens-score-summary-grid">
+                  <p className="truthlens-score-summary-item">
+                    Class {manualReportTarget.score.content_class} with confidence{' '}
+                    {manualReportTarget.score.content_class_confidence.toFixed(2)}.
+                  </p>
+                  <p className="truthlens-score-summary-item">
+                    Current action {manualReportTarget.score.recommended_action} at risk{' '}
+                    {manualReportTarget.score.risk_score.toFixed(2)}.
+                  </p>
+                  {manualReportTarget.score.bias_profile.guardrail_applied ? (
+                    <p className="truthlens-score-summary-item">
+                      Guardrail {manualReportTarget.score.bias_profile.guardrail_applied}.
+                    </p>
+                  ) : null}
+                  {manualReportTarget.score.bias_profile.positive_biases.length > 0 ? (
+                    <p className="truthlens-score-summary-item">
+                      Preserved bias{' '}
+                      {manualReportTarget.score.bias_profile.positive_biases.join(', ')}.
+                    </p>
+                  ) : null}
+                  {manualReportTarget.score.bias_profile.negative_biases.length > 0 ? (
+                    <p className="truthlens-score-summary-item">
+                      Negative bias{' '}
+                      {manualReportTarget.score.bias_profile.negative_biases.join(', ')}.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             <div className="truthlens-live-status" aria-live="polite" aria-atomic="false">
               <p className="truthlens-preview-label">Live status</p>

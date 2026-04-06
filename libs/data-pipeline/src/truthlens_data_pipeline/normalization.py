@@ -8,8 +8,13 @@ from typing import Any
 from truthlens_data_pipeline.acquisition import AcquiredItem
 from truthlens_data_pipeline.paths import relative_path, repo_root, write_json, write_jsonl
 from truthlens_feature_extractors import (
+    build_bias_primitives,
+    class_adjusted_mismatch,
     count_sensational_tokens,
+    dominant_bias_name,
     extract_thumbnail_features,
+    infer_bseo_prior_frames,
+    infer_content_taxonomy,
     normalize_text,
     transcript_mismatch_score,
     transcript_overlap,
@@ -102,7 +107,7 @@ def normalize_acquired_items(
         thumbnail_signal = _thumbnail_signal(item)
         title_transcript_overlap = transcript_overlap(normalized_title, item.transcript_excerpt)
         sensational_count = count_sensational_tokens(normalized_title)
-        transcript_mismatch = transcript_mismatch_score(
+        raw_transcript_mismatch = transcript_mismatch_score(
             normalized_title,
             item.transcript_excerpt,
             sensational_count,
@@ -132,6 +137,55 @@ def normalize_acquired_items(
             "repeat_template_rate": repeat_template_rate,
             "engagement_anomaly": engagement_anomaly,
         }
+        taxonomy = infer_content_taxonomy(
+            title=normalized_title,
+            description=normalized_description,
+            transcript=item.transcript_excerpt,
+            channel_name=item.channel_name,
+            tags=item.tags,
+            hashtags=item.hashtags,
+            template_cluster=item.template_cluster,
+            channel_history_features={**history_features, "prior_flags": float(item.channel_prior_flags)},
+        )
+        transcript_mismatch, guardrail = class_adjusted_mismatch(
+            raw_transcript_mismatch,
+            str(taxonomy["content_class"]),
+        )
+        bias_primitives = build_bias_primitives(
+            title=normalized_title,
+            description=normalized_description,
+            transcript=item.transcript_excerpt,
+            channel_name=item.channel_name,
+            raw_transcript_mismatch=raw_transcript_mismatch,
+            adjusted_transcript_mismatch=transcript_mismatch,
+            content_class=str(taxonomy["content_class"]),
+            content_class_confidence=float(taxonomy["content_class_confidence"]),
+            prior_flags=item.channel_prior_flags,
+            channel_risk_mean=float(history_features["channel_risk_mean"]),
+            repeat_template_rate=repeat_template_rate,
+            channel_history_features=history_features,
+        )
+        prior_frames = infer_bseo_prior_frames(
+            title=normalized_title,
+            description=normalized_description,
+            transcript=item.transcript_excerpt,
+            channel_name=item.channel_name,
+            content_class=str(taxonomy["content_class"]),
+            content_class_confidence=float(taxonomy["content_class_confidence"]),
+            metrics=bias_primitives,
+            prior_flags=item.channel_prior_flags,
+            channel_risk_mean=float(history_features["channel_risk_mean"]),
+            repeat_template_rate=repeat_template_rate,
+            channel_history_features=history_features,
+            thumbnail_text_density=float(thumbnail_signal["text_density"]),
+            thumbnail_shock_indicator=float(thumbnail_signal["shock_indicator"]),
+        )
+        history_features.update(
+            {
+                "music_likelihood": float(taxonomy["music_likelihood"]),
+                "content_class_confidence": float(taxonomy["content_class_confidence"]),
+            }
+        )
         record = validate_dataset_record(
             {
                 "item_id": item.item_id,
@@ -175,7 +229,17 @@ def normalize_acquired_items(
                     "sensational_count": sensational_count,
                     "mismatch_score": round(item.mismatch_seed, 4),
                     "transcript_title_overlap": title_transcript_overlap,
+                    "raw_transcript_mismatch_score": raw_transcript_mismatch,
                     "transcript_mismatch_score": transcript_mismatch,
+                    "content_class": taxonomy["content_class"],
+                    "content_class_confidence": taxonomy["content_class_confidence"],
+                    "content_class_scores": taxonomy["content_class_scores"],
+                    "taxonomy_guardrail": guardrail,
+                    "bias_primitives": bias_primitives,
+                    "dominant_bias_risk": dominant_bias_name(bias_primitives),
+                    "bseo_positive_contexts": list(prior_frames["positive_contexts"]),
+                    "bseo_negative_contexts": list(prior_frames["negative_contexts"]),
+                    "bseo_parameter_frames": dict(prior_frames["parameter_frames"]),
                     "thumbnail_brightness": round(thumbnail_signal["brightness"], 4),
                     "thumbnail_saturation": round(thumbnail_signal["saturation"], 4),
                     "thumbnail_contrast": round(thumbnail_signal["contrast"], 4),

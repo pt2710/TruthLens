@@ -26,6 +26,8 @@ describe('createBootstrapScore', () => {
     expect(result.reasons.length).toBeGreaterThan(0);
     expect(result.explanation_id).toBeTruthy();
     expect(result.evidence.length).toBeGreaterThan(0);
+    expect(result.content_class).toBe('news');
+    expect(result.bias_profile.metrics.sensational_weight).toBeGreaterThan(0);
   });
 
   it('hides muted channels immediately', () => {

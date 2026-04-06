@@ -22,10 +22,20 @@ data class ExplanationEvidenceDto(
     val details: String? = null,
 )
 
+data class BiasProfileDto(
+    val metrics: Map<String, Double> = emptyMap(),
+    @SerializedName("positive_biases") val positiveBiases: List<String> = emptyList(),
+    @SerializedName("negative_biases") val negativeBiases: List<String> = emptyList(),
+    @SerializedName("guardrail_applied") val guardrailApplied: String? = null,
+)
+
 data class ScoreResultDto(
     @SerializedName("risk_score") val riskScore: Double,
     val confidence: Double,
     val uncertainty: Double,
+    @SerializedName("content_class") val contentClass: String = "unknown",
+    @SerializedName("content_class_confidence") val contentClassConfidence: Double = 0.0,
+    @SerializedName("bias_profile") val biasProfile: BiasProfileDto = BiasProfileDto(),
     @SerializedName("recommended_action") val recommendedAction: String,
     val reasons: List<String>,
     @SerializedName("explanation_id") val explanationId: String?,
@@ -85,6 +95,8 @@ data class MobileResolvedWatchContextDto(
     @SerializedName("transcript_available") val transcriptAvailable: Boolean,
     @SerializedName("channel_context") val channelContext: String?,
     @SerializedName("music_likelihood") val musicLikelihood: Double,
+    @SerializedName("content_class") val contentClass: String = "unknown",
+    @SerializedName("content_class_confidence") val contentClassConfidence: Double = 0.0,
     val metadata: ItemMetadataDto,
 )
 

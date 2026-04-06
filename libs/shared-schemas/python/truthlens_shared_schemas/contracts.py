@@ -14,6 +14,18 @@ class RecommendedAction(str, Enum):
     ASK_REPORT = "ask-report"
 
 
+class ContentClass(str, Enum):
+    NEWS = "news"
+    COMMENTARY = "commentary"
+    DOCUMENTARY = "documentary"
+    MUSIC = "music"
+    ART = "art"
+    SATIRE = "satire"
+    GAMING = "gaming"
+    PROMO = "promo"
+    UNKNOWN = "unknown"
+
+
 class ChannelInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -46,6 +58,7 @@ class ScoreItemRequest(BaseModel):
     item_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     thumbnail_ref: str | None = None
+    description_snapshot: str | None = None
     transcript_excerpt: str | None = None
     metadata: ItemMetadata = Field(default_factory=ItemMetadata)
     channel: ChannelInfo
@@ -62,12 +75,23 @@ class ExplanationEvidence(BaseModel):
         "transcript",
         "metadata",
         "policy",
+        "taxonomy",
+        "bias",
         "user-context",
         "uncertainty",
     ]
     label: str = Field(min_length=1)
     score: float | None = Field(default=None, ge=0.0, le=1.0)
     details: str | None = None
+
+
+class BiasProfile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    metrics: dict[str, float] = Field(default_factory=dict)
+    positive_biases: list[str] = Field(default_factory=list)
+    negative_biases: list[str] = Field(default_factory=list)
+    guardrail_applied: str | None = None
 
 
 class ManualReportIssue(BaseModel):
@@ -161,6 +185,9 @@ class ManualReportSuggestionRequest(BaseModel):
     transcript_available: bool | None = None
     explanation_summary: str | None = None
     reasons: list[str] = Field(default_factory=list)
+    content_class: ContentClass = ContentClass.UNKNOWN
+    content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    bias_profile: BiasProfile = Field(default_factory=BiasProfile)
 
 
 class ManualReportSuggestionResponse(BaseModel):
@@ -221,6 +248,8 @@ class MobileResolvedWatchContext(BaseModel):
     transcript_available: bool = False
     channel_context: str | None = None
     music_likelihood: float = Field(default=0.0, ge=0.0, le=1.0)
+    content_class: ContentClass = ContentClass.UNKNOWN
+    content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     metadata: ItemMetadata = Field(default_factory=ItemMetadata)
 
 
@@ -287,6 +316,9 @@ class ScoreResult(BaseModel):
     risk_score: float = Field(ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0)
     uncertainty: float = Field(ge=0.0, le=1.0)
+    content_class: ContentClass = ContentClass.UNKNOWN
+    content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    bias_profile: BiasProfile = Field(default_factory=BiasProfile)
     recommended_action: RecommendedAction = RecommendedAction.NONE
     reasons: list[str] = Field(default_factory=list)
     explanation_id: str | None = None

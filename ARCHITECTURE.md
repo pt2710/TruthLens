@@ -43,14 +43,34 @@ The repository is organized as a monorepo with:
 - Feedback events must be auditable and versioned.
 - Model training is blocked until dataset governance artifacts are complete.
 - Optional learned encoder paths must degrade safely to explicit fallback paths when dependencies, artifacts, or runtime media bytes are unavailable.
-- Runtime RL policy may only override threshold policy when compatible artifacts exist and guardrails pass.
+- Runtime BSEO policy may only override threshold policy when compatible artifacts exist and guardrails pass.
 - Mobile and extension review flows must share stable versioned schemas rather than diverging client-specific payloads.
+
+## BSEO Interpretation Frame
+
+TruthLens treats BSEO as a bias-and-interpretation layer rather than a hardcoded rule engine.
+
+Two prior lists drive that layer:
+
+- benign-by-default contexts that should not be auto-classified as clickbait merely because they are dramatic, stylized, or commercial
+- suspicious-by-default patterns that should trigger higher skepticism because they rely on misleading promises, fake urgency, fake authority, or systematic packaging mismatch
+
+This frame is evaluated across the same operational parameters used elsewhere in the system:
+
+- `Thumbnail`
+- `Title`
+- `Description`
+- `Transcription`
+- `Channel`
+- `Other`
+
+The current runtime taxonomy remains fixed to `news`, `commentary`, `documentary`, `music`, `art`, `satire`, `gaming`, `promo`, and `unknown`, but broader priors such as tutorials, reviews, sports, education, official trailers, and user verification are folded into those classes as positive or negative bias frames.
 
 ## V1 / V2 / V3 Boundaries
 
 - V1: data pipelines, first dataset build, baseline explicit-feature models, calibration, FastAPI scoring, extension overlay, blur/hide, feedback capture, simple explanations
 - V2: optional sentence-transformer text path, optional tiny-CNN thumbnail path, optional LSTM history path, VAE anomaly signal, transcript-title mismatch, personalization, replay simulator
-- V3: optional ViT thumbnail encoder, runtime RL action policy (`threshold-default`, `rl-shadow`, `rl-live`), mobile analyze/review contract, Android companion/share client, Bellman/replay/evolution artifacts promoted into runtime-safe policy artifacts
+- V3: optional ViT thumbnail encoder, runtime BSEO action policy (`threshold-default`, `bseo-shadow`, `bseo-live`), mobile analyze/review contract, Android companion/share client, BSEO search / replay / mutation-atlas artifacts promoted into runtime-safe policy artifacts
 
 Post-V3 roadmap remains separate from shipped scope:
 

@@ -113,6 +113,27 @@ function Popup() {
               risk {sessionStats.lastScore.risk_score.toFixed(2)} | action{' '}
               {sessionStats.lastScore.recommended_action}
             </span>
+            <span style={{ color: '#555', fontSize: 12 }}>
+              class {sessionStats.lastScore.content_class} | confidence{' '}
+              {sessionStats.lastScore.content_class_confidence.toFixed(2)}
+            </span>
+            {sessionStats.lastScore.bias_profile.guardrail_applied ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                guardrail {sessionStats.lastScore.bias_profile.guardrail_applied}
+              </span>
+            ) : null}
+            {sessionStats.lastScore.bias_profile.positive_biases.length > 0 ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                preserved bias{' '}
+                {sessionStats.lastScore.bias_profile.positive_biases.join(', ')}
+              </span>
+            ) : null}
+            {sessionStats.lastScore.bias_profile.negative_biases.length > 0 ? (
+              <span style={{ color: '#555', fontSize: 12 }}>
+                negative bias{' '}
+                {sessionStats.lastScore.bias_profile.negative_biases.join(', ')}
+              </span>
+            ) : null}
             {sessionStats.lastScore.explanation_summary ? (
               <span style={{ color: '#555', fontSize: 12 }}>
                 Why: {sessionStats.lastScore.explanation_summary}
@@ -214,6 +235,32 @@ function Popup() {
 
       <section style={{ display: 'grid', gap: 8 }}>
         <h2 style={{ margin: 0, fontSize: 16 }}>Thresholds</h2>
+        <div
+          style={{
+            display: 'grid',
+            gap: 4,
+            padding: 8,
+            borderRadius: 8,
+            background: '#f4f5f7',
+          }}
+        >
+          <strong>
+            Policy mode{' '}
+            {policyInfo?.resolved_policy_mode ?? policyInfo?.policy_mode ?? 'loading'}
+          </strong>
+          {policyInfo?.bseo_artifact ? (
+            <span style={{ color: '#555', fontSize: 12 }}>
+              BSEO artifact{' '}
+              {policyInfo.bseo_artifact.available
+                ? policyInfo.bseo_artifact.compatible
+                  ? policyInfo.bseo_artifact.stale
+                    ? 'stale'
+                    : 'compatible'
+                  : 'incompatible'
+                : 'missing'}
+            </span>
+          ) : null}
+        </div>
         <div
           style={{
             display: 'grid',

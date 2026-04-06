@@ -167,6 +167,20 @@ NON_MUSIC_CONTEXT_MARKERS = (
     "gameplay",
     "reaction",
 )
+TRANSPARENT_CONTEXT_CLASSES = {"music", "art", "gaming"}
+FACTUAL_CONTEXT_CLASSES = {"news", "commentary", "documentary", "promo", "unknown"}
+AMBIGUOUS_CONTEXT_CLASSES = {"satire"}
+CLASS_LABELS = {
+    "news": "news",
+    "commentary": "commentary",
+    "documentary": "documentary",
+    "music": "music",
+    "art": "art",
+    "satire": "satire",
+    "gaming": "gaming",
+    "promo": "promotional",
+    "unknown": "mixed or unclear",
+}
 
 
 def gemini_available() -> bool:
@@ -474,6 +488,47 @@ def _estimate_music_likelihood(
     )
 
 
+def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> dict[str, object]:
+    raw_content_class = (
+        payload.content_class.value
+        if hasattr(payload.content_class, "value")
+        else str(payload.content_class)
+    ).strip().lower()
+    music_likelihood = _estimate_music_likelihood(
+        title=_normalize_text(payload.title_snapshot),
+        description=_normalize_text(payload.description_snapshot),
+        transcript=_normalize_text(payload.transcript_excerpt),
+        channel_name=_normalize_text(payload.channel_name),
+        channel_context=_normalize_text(payload.channel_context),
+    )
+    if raw_content_class not in CLASS_LABELS or (
+        raw_content_class == "unknown" and music_likelihood >= 0.45
+    ):
+        resolved_class = "music" if music_likelihood >= 0.45 else "unknown"
+    elif raw_content_class == "unknown" and payload.content_class_confidence < 0.45:
+        resolved_class = "music" if music_likelihood >= 0.45 else "unknown"
+    else:
+        resolved_class = raw_content_class
+    negative_biases = {
+        str(bias).strip().lower()
+        for bias in payload.bias_profile.negative_biases
+    }
+    positive_biases = {
+        str(bias).strip().lower()
+        for bias in payload.bias_profile.positive_biases
+    }
+    return {
+        "resolved_class": resolved_class,
+        "class_label": CLASS_LABELS.get(resolved_class, "mixed or unclear"),
+        "music_likelihood": music_likelihood,
+        "transparent_context_class": resolved_class in TRANSPARENT_CONTEXT_CLASSES,
+        "factual_context_class": resolved_class in FACTUAL_CONTEXT_CLASSES,
+        "ambiguous_context_class": resolved_class in AMBIGUOUS_CONTEXT_CLASSES,
+        "negative_biases": negative_biases,
+        "positive_biases": positive_biases,
+    }
+
+
 def _channel_feedback_profile(channel_name: str) -> dict[str, object] | None:
     normalized_channel = _normalize_text(channel_name).lower()
     if not normalized_channel or normalized_channel == "unknown channel":
@@ -638,14 +693,14 @@ def _build_heuristic_suggestion_response(
     prior_report_count = int(channel_profile.get("report_count", 0)) if channel_profile else 0
     prior_remove_count = int(channel_profile.get("remove_request_count", 0)) if channel_profile else 0
     prior_moderate_count = int(channel_profile.get("moderate_request_count", 0)) if channel_profile else 0
-    music_likelihood = _estimate_music_likelihood(
-        title=title,
-        description=description,
-        transcript=transcript,
-        channel_name=channel_name,
-        channel_context=channel_context,
-    )
-    likely_music_content = music_likelihood >= 0.45
+    review_context = _resolve_manual_report_context(payload)
+    resolved_class = str(review_context["resolved_class"])
+    class_label = str(review_context["class_label"])
+    likely_music_content = resolved_class == "music"
+    transparent_context_class = bool(review_context["transparent_context_class"])
+    factual_context_class = bool(review_context["factual_context_class"])
+    ambiguous_context_class = bool(review_context["ambiguous_context_class"])
+    negative_biases = set(review_context["negative_biases"])
     lower_context = " ".join(
         part.lower()
         for part in (title, description, transcript, channel_context, explanation, reasons_text, channel_name)
@@ -660,7 +715,9 @@ def _build_heuristic_suggestion_response(
     has_alignment_warning = _contains_any(lower_context, ALIGNMENT_MARKERS)
     has_channel_pattern = _contains_any(lower_context, CHANNEL_PATTERN_MARKERS) or channel_clickbait_hits >= 2
     has_positive_alignment = _contains_any(lower_context, POSITIVE_ALIGNMENT_MARKERS)
-    weak_text_alignment = bool(description or transcript) and text_alignment_ratio < (0.12 if likely_music_content else 0.22)
+    weak_text_alignment = bool(description or transcript) and text_alignment_ratio < (
+        0.12 if transparent_context_class else 0.22
+    )
     has_recent_channel_context = bool(channel_context)
     sampled_titles = _sampled_channel_titles(channel_context)
     channel_pattern_comment = _channel_pattern_comment(
@@ -684,7 +741,19 @@ def _build_heuristic_suggestion_response(
 
     if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
         transparent_signal = has_positive_alignment or (
-            not has_clickbait_title and not has_alignment_warning and text_alignment_ratio >= 0.18
+            not has_clickbait_title
+            and not has_alignment_warning
+            and text_alignment_ratio >= (0.12 if transparent_context_class else 0.18)
+            and not {"sensational-overweighting", "channel-lock-in-risk"}.intersection(negative_biases)
+        )
+        transparent_other_comment = (
+            "This appears to be music content, so non-literal artwork alone should not be treated as misleading; the overall packaging should instead be reviewed for honest artist, track, or release framing."
+            if likely_music_content
+            else "This appears to be art content, so non-literal artwork alone should not be treated as misleading; the overall packaging should instead be reviewed for honest artwork or exhibition framing."
+            if resolved_class == "art"
+            else "This appears to be gaming content, so non-literal scene selection alone should not be treated as misleading; the overall packaging should instead be reviewed for honest gameplay or release framing."
+            if resolved_class == "gaming"
+            else "Overall packaging does not currently show a strong clickbait signal from the available surface context, but the evidence should still be reviewed holistically."
         )
         issues = [
             _fallback_suggestion_issue(
@@ -693,6 +762,10 @@ def _build_heuristic_suggestion_response(
                 comment=(
                     "This appears to be music content, and the thumbnail currently looks broadly consistent as artist, track, or release packaging rather than deceptive clickbait."
                     if transparent_signal and likely_music_content
+                    else "This appears to be art content, and the thumbnail currently looks broadly consistent as artwork or exhibition packaging rather than deceptive clickbait."
+                    if transparent_signal and resolved_class == "art"
+                    else "This appears to be gaming content, and the thumbnail currently looks broadly consistent as gameplay or release framing rather than deceptive clickbait."
+                    if transparent_signal and resolved_class == "gaming"
                     else (
                         "Thumbnail appears broadly consistent with the title and visible context."
                         if transparent_signal
@@ -706,6 +779,10 @@ def _build_heuristic_suggestion_response(
                 comment=(
                     "This appears to be music content, and the title currently reads like normal artist or track labeling rather than deceptive overstatement."
                     if transparent_signal and likely_music_content
+                    else "This appears to be art content, and the title currently reads like normal artwork or exhibition labeling rather than deceptive overstatement."
+                    if transparent_signal and resolved_class == "art"
+                    else "This appears to be gaming content, and the title currently reads like ordinary gameplay or release framing rather than deceptive overstatement."
+                    if transparent_signal and resolved_class == "gaming"
                     else (
                         "Title appears consistent with the visible packaging and does not appear to overstate the likely content."
                         if transparent_signal
@@ -754,11 +831,7 @@ def _build_heuristic_suggestion_response(
                 comment=(
                     "Overall packaging appears transparent rather than clickbait-driven."
                     if transparent_signal
-                    else (
-                        "This appears to be music content, so non-literal artwork alone should not be treated as misleading; the overall packaging should instead be reviewed for honest artist, track, or release framing."
-                        if likely_music_content
-                        else "Overall packaging does not currently show a strong clickbait signal from the available surface context, but the evidence should still be reviewed holistically."
-                    )
+                    else transparent_other_comment
                 ),
             ),
         ]
@@ -771,9 +844,18 @@ def _build_heuristic_suggestion_response(
     thumbnail_suggested = payload.thumbnail_ref is not None
     title_suggested = True
     description_suggested = bool(description)
-    transcript_suggested = bool(transcript) and (weak_text_alignment or has_alignment_warning)
-    channel_suggested = bool(channel_pattern_comment)
-    other_suggested = not (likely_music_content and not has_alignment_warning and not has_channel_pattern)
+    transcript_suggested = bool(transcript) and (
+        weak_text_alignment
+        or has_alignment_warning
+        or (
+            ambiguous_context_class
+            and bool(negative_biases.intersection({"genre-confusion", "uncertainty-miscalibration"}))
+        )
+    )
+    channel_suggested = bool(channel_pattern_comment) or (ambiguous_context_class and has_recent_channel_context)
+    other_suggested = ambiguous_context_class or not (
+        transparent_context_class and not has_alignment_warning and not has_channel_pattern
+    )
 
     issues = [
         _fallback_suggestion_issue(
@@ -782,6 +864,12 @@ def _build_heuristic_suggestion_response(
             comment=(
                 "This appears to be music content. Review whether the thumbnail honestly represents the artist, track, or release context rather than assuming it must literally depict the lyrics or title."
                 if likely_music_content
+                else "This appears to be art content. Review whether the thumbnail honestly represents the artwork, artist, or exhibition context rather than implying a literal event the supporting text does not confirm."
+                if resolved_class == "art"
+                else "This appears to be gaming content. Review whether the thumbnail honestly represents the gameplay, mode, or release context rather than implying a stronger outcome than the video supports."
+                if resolved_class == "gaming"
+                else "This appears to be satire content. Review whether the thumbnail clearly signals parody or comedic framing instead of disguising it as a literal claim."
+                if ambiguous_context_class
                 else (
                     f"The thumbnail should be reviewed against the title phrases {quoted_title_signals}; {supporting_reference} does not clearly confirm that same high-drama premise, so the visual packaging may be selling a stronger scenario than the text evidence supports."
                     if quoted_title_signals
@@ -795,6 +883,12 @@ def _build_heuristic_suggestion_response(
             comment=(
                 "This appears to be music content. Review whether the title honestly identifies the artist, track, or release framing rather than expecting literal scene-to-title matching."
                 if likely_music_content
+                else "This appears to be art content. Review whether the title honestly identifies the artwork, artist, or exhibition framing rather than implying a literal event the packaging does not support."
+                if resolved_class == "art"
+                else "This appears to be gaming content. Review whether the title honestly identifies the gameplay, build, or release framing rather than overstating what the run actually shows."
+                if resolved_class == "gaming"
+                else "This appears to be satire content. Review whether the title clearly signals parody or comedic intent instead of presenting the joke as a literal claim."
+                if ambiguous_context_class
                 else (
                     f"The title phrases {quoted_title_signals} create a stronger claim than {supporting_reference} clearly substantiates, so the title risks overselling what the video actually contains."
                     if quoted_title_signals
@@ -808,6 +902,12 @@ def _build_heuristic_suggestion_response(
             comment=(
                 "This appears to be music content. Review whether the description honestly labels the artist, track, release, or performance context instead of overstating what the video contains."
                 if likely_music_content
+                else "This appears to be art content. Review whether the description honestly labels the artwork, exhibition, or studio context instead of overstating what the video contains."
+                if resolved_class == "art"
+                else "This appears to be gaming content. Review whether the description honestly labels the gameplay or release context instead of overstating the outcome shown."
+                if resolved_class == "gaming"
+                else "This appears to be satire content. Review whether the description makes the parody or comedic framing explicit enough for viewers."
+                if ambiguous_context_class
                 else (
                     f'Description currently says "{description_excerpt}", but that still does not clearly substantiate the stronger promise carried by the title phrases {quoted_title_signals}.'
                     if description_suggested and description_excerpt
@@ -819,9 +919,19 @@ def _build_heuristic_suggestion_response(
             "transcript",
             suggested=transcript_suggested,
             comment=(
-                f'Transcript excerpt says "{transcript_excerpt}", but that still does not clearly substantiate the stronger promise carried by the title phrases {quoted_title_signals}.'
-                if transcript_suggested
-                else ""
+                "This appears to be music content. Missing or non-literal transcript evidence alone should not be treated as deceptive when the artist, track, or release framing remains honest."
+                if likely_music_content
+                else "This appears to be art content. Non-literal transcript evidence alone should not be treated as deceptive when the artwork or exhibition framing remains honest."
+                if resolved_class == "art"
+                else "This appears to be gaming content. Transcript evidence should be reviewed for whether the gameplay framing is honest, not for literal scene matching alone."
+                if resolved_class == "gaming"
+                else "This appears to be satire content. Transcript evidence should be reviewed for whether the parody or comedic framing is made clear enough for viewers."
+                if ambiguous_context_class
+                else (
+                    f'Transcript excerpt says "{transcript_excerpt}", but that still does not clearly substantiate the stronger promise carried by the title phrases {quoted_title_signals}.'
+                    if transcript_suggested and transcript_excerpt
+                    else ""
+                )
             ),
         ),
         _fallback_suggestion_issue(
@@ -830,6 +940,8 @@ def _build_heuristic_suggestion_response(
             comment=(
                 channel_pattern_comment
                 if channel_pattern_comment
+                else "Recent channel context suggests recurring satire or parody framing, so the current upload should be reviewed for whether that framing is explicit enough."
+                if ambiguous_context_class and has_recent_channel_context
                 else ""
             ),
         ),
@@ -839,9 +951,15 @@ def _build_heuristic_suggestion_response(
             comment=(
                 "This appears to be music content. Non-literal artwork or performance imagery alone should not be treated as misleading; review instead whether the overall packaging overstates the song, artist, or release context."
                 if likely_music_content
+                else "This appears to be art content. Broad stylistic packaging alone should not be treated as misleading; review instead whether the overall packaging overstates the artwork or exhibition context."
+                if resolved_class == "art"
+                else "This appears to be gaming content. Broad hype or visual styling alone should not be treated as misleading; review instead whether the overall packaging overstates the gameplay or release context."
+                if resolved_class == "gaming"
+                else "The overall packaging should be reviewed for whether the satire or parody framing is explicit enough, because ambiguous joke packaging can still mislead viewers."
+                if ambiguous_context_class
                 else (
                     f"Taken together, the packaging leans on cues such as {title_cue_phrase}, while {supporting_reference} still does not clearly confirm the same premise; that overall pattern looks closer to clickbait than transparent framing."
-                    if other_suggested and title_cue_phrase
+                    if other_suggested and title_cue_phrase and factual_context_class
                     else f"Taken together, the packaging appears more manipulative than clarifying when the thumbnail, title, and {supporting_reference} are compared side by side."
                 )
             ),
@@ -972,20 +1090,19 @@ def _optimization_schema() -> dict[str, object]:
 def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
     description_line = payload.description_snapshot or "Not available."
     transcript_line = payload.transcript_excerpt or "Not available."
-    music_likelihood = _estimate_music_likelihood(
-        title=_normalize_text(payload.title_snapshot),
-        description=_normalize_text(payload.description_snapshot),
-        transcript=_normalize_text(payload.transcript_excerpt),
-        channel_name=_normalize_text(payload.channel_name),
-        channel_context=_normalize_text(payload.channel_context),
+    review_context = _resolve_manual_report_context(payload)
+    resolved_class = str(review_context["resolved_class"])
+    class_label = str(review_context["class_label"])
+    music_likelihood = float(review_context["music_likelihood"])
+    negative_biases = sorted(str(value) for value in review_context["negative_biases"])
+    positive_biases = sorted(str(value) for value in review_context["positive_biases"])
+    class_context_line = (
+        f"{class_label} ({payload.content_class_confidence:.0%} confidence)"
+        if resolved_class != "unknown" or payload.content_class_confidence > 0.0
+        else "mixed or unclear"
     )
-    music_context_line = (
-        "Likely music content"
-        if music_likelihood >= 0.45
-        else "Unclear music signal"
-        if music_likelihood >= 0.2
-        else "Not likely music content"
-    )
+    positive_bias_line = ", ".join(positive_biases) if positive_biases else "None recorded."
+    negative_bias_line = ", ".join(negative_biases) if negative_biases else "None recorded."
     transcript_availability = (
         "Available"
         if payload.transcript_available is True
@@ -1018,7 +1135,10 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             f"Target URL: {target_line}\n"
             f"Channel context: {channel_context_line}\n"
             f"TruthLens channel history: {channel_history_line}\n"
-            f"Likely music-content signal: {music_context_line}\n"
+            f"TruthLens content class: {class_context_line}\n"
+            f"TruthLens music-likelihood fallback: {music_likelihood:.2f}\n"
+            f"TruthLens positive biases: {positive_bias_line}\n"
+            f"TruthLens negative biases: {negative_bias_line}\n"
             f"Description snippet: {description_line}\n"
             f"Transcript availability: {transcript_availability}\n"
             f"Transcript excerpt: {transcript_line}\n"
@@ -1033,8 +1153,10 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- When suggested is false, leave comment empty.\n"
             "- Prefer leaving Transcript unsuggested instead of inventing a generic missing-transcript comment.\n"
             "- Prefer leaving Channel unsuggested unless the supplied channel context or TruthLens channel history shows a real recurring pattern.\n"
-            "- First decide whether the video appears to be primarily music content.\n"
+            "- Start from the supplied TruthLens content class and bias profile unless the visible evidence strongly contradicts it.\n"
             "- If it appears to be music content, do not treat non-literal artwork, performance imagery, lyric phrasing, or missing captions as automatic mismatch.\n"
+            "- If it appears to be art content, do not treat stylized or non-literal artwork as automatic mismatch.\n"
+            "- If it appears to be gaming content, do not treat selective scene choice or hype framing as automatic mismatch unless it overstates the actual gameplay or release context.\n"
             "- For music content, focus on whether the artist, track, or release framing appears honest rather than literal scene-to-title alignment.\n"
             "- Prefer reasoning about alignment and transparency across thumbnail, title, description, and transcript.\n"
             "- For Thumbnail, mention at least one concrete visible cue from the image itself before judging alignment.\n"
@@ -1062,7 +1184,10 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
         f"Target URL: {target_line}\n"
         f"Channel context: {channel_context_line}\n"
         f"TruthLens channel history: {channel_history_line}\n"
-        f"Likely music-content signal: {music_context_line}\n"
+        f"TruthLens content class: {class_context_line}\n"
+        f"TruthLens music-likelihood fallback: {music_likelihood:.2f}\n"
+        f"TruthLens positive biases: {positive_bias_line}\n"
+        f"TruthLens negative biases: {negative_bias_line}\n"
         f"Description snippet: {description_line}\n"
         f"Transcript availability: {transcript_availability}\n"
         f"Transcript excerpt: {transcript_line}\n"
@@ -1081,8 +1206,11 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
         "- When suggested is false, leave comment empty.\n"
         "- Prefer leaving Transcript unsuggested instead of inventing a generic missing-transcript comment.\n"
         "- Prefer leaving Channel unsuggested unless the supplied channel context or TruthLens channel history shows a real recurring pattern.\n"
-        "- First decide whether the video appears to be primarily music content.\n"
+        "- Start from the supplied TruthLens content class and bias profile unless the visible evidence strongly contradicts it.\n"
         "- If it appears to be music content, do not treat non-literal artwork, performance imagery, lyric phrasing, or missing captions as automatic mismatch.\n"
+        "- If it appears to be art content, do not treat stylized or non-literal artwork as automatic mismatch.\n"
+        "- If it appears to be gaming content, do not treat selective scene choice or hype framing as automatic mismatch unless it overstates the gameplay or release context.\n"
+        "- If it appears to be satire content, prefer comments about whether parody or comedic framing is explicit enough rather than assuming a literal claim.\n"
         "- For music content, focus on whether the artist, track, or release framing is honest rather than whether the thumbnail literally depicts the lyrics or song title.\n"
         "- Keep comments neutral, specific, and useful for a human reviewer.\n"
         "- For Thumbnail, describe the main visible subject, setting, or on-image text before explaining the mismatch.\n"

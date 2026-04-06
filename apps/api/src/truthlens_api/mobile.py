@@ -22,6 +22,13 @@ WATCH_HEADERS = {
     "User-Agent": "TruthLensMobile/0.1 (+https://localhost)",
 }
 
+TRANSPARENT_REVIEW_CLASSES = {"music", "art", "gaming"}
+AMBIGUOUS_REVIEW_CLASSES = {"satire"}
+SEVERE_NEGATIVE_BIASES = {
+    "sensational-overweighting",
+    "channel-lock-in-risk",
+}
+
 
 def _extract_video_id(target_url: str) -> str:
     parsed = urlparse(target_url)
@@ -215,6 +222,16 @@ def infer_review_prompt_state(
     music_likelihood: float,
 ) -> ReviewPromptState | None:
     bounded_music_likelihood = min(max(float(music_likelihood), 0.0), 1.0)
+    resolved_class = (
+        score.content_class.value
+        if hasattr(score.content_class, "value")
+        else str(score.content_class)
+    ).strip().lower()
+    content_class_confidence = float(score.content_class_confidence)
+    negative_biases = {
+        str(bias).strip().lower()
+        for bias in score.bias_profile.negative_biases
+    }
     if score.recommended_action == "ask-report":
         return ReviewPromptState(
             workflow_mode=ManualReportWorkflowMode.REPORT,
@@ -223,16 +240,54 @@ def infer_review_prompt_state(
             auto_open=score.confidence >= 0.8 and score.risk_score >= 0.68,
         )
     if (
-        bounded_music_likelihood >= 0.5
+        resolved_class in AMBIGUOUS_REVIEW_CLASSES
+        and score.recommended_action in {"none", "badge", "blur"}
+        and (
+            "genre-confusion" in negative_biases
+            or "uncertainty-miscalibration" in negative_biases
+            or score.uncertainty >= 0.22
+        )
+    ):
+        return ReviewPromptState(
+            workflow_mode=ManualReportWorkflowMode.REPORT,
+            label="Review ambiguity",
+            reason="TruthLens sees satire-like or ambiguous packaging that still needs human confirmation.",
+            auto_open=score.risk_score >= 0.28 or score.uncertainty >= 0.3,
+        )
+    if (
+        (
+            (
+                resolved_class in TRANSPARENT_REVIEW_CLASSES
+                and content_class_confidence >= 0.7
+            )
+            or (
+                resolved_class == "unknown"
+                and bounded_music_likelihood >= 0.5
+            )
+        )
         and score.risk_score <= 0.32
         and score.confidence >= 0.65
         and score.recommended_action in {"none", "badge"}
+        and not negative_biases.intersection(SEVERE_NEGATIVE_BIASES)
     ):
+        class_label = (
+            resolved_class
+            if resolved_class in TRANSPARENT_REVIEW_CLASSES
+            else "music"
+        )
         return ReviewPromptState(
             workflow_mode=ManualReportWorkflowMode.VERIFY_TRANSPARENT,
             label="Verify transparent",
-            reason="TruthLens thinks this likely looks like transparent music content.",
-            auto_open=bounded_music_likelihood >= 0.72 and score.confidence >= 0.8 and score.risk_score <= 0.18,
+            reason=f"TruthLens thinks this likely looks like transparent {class_label} content.",
+            auto_open=(
+                score.confidence >= 0.8
+                and score.risk_score <= 0.18
+                and score.uncertainty <= 0.18
+                and (
+                    content_class_confidence >= 0.84
+                    or bounded_music_likelihood >= 0.72
+                )
+            ),
         )
     return None
 

@@ -8,6 +8,18 @@ export const recommendedActionSchema = z.enum([
   'ask-report',
 ]);
 
+export const contentClassSchema = z.enum([
+  'news',
+  'commentary',
+  'documentary',
+  'music',
+  'art',
+  'satire',
+  'gaming',
+  'promo',
+  'unknown',
+]);
+
 export const channelInfoSchema = z.object({
   channel_name: z.string().min(1),
   channel_url: z.string().url().optional().nullable(),
@@ -32,6 +44,7 @@ export const scoreItemRequestSchema = z.object({
   item_id: z.string().min(1),
   title: z.string().min(1),
   thumbnail_ref: z.string().optional().nullable(),
+  description_snapshot: z.string().optional().nullable(),
   transcript_excerpt: z.string().optional().nullable(),
   metadata: itemMetadataSchema,
   channel: channelInfoSchema,
@@ -50,12 +63,21 @@ export const explanationEvidenceSchema = z.object({
     'transcript',
     'metadata',
     'policy',
+    'taxonomy',
+    'bias',
     'user-context',
     'uncertainty',
   ]),
   label: z.string().min(1),
   score: z.number().min(0).max(1).optional().nullable(),
   details: z.string().optional().nullable(),
+});
+
+export const biasProfileSchema = z.object({
+  metrics: z.record(z.number()).default({}),
+  positive_biases: z.array(z.string()).default([]),
+  negative_biases: z.array(z.string()).default([]),
+  guardrail_applied: z.string().optional().nullable(),
 });
 
 export const manualReportIssueTypeSchema = z.enum([
@@ -143,6 +165,14 @@ export const manualReportSuggestionRequestSchema = z.object({
   transcript_available: z.boolean().optional().nullable(),
   explanation_summary: z.string().optional().nullable(),
   reasons: z.array(z.string()).default([]),
+  content_class: contentClassSchema.default('unknown'),
+  content_class_confidence: z.number().min(0).max(1).default(0),
+  bias_profile: biasProfileSchema.default({
+    metrics: {},
+    positive_biases: [],
+    negative_biases: [],
+    guardrail_applied: null,
+  }),
 });
 
 export const manualReportSuggestionResponseSchema = z.object({
@@ -190,6 +220,8 @@ export const mobileResolvedWatchContextSchema = z.object({
   transcript_available: z.boolean().default(false),
   channel_context: z.string().optional().nullable(),
   music_likelihood: z.number().min(0).max(1).default(0),
+  content_class: contentClassSchema.default('unknown'),
+  content_class_confidence: z.number().min(0).max(1).default(0),
   metadata: itemMetadataSchema.default({}),
 });
 
@@ -240,6 +272,14 @@ export const scoreResultSchema = z
     risk_score: z.number().min(0).max(1),
     confidence: z.number().min(0).max(1),
     uncertainty: z.number().min(0).max(1),
+    content_class: contentClassSchema.default('unknown'),
+    content_class_confidence: z.number().min(0).max(1).default(0),
+    bias_profile: biasProfileSchema.default({
+      metrics: {},
+      positive_biases: [],
+      negative_biases: [],
+      guardrail_applied: null,
+    }),
     recommended_action: recommendedActionSchema,
     reasons: z.array(z.string()),
     explanation_id: z.string().optional().nullable(),
@@ -315,11 +355,13 @@ export const datasetRecordSchema = z.object({
 });
 
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
+export type ContentClass = z.infer<typeof contentClassSchema>;
 export type BatchScoreRequest = z.infer<typeof batchScoreRequestSchema>;
 export type BatchScoreResponse = z.infer<typeof batchScoreResponseSchema>;
 export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
 export type ExplanationEvidence = z.infer<typeof explanationEvidenceSchema>;
+export type BiasProfile = z.infer<typeof biasProfileSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;

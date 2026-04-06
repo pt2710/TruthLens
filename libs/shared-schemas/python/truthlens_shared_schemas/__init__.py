@@ -1,7 +1,9 @@
 from .contracts import (
     BatchScoreRequest,
     BatchScoreResponse,
+    BiasProfile,
     ChannelInfo,
+    ContentClass,
     DatasetRecord,
     ExplanationBundlePayload,
     ExplanationEvidence,
@@ -34,7 +36,9 @@ from .contracts import (
 __all__ = [
     "BatchScoreRequest",
     "BatchScoreResponse",
+    "BiasProfile",
     "ChannelInfo",
+    "ContentClass",
     "DatasetRecord",
     "ExplanationBundlePayload",
     "ExplanationEvidence",

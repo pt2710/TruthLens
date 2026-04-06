@@ -25,11 +25,19 @@ def test_pipeline_creates_build_outputs(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert "missing_field_rate" in result["build_manifest"]["sources"]["transform_manifest"]
     normalized_rows = read_jsonl(repo_root() / "datasets/interim/normalized/discovery-test-latest.jsonl")
     latest_annotation_batch = read_json(repo_root() / "datasets/labels/annotation_batches/latest.json")
+    adjudication_payload = read_json(repo_root() / "datasets/labels/adjudication/build-test-latest.json")
     assert all("transcript_mismatch_score" in row["features"] for row in normalized_rows)
+    assert all("content_class" in row["features"] for row in normalized_rows)
+    assert all("bias_primitives" in row["features"] for row in normalized_rows)
     assert all("repeat_template_rate" in row["history"]["channel_history_features"] for row in normalized_rows)
     assert latest_annotation_batch["run_id"] == "discovery-test-latest"
     assert "queue_reason" in latest_annotation_batch["review_queue"][0]
     assert "channel_name" in latest_annotation_batch["review_queue"][0]
+    assert "class_coverage" in latest_annotation_batch
+    assert "dominant_bias_coverage" in latest_annotation_batch
+    assert adjudication_payload["run_id"] == "discovery-test-latest"
+    assert "pending_items" in adjudication_payload
+    assert "source_gold_path" in adjudication_payload
 
 
 def test_training_and_simulation_generate_artifacts(
@@ -45,6 +53,9 @@ def test_training_and_simulation_generate_artifacts(
     model_dir = repo_root() / "artifacts/trained_models/latest"
     eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
     simulation_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-simulation.json")
+    bseo_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-report.json")
+    bseo_lineage = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-lineage.json")
+    bseo_atlas = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-mutation-bias-atlas.json")
     drift_report = read_json(repo_root() / "artifacts/drift_reports/build-test-latest.json")
     audit_report = read_json(repo_root() / "datasets/manifests/audits/build-test-latest.json")
 
@@ -97,13 +108,18 @@ def test_training_and_simulation_generate_artifacts(
     assert "bellman_state_values" in simulation_report
     assert "replay_summary" in simulation_report
     assert "evolutionary_search" in simulation_report
+    assert "bseo_search" in simulation_report
     assert "contextual_bandit" in simulation_report
     assert "bandit_threshold_adjustments" in simulation_report
     assert simulation_report["replay_summary"]["steps"] > 0
+    assert bseo_report["policy_version"] == "bseo-control-policy-v1"
+    assert bseo_lineage
+    assert bseo_atlas["status"] in {"sparse", "clustered"}
     assert "retraining_recommended" in drift_report
     assert "label_distribution_shift" in drift_report
     assert "corrupted_image_rate" in audit_report
     assert "parser_failure_rate" in audit_report
+    assert (repo_root() / "configs/thresholds/bseo-policy.json").exists()
     assert (repo_root() / "configs/thresholds/contextual-bandit.json").exists()
     assert (repo_root() / "configs/thresholds/evolutionary-search.json").exists()
     assert (repo_root() / "configs/thresholds/rl-policy.json").exists()
@@ -145,6 +161,18 @@ def test_trained_scoring_surfaces_model_contributor_details(
         entry.details is not None and "fusion risk drops" in entry.details
         for entry in result.evidence
     )
+    assert result.content_class in {
+        "news",
+        "commentary",
+        "documentary",
+        "music",
+        "art",
+        "satire",
+        "gaming",
+        "promo",
+        "unknown",
+    }
+    assert "metrics" in result.bias_profile.model_dump()
 
 
 def test_pipeline_supports_public_rss_sources(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

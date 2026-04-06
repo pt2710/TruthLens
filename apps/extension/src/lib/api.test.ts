@@ -186,6 +186,14 @@ describe('scoreFeedItem', () => {
       transcript_excerpt: 'A transcript excerpt.',
       explanation_summary: 'The title and thumbnail appear weakly aligned.',
       reasons: ['Title contains sensational framing patterns.'],
+      content_class: 'news',
+      content_class_confidence: 0.84,
+      bias_profile: {
+        metrics: { sensational_weight: 0.72 },
+        positive_biases: ['factual-scrutiny'],
+        negative_biases: ['sensational-overweighting'],
+        guardrail_applied: 'factual-context-amplifies-mismatch',
+      },
     });
 
     expect(suggestion.suggested_outcome).toBe('moderate');

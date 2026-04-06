@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { datasetRecordSchema, scoreResultSchema } from './index';
+import {
+  datasetRecordSchema,
+  manualReportSuggestionRequestSchema,
+  scoreResultSchema,
+} from './index';
 
 describe('shared schemas', () => {
   it('requires reasons for active recommendations', () => {
@@ -23,6 +27,14 @@ describe('shared schemas', () => {
       risk_score: 0.8,
       confidence: 0.9,
       uncertainty: 0.1,
+      content_class: 'news',
+      content_class_confidence: 0.88,
+      bias_profile: {
+        metrics: { sensational_weight: 0.72 },
+        positive_biases: ['factual-scrutiny'],
+        negative_biases: ['sensational-overweighting'],
+        guardrail_applied: 'factual-context-amplifies-mismatch',
+      },
       recommended_action: 'blur',
       reasons: ['Title contains strong sensational framing patterns.'],
       explanation_id: 'exp-item-1',
@@ -60,6 +72,26 @@ describe('shared schemas', () => {
       labels: {},
       provenance: {},
       annotator_notes: [],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts taxonomy-aware manual report suggestion requests', () => {
+    const result = manualReportSuggestionRequestSchema.safeParse({
+      target_url: 'https://www.youtube.com/watch?v=123',
+      title_snapshot: 'Moonlight Echoes (Official Audio)',
+      channel_name: 'Aurora Records',
+      explanation_summary: 'Packaging appears broadly aligned.',
+      reasons: ['Class-conditioned guardrail reduced the mismatch penalty.'],
+      content_class: 'music',
+      content_class_confidence: 0.92,
+      bias_profile: {
+        metrics: { crossmodal_rigidity: 0.28 },
+        positive_biases: ['stylistic-divergence-tolerance'],
+        negative_biases: [],
+        guardrail_applied: 'music-context-dampens-crossmodal-rigidity',
+      },
     });
 
     expect(result.success).toBe(true);
