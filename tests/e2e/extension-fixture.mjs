@@ -215,6 +215,18 @@ async function main() {
     });
 
     await page.route('http://127.0.0.1:8000/manual-report/suggest', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fulfill({
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          },
+          body: '',
+        });
+        return;
+      }
       suggestionRequests.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 200,

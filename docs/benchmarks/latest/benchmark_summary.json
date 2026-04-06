@@ -1,59 +1,116 @@
 {
-  "generated_at": "2026-04-06T04:16:02.789547+00:00",
-  "build_id": "build-20260323000612",
-  "model_version": "baseline-v1-build-20260323000612",
-  "trained_at": "2026-03-23T00:06:12.500359+00:00",
-  "sample_count": 4,
+  "generated_at": "2026-04-06T04:49:36.017741+00:00",
+  "build_id": "build-20260406042818",
+  "model_version": "baseline-v1-build-20260406042818",
+  "trained_at": "2026-04-06T04:28:18.606357+00:00",
+  "sample_count": 44,
   "artifact_paths": {
     "model_info": "artifacts/trained_models/latest/model_info.json",
-    "eval_report": "artifacts/eval_runs/build-20260323000612.json",
-    "simulation": "artifacts/eval_runs/build-20260323000612-simulation.json",
-    "bseo_report": null,
-    "mutation_atlas": null,
-    "lineage": null,
-    "drift_report": "artifacts/drift_reports/build-20260323000612.json",
+    "eval_report": "artifacts/eval_runs/build-20260406042818.json",
+    "simulation": "artifacts/eval_runs/build-20260406042818-simulation.json",
+    "bseo_report": "artifacts/eval_runs/build-20260406042818-bseo-report.json",
+    "mutation_atlas": "artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json",
+    "lineage": "artifacts/eval_runs/build-20260406042818-bseo-lineage.json",
+    "drift_report": "artifacts/drift_reports/build-20260406042818.json",
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
-    "bseo_policy": null
+    "bseo_policy": "configs/thresholds/bseo-policy.json",
+    "runtime_governance": "artifacts/reports/runtime-governance-latest.json"
   },
   "artifact_timestamps": {
-    "model_info": "2026-04-05T21:41:01.137404+00:00",
-    "eval_report": "2026-04-05T21:41:01.134542+00:00",
-    "simulation": "2026-04-05T21:41:01.133440+00:00",
-    "bseo_report": null,
-    "mutation_atlas": null,
-    "lineage": null,
-    "drift_report": "2026-04-05T21:41:01.132440+00:00",
-    "runtime_policy": "2026-04-05T21:41:01.150466+00:00",
-    "thresholds": "2026-04-05T21:41:01.149445+00:00",
-    "bseo_policy": null
+    "model_info": "2026-04-06T04:28:26.682182+00:00",
+    "eval_report": "2026-04-06T04:28:26.684195+00:00",
+    "simulation": "2026-04-06T04:28:51.362790+00:00",
+    "bseo_report": "2026-04-06T04:28:51.365789+00:00",
+    "mutation_atlas": "2026-04-06T04:28:51.393782+00:00",
+    "lineage": "2026-04-06T04:28:51.393782+00:00",
+    "drift_report": "2026-04-06T04:28:51.395790+00:00",
+    "runtime_policy": "2026-04-06T04:40:02.540092+00:00",
+    "thresholds": "2026-04-06T04:28:51.397798+00:00",
+    "bseo_policy": "2026-04-06T04:28:51.402820+00:00",
+    "runtime_governance": "2026-04-06T04:49:36.003970+00:00"
   },
   "runtime_truth": {
-    "configured_policy_mode": "threshold-default",
-    "resolved_policy_mode": "threshold-default",
-    "bseo_artifact_committed": false,
-    "bseo_artifact_compatible": false,
+    "configured_policy_mode": "bseo-shadow",
+    "resolved_policy_mode": "bseo-shadow",
+    "bseo_artifact_committed": true,
+    "bseo_artifact_compatible": true,
     "selective_verification_contract_present": true,
-    "heavy_llm_hot_path": false
+    "heavy_llm_hot_path": false,
+    "recommended_policy_mode": "bseo-shadow",
+    "max_promotable_mode": "bseo-shadow",
+    "shadow_eligible": true,
+    "live_eligible": false
+  },
+  "runtime_governance": {
+    "generated_at": "2026-04-06T04:49:35.998957+00:00",
+    "build_id": "build-20260406042818",
+    "runtime_policy": {
+      "configured_mode": "bseo-shadow",
+      "resolved_mode": "bseo-shadow",
+      "bseo_min_confidence": 0.58,
+      "bseo_max_uncertainty": 0.45,
+      "bseo_artifact_max_age_hours": 168.0
+    },
+    "artifacts": {
+      "bseo_policy": {
+        "available": true,
+        "compatible": true,
+        "stale": false,
+        "status": "compatible",
+        "reason": null,
+        "age_hours": 0.355,
+        "build_id": "build-20260406042818",
+        "policy_version": "bseo-control-policy-v1"
+      },
+      "lineage_count": 125,
+      "mutation_atlas_status": "clustered",
+      "usable_mutations": 106
+    },
+    "dataset": {
+      "train_count": 110,
+      "validation_count": 44,
+      "test_count": 44,
+      "eval_sample_count": 44
+    },
+    "performance": {
+      "eval_f1": 1.0,
+      "validation_f1": 1.0,
+      "validation_gap": 0.0,
+      "calibration_error": 0.2201,
+      "bseo_objective_score": 0.8344,
+      "benign_false_positive_rate": 0.0,
+      "shadow_observation_count": 8
+    },
+    "promotion": {
+      "shadow_eligible": true,
+      "shadow_blockers": [],
+      "live_eligible": false,
+      "live_blockers": [
+        "insufficient-shadow-observation-history"
+      ],
+      "recommended_mode": "bseo-shadow",
+      "max_promotable_mode": "bseo-shadow"
+    }
   },
   "metrics": {
     "eval": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "positive_rate": 0.25,
+      "positive_rate": 0.6364,
       "false_positive_rate": 0.0,
       "false_negative_rate": 0.0,
       "roc_auc": 1.0,
       "pr_auc": 1.0
     },
     "validation": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "positive_rate": 0.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.6364,
       "false_positive_rate": 0.0,
-      "false_negative_rate": 1.0,
+      "false_negative_rate": 0.0,
       "roc_auc": 1.0,
       "pr_auc": 1.0
     },
@@ -61,81 +118,68 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "positive_rate": 0.25,
+      "positive_rate": 0.6364,
       "false_positive_rate": 0.0,
       "false_negative_rate": 0.0,
       "roc_auc": 1.0,
       "pr_auc": 1.0
     },
-    "calibration_error": 0.0,
-    "validation_calibration_error": 0.0,
+    "calibration_error": 0.2201,
+    "validation_calibration_error": 0.2201,
     "per_head_metrics": {
       "text": {
         "metrics": {
-          "precision": 0.3333,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.5,
-          "positive_rate": 0.75,
-          "false_positive_rate": 0.6667,
+          "f1": 1.0,
+          "positive_rate": 0.6364,
+          "false_positive_rate": 0.0,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.4187
+        "calibration_error": 0.0321
       },
       "vision": {
         "metrics": {
           "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "positive_rate": 0.25,
+          "recall": 0.5714,
+          "f1": 0.7273,
+          "positive_rate": 0.3636,
           "false_positive_rate": 0.0,
-          "false_negative_rate": 0.0,
-          "roc_auc": 1.0,
-          "pr_auc": 1.0
+          "false_negative_rate": 0.4286,
+          "roc_auc": 0.8929,
+          "pr_auc": 0.9557
         },
-        "calibration_error": 0.2562
+        "calibration_error": 0.2895
       },
       "metadata": {
         "metrics": {
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "positive_rate": 0.75,
-          "false_positive_rate": 1.0,
-          "false_negative_rate": 1.0,
-          "roc_auc": 0.0,
-          "pr_auc": 0.25
-        },
-        "calibration_error": 0.9989
-      },
-      "history": {
-        "metrics": {
-          "precision": 0.25,
-          "recall": 1.0,
-          "f1": 0.4,
-          "positive_rate": 1.0,
-          "false_positive_rate": 1.0,
-          "false_negative_rate": 0.0,
-          "roc_auc": 0.5,
-          "pr_auc": 0.25
-        },
-        "calibration_error": 0.25
-      },
-      "fusion": {
-        "metrics": {
           "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "positive_rate": 0.25,
+          "recall": 0.8571,
+          "f1": 0.9231,
+          "positive_rate": 0.5455,
           "false_positive_rate": 0.0,
-          "false_negative_rate": 0.0,
+          "false_negative_rate": 0.1429,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.3016
+        "calibration_error": 0.1893
       },
-      "calibrated": {
+      "history": {
+        "metrics": {
+          "precision": 0.6,
+          "recall": 0.2143,
+          "f1": 0.3158,
+          "positive_rate": 0.2273,
+          "false_positive_rate": 0.25,
+          "false_negative_rate": 0.7857,
+          "roc_auc": 0.4978,
+          "pr_auc": 0.671
+        },
+        "calibration_error": 0.1364
+      },
+      "anomaly": {
         "metrics": {
           "precision": 0.0,
           "recall": 0.0,
@@ -143,224 +187,693 @@
           "positive_rate": 0.0,
           "false_positive_rate": 0.0,
           "false_negative_rate": 1.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.6364
+        },
+        "calibration_error": 0.6364
+      },
+      "fusion": {
+        "metrics": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "positive_rate": 0.6364,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.0
+        "calibration_error": 0.1454
+      },
+      "calibrated": {
+        "metrics": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "positive_rate": 0.6364,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
+          "roc_auc": 1.0,
+          "pr_auc": 1.0
+        },
+        "calibration_error": 0.2201
       }
     },
     "confusion_matrix": {
-      "tp": 1,
-      "tn": 3,
+      "tp": 28,
+      "tn": 16,
       "fp": 0,
       "fn": 0
     }
   },
   "thresholds": {
-    "badge_threshold": 0.2,
-    "blur_threshold": 0.45,
-    "report_prompt_threshold": 0.65,
-    "hide_threshold": 0.8
+    "badge_threshold": 0.371,
+    "blur_threshold": 0.5,
+    "report_prompt_threshold": 0.697,
+    "hide_threshold": 0.864
   },
   "simulation": {
     "threshold_sweep": [
       {
         "threshold": 0.2,
-        "precision": 1.0,
+        "precision": 0.6364,
         "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "f1": 0.7778,
+        "positive_rate": 1.0,
+        "false_positive_rate": 1.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": 1.6
       },
       {
         "threshold": 0.25,
-        "precision": 1.0,
+        "precision": 0.6364,
         "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "f1": 0.7778,
+        "positive_rate": 1.0,
+        "false_positive_rate": 1.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": 2.0
       },
       {
         "threshold": 0.3,
-        "precision": 1.0,
+        "precision": 0.7778,
         "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "f1": 0.875,
+        "positive_rate": 0.8182,
+        "false_positive_rate": 0.5,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -10.0
       },
       {
         "threshold": 0.35,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.4,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.45,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.5,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.55,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.6,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.65,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.7,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.75,
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "positive_rate": 0.25,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -22.4
       },
       {
         "threshold": 0.8,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "positive_rate": 0.5455,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.1429,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": -14.8
       },
       {
         "threshold": 0.85,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "recall": 0.2857,
+        "f1": 0.4444,
+        "positive_rate": 0.1818,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.7143,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": 15.6
       },
       {
         "threshold": 0.9,
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "positive_rate": 0.0,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 1.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0,
-        "intervention_cost": -0.8
+        "intervention_cost": 30.8
       }
     ],
     "recommended_thresholds": {
-      "badge_threshold": 0.2,
-      "blur_threshold": 0.45,
-      "report_prompt_threshold": 0.65,
-      "hide_threshold": 0.8
+      "badge_threshold": 0.371,
+      "blur_threshold": 0.5,
+      "report_prompt_threshold": 0.697,
+      "hide_threshold": 0.864
     },
-    "replay_summary": {},
-    "policy": {},
-    "q_table": {
-      "s0:u2": {
-        "none": 1.0,
-        "badge": 0.4,
-        "blur": -0.3,
-        "ask-report": -0.8,
-        "hide": -1.2
+    "replay_summary": {
+      "steps": 44,
+      "average_reward": 1.8243,
+      "discounted_return": 18.4771,
+      "action_counts": {
+        "none": 16,
+        "badge": 0,
+        "blur": 0,
+        "ask-report": 28,
+        "hide": 0
       },
+      "correct_interventions": 28,
+      "unnecessary_interventions": 0,
+      "intervention_rate": 0.6364
+    },
+    "policy": {
+      "s3:u0": "ask-report",
+      "s1:u1": "none"
+    },
+    "q_table": {
       "s3:u0": {
-        "none": -1.1,
-        "badge": 1.18,
-        "blur": 1.88,
-        "ask-report": 2.38,
-        "hide": 1.98
+        "none": 1.6669,
+        "badge": 3.786,
+        "blur": 4.4683,
+        "ask-report": 4.9623,
+        "hide": 4.655
+      },
+      "s1:u1": {
+        "none": 4.0067,
+        "badge": 3.4708,
+        "blur": 2.8191,
+        "ask-report": 2.3537,
+        "hide": 1.9814
       }
     }
   },
   "drift": {
-    "reference_count": 12,
-    "current_count": 4,
-    "title_length_shift": 1.0,
-    "sensational_count_shift": -0.5,
-    "label_rate_shift": -0.5
+    "reference_count": 110,
+    "current_count": 44,
+    "title_length_shift": 0.0,
+    "sensational_count_shift": 0.0,
+    "thumbnail_text_density_shift": 0.0,
+    "transcript_mismatch_shift": 0.0004,
+    "repeat_template_rate_shift": 0.0,
+    "channel_risk_mean_shift": -0.0215,
+    "label_rate_shift": 0.0,
+    "label_distribution_shift": {
+      "clickbait": 0.0,
+      "misleading_thumbnail": 0.0,
+      "misleading_title": 0.0,
+      "fearbait": 0.0182,
+      "ai_mass_spam": -0.0818
+    },
+    "retraining_recommended": false,
+    "trigger_reasons": []
   },
   "bseo": {
-    "policy_artifact": {},
-    "report": {},
-    "bias_signature": {},
-    "mutation_bias_atlas": {},
-    "lineage": [],
-    "available": false
+    "policy_artifact": {
+      "policy_version": "bseo-control-policy-v1",
+      "generated_at": "2026-04-06T04:28:18.606357+00:00",
+      "build_id": "build-20260406042818",
+      "head_spec_version": "2026-04-02",
+      "architecture_plan_version": "2026-04-02",
+      "recommended_thresholds": {
+        "badge_threshold": 0.3544,
+        "blur_threshold": 0.5128,
+        "report_prompt_threshold": 0.7062,
+        "hide_threshold": 0.8439
+      },
+      "control_genome": {
+        "global_thresholds": {
+          "badge_threshold": 0.3544,
+          "blur_threshold": 0.5128,
+          "report_prompt_threshold": 0.7062,
+          "hide_threshold": 0.8439
+        },
+        "content_threshold_offsets": {
+          "news": -0.0125,
+          "commentary": -0.0147,
+          "documentary": 0.0119,
+          "music": 0.1199,
+          "art": 0.0274,
+          "satire": 0.0399,
+          "gaming": 0.0368,
+          "promo": -0.0187,
+          "unknown": 0.0049
+        },
+        "mismatch_weight_by_class": {
+          "news": 1.1793,
+          "commentary": 1.0797,
+          "documentary": 1.165,
+          "music": 0.6,
+          "art": 0.7607,
+          "satire": 0.9301,
+          "gaming": 0.9138,
+          "promo": 1.0192,
+          "unknown": 0.9899
+        },
+        "sensational_weight_by_class": {
+          "news": 1.0964,
+          "commentary": 1.0511,
+          "documentary": 1.0009,
+          "music": 0.8067,
+          "art": 0.8378,
+          "satire": 0.9172,
+          "gaming": 0.9649,
+          "promo": 1.1504,
+          "unknown": 1.0799
+        },
+        "channel_prior_temperature": 0.7611,
+        "uncertainty_escalation_bias": 0.7682
+      },
+      "bias_signature_macro": {
+        "sensational_weight": 0.1145,
+        "crossmodal_rigidity": 0.4068,
+        "channel_prior_dependency": 0.2019,
+        "genre_confusion": 0.1538,
+        "uncertainty_calibration": 0.1433
+      },
+      "negative_bias_score": 0.0998,
+      "objective": {
+        "score": 0.8344,
+        "detection_quality": 0.9308,
+        "context_sensitivity": 1.0,
+        "calibration": 0.8377,
+        "mutation_stability": 1.0,
+        "channel_lock_in": 0.0295,
+        "genre_confusion": 0.1725
+      },
+      "mutation_bias_atlas": {
+        "status": "clustered",
+        "usable_mutations": 106,
+        "clusters": [
+          {
+            "cluster_id": 0,
+            "size": 24,
+            "average_delta_f": 0.0,
+            "average_delta_b": 0.0,
+            "average_theta_shift": 0.0
+          }
+        ]
+      },
+      "lineage_log_path": "artifacts/eval_runs/build-20260406042818-bseo-lineage.json",
+      "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json",
+      "report_path": "artifacts/eval_runs/build-20260406042818-bseo-report.json"
+    },
+    "report": {
+      "build_id": "build-20260406042818",
+      "generated_at": "2026-04-06T04:28:18.606357+00:00",
+      "policy_version": "bseo-control-policy-v1",
+      "best_candidate_id": "g5-child7",
+      "best_objective": 0.8344,
+      "recommended_thresholds": {
+        "badge_threshold": 0.3544,
+        "blur_threshold": 0.5128,
+        "report_prompt_threshold": 0.7062,
+        "hide_threshold": 0.8439
+      },
+      "best_performance": {
+        "detection_quality": 0.9308,
+        "context_sensitivity": 1.0,
+        "macro_ece": 0.1623,
+        "calibration": 0.8377,
+        "channel_lock_in": 0.0295,
+        "genre_confusion": 0.1725,
+        "intervention_rate": 0.7273,
+        "benign_false_positive_rate": 0.0,
+        "action_counts": {
+          "none": 12,
+          "badge": 4,
+          "blur": 0,
+          "ask-report": 0,
+          "hide": 28
+        },
+        "slice_metrics": {
+          "news": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.0,
+            "coverage": 4.0,
+            "intervention_rate": 1.0
+          },
+          "commentary": {
+            "f1": 0.9231,
+            "false_positive_rate": 0.0,
+            "ece": 0.0795,
+            "coverage": 14.0,
+            "intervention_rate": 1.0
+          },
+          "documentary": {
+            "f1": 0.8,
+            "false_positive_rate": 0.0,
+            "ece": 0.1906,
+            "coverage": 6.0,
+            "intervention_rate": 1.0
+          },
+          "music": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.2948,
+            "coverage": 4.0,
+            "intervention_rate": 0.0
+          },
+          "art": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.2847,
+            "coverage": 4.0,
+            "intervention_rate": 0.0
+          },
+          "satire": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.0663,
+            "coverage": 4.0,
+            "intervention_rate": 1.0
+          },
+          "gaming": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.3827,
+            "coverage": 4.0,
+            "intervention_rate": 0.0
+          },
+          "promo": {
+            "f1": 1.0,
+            "false_positive_rate": 0.0,
+            "ece": 0.0,
+            "coverage": 4.0,
+            "intervention_rate": 1.0
+          }
+        }
+      }
+    },
+    "bias_signature": {
+      "per_class": {
+        "news": {
+          "sensational_weight": 0.6016,
+          "crossmodal_rigidity": 1.0,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.1022,
+          "uncertainty_calibration": 0.1509
+        },
+        "commentary": {
+          "sensational_weight": 0.0001,
+          "crossmodal_rigidity": 0.649,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.2238,
+          "uncertainty_calibration": 0.1628
+        },
+        "documentary": {
+          "sensational_weight": 0.0,
+          "crossmodal_rigidity": 0.6286,
+          "channel_prior_dependency": 0.2017,
+          "genre_confusion": 0.2147,
+          "uncertainty_calibration": 0.1229
+        },
+        "music": {
+          "sensational_weight": 0.0,
+          "crossmodal_rigidity": 0.0,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.0,
+          "uncertainty_calibration": 0.0296
+        },
+        "art": {
+          "sensational_weight": 0.0,
+          "crossmodal_rigidity": 0.0,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.003,
+          "uncertainty_calibration": 0.0424
+        },
+        "satire": {
+          "sensational_weight": 0.1314,
+          "crossmodal_rigidity": 0.187,
+          "channel_prior_dependency": 0.204,
+          "genre_confusion": 0.3293,
+          "uncertainty_calibration": 0.3709
+        },
+        "gaming": {
+          "sensational_weight": 0.0,
+          "crossmodal_rigidity": 0.1666,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.2076,
+          "uncertainty_calibration": 0.0922
+        },
+        "promo": {
+          "sensational_weight": 0.1833,
+          "crossmodal_rigidity": 0.6229,
+          "channel_prior_dependency": 0.2016,
+          "genre_confusion": 0.1497,
+          "uncertainty_calibration": 0.1746
+        }
+      },
+      "macro": {
+        "sensational_weight": 0.1145,
+        "crossmodal_rigidity": 0.4068,
+        "channel_prior_dependency": 0.2019,
+        "genre_confusion": 0.1538,
+        "uncertainty_calibration": 0.1433
+      },
+      "negative_bias_score": 0.0998
+    },
+    "mutation_bias_atlas": {
+      "status": "clustered",
+      "usable_mutations": 106,
+      "clusters": [
+        {
+          "cluster_id": 0,
+          "size": 24,
+          "average_delta_f": 0.0,
+          "average_delta_b": 0.0,
+          "average_theta_shift": 0.0
+        }
+      ]
+    },
+    "lineage": {
+      "count": 125,
+      "accepted_count": 106,
+      "accepted_preview": [
+        {
+          "candidate_id": "g0-m0",
+          "generation": 0,
+          "objective": 0.834,
+          "delta_f": 0.0,
+          "delta_b": -0.0028,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m1",
+          "generation": 0,
+          "objective": 0.7339,
+          "delta_f": 0.0,
+          "delta_b": 0.0046,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m11",
+          "generation": 0,
+          "objective": 0.8339,
+          "delta_f": 0.0,
+          "delta_b": -0.0009,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m12",
+          "generation": 0,
+          "objective": 0.8341,
+          "delta_f": 0.0,
+          "delta_b": -0.0003,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m14",
+          "generation": 0,
+          "objective": 0.7341,
+          "delta_f": 0.0,
+          "delta_b": 0.0034,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m15",
+          "generation": 0,
+          "objective": 0.7342,
+          "delta_f": 0.0,
+          "delta_b": 0.0043,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m2",
+          "generation": 0,
+          "objective": 0.734,
+          "delta_f": 0.0,
+          "delta_b": 0.0032,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m3",
+          "generation": 0,
+          "objective": 0.834,
+          "delta_f": 0.0,
+          "delta_b": -0.0028,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m5",
+          "generation": 0,
+          "objective": 0.734,
+          "delta_f": 0.0,
+          "delta_b": 0.0024,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g0-m6",
+          "generation": 0,
+          "objective": 0.734,
+          "delta_f": 0.0,
+          "delta_b": 0.0006,
+          "mutation_type": "mutation"
+        },
+        {
+          "candidate_id": "g1-child10",
+          "generation": 1,
+          "objective": 0.8341,
+          "delta_f": 0.0,
+          "delta_b": -0.0001,
+          "mutation_type": "crossover"
+        },
+        {
+          "candidate_id": "g1-child11",
+          "generation": 1,
+          "objective": 0.834,
+          "delta_f": 0.0,
+          "delta_b": -0.0015,
+          "mutation_type": "crossover"
+        },
+        {
+          "candidate_id": "g1-child12",
+          "generation": 1,
+          "objective": 0.7341,
+          "delta_f": 0.0,
+          "delta_b": 0.0001,
+          "mutation_type": "crossover"
+        },
+        {
+          "candidate_id": "g1-child14",
+          "generation": 1,
+          "objective": 0.734,
+          "delta_f": 0.0,
+          "delta_b": 0.0004,
+          "mutation_type": "crossover"
+        },
+        {
+          "candidate_id": "g1-child16",
+          "generation": 1,
+          "objective": 0.734,
+          "delta_f": 0.0,
+          "delta_b": 0.0036,
+          "mutation_type": "crossover"
+        },
+        {
+          "candidate_id": "g1-child17",
+          "generation": 1,
+          "objective": 0.834,
+          "delta_f": 0.0,
+          "delta_b": -0.0033,
+          "mutation_type": "crossover"
+        }
+      ]
+    },
+    "available": true
   },
   "caveats": [
-    "Committed eval sample count is only 4; metrics are unstable and must not be treated as production benchmarks.",
-    "Validation performance is materially weaker than eval performance; treat the current benchmark as a tiny-sample sanity signal, not a stable generalization claim.",
-    "No committed configs/thresholds/bseo-policy.json is present at repo root, so BSEO shadow/live remains a code-supported mode rather than a promoted committed runtime artifact.",
-    "Committed simulation artifacts do not currently include populated BSEO search outputs, lineage logs, or mutation atlas data.",
-    "Drift report compares against only 4 current rows, so shift readings are directional rather than statistically robust."
+    "BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history."
   ],
   "missing_data": [],
   "output_root": "docs/benchmarks/latest",
@@ -372,6 +885,7 @@
     "threshold_sweep.svg",
     "drift_summary.svg",
     "policy_mode_comparison.svg",
+    "runtime_governance.svg",
     "benchmark_provenance.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
@@ -381,6 +895,7 @@
     "metrics_dashboard.html",
     "threshold_explorer.html",
     "bseo_policy_dashboard.html",
-    "mutation_atlas.html"
+    "mutation_atlas.html",
+    "runtime_governance_dashboard.html"
   ]
 }

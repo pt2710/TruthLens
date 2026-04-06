@@ -23,11 +23,11 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="58" y="210">Committed eval snapshot</text>
 <rect class="card" x="355" y="112" width="290" height="150" rx="14" />
 <text class="label" x="373" y="138">Validation F1</text>
-<text class="value" x="373" y="182">0.000</text>
+<text class="value" x="373" y="182">1.000</text>
 <text class="small" x="373" y="210">Cross-check against validation split</text>
-<rect class="warn" x="670" y="112" width="290" height="150" rx="14" />
+<rect class="accent" x="670" y="112" width="290" height="150" rx="14" />
 <text class="label" x="688" y="138">Eval sample count</text>
-<text class="value" x="688" y="182">4</text>
+<text class="value" x="688" y="182">44</text>
 <text class="small" x="688" y="210">Very small n must be treated as unstable</text>
 <rect class="card" x="40" y="282" width="290" height="150" rx="14" />
 <text class="label" x="58" y="308">Eval precision</text>
@@ -37,5 +37,5 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="value" x="373" y="352">1.000</text>
 <rect class="card" x="670" y="282" width="290" height="150" rx="14" />
 <text class="label" x="688" y="308">Validation calibration</text>
-<text class="value" x="688" y="352">0.000</text>
+<text class="value" x="688" y="352">0.220</text>
 </svg>

@@ -203,7 +203,7 @@
       "encoder": "q-learning-plus-search",
       "backend": "simulation-and-policy-stack",
       "runtime_path": "policy-layer",
-      "notes": "Implemented feature-flagged threshold-default, rl-shadow, and rl-live modes backed by simulation artifacts plus runtime guardrails."
+      "notes": "Implemented feature-flagged threshold-default, bseo-shadow, and bseo-live modes backed by simulation artifacts plus runtime guardrails, with rl-shadow and rl-live retained only as compatibility aliases."
     },
     {
       "component_id": "cross-platform-client",

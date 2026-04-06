@@ -11,7 +11,8 @@
     "build": "pnpm --filter @truthlens/shared-schemas build && pnpm --filter @truthlens/extension build && pnpm --filter @truthlens/labeling-ui build",
     "format": "pnpm exec prettier --check .",
     "docs:render-architecture": "node scripts/render_architecture_diagram.mjs",
-    "docs:render-benchmarks": "py -m uv run python scripts/render_benchmark_visualizations.py"
+    "docs:render-benchmarks": "py -m uv run python scripts/render_benchmark_visualizations.py",
+    "runtime:promote-auto": "py -m uv run python scripts/promote_runtime_policy.py --mode auto"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

@@ -1,0 +1,175 @@
+{
+  "policy_version": "bseo-control-policy-v1",
+  "generated_at": "2026-04-06T04:28:18.606357+00:00",
+  "build_id": "build-20260406042818",
+  "head_spec_version": "2026-04-02",
+  "architecture_plan_version": "2026-04-02",
+  "recommended_thresholds": {
+    "badge_threshold": 0.3544,
+    "blur_threshold": 0.5128,
+    "report_prompt_threshold": 0.7062,
+    "hide_threshold": 0.8439
+  },
+  "control_genome": {
+    "global_thresholds": {
+      "badge_threshold": 0.3544,
+      "blur_threshold": 0.5128,
+      "report_prompt_threshold": 0.7062,
+      "hide_threshold": 0.8439
+    },
+    "content_threshold_offsets": {
+      "news": -0.0125,
+      "commentary": -0.0147,
+      "documentary": 0.0119,
+      "music": 0.1199,
+      "art": 0.0274,
+      "satire": 0.0399,
+      "gaming": 0.0368,
+      "promo": -0.0187,
+      "unknown": 0.0049
+    },
+    "mismatch_weight_by_class": {
+      "news": 1.1793,
+      "commentary": 1.0797,
+      "documentary": 1.165,
+      "music": 0.6,
+      "art": 0.7607,
+      "satire": 0.9301,
+      "gaming": 0.9138,
+      "promo": 1.0192,
+      "unknown": 0.9899
+    },
+    "sensational_weight_by_class": {
+      "news": 1.0964,
+      "commentary": 1.0511,
+      "documentary": 1.0009,
+      "music": 0.8067,
+      "art": 0.8378,
+      "satire": 0.9172,
+      "gaming": 0.9649,
+      "promo": 1.1504,
+      "unknown": 1.0799
+    },
+    "channel_prior_temperature": 0.7611,
+    "uncertainty_escalation_bias": 0.7682
+  },
+  "bias_signature": {
+    "per_class": {
+      "news": {
+        "sensational_weight": 0.6016,
+        "crossmodal_rigidity": 1.0,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.1022,
+        "uncertainty_calibration": 0.1509
+      },
+      "commentary": {
+        "sensational_weight": 0.0001,
+        "crossmodal_rigidity": 0.649,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.2238,
+        "uncertainty_calibration": 0.1628
+      },
+      "documentary": {
+        "sensational_weight": 0.0,
+        "crossmodal_rigidity": 0.6286,
+        "channel_prior_dependency": 0.2017,
+        "genre_confusion": 0.2147,
+        "uncertainty_calibration": 0.1229
+      },
+      "music": {
+        "sensational_weight": 0.0,
+        "crossmodal_rigidity": 0.0,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.0,
+        "uncertainty_calibration": 0.0296
+      },
+      "art": {
+        "sensational_weight": 0.0,
+        "crossmodal_rigidity": 0.0,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.003,
+        "uncertainty_calibration": 0.0424
+      },
+      "satire": {
+        "sensational_weight": 0.1314,
+        "crossmodal_rigidity": 0.187,
+        "channel_prior_dependency": 0.204,
+        "genre_confusion": 0.3293,
+        "uncertainty_calibration": 0.3709
+      },
+      "gaming": {
+        "sensational_weight": 0.0,
+        "crossmodal_rigidity": 0.1666,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.2076,
+        "uncertainty_calibration": 0.0922
+      },
+      "promo": {
+        "sensational_weight": 0.1833,
+        "crossmodal_rigidity": 0.6229,
+        "channel_prior_dependency": 0.2016,
+        "genre_confusion": 0.1497,
+        "uncertainty_calibration": 0.1746
+      }
+    },
+    "macro": {
+      "sensational_weight": 0.1145,
+      "crossmodal_rigidity": 0.4068,
+      "channel_prior_dependency": 0.2019,
+      "genre_confusion": 0.1538,
+      "uncertainty_calibration": 0.1433
+    },
+    "negative_bias_score": 0.0998
+  },
+  "objective": {
+    "score": 0.8344,
+    "detection_quality": 0.9308,
+    "context_sensitivity": 1.0,
+    "calibration": 0.8377,
+    "mutation_stability": 1.0,
+    "channel_lock_in": 0.0295,
+    "genre_confusion": 0.1725
+  },
+  "mutation_bias_atlas": {
+    "status": "clustered",
+    "usable_mutations": 106,
+    "clusters": [
+      {
+        "cluster_id": 0,
+        "size": 24,
+        "member_ids": [
+          "g1-elite0",
+          "g1-elite1",
+          "g1-elite2",
+          "g1-elite3",
+          "g2-elite0",
+          "g2-elite1",
+          "g2-elite2",
+          "g2-elite3",
+          "g3-elite0",
+          "g3-elite1",
+          "g3-elite2",
+          "g3-elite3",
+          "g4-elite0",
+          "g4-elite1",
+          "g4-elite2",
+          "g4-elite3",
+          "g5-elite0",
+          "g5-elite1",
+          "g5-elite2",
+          "g5-elite3",
+          "g6-elite0",
+          "g6-elite1",
+          "g6-elite2",
+          "g6-elite3"
+        ],
+        "average_delta_f": 0.0,
+        "average_delta_b": 0.0,
+        "average_theta_shift": 0.0
+      }
+    ]
+  },
+  "lineage_log_path": "artifacts/eval_runs/build-20260406042818-bseo-lineage.json",
+  "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json",
+  "report_path": "artifacts/eval_runs/build-20260406042818-bseo-report.json"
+}

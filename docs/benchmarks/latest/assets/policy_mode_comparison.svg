@@ -19,15 +19,15 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="subtitle" x="40" y="72">This panel is derived from committed runtime config and artifact presence, not from aspirational docs.</text>
 <rect class="accent" x="40" y="112" width="280" height="150" rx="14" />
 <text class="label" x="58" y="138">Configured runtime mode</text>
-<text class="value" x="58" y="182">threshold-default</text>
+<text class="value" x="58" y="182">bseo-shadow</text>
 <text class="small" x="58" y="210">Directly from configs/thresholds/runtime-policy.json</text>
 <rect class="card" x="350" y="112" width="280" height="150" rx="14" />
 <text class="label" x="368" y="138">Resolved runtime mode</text>
-<text class="value" x="368" y="182">threshold-default</text>
+<text class="value" x="368" y="182">bseo-shadow</text>
 <text class="small" x="368" y="210">Aliases normalized for architectural truth</text>
-<rect class="warn" x="660" y="112" width="300" height="150" rx="14" />
+<rect class="accent" x="660" y="112" width="300" height="150" rx="14" />
 <text class="label" x="678" y="138">Committed BSEO artifact</text>
-<text class="value" x="678" y="182">no</text>
+<text class="value" x="678" y="182">yes</text>
 <text class="small" x="678" y="210">If absent, shadow/live is code-supported but not</text>
 <text class="small" x="678" y="226">promoted as a committed runtime artifact.</text>
 <rect class="card" x="40" y="282" width="280" height="140" rx="14" />

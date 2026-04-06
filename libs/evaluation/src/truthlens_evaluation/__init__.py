@@ -5,17 +5,25 @@ from .drift import build_drift_report
 from .evolution import run_evolutionary_search, search_threshold_family
 from .metrics import compute_binary_metrics, confusion_counts, expected_calibration_error
 from .rl import build_q_table, derive_policy, estimate_state_values, run_policy_replay, state_key_for_score
+from .runtime_governance import (
+    apply_runtime_promotion,
+    build_runtime_governance_summary,
+    persist_runtime_governance_summary,
+)
 from .simulation import run_threshold_sweep
 
 __all__ = [
+    "apply_runtime_promotion",
     "build_drift_report",
     "build_benchmark_summary",
+    "build_runtime_governance_summary",
     "build_q_table",
     "compute_binary_metrics",
     "confusion_counts",
     "derive_policy",
     "estimate_state_values",
     "expected_calibration_error",
+    "persist_runtime_governance_summary",
     "recommend_bandit_threshold_adjustments",
     "render_benchmark_bundle",
     "run_bseo_search",

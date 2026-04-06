@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img">
+<style>
+text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+.title { font-size: 24px; font-weight: 700; }
+.subtitle { font-size: 12px; fill: #475569; }
+.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
+.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
+.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
+.label { font-size: 13px; fill: #475569; }
+.value { font-size: 28px; font-weight: 700; }
+.small { font-size: 11px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1; }
+.grid { stroke: #e2e8f0; stroke-width: 1; }
+.legend { font-size: 12px; fill: #334155; }
+.stub { font-size: 16px; font-weight: 600; }
+</style>
+<rect x="0" y="0" width="1000" height="470" fill="#ffffff" />
+<text class="title" x="40" y="48">Runtime governance summary</text>
+<text class="subtitle" x="40" y="72">Promotion truth from committed BSEO artifacts, performance guardrails, and observed shadow history.</text>
+<rect class="accent" x="40" y="112" width="280" height="150" rx="14" />
+<text class="label" x="58" y="138">Recommended mode</text>
+<text class="value" x="58" y="182">bseo-shadow</text>
+<text class="small" x="58" y="210">The highest runtime mode currently justified by</text>
+<text class="small" x="58" y="226">committed artifacts and guardrails.</text>
+<rect class="card" x="350" y="112" width="280" height="150" rx="14" />
+<text class="label" x="368" y="138">Max promotable mode</text>
+<text class="value" x="368" y="182">bseo-shadow</text>
+<text class="small" x="368" y="210">Live is only eligible after calibration, lineage,</text>
+<text class="small" x="368" y="226">atlas, and shadow-soak checks pass.</text>
+<rect class="card" x="660" y="112" width="300" height="150" rx="14" />
+<text class="label" x="678" y="138">Current eval footprint</text>
+<text class="value" x="678" y="182">test=44 | eval=44</text>
+<text class="small" x="678" y="210">Governance summaries are only credible when dataset</text>
+<text class="small" x="678" y="226">counts are large enough to matter.</text>
+<rect class="card" x="40" y="282" width="280" height="150" rx="14" />
+<text class="label" x="58" y="308">Objective + calibration</text>
+<text class="value" x="58" y="352">obj=0.834 | ece=0.220</text>
+<text class="small" x="58" y="380">BSEO promotion stays downstream of fused/calibrated</text>
+<text class="small" x="58" y="396">scoring quality.</text>
+<rect class="card" x="350" y="282" width="280" height="150" rx="14" />
+<text class="label" x="368" y="308">Atlas + lineage</text>
+<text class="value" x="368" y="352">clustered | lineage=125</text>
+<text class="small" x="368" y="380">usable_mutations=106</text>
+<rect class="warn" x="660" y="282" width="300" height="150" rx="14" />
+<text class="label" x="678" y="308">Live blockers</text>
+<text class="value" x="678" y="352">insufficient-shadow-observation-history</text>
+<text class="small" x="678" y="380">shadow_observations=8</text>
+</svg>

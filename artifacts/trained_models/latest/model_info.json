@@ -1,8 +1,8 @@
 {
-  "model_version": "baseline-v1-build-20260323000612",
-  "trained_at": "2026-03-23T00:06:12.500359+00:00",
-  "build_id": "build-20260323000612",
-  "head_spec_version": "2026-03-23",
+  "model_version": "baseline-v1-build-20260406042818",
+  "trained_at": "2026-04-06T04:28:18.606357+00:00",
+  "build_id": "build-20260406042818",
+  "head_spec_version": "2026-04-02",
   "head_specs": [
     {
       "name": "text",
@@ -55,6 +55,18 @@
       "supports_sequence": true
     },
     {
+      "name": "anomaly",
+      "family": "packaging-vae-anomaly-head",
+      "backend": "torch-vae",
+      "encoder": "vision-metadata-vae-v1",
+      "artifact_keys": [
+        "packaging_vae_artifacts"
+      ],
+      "supports_attribution": true,
+      "supports_counterfactuals": false,
+      "supports_sequence": false
+    },
+    {
       "name": "fusion",
       "family": "multimodal-fusion-head",
       "backend": "sklearn-logistic-regression",
@@ -79,6 +91,311 @@
       "supports_sequence": false
     }
   ],
+  "architecture_plan_version": "2026-04-02",
+  "architecture_layers": [
+    {
+      "component_id": "text-representation",
+      "label": "Sparse title representation",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "feature-projection",
+      "family": "title-encoder",
+      "encoder": "count-vectorizer-bigrams",
+      "backend": "scikit-learn",
+      "runtime_path": "core-inference",
+      "notes": "Sparse bag-of-ngrams projection over title text; no learned embedding layer in the shipped scorer."
+    },
+    {
+      "component_id": "vision-representation",
+      "label": "Engineered thumbnail representation",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "feature-projection",
+      "family": "thumbnail-feature-head",
+      "encoder": "vision-v2",
+      "backend": "scikit-learn",
+      "runtime_path": "core-inference",
+      "notes": "Handcrafted thumbnail feature extraction remains the explicit baseline representation and safe fallback when the optional tiny CNN or ViT paths are unavailable."
+    },
+    {
+      "component_id": "metadata-representation",
+      "label": "Handcrafted metadata representation",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "tabular-features",
+      "family": "tabular-risk-head",
+      "encoder": "handcrafted-metadata-v1",
+      "backend": "scikit-learn",
+      "runtime_path": "core-inference",
+      "notes": "Tabular risk and mismatch features over title, transcript, engagement, and feed metadata."
+    },
+    {
+      "component_id": "temporal-summary",
+      "label": "Sequence-summary temporal context",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "temporal-summary",
+      "family": "temporal-channel-head",
+      "encoder": "sequence-summary-v1",
+      "backend": "scikit-learn",
+      "runtime_path": "core-inference",
+      "notes": "Channel-history aggregation over prior flags, upload velocity, repeat templates, and engagement anomalies."
+    },
+    {
+      "component_id": "text-head",
+      "label": "Text sigmoid classifier",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "classifier-head",
+      "family": "title-encoder",
+      "encoder": "count-vectorizer-bigrams",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Probability-producing text head over sparse title features."
+    },
+    {
+      "component_id": "vision-head",
+      "label": "Vision sigmoid classifier",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "classifier-head",
+      "family": "thumbnail-feature-head",
+      "encoder": "vision-v2",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Probability-producing thumbnail head over engineered image features."
+    },
+    {
+      "component_id": "metadata-head",
+      "label": "Metadata sigmoid classifier",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "classifier-head",
+      "family": "tabular-risk-head",
+      "encoder": "handcrafted-metadata-v1",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Probability-producing metadata head over explicit tabular features."
+    },
+    {
+      "component_id": "history-head",
+      "label": "History sigmoid classifier",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "classifier-head",
+      "family": "temporal-channel-head",
+      "encoder": "sequence-summary-v1",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Probability-producing history head over sequence-summary channel features."
+    },
+    {
+      "component_id": "fusion-head",
+      "label": "Multimodal logistic fusion",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "fusion-layer",
+      "family": "multimodal-fusion-head",
+      "encoder": "score-stack-v1",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Logistic fusion over per-head probability stacks."
+    },
+    {
+      "component_id": "calibration-head",
+      "label": "Platt calibration layer",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "calibration-layer",
+      "family": "probability-calibration-head",
+      "encoder": "platt-scaling-v1",
+      "backend": "sklearn-logistic-regression",
+      "runtime_path": "core-inference",
+      "notes": "Probability calibration over fused scores."
+    },
+    {
+      "component_id": "llm-review-assist",
+      "label": "LLM review assist",
+      "phase": "V1",
+      "status": "implemented",
+      "layer_type": "llm-assist",
+      "family": "gemini-review-assist",
+      "encoder": "gemini-structured-output",
+      "backend": "google-gemini-api",
+      "runtime_path": "human-review-only",
+      "notes": "Used for manual report suggestion and wording optimization only; not part of the scoring classifier."
+    },
+    {
+      "component_id": "text-embedding-transformer",
+      "label": "Text embedding / transformer encoder",
+      "phase": "V2",
+      "status": "implemented",
+      "layer_type": "embedding-layer",
+      "family": "text-encoder-next",
+      "encoder": "sentence-transformer-or-transformer",
+      "backend": "torch-transformers",
+      "runtime_path": "core-inference",
+      "notes": "Optional sentence-transformer path is implemented; sparse title projection remains the fallback path."
+    },
+    {
+      "component_id": "vision-cnn-encoder",
+      "label": "Tiny CNN thumbnail encoder",
+      "phase": "V2",
+      "status": "implemented",
+      "layer_type": "vision-encoder",
+      "family": "thumbnail-encoder-next",
+      "encoder": "tiny-cnn-thumbnail",
+      "backend": "torch",
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional CNN thumbnail path; engineered thumbnail features remain the fallback and still feed anomaly/metadata signals."
+    },
+    {
+      "component_id": "vision-vit-encoder",
+      "label": "ViT thumbnail encoder",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "vision-encoder",
+      "family": "thumbnail-encoder-next",
+      "encoder": "vision-transformer",
+      "backend": "torch-transformers",
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional ViT thumbnail path with runtime priority over the tiny CNN and engineered vision fallback."
+    },
+    {
+      "component_id": "vae-anomaly-head",
+      "label": "VAE anomaly signal",
+      "phase": "V2",
+      "status": "implemented",
+      "layer_type": "anomaly-head",
+      "family": "thumbnail-or-metadata-vae",
+      "encoder": "variational-autoencoder",
+      "backend": "torch",
+      "runtime_path": "core-inference",
+      "notes": "Implemented packaging-anomaly head over combined thumbnail and metadata features."
+    },
+    {
+      "component_id": "temporal-lstm-encoder",
+      "label": "LSTM temporal encoder",
+      "phase": "V2",
+      "status": "implemented",
+      "layer_type": "temporal-encoder",
+      "family": "channel-history-next",
+      "encoder": "lstm-or-gru",
+      "backend": "torch",
+      "runtime_path": "core-inference",
+      "notes": "Implemented optional temporal LSTM path trained on recent channel-item sequences, with summary-derived runtime proxy when explicit sequence history is unavailable."
+    },
+    {
+      "component_id": "rl-action-policy",
+      "label": "Reinforcement-learned action policy",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "policy-optimizer",
+      "family": "rl-policy-next",
+      "encoder": "q-learning-plus-search",
+      "backend": "simulation-and-policy-stack",
+      "runtime_path": "policy-layer",
+      "notes": "Implemented feature-flagged threshold-default, rl-shadow, and rl-live modes backed by simulation artifacts plus runtime guardrails."
+    },
+    {
+      "component_id": "cross-platform-client",
+      "label": "Cross-platform TruthLens client",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "product-surface",
+      "family": "client-expansion",
+      "encoder": "n/a",
+      "backend": "api-plus-shared-session-contract",
+      "runtime_path": "surface-and-api",
+      "notes": "Implemented platform-neutral mobile analyze/review contract so non-extension clients can consume resolved watch context, scoring, prompt state, and draft suggestions."
+    },
+    {
+      "component_id": "android-client",
+      "label": "Android client",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "product-surface",
+      "family": "android-expansion",
+      "encoder": "n/a",
+      "backend": "android",
+      "runtime_path": "surface",
+      "notes": "Implemented native Jetpack Compose Android MVP companion/share client for share-intake, analyze, optimize, report, verify, and local session persistence."
+    },
+    {
+      "component_id": "future-multimodal-stack",
+      "label": "Stronger end-to-end multimodal encoder stack",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "multimodal-encoder",
+      "family": "multimodal-next",
+      "encoder": "end-to-end-multimodal-transformer",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned future work beyond the current bounded optional encoder paths."
+    },
+    {
+      "component_id": "future-video-understanding",
+      "label": "Richer transcript and video understanding",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "video-understanding",
+      "family": "context-next",
+      "encoder": "video-plus-transcript-understanding",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned deeper video/timeline reasoning beyond thumbnail, watch metadata, and transcript excerpts."
+    },
+    {
+      "component_id": "future-moderation-analytics",
+      "label": "Deeper moderation analytics",
+      "phase": "V4",
+      "status": "planned",
+      "layer_type": "analytics-surface",
+      "family": "operator-tooling-next",
+      "encoder": "n/a",
+      "backend": "future",
+      "runtime_path": "future",
+      "notes": "Planned operator and analytics tooling beyond the current extension, API, and Android companion scope."
+    }
+  ],
+  "text_encoder_resolution": {
+    "requested_encoder": "sentence-transformer",
+    "actual_encoder": "count-vectorizer-bigrams",
+    "fallback_used": true,
+    "sentence_transformer_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "fallback_reason": "sentence-transformers is not installed in the active environment"
+  },
+  "vision_encoder_resolution": {
+    "requested_encoder": "vision-transformer",
+    "actual_encoder": "vision-v2",
+    "fallback_used": true,
+    "image_size": 32,
+    "conv_channels": [
+      8,
+      16
+    ],
+    "hidden_dim": 32,
+    "epochs": 14,
+    "learning_rate": 0.002,
+    "patch_size": 8,
+    "transformer_hidden_size": 64,
+    "transformer_num_hidden_layers": 2,
+    "transformer_num_attention_heads": 4,
+    "transformer_intermediate_size": 128,
+    "transformer_pooling": "cls",
+    "fallback_reason": "torch, transformers, or Pillow is not installed in the active environment"
+  },
+  "history_encoder_resolution": {
+    "requested_encoder": "lstm-sequence",
+    "actual_encoder": "sequence-summary-v1",
+    "fallback_used": true,
+    "sequence_length": 4,
+    "hidden_dim": 16,
+    "num_layers": 1,
+    "epochs": 60,
+    "learning_rate": 0.01,
+    "fallback_reason": "torch is not installed in the active environment"
+  },
   "training_library_versions": {
     "scikit_learn": "1.8.0"
   },
@@ -87,109 +404,97 @@
   "fusion_profile": {
     "strategy": "logistic-fusion",
     "head_weights": {
-      "text": 0.4347,
-      "vision": 0.614,
-      "metadata": -1.2035,
-      "history": 0.0
+      "text": 2.9868,
+      "vision": 0.7537,
+      "metadata": 1.2427,
+      "history": 0.0006,
+      "anomaly": 0.0
     },
-    "intercept": -0.0374
+    "intercept": -2.4718
   },
-  "decision_threshold": 0.25,
+  "decision_threshold": 0.35,
   "metrics": {
     "precision": 1.0,
     "recall": 1.0,
     "f1": 1.0,
-    "positive_rate": 0.25,
+    "positive_rate": 0.6364,
     "false_positive_rate": 0.0,
     "false_negative_rate": 0.0,
     "roc_auc": 1.0,
     "pr_auc": 1.0
   },
-  "calibration_error": 0.0,
+  "calibration_error": 0.2201,
   "confusion_matrix": {
-    "tp": 1,
-    "tn": 3,
+    "tp": 28,
+    "tn": 16,
     "fp": 0,
     "fn": 0
   },
   "validation_metrics": {
-    "precision": 0.0,
-    "recall": 0.0,
-    "f1": 0.0,
-    "positive_rate": 0.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "positive_rate": 0.6364,
     "false_positive_rate": 0.0,
-    "false_negative_rate": 1.0,
+    "false_negative_rate": 0.0,
     "roc_auc": 1.0,
     "pr_auc": 1.0
   },
-  "validation_calibration_error": 0.0,
+  "validation_calibration_error": 0.2201,
   "per_head_metrics": {
     "text": {
       "metrics": {
-        "precision": 0.3333,
+        "precision": 1.0,
         "recall": 1.0,
-        "f1": 0.5,
-        "positive_rate": 0.75,
-        "false_positive_rate": 0.6667,
+        "f1": 1.0,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
         "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0
       },
-      "calibration_error": 0.4187
+      "calibration_error": 0.0321
     },
     "vision": {
       "metrics": {
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "recall": 0.5714,
+        "f1": 0.7273,
+        "positive_rate": 0.3636,
         "false_positive_rate": 0.0,
-        "false_negative_rate": 0.0,
-        "roc_auc": 1.0,
-        "pr_auc": 1.0
+        "false_negative_rate": 0.4286,
+        "roc_auc": 0.8929,
+        "pr_auc": 0.9557
       },
-      "calibration_error": 0.2562
+      "calibration_error": 0.2895
     },
     "metadata": {
       "metrics": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "positive_rate": 0.75,
-        "false_positive_rate": 1.0,
-        "false_negative_rate": 1.0,
-        "roc_auc": 0.0,
-        "pr_auc": 0.25
-      },
-      "calibration_error": 0.9989
-    },
-    "history": {
-      "metrics": {
-        "precision": 0.25,
-        "recall": 1.0,
-        "f1": 0.4,
-        "positive_rate": 1.0,
-        "false_positive_rate": 1.0,
-        "false_negative_rate": 0.0,
-        "roc_auc": 0.5,
-        "pr_auc": 0.25
-      },
-      "calibration_error": 0.25
-    },
-    "fusion": {
-      "metrics": {
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "positive_rate": 0.25,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "positive_rate": 0.5455,
         "false_positive_rate": 0.0,
-        "false_negative_rate": 0.0,
+        "false_negative_rate": 0.1429,
         "roc_auc": 1.0,
         "pr_auc": 1.0
       },
-      "calibration_error": 0.3016
+      "calibration_error": 0.1893
     },
-    "calibrated": {
+    "history": {
+      "metrics": {
+        "precision": 0.6,
+        "recall": 0.2143,
+        "f1": 0.3158,
+        "positive_rate": 0.2273,
+        "false_positive_rate": 0.25,
+        "false_negative_rate": 0.7857,
+        "roc_auc": 0.4978,
+        "pr_auc": 0.671
+      },
+      "calibration_error": 0.1364
+    },
+    "anomaly": {
       "metrics": {
         "precision": 0.0,
         "recall": 0.0,
@@ -197,10 +502,36 @@
         "positive_rate": 0.0,
         "false_positive_rate": 0.0,
         "false_negative_rate": 1.0,
+        "roc_auc": 0.5,
+        "pr_auc": 0.6364
+      },
+      "calibration_error": 0.6364
+    },
+    "fusion": {
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
         "roc_auc": 1.0,
         "pr_auc": 1.0
       },
-      "calibration_error": 0.0
+      "calibration_error": 0.1454
+    },
+    "calibrated": {
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.6364,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0
+      },
+      "calibration_error": 0.2201
     }
   }
 }

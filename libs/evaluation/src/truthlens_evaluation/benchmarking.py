@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from truthlens_data_pipeline.paths import ensure_dir, read_json, repo_root, write_json
+from truthlens_evaluation.runtime_governance import persist_runtime_governance_summary
 
 
 ASSET_FILENAMES = (
@@ -17,6 +18,7 @@ ASSET_FILENAMES = (
     "threshold_sweep.svg",
     "drift_summary.svg",
     "policy_mode_comparison.svg",
+    "runtime_governance.svg",
     "benchmark_provenance.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
@@ -28,6 +30,7 @@ INTERACTIVE_FILENAMES = (
     "threshold_explorer.html",
     "bseo_policy_dashboard.html",
     "mutation_atlas.html",
+    "runtime_governance_dashboard.html",
 )
 
 
@@ -123,6 +126,7 @@ def _artifact_paths() -> dict[str, Path | None]:
     runtime_policy_path = thresholds_dir / "runtime-policy.json"
     threshold_path = thresholds_dir / "default.json"
     bseo_policy_path = thresholds_dir / "bseo-policy.json"
+    runtime_governance_path = root / "artifacts" / "reports" / "runtime-governance-latest.json"
     return {
         "model_info": model_info_path if model_info_path.exists() else None,
         "eval_report": eval_report_path,
@@ -134,6 +138,7 @@ def _artifact_paths() -> dict[str, Path | None]:
         "runtime_policy": runtime_policy_path if runtime_policy_path.exists() else None,
         "thresholds": threshold_path if threshold_path.exists() else None,
         "bseo_policy": bseo_policy_path if bseo_policy_path.exists() else None,
+        "runtime_governance": runtime_governance_path if runtime_governance_path.exists() else None,
     }
 
 
@@ -176,7 +181,102 @@ def _is_truthy_bseo_payload(simulation: dict[str, Any] | None) -> bool:
     return isinstance(bseo, dict) and bool(bseo)
 
 
+def _summarize_mutation_atlas(atlas: dict[str, Any] | None) -> dict[str, Any]:
+    payload = atlas or {}
+    clusters = []
+    for cluster in payload.get("clusters", []):
+        if not isinstance(cluster, dict):
+            continue
+        clusters.append(
+            {
+                "cluster_id": cluster.get("cluster_id"),
+                "size": cluster.get("size"),
+                "average_delta_f": cluster.get("average_delta_f"),
+                "average_delta_b": cluster.get("average_delta_b"),
+                "average_theta_shift": cluster.get("average_theta_shift"),
+            }
+        )
+    return {
+        "status": payload.get("status", "missing"),
+        "usable_mutations": _safe_int(payload.get("usable_mutations")),
+        "clusters": clusters,
+    }
+
+
+def _summarize_lineage(lineage: list[dict[str, Any]] | None) -> dict[str, Any]:
+    rows = lineage if isinstance(lineage, list) else []
+    accepted = sorted(
+        [entry for entry in rows if isinstance(entry, dict) and bool(entry.get("accepted"))],
+        key=lambda entry: (_safe_int(entry.get("generation")), str(entry.get("candidate_id"))),
+    )
+    preview = [
+        {
+            "candidate_id": entry.get("candidate_id"),
+            "generation": entry.get("generation"),
+            "objective": entry.get("objective"),
+            "delta_f": entry.get("delta_f"),
+            "delta_b": entry.get("delta_b"),
+            "mutation_type": entry.get("mutation_type"),
+        }
+        for entry in accepted[:16]
+    ]
+    return {
+        "count": len(rows),
+        "accepted_count": len(accepted),
+        "accepted_preview": preview,
+    }
+
+
+def _summarize_bseo_report(report: dict[str, Any] | None) -> dict[str, Any]:
+    payload = report or {}
+    performance = dict(payload.get("best_performance", {}))
+    return {
+        "build_id": payload.get("build_id"),
+        "generated_at": payload.get("generated_at"),
+        "policy_version": payload.get("policy_version"),
+        "best_candidate_id": payload.get("best_candidate_id"),
+        "best_objective": payload.get("best_objective"),
+        "recommended_thresholds": dict(payload.get("recommended_thresholds", {})),
+        "best_performance": {
+            "detection_quality": performance.get("detection_quality"),
+            "context_sensitivity": performance.get("context_sensitivity"),
+            "macro_ece": performance.get("macro_ece"),
+            "calibration": performance.get("calibration"),
+            "channel_lock_in": performance.get("channel_lock_in"),
+            "genre_confusion": performance.get("genre_confusion"),
+            "intervention_rate": performance.get("intervention_rate"),
+            "benign_false_positive_rate": performance.get("benign_false_positive_rate"),
+            "action_counts": dict(performance.get("action_counts", {})),
+            "slice_metrics": dict(performance.get("slice_metrics", {})),
+        },
+    }
+
+
+def _summarize_bseo_policy_artifact(policy: dict[str, Any] | None) -> dict[str, Any]:
+    payload = policy or {}
+    bias_signature = dict(payload.get("bias_signature", {}))
+    return {
+        "policy_version": payload.get("policy_version"),
+        "generated_at": payload.get("generated_at"),
+        "build_id": payload.get("build_id"),
+        "head_spec_version": payload.get("head_spec_version"),
+        "architecture_plan_version": payload.get("architecture_plan_version"),
+        "recommended_thresholds": dict(payload.get("recommended_thresholds", {})),
+        "control_genome": dict(payload.get("control_genome", {})),
+        "bias_signature_macro": dict(bias_signature.get("macro", {})),
+        "negative_bias_score": bias_signature.get("negative_bias_score"),
+        "objective": dict(payload.get("objective", {})),
+        "mutation_bias_atlas": _summarize_mutation_atlas(
+            dict(payload.get("mutation_bias_atlas", {})) if isinstance(payload.get("mutation_bias_atlas"), dict) else {}
+        ),
+        "lineage_log_path": payload.get("lineage_log_path"),
+        "mutation_bias_atlas_path": payload.get("mutation_bias_atlas_path"),
+        "report_path": payload.get("report_path"),
+    }
+
+
 def build_benchmark_summary() -> dict[str, Any]:
+    runtime_governance = persist_runtime_governance_summary()
     paths = _artifact_paths()
     model_info = _read_json_if_exists(paths["model_info"])
     eval_report = _read_json_if_exists(paths["eval_report"])
@@ -202,7 +302,7 @@ def build_benchmark_summary() -> dict[str, Any]:
     per_head_metrics = dict((model_info or {}).get("per_head_metrics", {}))
     threshold_sweep = list((simulation or {}).get("threshold_sweep", []))
     simulation_has_bseo = _is_truthy_bseo_payload(simulation)
-    mutation_atlas_payload = (
+    mutation_atlas_payload = _summarize_mutation_atlas(
         dict((simulation or {}).get("bseo_search", {}).get("mutation_bias_atlas", {}))
         if simulation_has_bseo
         else mutation_atlas or {}
@@ -212,6 +312,7 @@ def build_benchmark_summary() -> dict[str, Any]:
         if simulation_has_bseo
         else dict((bseo_report or {}).get("best_bias_signature", {}))
     )
+    bseo_lineage_summary = _summarize_lineage(lineage if isinstance(lineage, list) else None)
 
     caveats: list[str] = []
     missing: list[str] = []
@@ -267,7 +368,24 @@ def build_benchmark_summary() -> dict[str, Any]:
         ),
         "selective_verification_contract_present": True,
         "heavy_llm_hot_path": False,
+        "recommended_policy_mode": str(runtime_governance["promotion"]["recommended_mode"]),
+        "max_promotable_mode": str(runtime_governance["promotion"]["max_promotable_mode"]),
+        "shadow_eligible": bool(runtime_governance["promotion"]["shadow_eligible"]),
+        "live_eligible": bool(runtime_governance["promotion"]["live_eligible"]),
     }
+
+    recommended_mode = str(runtime_governance["promotion"]["recommended_mode"])
+    max_promotable_mode = str(runtime_governance["promotion"]["max_promotable_mode"])
+    if policy_mode != recommended_mode:
+        caveats.append(
+            f"Configured runtime mode is `{policy_mode}`, but runtime governance currently recommends `{recommended_mode}` from the committed artifacts and guardrails."
+        )
+    live_blockers = list(runtime_governance["promotion"]["live_blockers"])
+    if live_blockers:
+        blocker_text = ", ".join(str(blocker) for blocker in live_blockers)
+        caveats.append(
+            f"BSEO live is not currently eligible. Max promotable committed mode is `{max_promotable_mode}`. Live blockers: {blocker_text}."
+        )
 
     return {
         "generated_at": _utc_now(),
@@ -278,6 +396,7 @@ def build_benchmark_summary() -> dict[str, Any]:
         "artifact_paths": {name: _relative(path) for name, path in paths.items()},
         "artifact_timestamps": {name: _artifact_timestamp(path) for name, path in paths.items()},
         "runtime_truth": runtime_truth,
+        "runtime_governance": runtime_governance,
         "metrics": {
             "eval": eval_metrics,
             "validation": validation_metrics,
@@ -299,11 +418,11 @@ def build_benchmark_summary() -> dict[str, Any]:
         },
         "drift": drift_report or {},
         "bseo": {
-            "policy_artifact": bseo_policy or {},
-            "report": bseo_report or {},
+            "policy_artifact": _summarize_bseo_policy_artifact(bseo_policy),
+            "report": _summarize_bseo_report(bseo_report),
             "bias_signature": bseo_bias_signature,
             "mutation_bias_atlas": mutation_atlas_payload,
-            "lineage": lineage or [],
+            "lineage": bseo_lineage_summary,
             "available": bool(bseo_policy or bseo_report or simulation_has_bseo),
         },
         "caveats": caveats,
@@ -759,6 +878,84 @@ def _write_policy_svg(summary: dict[str, Any], path: Path) -> None:
     )
 
 
+def _write_runtime_governance_svg(summary: dict[str, Any], path: Path) -> None:
+    governance = dict(summary["runtime_governance"])
+    promotion = dict(governance.get("promotion", {}))
+    performance = dict(governance.get("performance", {}))
+    artifacts = dict(governance.get("artifacts", {}))
+    dataset = dict(governance.get("dataset", {}))
+    live_blockers = list(promotion.get("live_blockers", []))
+    live_blocker_text = ", ".join(str(value) for value in live_blockers[:4]) or "none"
+    body = [
+        _card(
+            40,
+            112,
+            280,
+            150,
+            "Recommended mode",
+            str(promotion.get("recommended_mode", "n/a")),
+            "The highest runtime mode currently justified by committed artifacts and guardrails.",
+            "accent" if str(promotion.get("recommended_mode", "")) != "threshold-default" else "warn",
+        ),
+        _card(
+            350,
+            112,
+            280,
+            150,
+            "Max promotable mode",
+            str(promotion.get("max_promotable_mode", "n/a")),
+            "Live is only eligible after calibration, lineage, atlas, and shadow-soak checks pass.",
+        ),
+        _card(
+            660,
+            112,
+            300,
+            150,
+            "Current eval footprint",
+            f"test={_safe_int(dataset.get('test_count'))} | eval={_safe_int(dataset.get('eval_sample_count'))}",
+            "Governance summaries are only credible when dataset counts are large enough to matter.",
+        ),
+        _card(
+            40,
+            282,
+            280,
+            150,
+            "Objective + calibration",
+            f"obj={_safe_float(performance.get('bseo_objective_score')):.3f} | ece={_safe_float(performance.get('calibration_error')):.3f}",
+            "BSEO promotion stays downstream of fused/calibrated scoring quality.",
+        ),
+        _card(
+            350,
+            282,
+            280,
+            150,
+            "Atlas + lineage",
+            f"{artifacts.get('mutation_atlas_status', 'n/a')} | lineage={_safe_int(artifacts.get('lineage_count'))}",
+            f"usable_mutations={_safe_int(artifacts.get('usable_mutations'))}",
+        ),
+        _card(
+            660,
+            282,
+            300,
+            150,
+            "Live blockers",
+            live_blocker_text,
+            f"shadow_observations={_safe_int(performance.get('shadow_observation_count'))}",
+            "warn" if live_blockers else "accent",
+        ),
+    ]
+    path.write_text(
+        _svg_document(
+            "Runtime governance summary",
+            "Promotion truth from committed BSEO artifacts, performance guardrails, and observed shadow history.",
+            1000,
+            470,
+            body,
+        ),
+        encoding="utf-8",
+    )
+
+
 def _write_provenance_svg(summary: dict[str, Any], path: Path) -> None:
     build_id = str(summary.get("build_id") or "n/a")
     model_version = str(summary.get("model_version") or "n/a")
@@ -872,8 +1069,9 @@ def _write_mutation_atlas_svg(summary: dict[str, Any], path: Path) -> None:
 
 
 def _write_lineage_svg(summary: dict[str, Any], path: Path) -> None:
-    lineage = summary["bseo"]["lineage"]
-    if not isinstance(lineage, list) or not lineage:
+    lineage = dict(summary["bseo"]["lineage"])
+    accepted = list(lineage.get("accepted_preview", []))
+    if not accepted:
         _stub_svg(
             "Lineage overview",
             "Accepted mutation trajectory",
@@ -881,24 +1079,11 @@ def _write_lineage_svg(summary: dict[str, Any], path: Path) -> None:
             path,
         )
         return
-    accepted = [entry for entry in lineage if bool(entry.get("accepted"))]
-    if not accepted:
-        _stub_svg(
-            "Lineage overview",
-            "Accepted mutation trajectory",
-            "The lineage log exists but contains no accepted mutations.",
-            path,
-        )
-        return
-    accepted = sorted(
-        accepted,
-        key=lambda entry: (_safe_int(entry.get("generation")), str(entry.get("candidate_id"))),
-    )
     categories = [str(entry.get("candidate_id")) for entry in accepted[:8]]
     objective = [_safe_float(entry.get("objective")) for entry in accepted[:8]]
     _bar_chart(
         title="Accepted lineage objective scores",
-        subtitle="First accepted lineage entries in order. This is only meaningful when a real lineage log exists.",
+        subtitle="Accepted lineage preview from the committed summary. Raw lineage remains in the eval artifact path.",
         categories=categories,
         series=[("Objective", "#2563eb", objective)],
         path=path,
@@ -931,6 +1116,8 @@ def _overall_metrics_table(summary: dict[str, Any]) -> str:
 
 
 def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
+    governance = dict(summary["runtime_governance"])
+    promotion = dict(governance.get("promotion", {}))
     lines = [
         "# Benchmark Summary",
         "",
@@ -940,14 +1127,25 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         f"- Eval sample count: `{summary.get('sample_count') or 'n/a'}`",
         f"- Configured runtime policy mode: `{summary['runtime_truth']['configured_policy_mode']}`",
         f"- Resolved runtime policy mode: `{summary['runtime_truth']['resolved_policy_mode']}`",
+        f"- Governance recommended mode: `{promotion.get('recommended_mode', 'n/a')}`",
+        f"- Max promotable mode: `{promotion.get('max_promotable_mode', 'n/a')}`",
         "",
         "## Metrics",
         "",
         _overall_metrics_table(summary).rstrip(),
         "",
-        "## Caveats",
+        "## Runtime Governance",
         "",
+        f"- Shadow eligible: `{promotion.get('shadow_eligible', False)}`",
+        f"- Live eligible: `{promotion.get('live_eligible', False)}`",
     ]
+    shadow_blockers = list(promotion.get("shadow_blockers", []))
+    live_blockers = list(promotion.get("live_blockers", []))
+    if shadow_blockers:
+        lines.append(f"- Shadow blockers: `{', '.join(str(value) for value in shadow_blockers)}`")
+    if live_blockers:
+        lines.append(f"- Live blockers: `{', '.join(str(value) for value in live_blockers)}`")
+    lines.extend(["", "## Caveats", ""])
     if summary["caveats"]:
         for caveat in summary["caveats"]:
             lines.append(f"- {caveat}")
@@ -966,7 +1164,20 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
 
 
 def _write_dashboard(summary: dict[str, Any], path: Path, title: str, body_html: str) -> None:
-    payload = json.dumps(summary, indent=2, ensure_ascii=True)
+    payload = json.dumps(
+        {
+            "build_id": summary.get("build_id"),
+            "model_version": summary.get("model_version"),
+            "sample_count": summary.get("sample_count"),
+            "runtime_truth": summary.get("runtime_truth"),
+            "runtime_governance": summary.get("runtime_governance"),
+            "metrics": summary.get("metrics"),
+            "caveats": summary.get("caveats"),
+            "artifact_paths": summary.get("artifact_paths"),
+        },
+        indent=2,
+        ensure_ascii=True,
+    )
     html = f"""<!doctype html>
 <html lang="en">
   <head>
@@ -1001,6 +1212,8 @@ def _write_dashboard(summary: dict[str, Any], path: Path, title: str, body_html:
 
 
 def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> None:
+    governance = dict(summary["runtime_governance"])
+    promotion = dict(governance.get("promotion", {}))
     metrics_rows = "\n".join(
         f"<tr><td>{escape(name)}</td><td>{escape(_format_metric(_safe_float(summary['metrics']['eval'].get(key))))}</td><td>{escape(_format_metric(_safe_float(summary['metrics']['validation'].get(key))))}</td></tr>"
         for name, key in [
@@ -1073,6 +1286,8 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
           <h2>Runtime policy truth</h2>
           <p><strong>Configured mode:</strong> {escape(str(summary['runtime_truth']['configured_policy_mode']))}</p>
           <p><strong>Resolved mode:</strong> {escape(str(summary['runtime_truth']['resolved_policy_mode']))}</p>
+          <p><strong>Recommended mode:</strong> {escape(str(summary['runtime_truth']['recommended_policy_mode']))}</p>
+          <p><strong>Max promotable mode:</strong> {escape(str(summary['runtime_truth']['max_promotable_mode']))}</p>
           <p><strong>Committed BSEO artifact:</strong> {escape('yes' if summary['runtime_truth']['bseo_artifact_committed'] else 'no')}</p>
         </div>
         <div class="card">
@@ -1112,6 +1327,42 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         """,
     )
 
+    shadow_blockers = "".join(
+        f"<li>{escape(str(value))}</li>" for value in promotion.get("shadow_blockers", [])
+    ) or "<li>No shadow blockers.</li>"
+    live_blockers = "".join(
+        f"<li>{escape(str(value))}</li>" for value in promotion.get("live_blockers", [])
+    ) or "<li>No live blockers.</li>"
+    _write_dashboard(
+        summary,
+        output_dir / "runtime_governance_dashboard.html",
+        "TruthLens runtime governance dashboard",
+        f"""
+        <div class="card">
+          <h2>Promotion truth</h2>
+          <p><strong>Configured mode:</strong> {escape(str(summary['runtime_truth']['configured_policy_mode']))}</p>
+          <p><strong>Recommended mode:</strong> {escape(str(promotion.get('recommended_mode', 'n/a')))}</p>
+          <p><strong>Max promotable mode:</strong> {escape(str(promotion.get('max_promotable_mode', 'n/a')))}</p>
+          <p><strong>Shadow eligible:</strong> {escape(str(promotion.get('shadow_eligible', False)))}</p>
+          <p><strong>Live eligible:</strong> {escape(str(promotion.get('live_eligible', False)))}</p>
+        </div>
+        <div class="card">
+          <h2>Observed runtime evidence</h2>
+          <p><strong>Shadow observations:</strong> {escape(str(_safe_int(dict(governance.get('performance', {})).get('shadow_observation_count'))))}</p>
+          <p><strong>Eval sample count:</strong> {escape(str(_safe_int(dict(governance.get('dataset', {})).get('eval_sample_count'))))}</p>
+          <p><strong>Mutation atlas status:</strong> {escape(str(dict(governance.get('artifacts', {})).get('mutation_atlas_status', 'n/a')))}</p>
+        </div>
+        <div class="card warn">
+          <h2>Shadow blockers</h2>
+          <ul>{shadow_blockers}</ul>
+        </div>
+        <div class="card warn">
+          <h2>Live blockers</h2>
+          <ul>{live_blockers}</ul>
+        </div>
+        """,
+    )
+
 
 def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     root = output_root or (repo_root() / "docs" / "benchmarks" / "latest")
@@ -1130,6 +1381,7 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     _write_threshold_sweep_svg(summary, assets_dir / "threshold_sweep.svg")
     _write_drift_svg(summary, assets_dir / "drift_summary.svg")
     _write_policy_svg(summary, assets_dir / "policy_mode_comparison.svg")
+    _write_runtime_governance_svg(summary, assets_dir / "runtime_governance.svg")
     _write_provenance_svg(summary, assets_dir / "benchmark_provenance.svg")
     _write_bseo_bias_svg(summary, assets_dir / "bseo_bias_profile.svg")
     _write_mutation_atlas_svg(summary, assets_dir / "mutation_bias_atlas.svg")

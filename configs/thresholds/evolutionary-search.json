@@ -1,0 +1,94 @@
+{
+  "best_thresholds": {
+    "badge_threshold": 0.371,
+    "blur_threshold": 0.5,
+    "report_prompt_threshold": 0.697,
+    "hide_threshold": 0.864
+  },
+  "best_fitness": 1.5571,
+  "best_metrics": {
+    "average_reward": 1.6334,
+    "intervention_rate": 0.6364,
+    "action_counts": {
+      "none": 16,
+      "badge": 0,
+      "blur": 0,
+      "ask-report": 28,
+      "hide": 0
+    }
+  },
+  "population_size": 18,
+  "generations": 7,
+  "history": [
+    {
+      "generation": 0,
+      "best_fitness": 1.4434,
+      "best_thresholds": {
+        "badge_threshold": 0.406,
+        "blur_threshold": 0.517,
+        "report_prompt_threshold": 0.713,
+        "hide_threshold": 0.823
+      }
+    },
+    {
+      "generation": 1,
+      "best_fitness": 1.4889,
+      "best_thresholds": {
+        "badge_threshold": 0.422,
+        "blur_threshold": 0.505,
+        "report_prompt_threshold": 0.701,
+        "hide_threshold": 0.835
+      }
+    },
+    {
+      "generation": 2,
+      "best_fitness": 1.5116,
+      "best_thresholds": {
+        "badge_threshold": 0.397,
+        "blur_threshold": 0.518,
+        "report_prompt_threshold": 0.705,
+        "hide_threshold": 0.844
+      }
+    },
+    {
+      "generation": 3,
+      "best_fitness": 1.5571,
+      "best_thresholds": {
+        "badge_threshold": 0.371,
+        "blur_threshold": 0.5,
+        "report_prompt_threshold": 0.697,
+        "hide_threshold": 0.864
+      }
+    },
+    {
+      "generation": 4,
+      "best_fitness": 1.5571,
+      "best_thresholds": {
+        "badge_threshold": 0.371,
+        "blur_threshold": 0.5,
+        "report_prompt_threshold": 0.697,
+        "hide_threshold": 0.864
+      }
+    },
+    {
+      "generation": 5,
+      "best_fitness": 1.5571,
+      "best_thresholds": {
+        "badge_threshold": 0.371,
+        "blur_threshold": 0.5,
+        "report_prompt_threshold": 0.697,
+        "hide_threshold": 0.864
+      }
+    },
+    {
+      "generation": 6,
+      "best_fitness": 1.5571,
+      "best_thresholds": {
+        "badge_threshold": 0.371,
+        "blur_threshold": 0.5,
+        "report_prompt_threshold": 0.697,
+        "hide_threshold": 0.864
+      }
+    }
+  ]
+}

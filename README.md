@@ -15,9 +15,9 @@ Current committed root-repo truth:
 - baseline runtime is separated into perception -> fusion/calibration -> selective verification -> policy -> explanation
 - selective deep verification is explicit and fail-soft
 - heavy LLM assistance remains downstream in review and report drafting, not in the baseline hot path
-- BSEO exists in code and offline evaluation concepts, but the committed root runtime is still `threshold-default`
-- no committed `configs/thresholds/bseo-policy.json` currently exists at repo root
-- committed benchmark artifacts are tiny-sample and must not be read as production performance claims
+- a compatible `configs/thresholds/bseo-policy.json` is now committed and the root runtime is promoted to `bseo-shadow`
+- `bseo-live` is still intentionally blocked by governance because committed shadow-observation history is still far below the live threshold
+- committed benchmarks are larger than the earlier tiny-sample snapshot, but they are still repository artifacts rather than production performance claims
 
 ## Architecture Summary
 
@@ -93,9 +93,9 @@ Compatibility aliases:
 
 Committed root configuration today:
 
-- `configs/thresholds/runtime-policy.json` is set to `threshold-default`
-- root repo does not currently commit a `bseo-policy.json`
-- README therefore does not present BSEO as the active committed runtime controller
+- `configs/thresholds/runtime-policy.json` is set to `bseo-shadow`
+- `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
+- `bseo-live` is not promoted yet because runtime governance still blocks live rollout on shadow-observation soak
 
 ## Benchmarking
 
@@ -109,33 +109,35 @@ Current committed snapshot:
 
 | Field | Value |
 | --- | --- |
-| `build_id` | `build-20260323000612` |
-| `model_version` | `baseline-v1-build-20260323000612` |
-| `trained_at` | `2026-03-23T00:06:12.500359+00:00` |
-| `eval sample_count` | `4` |
-| `configured runtime mode` | `threshold-default` |
-| `resolved runtime mode` | `threshold-default` |
+| `build_id` | `build-20260406042818` |
+| `model_version` | `baseline-v1-build-20260406042818` |
+| `trained_at` | `2026-04-06T04:28:18.606357+00:00` |
+| `eval sample_count` | `44` |
+| `configured runtime mode` | `bseo-shadow` |
+| `resolved runtime mode` | `bseo-shadow` |
+| `governance recommended mode` | `bseo-shadow` |
+| `max promotable mode` | `bseo-shadow` |
 
 Current eval vs validation snapshot from committed artifacts:
 
 | Metric | Eval | Validation |
 | --- | ---: | ---: |
-| Precision | 1.000 | 0.000 |
-| Recall | 1.000 | 0.000 |
-| F1 | 1.000 | 0.000 |
+| Precision | 1.000 | 1.000 |
+| Recall | 1.000 | 1.000 |
+| F1 | 1.000 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.000 | 0.000 |
+| Calibration error | 0.220 | 0.220 |
 
 ## Metrics Caveats
 
 These numbers are not production claims.
 
-- committed eval sample count is only `4`
-- validation performance is materially weaker than eval performance
-- committed drift report compares against only `4` current rows
-- committed simulation artifacts do not currently include populated BSEO lineage or mutation-atlas data
-- README therefore surfaces benchmark truth as a tiny-sample artifact snapshot, not as a mature benchmark claim
+- committed eval sample count is now `44`, which is materially better than the earlier tiny-sample snapshot but still modest
+- eval and validation are both very strong on this committed split; that symmetry should be read as a clean repository benchmark, not as broad real-world proof
+- overall calibration error remains `0.220`, so ranking confidence is still less mature than the binary F1 snapshot suggests
+- per-head metrics are uneven: text/fusion are strong, while history and anomaly remain much weaker sidecars
+- `bseo-live` is still blocked because committed shadow-observation history is still far below the live threshold of `200`
 
 ## Evaluation And Visualization
 
@@ -159,6 +161,10 @@ These numbers are not production claims.
 
 ![Policy mode comparison](docs/benchmarks/latest/assets/policy_mode_comparison.svg)
 
+### Runtime Governance
+
+![Runtime governance summary](docs/benchmarks/latest/assets/runtime_governance.svg)
+
 Additional committed assets:
 
 - [Overall metrics table](docs/benchmarks/latest/assets/overall_metrics_table.md)
@@ -172,24 +178,23 @@ Additional committed assets:
 - [Threshold explorer](docs/benchmarks/latest/interactive/threshold_explorer.html)
 - [BSEO policy dashboard](docs/benchmarks/latest/interactive/bseo_policy_dashboard.html)
 - [Mutation atlas explorer](docs/benchmarks/latest/interactive/mutation_atlas.html)
+- [Runtime governance dashboard](docs/benchmarks/latest/interactive/runtime_governance_dashboard.html)
 
 ## Artifact Provenance
 
 Current benchmark inputs:
 
 - `artifacts/trained_models/latest/model_info.json`
-- `artifacts/eval_runs/build-20260323000612.json`
-- `artifacts/eval_runs/build-20260323000612-simulation.json`
-- `artifacts/drift_reports/build-20260323000612.json`
+- `artifacts/eval_runs/build-20260406042818.json`
+- `artifacts/eval_runs/build-20260406042818-simulation.json`
+- `artifacts/eval_runs/build-20260406042818-bseo-report.json`
+- `artifacts/eval_runs/build-20260406042818-bseo-lineage.json`
+- `artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json`
+- `artifacts/drift_reports/build-20260406042818.json`
 - `configs/thresholds/default.json`
-- `configs/thresholds/runtime-policy.json`
-
-Missing in the current committed root snapshot:
-
 - `configs/thresholds/bseo-policy.json`
-- committed BSEO report
-- committed mutation-bias atlas
-- committed lineage log
+- `configs/thresholds/runtime-policy.json`
+- `artifacts/reports/runtime-governance-latest.json`
 
 ## Quick Start
 
@@ -217,6 +222,7 @@ pnpm test:e2e
 ### Docs And Benchmark Assets
 
 ```powershell
+pnpm runtime:promote-auto
 pnpm docs:render-architecture
 pnpm docs:render-benchmarks
 ```
@@ -266,14 +272,14 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 
 ## Honest Limitations
 
-- committed benchmarks are tiny-sample and unstable
-- validation does not support any strong generalization claim yet
-- root runtime config does not currently promote BSEO as the active committed policy artifact
-- missing committed BSEO lineage and atlas artifacts means those visual panels are currently truthful stubs
-- current repo truth is stronger on architecture separation than on benchmark maturity
+- committed benchmarks are stronger than before but still small enough that README should not read like a product benchmark sheet
+- calibration and per-head stability still lag behind the clean fused F1 snapshot
+- history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
+- `bseo-shadow` is promoted, but `bseo-live` still lacks the shadow-soak evidence required for a truthful rollout
+- current repo truth is stronger on architecture separation and governance discipline than on large-sample benchmark maturity
 
 ## Next Stages
 
-1. promote fresh committed BSEO artifacts only when lineage, atlas, and guardrails are actually present
-2. grow the benchmark sample size and keep README aligned to the artifacts rather than to aspirational performance
-3. continue hardening explanation provenance across extension, API, and Android review surfaces
+1. accumulate real shadow-observation history and only then reconsider `bseo-live`
+2. grow benchmark coverage beyond the current `44` eval rows so README metrics become less brittle
+3. keep turning benchmark and provenance artifacts into richer operator dashboards and runtime governance views

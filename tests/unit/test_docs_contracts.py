@@ -23,5 +23,6 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     benchmark_readme = _read("docs/benchmarks/README.md")
 
     assert "docs/benchmarks/latest/benchmark_summary.json" in readme
-    assert "tiny-sample" in readme.lower()
+    assert "runtime governance" in readme.lower()
+    assert "runtime-governance-latest.json" in readme
     assert "pnpm docs:render-benchmarks" in benchmark_readme

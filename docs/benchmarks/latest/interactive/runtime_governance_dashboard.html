@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>TruthLens runtime governance dashboard</title>
+    <style>
+      body { font-family: "Segoe UI", Arial, sans-serif; margin: 24px; color: #0f172a; background: #f8fafc; }
+      h1, h2 { margin-top: 0; }
+      .card { background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+      code, pre { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px; overflow: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+      th { background: #eff6ff; }
+      .warn { background: #fff7ed; border-color: #fdba74; }
+      .muted { color: #475569; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>TruthLens runtime governance dashboard</h1>
+      <p class="muted">Generated from committed artifacts. This page is static and deterministic.</p>
+    </div>
+    
+        <div class="card">
+          <h2>Promotion truth</h2>
+          <p><strong>Configured mode:</strong> bseo-shadow</p>
+          <p><strong>Recommended mode:</strong> bseo-shadow</p>
+          <p><strong>Max promotable mode:</strong> bseo-shadow</p>
+          <p><strong>Shadow eligible:</strong> True</p>
+          <p><strong>Live eligible:</strong> False</p>
+        </div>
+        <div class="card">
+          <h2>Observed runtime evidence</h2>
+          <p><strong>Shadow observations:</strong> 8</p>
+          <p><strong>Eval sample count:</strong> 44</p>
+          <p><strong>Mutation atlas status:</strong> clustered</p>
+        </div>
+        <div class="card warn">
+          <h2>Shadow blockers</h2>
+          <ul><li>No shadow blockers.</li></ul>
+        </div>
+        <div class="card warn">
+          <h2>Live blockers</h2>
+          <ul><li>insufficient-shadow-observation-history</li></ul>
+        </div>
+        
+    <div class="card">
+      <h2>Embedded summary payload</h2>
+      <pre>{
+  &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260406042818&quot;,
+  &quot;sample_count&quot;: 44,
+  &quot;runtime_truth&quot;: {
+    &quot;configured_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;resolved_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;bseo_artifact_committed&quot;: true,
+    &quot;bseo_artifact_compatible&quot;: true,
+    &quot;selective_verification_contract_present&quot;: true,
+    &quot;heavy_llm_hot_path&quot;: false,
+    &quot;recommended_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;shadow_eligible&quot;: true,
+    &quot;live_eligible&quot;: false
+  },
+  &quot;runtime_governance&quot;: {
+    &quot;generated_at&quot;: &quot;2026-04-06T04:49:35.998957+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+    &quot;runtime_policy&quot;: {
+      &quot;configured_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;resolved_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;bseo_min_confidence&quot;: 0.58,
+      &quot;bseo_max_uncertainty&quot;: 0.45,
+      &quot;bseo_artifact_max_age_hours&quot;: 168.0
+    },
+    &quot;artifacts&quot;: {
+      &quot;bseo_policy&quot;: {
+        &quot;available&quot;: true,
+        &quot;compatible&quot;: true,
+        &quot;stale&quot;: false,
+        &quot;status&quot;: &quot;compatible&quot;,
+        &quot;reason&quot;: null,
+        &quot;age_hours&quot;: 0.355,
+        &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+        &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
+      },
+      &quot;lineage_count&quot;: 125,
+      &quot;mutation_atlas_status&quot;: &quot;clustered&quot;,
+      &quot;usable_mutations&quot;: 106
+    },
+    &quot;dataset&quot;: {
+      &quot;train_count&quot;: 110,
+      &quot;validation_count&quot;: 44,
+      &quot;test_count&quot;: 44,
+      &quot;eval_sample_count&quot;: 44
+    },
+    &quot;performance&quot;: {
+      &quot;eval_f1&quot;: 1.0,
+      &quot;validation_f1&quot;: 1.0,
+      &quot;validation_gap&quot;: 0.0,
+      &quot;calibration_error&quot;: 0.2201,
+      &quot;bseo_objective_score&quot;: 0.8344,
+      &quot;benign_false_positive_rate&quot;: 0.0,
+      &quot;shadow_observation_count&quot;: 8
+    },
+    &quot;promotion&quot;: {
+      &quot;shadow_eligible&quot;: true,
+      &quot;shadow_blockers&quot;: [],
+      &quot;live_eligible&quot;: false,
+      &quot;live_blockers&quot;: [
+        &quot;insufficient-shadow-observation-history&quot;
+      ],
+      &quot;recommended_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;
+    }
+  },
+  &quot;metrics&quot;: {
+    &quot;eval&quot;: {
+      &quot;precision&quot;: 1.0,
+      &quot;recall&quot;: 1.0,
+      &quot;f1&quot;: 1.0,
+      &quot;positive_rate&quot;: 0.6364,
+      &quot;false_positive_rate&quot;: 0.0,
+      &quot;false_negative_rate&quot;: 0.0,
+      &quot;roc_auc&quot;: 1.0,
+      &quot;pr_auc&quot;: 1.0
+    },
+    &quot;validation&quot;: {
+      &quot;precision&quot;: 1.0,
+      &quot;recall&quot;: 1.0,
+      &quot;f1&quot;: 1.0,
+      &quot;positive_rate&quot;: 0.6364,
+      &quot;false_positive_rate&quot;: 0.0,
+      &quot;false_negative_rate&quot;: 0.0,
+      &quot;roc_auc&quot;: 1.0,
+      &quot;pr_auc&quot;: 1.0
+    },
+    &quot;model_snapshot&quot;: {
+      &quot;precision&quot;: 1.0,
+      &quot;recall&quot;: 1.0,
+      &quot;f1&quot;: 1.0,
+      &quot;positive_rate&quot;: 0.6364,
+      &quot;false_positive_rate&quot;: 0.0,
+      &quot;false_negative_rate&quot;: 0.0,
+      &quot;roc_auc&quot;: 1.0,
+      &quot;pr_auc&quot;: 1.0
+    },
+    &quot;calibration_error&quot;: 0.2201,
+    &quot;validation_calibration_error&quot;: 0.2201,
+    &quot;per_head_metrics&quot;: {
+      &quot;text&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.0,
+          &quot;roc_auc&quot;: 1.0,
+          &quot;pr_auc&quot;: 1.0
+        },
+        &quot;calibration_error&quot;: 0.0321
+      },
+      &quot;vision&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 0.5714,
+          &quot;f1&quot;: 0.7273,
+          &quot;positive_rate&quot;: 0.3636,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.4286,
+          &quot;roc_auc&quot;: 0.8929,
+          &quot;pr_auc&quot;: 0.9557
+        },
+        &quot;calibration_error&quot;: 0.2895
+      },
+      &quot;metadata&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 0.8571,
+          &quot;f1&quot;: 0.9231,
+          &quot;positive_rate&quot;: 0.5455,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.1429,
+          &quot;roc_auc&quot;: 1.0,
+          &quot;pr_auc&quot;: 1.0
+        },
+        &quot;calibration_error&quot;: 0.1893
+      },
+      &quot;history&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 0.6,
+          &quot;recall&quot;: 0.2143,
+          &quot;f1&quot;: 0.3158,
+          &quot;positive_rate&quot;: 0.2273,
+          &quot;false_positive_rate&quot;: 0.25,
+          &quot;false_negative_rate&quot;: 0.7857,
+          &quot;roc_auc&quot;: 0.4978,
+          &quot;pr_auc&quot;: 0.671
+        },
+        &quot;calibration_error&quot;: 0.1364
+      },
+      &quot;anomaly&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 0.0,
+          &quot;recall&quot;: 0.0,
+          &quot;f1&quot;: 0.0,
+          &quot;positive_rate&quot;: 0.0,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 1.0,
+          &quot;roc_auc&quot;: 0.5,
+          &quot;pr_auc&quot;: 0.6364
+        },
+        &quot;calibration_error&quot;: 0.6364
+      },
+      &quot;fusion&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.0,
+          &quot;roc_auc&quot;: 1.0,
+          &quot;pr_auc&quot;: 1.0
+        },
+        &quot;calibration_error&quot;: 0.1454
+      },
+      &quot;calibrated&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.0,
+          &quot;roc_auc&quot;: 1.0,
+          &quot;pr_auc&quot;: 1.0
+        },
+        &quot;calibration_error&quot;: 0.2201
+      }
+    },
+    &quot;confusion_matrix&quot;: {
+      &quot;tp&quot;: 28,
+      &quot;tn&quot;: 16,
+      &quot;fp&quot;: 0,
+      &quot;fn&quot;: 0
+    }
+  },
+  &quot;caveats&quot;: [
+    &quot;BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.&quot;
+  ],
+  &quot;artifact_paths&quot;: {
+    &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260406042818.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260406042818-simulation.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260406042818.json&quot;,
+    &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
+    &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
+    &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,
+    &quot;runtime_governance&quot;: &quot;artifacts/reports/runtime-governance-latest.json&quot;
+  }
+}</pre>
+    </div>
+  </body>
+</html>

@@ -58,16 +58,45 @@ ATOM_NAMESPACE = {"atom": "http://www.w3.org/2005/Atom", "media": "http://search
 
 def _channels() -> list[dict[str, Any]]:
     return [
-        {"name": "OpenSky Alerts", "prior_flags": 4, "risk_profile": "elevated"},
+        {"name": "Archive Lens Docs", "prior_flags": 0, "risk_profile": "balanced"},
+        {"name": "Builder How-To Hub", "prior_flags": 1, "risk_profile": "commercial"},
         {"name": "Calm Science Daily", "prior_flags": 0, "risk_profile": "balanced"},
-        {"name": "Signal Watch Europe", "prior_flags": 3, "risk_profile": "elevated"},
-        {"name": "Verified Space Desk", "prior_flags": 0, "risk_profile": "balanced"},
-        {"name": "Now Stream Briefing", "prior_flags": 2, "risk_profile": "elevated"},
         {"name": "Context First Media", "prior_flags": 0, "risk_profile": "balanced"},
+        {"name": "Device Verdict Lab", "prior_flags": 1, "risk_profile": "commercial"},
+        {"name": "Launch Trailer Vault", "prior_flags": 1, "risk_profile": "commercial"},
+        {"name": "Matchday Tactics Desk", "prior_flags": 1, "risk_profile": "gaming"},
+        {"name": "Northern Echo Records", "prior_flags": 0, "risk_profile": "creative"},
+        {"name": "Now Stream Briefing", "prior_flags": 2, "risk_profile": "elevated"},
+        {"name": "OpenSky Alerts", "prior_flags": 4, "risk_profile": "elevated"},
+        {"name": "Orbital Satire Circuit", "prior_flags": 0, "risk_profile": "creative"},
+        {"name": "Patch Notes Arena", "prior_flags": 1, "risk_profile": "gaming"},
+        {"name": "Signal Watch Europe", "prior_flags": 3, "risk_profile": "elevated"},
+        {"name": "Studio Canvas Atlas", "prior_flags": 0, "risk_profile": "creative"},
+        {"name": "Verified Space Desk", "prior_flags": 0, "risk_profile": "balanced"},
+        {"name": "Viral Evidence Desk", "prior_flags": 4, "risk_profile": "elevated"},
+        {"name": "Weekly Orbit Ledger", "prior_flags": 1, "risk_profile": "balanced"},
+        {"name": "Zero Chill Bulletins", "prior_flags": 3, "risk_profile": "elevated"},
     ]
 
 
-def _risk_templates() -> list[dict[str, Any]]:
+_PROFILE_RISK_MULTIPLIER = {
+    "elevated": 1.08,
+    "balanced": 0.94,
+    "creative": 0.82,
+    "commercial": 0.98,
+    "gaming": 0.88,
+}
+
+_PROFILE_MISMATCH_MULTIPLIER = {
+    "elevated": 1.1,
+    "balanced": 0.95,
+    "creative": 0.78,
+    "commercial": 0.96,
+    "gaming": 0.84,
+}
+
+
+def _bootstrap_templates() -> list[dict[str, Any]]:
     return [
         {
             "title": "Breaking aliens confirmed over Europe",
@@ -87,44 +116,39 @@ def _risk_templates() -> list[dict[str, Any]]:
             "mismatch_seed": 0.82,
         },
         {
-            "title": "Secret lab leak exposed in new footage",
-            "description": "Dramatic framing with thin sourcing and strong certainty language.",
-            "tags": ["secret", "exposed", "lab"],
-            "hashtags": ["#secret", "#exposed"],
-            "transcript": "The footage proves what they did not want you to see according to unnamed sources.",
-            "template_cluster": "lab-leak-exposed",
+            "title": "Leaked official trailer confirmed before it gets deleted",
+            "description": "A fake-official packaging pattern that borrows studio authority and urgency without credible sourcing.",
+            "tags": ["leaked", "official trailer", "confirmed"],
+            "hashtags": ["#leaked", "#official"],
+            "transcript": "The host repeats that this is the real trailer and that viewers must watch now before it disappears.",
+            "template_cluster": "fake-official-trailer",
             "thumbnail_signal": {
-                "saturation": 0.84,
-                "contrast": 0.8,
-                "text_density": 0.72,
-                "face_emphasis": 0.74,
-                "shock_indicator": 0.85,
+                "saturation": 0.88,
+                "contrast": 0.83,
+                "text_density": 0.78,
+                "face_emphasis": 0.76,
+                "shock_indicator": 0.89,
             },
-            "risk_seed": 0.88,
-            "mismatch_seed": 0.71,
+            "risk_seed": 0.92,
+            "mismatch_seed": 0.8,
         },
         {
-            "title": "What they do not want you to know about tonight",
-            "description": "Vague framing designed to create urgency without a specific factual claim.",
-            "tags": ["urgent", "secret", "tonight"],
-            "hashtags": ["#urgent", "#truth"],
-            "transcript": "Something huge is coming and the public is not ready according to the host.",
-            "template_cluster": "hidden-truth-tonight",
+            "title": "This method works 100% and changes everything",
+            "description": "A tutorial-shaped promise with exaggerated outcomes, vague proof claims, and little substantive delivery.",
+            "tags": ["tutorial", "100%", "changes everything"],
+            "hashtags": ["#guide", "#mustsee"],
+            "transcript": "The presenter stalls around a miracle workflow and never demonstrates the promised result in a credible way.",
+            "template_cluster": "miracle-guide",
             "thumbnail_signal": {
-                "saturation": 0.83,
-                "contrast": 0.78,
-                "text_density": 0.7,
-                "face_emphasis": 0.66,
-                "shock_indicator": 0.76,
+                "saturation": 0.81,
+                "contrast": 0.79,
+                "text_density": 0.76,
+                "face_emphasis": 0.64,
+                "shock_indicator": 0.82,
             },
-            "risk_seed": 0.81,
-            "mismatch_seed": 0.64,
+            "risk_seed": 0.87,
+            "mismatch_seed": 0.77,
         },
-    ]
-
-
-def _neutral_templates() -> list[dict[str, Any]]:
-    return [
         {
             "title": "Weekly launch schedule and mission recap",
             "description": "A source-cited review of recent launches, delays, and mission updates.",
@@ -143,12 +167,12 @@ def _neutral_templates() -> list[dict[str, Any]]:
             "mismatch_seed": 0.09,
         },
         {
-            "title": "How telescope calibration improved this month",
-            "description": "A calm explainer focused on instrument changes and measured outcomes.",
-            "tags": ["telescope", "calibration", "science"],
-            "hashtags": ["#science", "#calibration"],
-            "transcript": "The calibration update reduced noise and improved the quality of long exposure captures.",
-            "template_cluster": "calibration-update",
+            "title": "Telescope calibration workshop lesson",
+            "description": "An educational explainer that walks through each calibration step and the measured improvement.",
+            "tags": ["calibration", "lesson", "workshop"],
+            "hashtags": ["#science", "#lesson"],
+            "transcript": "This lecture explains the calibration process, the expected noise floor, and why the instrument changes mattered.",
+            "template_cluster": "calibration-workshop",
             "thumbnail_signal": {
                 "saturation": 0.31,
                 "contrast": 0.33,
@@ -160,21 +184,106 @@ def _neutral_templates() -> list[dict[str, Any]]:
             "mismatch_seed": 0.05,
         },
         {
-            "title": "Satellite weather imaging workflow explained",
-            "description": "A practical walkthrough with clear method notes and stable sourcing.",
-            "tags": ["satellite", "weather", "workflow"],
-            "hashtags": ["#weather", "#satellite"],
-            "transcript": "This tutorial explains how analysts align sensor frames before publishing weather composites.",
-            "template_cluster": "weather-workflow",
+            "title": "Official audio lyric video live session remix",
+            "description": "A music release with album art, non-literal cover imagery, and a transcript that matches a song structure rather than a factual claim.",
+            "tags": ["official audio", "lyric video", "remix"],
+            "hashtags": ["#music", "#lyrics"],
+            "transcript": "Verse one fades into the chorus before the bridge returns in the live session arrangement.",
+            "template_cluster": "official-audio-remix",
             "thumbnail_signal": {
-                "saturation": 0.41,
-                "contrast": 0.39,
-                "text_density": 0.2,
-                "face_emphasis": 0.06,
+                "saturation": 0.58,
+                "contrast": 0.44,
+                "text_density": 0.18,
+                "face_emphasis": 0.16,
                 "shock_indicator": 0.06,
             },
-            "risk_seed": 0.16,
-            "mismatch_seed": 0.07,
+            "risk_seed": 0.14,
+            "mismatch_seed": 0.1,
+        },
+        {
+            "title": "Gallery illustration sketchbook exhibition",
+            "description": "An art studio upload showing concept art, sketches, and exhibition notes without a literal thumbnail-title requirement.",
+            "tags": ["gallery", "illustration", "concept art"],
+            "hashtags": ["#art", "#gallery"],
+            "transcript": "The artist walks through the sketchbook, color studies, and final illustration choices for the exhibition wall.",
+            "template_cluster": "gallery-exhibition",
+            "thumbnail_signal": {
+                "saturation": 0.49,
+                "contrast": 0.4,
+                "text_density": 0.12,
+                "face_emphasis": 0.07,
+                "shock_indicator": 0.05,
+            },
+            "risk_seed": 0.12,
+            "mismatch_seed": 0.11,
+        },
+        {
+            "title": "Parody sketch reacts to breaking headlines",
+            "description": "A satire format that uses theatrical framing and joke cues rather than factual news delivery.",
+            "tags": ["parody", "sketch", "satire"],
+            "hashtags": ["#satire", "#comedy"],
+            "transcript": "The comedian exaggerates the headline to make the joke obvious and breaks character midway through the sketch.",
+            "template_cluster": "satire-sketch",
+            "thumbnail_signal": {
+                "saturation": 0.56,
+                "contrast": 0.51,
+                "text_density": 0.26,
+                "face_emphasis": 0.52,
+                "shock_indicator": 0.22,
+            },
+            "risk_seed": 0.19,
+            "mismatch_seed": 0.16,
+        },
+        {
+            "title": "Gameplay walkthrough highlights and patch notes",
+            "description": "A gaming video mixing challenge-run footage, patch analysis, and a build guide.",
+            "tags": ["gameplay", "patch notes", "build guide"],
+            "hashtags": ["#gaming", "#walkthrough"],
+            "transcript": "The host shows the boss fight, explains the patch changes, and then demonstrates the build guide in a live run.",
+            "template_cluster": "gameplay-patch-highlights",
+            "thumbnail_signal": {
+                "saturation": 0.67,
+                "contrast": 0.58,
+                "text_density": 0.24,
+                "face_emphasis": 0.2,
+                "shock_indicator": 0.18,
+            },
+            "risk_seed": 0.2,
+            "mismatch_seed": 0.13,
+        },
+        {
+            "title": "Matchday tactics breakdown and highlights review",
+            "description": "A sports analysis format with intense visuals, replays, and concrete discussion of match events.",
+            "tags": ["matchday", "tactics", "highlights"],
+            "hashtags": ["#sports", "#tactics"],
+            "transcript": "This post-game breakdown shows the actual goal sequence and explains the tactical adjustment that changed the match.",
+            "template_cluster": "sports-tactics-breakdown",
+            "thumbnail_signal": {
+                "saturation": 0.62,
+                "contrast": 0.56,
+                "text_density": 0.22,
+                "face_emphasis": 0.29,
+                "shock_indicator": 0.17,
+            },
+            "risk_seed": 0.18,
+            "mismatch_seed": 0.12,
+        },
+        {
+            "title": "Device review comparison and first impressions",
+            "description": "A comparison and benchmark video that actually tests the promised devices and summarizes the tradeoffs.",
+            "tags": ["review", "comparison", "benchmark"],
+            "hashtags": ["#review", "#tech"],
+            "transcript": "The presenter compares battery life, thermals, and camera performance before giving a first-impressions verdict.",
+            "template_cluster": "device-review-comparison",
+            "thumbnail_signal": {
+                "saturation": 0.46,
+                "contrast": 0.43,
+                "text_density": 0.21,
+                "face_emphasis": 0.24,
+                "shock_indicator": 0.1,
+            },
+            "risk_seed": 0.17,
+            "mismatch_seed": 0.11,
         },
     ]
 
@@ -343,8 +452,7 @@ def build_discovery_run(
         return _build_public_discovery_run(resolved_run_id, public_sources, fetcher)
     records: list[SourceManifestRecord] = []
     items: list[DiscoveredItem] = []
-    risk_templates = _risk_templates()
-    neutral_templates = _neutral_templates()
+    bootstrap_templates = _bootstrap_templates()
 
     for channel_index, channel in enumerate(_channels()):
         source_slug = slugify(channel["name"])
@@ -368,13 +476,21 @@ def build_discovery_run(
                 status="pending",
             )
         )
-        templates = (
-            risk_templates + neutral_templates[:1]
-            if channel["risk_profile"] == "elevated"
-            else neutral_templates + risk_templates[:1]
-        )
-        for template_index, template in enumerate(templates):
+        risk_multiplier = _PROFILE_RISK_MULTIPLIER.get(channel["risk_profile"], 1.0)
+        mismatch_multiplier = _PROFILE_MISMATCH_MULTIPLIER.get(channel["risk_profile"], 1.0)
+        for template_index, template in enumerate(bootstrap_templates):
             item_slug = f"{source_slug}-{template_index + 1}"
+            offset = channel_index * len(bootstrap_templates) + template_index
+            month = 3 + (offset // 28)
+            day = (offset % 28) + 1
+            risk_seed = min(
+                max(template["risk_seed"] * risk_multiplier + channel["prior_flags"] * 0.015, 0.02),
+                0.98,
+            )
+            mismatch_seed = min(
+                max(template["mismatch_seed"] * mismatch_multiplier + channel["prior_flags"] * 0.012, 0.02),
+                0.98,
+            )
             items.append(
                 DiscoveredItem(
                     item_id=item_slug,
@@ -388,19 +504,19 @@ def build_discovery_run(
                     tags=template["tags"],
                     hashtags=template["hashtags"],
                     transcript_excerpt=template["transcript"],
-                    upload_time=f"2026-03-{channel_index + template_index + 1:02d}T12:00:00Z",
+                    upload_time=f"2026-{month:02d}-{day:02d}T12:00:00Z",
                     duration_seconds=420 + template_index * 45,
-                    view_count=12500 + channel_index * 2300 + template_index * 800,
-                    like_count=1200 + channel_index * 180 + template_index * 70,
+                    view_count=12500 + channel_index * 1900 + template_index * 950,
+                    like_count=1200 + channel_index * 140 + template_index * 85,
                     template_cluster=template["template_cluster"],
                     thumbnail_url=None,
                     thumbnail_signal=template["thumbnail_signal"],
-                    risk_seed=template["risk_seed"],
-                    mismatch_seed=template["mismatch_seed"],
+                    risk_seed=round(risk_seed, 4),
+                    mismatch_seed=round(mismatch_seed, 4),
                 )
             )
 
-    duplicate_originals = [items[0], items[5]]
+    duplicate_originals = [items[0], items[9], items[18], items[27]]
     for duplicate_index, original in enumerate(duplicate_originals, start=1):
         items.append(
             original.model_copy(
@@ -408,7 +524,7 @@ def build_discovery_run(
                     "item_id": f"{original.item_id}-dup-{duplicate_index}",
                     "source_url": original.source_url,
                     "duplicate_of": original.item_id,
-                    "upload_time": f"2026-03-{20 + duplicate_index:02d}T12:00:00Z",
+                    "upload_time": f"2026-11-{20 + duplicate_index:02d}T12:00:00Z",
                 }
             )
         )

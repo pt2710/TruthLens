@@ -23,83 +23,112 @@
     
         <div class="card">
           <h2>Current snapshot</h2>
-          <p><strong>Build ID:</strong> build-20260323000612</p>
-          <p><strong>Eval sample count:</strong> 4</p>
+          <p><strong>Build ID:</strong> build-20260406042818</p>
+          <p><strong>Eval sample count:</strong> 44</p>
         </div>
         <div class="card">
           <h2>Eval vs validation</h2>
           <table>
             <thead><tr><th>Metric</th><th>Eval</th><th>Validation</th></tr></thead>
-            <tbody><tr><td>Precision</td><td>1.000</td><td>0.000</td></tr>
-<tr><td>Recall</td><td>1.000</td><td>0.000</td></tr>
-<tr><td>F1</td><td>1.000</td><td>0.000</td></tr>
+            <tbody><tr><td>Precision</td><td>1.000</td><td>1.000</td></tr>
+<tr><td>Recall</td><td>1.000</td><td>1.000</td></tr>
+<tr><td>F1</td><td>1.000</td><td>1.000</td></tr>
 <tr><td>ROC AUC</td><td>1.000</td><td>1.000</td></tr>
 <tr><td>PR AUC</td><td>1.000</td><td>1.000</td></tr></tbody>
           </table>
         </div>
         <div class="card warn">
           <h2>Caveats</h2>
-          <ul><li>Committed eval sample count is only 4; metrics are unstable and must not be treated as production benchmarks.</li><li>Validation performance is materially weaker than eval performance; treat the current benchmark as a tiny-sample sanity signal, not a stable generalization claim.</li><li>No committed configs/thresholds/bseo-policy.json is present at repo root, so BSEO shadow/live remains a code-supported mode rather than a promoted committed runtime artifact.</li><li>Committed simulation artifacts do not currently include populated BSEO search outputs, lineage logs, or mutation atlas data.</li><li>Drift report compares against only 4 current rows, so shift readings are directional rather than statistically robust.</li></ul>
+          <ul><li>BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.</li></ul>
         </div>
         
     <div class="card">
       <h2>Embedded summary payload</h2>
       <pre>{
-  &quot;generated_at&quot;: &quot;2026-04-06T04:16:02.789547+00:00&quot;,
-  &quot;build_id&quot;: &quot;build-20260323000612&quot;,
-  &quot;model_version&quot;: &quot;baseline-v1-build-20260323000612&quot;,
-  &quot;trained_at&quot;: &quot;2026-03-23T00:06:12.500359+00:00&quot;,
-  &quot;sample_count&quot;: 4,
-  &quot;artifact_paths&quot;: {
-    &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
-    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260323000612.json&quot;,
-    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260323000612-simulation.json&quot;,
-    &quot;bseo_report&quot;: null,
-    &quot;mutation_atlas&quot;: null,
-    &quot;lineage&quot;: null,
-    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260323000612.json&quot;,
-    &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
-    &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
-    &quot;bseo_policy&quot;: null
-  },
-  &quot;artifact_timestamps&quot;: {
-    &quot;model_info&quot;: &quot;2026-04-05T21:41:01.137404+00:00&quot;,
-    &quot;eval_report&quot;: &quot;2026-04-05T21:41:01.134542+00:00&quot;,
-    &quot;simulation&quot;: &quot;2026-04-05T21:41:01.133440+00:00&quot;,
-    &quot;bseo_report&quot;: null,
-    &quot;mutation_atlas&quot;: null,
-    &quot;lineage&quot;: null,
-    &quot;drift_report&quot;: &quot;2026-04-05T21:41:01.132440+00:00&quot;,
-    &quot;runtime_policy&quot;: &quot;2026-04-05T21:41:01.150466+00:00&quot;,
-    &quot;thresholds&quot;: &quot;2026-04-05T21:41:01.149445+00:00&quot;,
-    &quot;bseo_policy&quot;: null
-  },
+  &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260406042818&quot;,
+  &quot;sample_count&quot;: 44,
   &quot;runtime_truth&quot;: {
-    &quot;configured_policy_mode&quot;: &quot;threshold-default&quot;,
-    &quot;resolved_policy_mode&quot;: &quot;threshold-default&quot;,
-    &quot;bseo_artifact_committed&quot;: false,
-    &quot;bseo_artifact_compatible&quot;: false,
+    &quot;configured_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;resolved_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;bseo_artifact_committed&quot;: true,
+    &quot;bseo_artifact_compatible&quot;: true,
     &quot;selective_verification_contract_present&quot;: true,
-    &quot;heavy_llm_hot_path&quot;: false
+    &quot;heavy_llm_hot_path&quot;: false,
+    &quot;recommended_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;shadow_eligible&quot;: true,
+    &quot;live_eligible&quot;: false
+  },
+  &quot;runtime_governance&quot;: {
+    &quot;generated_at&quot;: &quot;2026-04-06T04:49:35.998957+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+    &quot;runtime_policy&quot;: {
+      &quot;configured_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;resolved_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;bseo_min_confidence&quot;: 0.58,
+      &quot;bseo_max_uncertainty&quot;: 0.45,
+      &quot;bseo_artifact_max_age_hours&quot;: 168.0
+    },
+    &quot;artifacts&quot;: {
+      &quot;bseo_policy&quot;: {
+        &quot;available&quot;: true,
+        &quot;compatible&quot;: true,
+        &quot;stale&quot;: false,
+        &quot;status&quot;: &quot;compatible&quot;,
+        &quot;reason&quot;: null,
+        &quot;age_hours&quot;: 0.355,
+        &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+        &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
+      },
+      &quot;lineage_count&quot;: 125,
+      &quot;mutation_atlas_status&quot;: &quot;clustered&quot;,
+      &quot;usable_mutations&quot;: 106
+    },
+    &quot;dataset&quot;: {
+      &quot;train_count&quot;: 110,
+      &quot;validation_count&quot;: 44,
+      &quot;test_count&quot;: 44,
+      &quot;eval_sample_count&quot;: 44
+    },
+    &quot;performance&quot;: {
+      &quot;eval_f1&quot;: 1.0,
+      &quot;validation_f1&quot;: 1.0,
+      &quot;validation_gap&quot;: 0.0,
+      &quot;calibration_error&quot;: 0.2201,
+      &quot;bseo_objective_score&quot;: 0.8344,
+      &quot;benign_false_positive_rate&quot;: 0.0,
+      &quot;shadow_observation_count&quot;: 8
+    },
+    &quot;promotion&quot;: {
+      &quot;shadow_eligible&quot;: true,
+      &quot;shadow_blockers&quot;: [],
+      &quot;live_eligible&quot;: false,
+      &quot;live_blockers&quot;: [
+        &quot;insufficient-shadow-observation-history&quot;
+      ],
+      &quot;recommended_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;
+    }
   },
   &quot;metrics&quot;: {
     &quot;eval&quot;: {
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.25,
+      &quot;positive_rate&quot;: 0.6364,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
     &quot;validation&quot;: {
-      &quot;precision&quot;: 0.0,
-      &quot;recall&quot;: 0.0,
-      &quot;f1&quot;: 0.0,
-      &quot;positive_rate&quot;: 0.0,
+      &quot;precision&quot;: 1.0,
+      &quot;recall&quot;: 1.0,
+      &quot;f1&quot;: 1.0,
+      &quot;positive_rate&quot;: 0.6364,
       &quot;false_positive_rate&quot;: 0.0,
-      &quot;false_negative_rate&quot;: 1.0,
+      &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
@@ -107,81 +136,68 @@
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.25,
+      &quot;positive_rate&quot;: 0.6364,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
-    &quot;calibration_error&quot;: 0.0,
-    &quot;validation_calibration_error&quot;: 0.0,
+    &quot;calibration_error&quot;: 0.2201,
+    &quot;validation_calibration_error&quot;: 0.2201,
     &quot;per_head_metrics&quot;: {
       &quot;text&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.3333,
+          &quot;precision&quot;: 1.0,
           &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 0.5,
-          &quot;positive_rate&quot;: 0.75,
-          &quot;false_positive_rate&quot;: 0.6667,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.4187
+        &quot;calibration_error&quot;: 0.0321
       },
       &quot;vision&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
-          &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.25,
+          &quot;recall&quot;: 0.5714,
+          &quot;f1&quot;: 0.7273,
+          &quot;positive_rate&quot;: 0.3636,
           &quot;false_positive_rate&quot;: 0.0,
-          &quot;false_negative_rate&quot;: 0.0,
-          &quot;roc_auc&quot;: 1.0,
-          &quot;pr_auc&quot;: 1.0
+          &quot;false_negative_rate&quot;: 0.4286,
+          &quot;roc_auc&quot;: 0.8929,
+          &quot;pr_auc&quot;: 0.9557
         },
-        &quot;calibration_error&quot;: 0.2562
+        &quot;calibration_error&quot;: 0.2895
       },
       &quot;metadata&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.0,
-          &quot;recall&quot;: 0.0,
-          &quot;f1&quot;: 0.0,
-          &quot;positive_rate&quot;: 0.75,
-          &quot;false_positive_rate&quot;: 1.0,
-          &quot;false_negative_rate&quot;: 1.0,
-          &quot;roc_auc&quot;: 0.0,
-          &quot;pr_auc&quot;: 0.25
-        },
-        &quot;calibration_error&quot;: 0.9989
-      },
-      &quot;history&quot;: {
-        &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.25,
-          &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 0.4,
-          &quot;positive_rate&quot;: 1.0,
-          &quot;false_positive_rate&quot;: 1.0,
-          &quot;false_negative_rate&quot;: 0.0,
-          &quot;roc_auc&quot;: 0.5,
-          &quot;pr_auc&quot;: 0.25
-        },
-        &quot;calibration_error&quot;: 0.25
-      },
-      &quot;fusion&quot;: {
-        &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
-          &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.25,
+          &quot;recall&quot;: 0.8571,
+          &quot;f1&quot;: 0.9231,
+          &quot;positive_rate&quot;: 0.5455,
           &quot;false_positive_rate&quot;: 0.0,
-          &quot;false_negative_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.1429,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.3016
+        &quot;calibration_error&quot;: 0.1893
       },
-      &quot;calibrated&quot;: {
+      &quot;history&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 0.6,
+          &quot;recall&quot;: 0.2143,
+          &quot;f1&quot;: 0.3158,
+          &quot;positive_rate&quot;: 0.2273,
+          &quot;false_positive_rate&quot;: 0.25,
+          &quot;false_negative_rate&quot;: 0.7857,
+          &quot;roc_auc&quot;: 0.4978,
+          &quot;pr_auc&quot;: 0.671
+        },
+        &quot;calibration_error&quot;: 0.1364
+      },
+      &quot;anomaly&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 0.0,
           &quot;recall&quot;: 0.0,
@@ -189,226 +205,61 @@
           &quot;positive_rate&quot;: 0.0,
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 1.0,
+          &quot;roc_auc&quot;: 0.5,
+          &quot;pr_auc&quot;: 0.6364
+        },
+        &quot;calibration_error&quot;: 0.6364
+      },
+      &quot;fusion&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.0
+        &quot;calibration_error&quot;: 0.1454
+      },
+      &quot;calibrated&quot;: {
+        &quot;metrics&quot;: {
+          &quot;precision&quot;: 1.0,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 1.0,
+          &quot;positive_rate&quot;: 0.6364,
+          &quot;false_positive_rate&quot;: 0.0,
+          &quot;false_negative_rate&quot;: 0.0,
+          &quot;roc_auc&quot;: 1.0,
+          &quot;pr_auc&quot;: 1.0
+        },
+        &quot;calibration_error&quot;: 0.2201
       }
     },
     &quot;confusion_matrix&quot;: {
-      &quot;tp&quot;: 1,
-      &quot;tn&quot;: 3,
+      &quot;tp&quot;: 28,
+      &quot;tn&quot;: 16,
       &quot;fp&quot;: 0,
       &quot;fn&quot;: 0
     }
   },
-  &quot;thresholds&quot;: {
-    &quot;badge_threshold&quot;: 0.2,
-    &quot;blur_threshold&quot;: 0.45,
-    &quot;report_prompt_threshold&quot;: 0.65,
-    &quot;hide_threshold&quot;: 0.8
-  },
-  &quot;simulation&quot;: {
-    &quot;threshold_sweep&quot;: [
-      {
-        &quot;threshold&quot;: 0.2,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.25,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.3,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.35,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.4,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.45,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.5,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.55,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.6,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.65,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.7,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.75,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.8,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.85,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      },
-      {
-        &quot;threshold&quot;: 0.9,
-        &quot;precision&quot;: 1.0,
-        &quot;recall&quot;: 1.0,
-        &quot;f1&quot;: 1.0,
-        &quot;positive_rate&quot;: 0.25,
-        &quot;roc_auc&quot;: 1.0,
-        &quot;pr_auc&quot;: 1.0,
-        &quot;intervention_cost&quot;: -0.8
-      }
-    ],
-    &quot;recommended_thresholds&quot;: {
-      &quot;badge_threshold&quot;: 0.2,
-      &quot;blur_threshold&quot;: 0.45,
-      &quot;report_prompt_threshold&quot;: 0.65,
-      &quot;hide_threshold&quot;: 0.8
-    },
-    &quot;replay_summary&quot;: {},
-    &quot;policy&quot;: {},
-    &quot;q_table&quot;: {
-      &quot;s0:u2&quot;: {
-        &quot;none&quot;: 1.0,
-        &quot;badge&quot;: 0.4,
-        &quot;blur&quot;: -0.3,
-        &quot;ask-report&quot;: -0.8,
-        &quot;hide&quot;: -1.2
-      },
-      &quot;s3:u0&quot;: {
-        &quot;none&quot;: -1.1,
-        &quot;badge&quot;: 1.18,
-        &quot;blur&quot;: 1.88,
-        &quot;ask-report&quot;: 2.38,
-        &quot;hide&quot;: 1.98
-      }
-    }
-  },
-  &quot;drift&quot;: {
-    &quot;reference_count&quot;: 12,
-    &quot;current_count&quot;: 4,
-    &quot;title_length_shift&quot;: 1.0,
-    &quot;sensational_count_shift&quot;: -0.5,
-    &quot;label_rate_shift&quot;: -0.5
-  },
-  &quot;bseo&quot;: {
-    &quot;policy_artifact&quot;: {},
-    &quot;report&quot;: {},
-    &quot;bias_signature&quot;: {},
-    &quot;mutation_bias_atlas&quot;: {},
-    &quot;lineage&quot;: [],
-    &quot;available&quot;: false
-  },
   &quot;caveats&quot;: [
-    &quot;Committed eval sample count is only 4; metrics are unstable and must not be treated as production benchmarks.&quot;,
-    &quot;Validation performance is materially weaker than eval performance; treat the current benchmark as a tiny-sample sanity signal, not a stable generalization claim.&quot;,
-    &quot;No committed configs/thresholds/bseo-policy.json is present at repo root, so BSEO shadow/live remains a code-supported mode rather than a promoted committed runtime artifact.&quot;,
-    &quot;Committed simulation artifacts do not currently include populated BSEO search outputs, lineage logs, or mutation atlas data.&quot;,
-    &quot;Drift report compares against only 4 current rows, so shift readings are directional rather than statistically robust.&quot;
+    &quot;BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.&quot;
   ],
-  &quot;missing_data&quot;: []
+  &quot;artifact_paths&quot;: {
+    &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260406042818.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260406042818-simulation.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260406042818.json&quot;,
+    &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
+    &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
+    &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,
+    &quot;runtime_governance&quot;: &quot;artifacts/reports/runtime-governance-latest.json&quot;
+  }
 }</pre>
     </div>
   </body>

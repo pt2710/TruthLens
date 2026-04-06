@@ -31,22 +31,24 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="24" y="114.0">1.00</text>
 <line class="axis" x1="60" y1="110" x2="60" y2="410" />
 <line class="axis" x1="60" y1="410" x2="1140" y2="410" />
-<rect x="80.0" y="284.4" width="48.0" height="125.6" fill="#7c3aed" rx="6" />
-<text class="small" x="113.8" y="434" text-anchor="middle">text</text>
-<rect x="215.0" y="333.1" width="48.0" height="76.9" fill="#7c3aed" rx="6" />
-<text class="small" x="248.8" y="434" text-anchor="middle">vision</text>
-<rect x="350.0" y="110.3" width="48.0" height="299.7" fill="#7c3aed" rx="6" />
-<text class="small" x="383.8" y="434" text-anchor="middle">metadata</text>
-<rect x="485.0" y="335.0" width="48.0" height="75.0" fill="#7c3aed" rx="6" />
-<text class="small" x="518.8" y="434" text-anchor="middle">history</text>
-<rect x="620.0" y="319.5" width="48.0" height="90.5" fill="#7c3aed" rx="6" />
-<text class="small" x="653.8" y="434" text-anchor="middle">fusion</text>
-<rect x="755.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
-<text class="small" x="788.8" y="434" text-anchor="middle">calibrated</text>
-<rect x="890.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
-<text class="small" x="923.8" y="434" text-anchor="middle">eval</text>
-<rect x="1025.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
-<text class="small" x="1058.8" y="434" text-anchor="middle">validation</text>
+<rect x="80.0" y="400.4" width="48.0" height="9.6" fill="#7c3aed" rx="6" />
+<text class="small" x="110.0" y="434" text-anchor="middle">text</text>
+<rect x="200.0" y="323.1" width="48.0" height="86.8" fill="#7c3aed" rx="6" />
+<text class="small" x="230.0" y="434" text-anchor="middle">vision</text>
+<rect x="320.0" y="353.2" width="48.0" height="56.8" fill="#7c3aed" rx="6" />
+<text class="small" x="350.0" y="434" text-anchor="middle">metadata</text>
+<rect x="440.0" y="369.1" width="48.0" height="40.9" fill="#7c3aed" rx="6" />
+<text class="small" x="470.0" y="434" text-anchor="middle">history</text>
+<rect x="560.0" y="219.1" width="48.0" height="190.9" fill="#7c3aed" rx="6" />
+<text class="small" x="590.0" y="434" text-anchor="middle">anomaly</text>
+<rect x="680.0" y="366.4" width="48.0" height="43.6" fill="#7c3aed" rx="6" />
+<text class="small" x="710.0" y="434" text-anchor="middle">fusion</text>
+<rect x="800.0" y="344.0" width="48.0" height="66.0" fill="#7c3aed" rx="6" />
+<text class="small" x="830.0" y="434" text-anchor="middle">calibrated</text>
+<rect x="920.0" y="344.0" width="48.0" height="66.0" fill="#7c3aed" rx="6" />
+<text class="small" x="950.0" y="434" text-anchor="middle">eval</text>
+<rect x="1040.0" y="344.0" width="48.0" height="66.0" fill="#7c3aed" rx="6" />
+<text class="small" x="1070.0" y="434" text-anchor="middle">validation</text>
 <rect x="60" y="438" width="14" height="14" fill="#7c3aed" rx="3" />
 <text class="legend" x="82" y="450">Calibration error</text>
 </svg>

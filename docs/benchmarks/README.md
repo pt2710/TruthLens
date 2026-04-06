@@ -7,7 +7,7 @@ Rules:
 - Benchmark claims in `README.md` must trace back to `docs/benchmarks/latest/benchmark_summary.json`.
 - Visuals in `docs/benchmarks/latest/assets/` are generated from committed artifacts only.
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
-- Small sample sizes, validation regressions, and runtime-policy mismatches must be surfaced explicitly.
+- Small sample sizes, validation regressions, runtime-governance blockers, and runtime-policy mismatches must be surfaced explicitly.
 
 Primary outputs:
 
@@ -16,13 +16,17 @@ Primary outputs:
 - `latest/assets/*.svg`
 - `latest/assets/overall_metrics_table.md`
 - `latest/interactive/*.html`
+- `../../artifacts/reports/runtime-governance-latest.json`
 
 Regenerate everything with:
 
 ```powershell
+pnpm runtime:promote-auto
 pnpm docs:render-benchmarks
 ```
 
 Current committed caveat:
 
-- The present root-artifact benchmark is a tiny-sample snapshot. Treat it as repository truth for the committed artifacts, not as a production performance claim.
+- The present root-artifact benchmark reflects a materially larger sample than the previous tiny-sample snapshot, but it is still a repository benchmark rather than a production claim.
+- `bseo-shadow` is committed and promoted.
+- `bseo-live` remains blocked until sufficient shadow-observation history exists in committed governance artifacts.

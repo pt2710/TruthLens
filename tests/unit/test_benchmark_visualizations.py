@@ -97,9 +97,12 @@ def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
     assert (output_root / "assets/overall_metrics_table.md").exists()
     assert (output_root / "assets/train_validation_eval_overview.svg").exists()
     assert (output_root / "assets/policy_mode_comparison.svg").exists()
+    assert (output_root / "assets/runtime_governance.svg").exists()
     assert (output_root / "interactive/metrics_dashboard.html").exists()
+    assert (output_root / "interactive/runtime_governance_dashboard.html").exists()
     assert "Data unavailable for this visualization" in (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
     assert summary["runtime_truth"]["configured_policy_mode"] == "threshold-default"
+    assert summary["runtime_governance"]["promotion"]["recommended_mode"] == "threshold-default"
 
 
 def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(
@@ -154,7 +157,9 @@ def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(
     bias_svg = (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
     atlas_svg = (output_root / "assets/mutation_bias_atlas.svg").read_text(encoding="utf-8")
     lineage_svg = (output_root / "assets/lineage_overview.svg").read_text(encoding="utf-8")
+    governance_svg = (output_root / "assets/runtime_governance.svg").read_text(encoding="utf-8")
 
     assert "Data unavailable for this visualization" not in bias_svg
     assert "Mutation bias atlas" in atlas_svg
     assert "Accepted lineage objective scores" in lineage_svg
+    assert "Runtime governance summary" in governance_svg

@@ -1,6 +1,9 @@
 {
-  "policy_mode": "threshold-default",
-  "rl_min_confidence": 0.72,
-  "rl_max_uncertainty": 0.35,
-  "rl_artifact_max_age_hours": 168
+  "policy_mode": "bseo-shadow",
+  "bseo_min_confidence": 0.58,
+  "bseo_max_uncertainty": 0.45,
+  "bseo_artifact_max_age_hours": 168.0,
+  "rl_min_confidence": 0.58,
+  "rl_max_uncertainty": 0.45,
+  "rl_artifact_max_age_hours": 168.0
 }
