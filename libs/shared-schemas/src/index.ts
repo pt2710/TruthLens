@@ -48,6 +48,75 @@ export const runtimeContextSchema = z.object({
   source_provenance: z.string().optional().nullable(),
 });
 
+export const observationDistilledFeaturesSchema = z.object({
+  card_index: z.number().int().nonnegative().optional().nullable(),
+  link_kind: z.enum(['watch', 'shorts', 'other', 'unknown']).default('unknown'),
+  has_thumbnail: z.boolean().default(false),
+  has_description_snapshot: z.boolean().default(false),
+  has_transcript_excerpt: z.boolean().default(false),
+  title_token_count: z.number().int().nonnegative().default(0),
+  description_token_count: z.number().int().nonnegative().default(0),
+  channel_known: z.boolean().default(true),
+  duration_seconds: z.number().int().nonnegative().optional().nullable(),
+});
+
+export const observationScoreSnapshotSchema = z.object({
+  risk_score: z.number().min(0).max(1).default(0),
+  calibrated_score: z.number().min(0).max(1).default(0),
+  uncertainty: z.number().min(0).max(1).default(0),
+  recommended_action: recommendedActionSchema.default('none'),
+  content_class: contentClassSchema.default('unknown'),
+  content_class_confidence: z.number().min(0).max(1).default(0),
+  explanation_id: z.string().optional().nullable(),
+});
+
+export const observationProvenanceSchema = z.object({
+  observed_at: z.string().min(1),
+  collector: z.enum(['extension-dom', 'api', 'unknown']).default('unknown'),
+  collector_version: z.string().optional().nullable(),
+  session_id: z.string().optional().nullable(),
+  page_url: z.string().optional().nullable(),
+  source_path: z.string().optional().nullable(),
+});
+
+export const browserObservationRecordSchema = z.object({
+  observation_id: z.string().min(1),
+  item_id: z.string().min(1),
+  item_hash: z.string().optional().nullable(),
+  title_snapshot: z.string().min(1),
+  channel_name: z.string().optional().nullable(),
+  channel_url: z.string().url().optional().nullable(),
+  link_url: z.string().url().optional().nullable(),
+  thumbnail_ref: z.string().optional().nullable(),
+  description_snapshot: z.string().optional().nullable(),
+  transcript_excerpt: z.string().optional().nullable(),
+  metadata: itemMetadataSchema.default({}),
+  runtime_context: runtimeContextSchema.default({
+    surface: 'unknown',
+    review_requested: false,
+    source_provenance: null,
+  }),
+  distilled_features: observationDistilledFeaturesSchema.default({
+    link_kind: 'unknown',
+    has_thumbnail: false,
+    has_description_snapshot: false,
+    has_transcript_excerpt: false,
+    title_token_count: 0,
+    description_token_count: 0,
+    channel_known: true,
+  }),
+  score_snapshot: observationScoreSnapshotSchema.default({
+    risk_score: 0,
+    calibrated_score: 0,
+    uncertainty: 0,
+    recommended_action: 'none',
+    content_class: 'unknown',
+    content_class_confidence: 0,
+    explanation_id: null,
+  }),
+  provenance: observationProvenanceSchema,
+});
+
 export const scoreItemRequestSchema = z.object({
   item_id: z.string().min(1),
   title: z.string().min(1),
@@ -130,6 +199,80 @@ export const artifactProvenanceSchema = z.object({
   policy_version: z.string().optional().nullable(),
   policy_build_id: z.string().optional().nullable(),
   policy_artifact_status: z.string().optional().nullable(),
+});
+
+export const labelCandidateFeedbackSummarySchema = z.object({
+  total_events: z.number().int().nonnegative().default(0),
+  risk_event_count: z.number().int().nonnegative().default(0),
+  benign_event_count: z.number().int().nonnegative().default(0),
+  manual_report_count: z.number().int().nonnegative().default(0),
+  last_user_action: z.string().optional().nullable(),
+});
+
+export const labelCandidateSplitSafetySchema = z.object({
+  dataset_membership: z
+    .enum(['existing-batch', 'supplemental-intake', 'supplemental-adjudicated'])
+    .default('supplemental-intake'),
+  split_status: z
+    .enum(['assigned', 'blocked-until-ingestion', 'excluded-from-training'])
+    .default('blocked-until-ingestion'),
+  split_name: z.enum(['train', 'validation', 'test', 'unknown']).default('unknown'),
+  dataset_build_id: z.string().optional().nullable(),
+  annotation_run_id: z.string().optional().nullable(),
+  eligible_for_training: z.boolean().default(false),
+  leakage_guard_reason: z.string().optional().nullable(),
+});
+
+export const labelCandidateProvenanceSchema = z.object({
+  generated_at: z.string().min(1),
+  generator: z.string().default('browser-feedback-intake-v1'),
+  candidate_sources: z
+    .array(z.enum(['pipeline-batch', 'browser-observation', 'feedback-event', 'manual-report']))
+    .default([]),
+  observation_ids: z.array(z.string()).default([]),
+  feedback_event_ids: z.array(z.string()).default([]),
+  source_paths: z.array(z.string()).default([]),
+});
+
+export const labelCandidateQueueSchema = z.enum(['review', 'hard-negative', 'disagreement']);
+
+export const labelCandidateSchema = z.object({
+  candidate_id: z.string().min(1),
+  item_id: z.string().min(1),
+  queue_name: labelCandidateQueueSchema,
+  origin: z.enum(['pipeline-batch', 'supplemental-intake']).default('pipeline-batch'),
+  title: z.string().min(1),
+  channel_name: z.string().optional().nullable(),
+  weak_label_score: z.number().min(0).max(1).optional().nullable(),
+  uncertainty_bucket: z.string().optional().nullable(),
+  source_trust_flag: z.string().optional().nullable(),
+  template_cluster: z.string().optional().nullable(),
+  prior_flags: z.number().int().nonnegative().optional().nullable(),
+  content_class: z.string().default('unknown'),
+  content_class_confidence: z.number().min(0).max(1).optional().nullable(),
+  dominant_bias_risk: z.string().optional().nullable(),
+  bias_review_required: z.boolean().optional().nullable(),
+  current_labels: z.record(z.boolean()).default({}),
+  annotator_notes: z.array(z.string()).default([]),
+  queue_reason: z.string().optional().nullable(),
+  distilled_features: observationDistilledFeaturesSchema.optional().nullable(),
+  feedback_summary: labelCandidateFeedbackSummarySchema.default({
+    total_events: 0,
+    risk_event_count: 0,
+    benign_event_count: 0,
+    manual_report_count: 0,
+    last_user_action: null,
+  }),
+  provenance: labelCandidateProvenanceSchema,
+  split_safety: labelCandidateSplitSafetySchema.default({
+    dataset_membership: 'supplemental-intake',
+    split_status: 'blocked-until-ingestion',
+    split_name: 'unknown',
+    dataset_build_id: null,
+    annotation_run_id: null,
+    eligible_for_training: false,
+    leakage_guard_reason: null,
+  }),
 });
 
 export const manualReportIssueTypeSchema = z.enum([
@@ -399,8 +542,10 @@ export const batchScoreResponseSchema = z.object({
 });
 
 export const feedbackEventSchema = z.object({
+  feedback_id: z.string().optional().nullable(),
   item_id: z.string().min(1),
   item_hash: z.string().optional().nullable(),
+  observation_id: z.string().optional().nullable(),
   channel_name: z.string().optional().nullable(),
   model_version: z.string().min(1),
   policy_version: z.string().min(1),
@@ -410,6 +555,8 @@ export const feedbackEventSchema = z.object({
   before_score: z.number().min(0).max(1).optional().nullable(),
   after_score: z.number().min(0).max(1).optional().nullable(),
   timestamp: z.string().min(1),
+  runtime_context: runtimeContextSchema.optional().nullable(),
+  artifact_provenance: artifactProvenanceSchema.optional().nullable(),
   manual_report: manualReportSchema.optional().nullable(),
 });
 
@@ -446,12 +593,21 @@ export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;
 export type RuntimeContext = z.infer<typeof runtimeContextSchema>;
+export type ObservationDistilledFeatures = z.infer<typeof observationDistilledFeaturesSchema>;
+export type ObservationScoreSnapshot = z.infer<typeof observationScoreSnapshotSchema>;
+export type ObservationProvenance = z.infer<typeof observationProvenanceSchema>;
+export type BrowserObservationRecord = z.infer<typeof browserObservationRecordSchema>;
 export type ManualReportIssueType = z.infer<typeof manualReportIssueTypeSchema>;
 export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
 export type VerificationTrigger = z.infer<typeof verificationTriggerSchema>;
 export type VerificationProvenance = z.infer<typeof verificationProvenanceSchema>;
 export type ActionDecisionBasis = z.infer<typeof actionDecisionBasisSchema>;
 export type ArtifactProvenance = z.infer<typeof artifactProvenanceSchema>;
+export type LabelCandidateFeedbackSummary = z.infer<typeof labelCandidateFeedbackSummarySchema>;
+export type LabelCandidateSplitSafety = z.infer<typeof labelCandidateSplitSafetySchema>;
+export type LabelCandidateProvenance = z.infer<typeof labelCandidateProvenanceSchema>;
+export type LabelCandidateQueue = z.infer<typeof labelCandidateQueueSchema>;
+export type LabelCandidate = z.infer<typeof labelCandidateSchema>;
 export type ManualReportWorkflowMode = z.infer<
   typeof manualReportWorkflowModeSchema
 >;

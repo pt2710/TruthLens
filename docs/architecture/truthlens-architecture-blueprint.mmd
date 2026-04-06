@@ -38,15 +38,17 @@ class extension,mobile,api implemented
 subgraph inputs["2. Input And Context"]
   package["Title + thumbnail + description"]
   transcript["Transcript excerpt / watch signals"]
+  browser_obs["Browser observation records<br/>DOM only, no DevTools"]
   metadata["Metadata"]
   channel["Channel history / priors"]
   user_ctx["User preferences / corrections / muted channels"]
   runtime_ctx["Runtime surface + provenance context"]
 end
-class package,transcript,metadata,channel,user_ctx,runtime_ctx implemented
+class package,transcript,browser_obs,metadata,channel,user_ctx,runtime_ctx implemented
 
 extension --> package
 extension --> transcript
+extension --> browser_obs
 extension --> runtime_ctx
 mobile --> api
 api --> package
@@ -150,7 +152,18 @@ action_map --> explanation_engine
 explanation_engine --> review_payloads --> manual_review
 manual_review --> gemini
 
-subgraph bseo_layer["8. BSEO Interpretation / Search / Artifacts"]
+subgraph intake["8. Observation / Feedback Intake"]
+  feedback_events["Feedback events<br/>shared contracts + provenance"]
+  label_candidates["Supplemental label candidates"]
+  split_safety["Split-blocked adjudicated intake<br/>never direct train/validation/test append"]
+end
+class feedback_events,label_candidates,split_safety contract
+
+browser_obs --> feedback_events
+manual_review --> feedback_events
+feedback_events --> label_candidates --> split_safety
+
+subgraph bseo_layer["9. BSEO Interpretation / Search / Artifacts"]
   bseo_frame["Bias-structured interpretation frame<br/>Thumbnail | Title | Description | Transcription | Channel | Other"]
   bseo_search["Offline control-genome search"]
   lineage["Mutation lineage log"]
@@ -171,7 +184,7 @@ lineage --> bseo_policy_artifact
 atlas --> bseo_policy_artifact
 bseo_policy_artifact -.-> guardrails
 
-subgraph offline_pipeline["9. Offline Pipeline And Governance"]
+subgraph offline_pipeline["10. Offline Pipeline And Governance"]
   governance["Discovery -> acquisition -> normalization -> governance gate"]
   trainer["Trainer"]
   evals["Eval + simulation + drift"]
@@ -180,12 +193,13 @@ end
 class governance,trainer,evals,benchmark offline
 
 governance --> trainer --> evals --> benchmark
+split_safety -.-> governance
 trainer --> bseo_search
 evals --> bseo_search
 evals --> bseo_policy_artifact
 benchmark --> review_payloads
 
-subgraph future_stack["10. Future Extensions"]
+subgraph future_stack["11. Future Extensions"]
   richer_video["Richer transcript / video understanding"]
   deeper_analytics["Operator analytics and broader dashboards"]
   stronger_multimodal["Stronger end-to-end multimodal encoders"]

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-06T05:09:17.814369+00:00",
+  "generated_at": "2026-04-06T05:52:39.450518+00:00",
   "build_id": "build-20260406042818",
   "model_version": "baseline-v1-build-20260406042818",
   "trained_at": "2026-04-06T04:28:18.606357+00:00",
@@ -15,7 +15,10 @@
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
     "bseo_policy": "configs/thresholds/bseo-policy.json",
-    "runtime_governance": "artifacts/reports/runtime-governance-latest.json"
+    "runtime_governance": "artifacts/reports/runtime-governance-latest.json",
+    "supplemental_candidates": null,
+    "supplemental_adjudication": null,
+    "supplemental_gold": null
   },
   "artifact_timestamps": {
     "model_info": "2026-04-06T04:28:26.682182+00:00",
@@ -28,7 +31,10 @@
     "runtime_policy": "2026-04-06T04:40:02.540092+00:00",
     "thresholds": "2026-04-06T04:28:51.397798+00:00",
     "bseo_policy": "2026-04-06T04:28:51.402820+00:00",
-    "runtime_governance": "2026-04-06T05:09:17.802052+00:00"
+    "runtime_governance": "2026-04-06T05:52:39.436647+00:00",
+    "supplemental_candidates": null,
+    "supplemental_adjudication": null,
+    "supplemental_gold": null
   },
   "runtime_truth": {
     "configured_policy_mode": "bseo-shadow",
@@ -43,7 +49,7 @@
     "live_eligible": false
   },
   "runtime_governance": {
-    "generated_at": "2026-04-06T05:09:17.799241+00:00",
+    "generated_at": "2026-04-06T05:52:39.436647+00:00",
     "build_id": "build-20260406042818",
     "runtime_policy": {
       "configured_mode": "bseo-shadow",
@@ -59,7 +65,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 0.683,
+        "age_hours": 1.406,
         "build_id": "build-20260406042818",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -80,7 +86,7 @@
       "calibration_error": 0.2201,
       "bseo_objective_score": 0.8344,
       "benign_false_positive_rate": 0.0,
-      "shadow_observation_count": 16
+      "shadow_observation_count": 40
     },
     "promotion": {
       "shadow_eligible": true,
@@ -872,7 +878,35 @@
     },
     "available": true
   },
+  "supplemental_intake": {
+    "browser_observations": {
+      "total_observations": 0,
+      "unique_items": 0,
+      "surface_counts": {},
+      "recommended_action_counts": {},
+      "with_score_link": 0
+    },
+    "candidate_batch": {
+      "candidate_count": 0,
+      "feedback_linked_count": 0,
+      "observation_linked_count": 0,
+      "manual_report_linked_count": 0,
+      "split_blocked_count": 0,
+      "review_queue_count": 0,
+      "hard_negative_queue_count": 0,
+      "disagreement_queue_count": 0,
+      "adjudicated_count": 0,
+      "confirmed_count": 0,
+      "escalation_count": 0,
+      "supplemental_gold_count": 0
+    },
+    "candidate_batch_path": null,
+    "supplemental_adjudication_path": null,
+    "supplemental_gold_path": null
+  },
   "caveats": [
+    "No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich.",
+    "No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.",
     "BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history."
   ],
   "missing_data": [],
@@ -886,6 +920,7 @@
     "drift_summary.svg",
     "policy_mode_comparison.svg",
     "runtime_governance.svg",
+    "observation_feedback_intake.svg",
     "benchmark_provenance.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",

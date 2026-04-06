@@ -54,6 +54,10 @@ def _score_log_path() -> Path:
     return _repo_root() / "artifacts" / "reports" / "score_events.jsonl"
 
 
+def _observation_log_path() -> Path:
+    return _repo_root() / "artifacts" / "reports" / "browser_observations.jsonl"
+
+
 def _feedback_db_path() -> Path:
     return _repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
 
@@ -351,8 +355,10 @@ def load_feedback_events() -> list[dict[str, Any]]:
             cursor = connection.execute(
                 """
                 SELECT
+                    feedback_id,
                     item_id,
                     item_hash,
+                    observation_id,
                     channel_name,
                     model_version,
                     policy_version,
@@ -362,6 +368,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     before_score,
                     after_score,
                     timestamp,
+                    runtime_context_json,
+                    artifact_provenance_json,
                     manual_report_json
                 FROM feedback_events
                 ORDER BY rowid ASC
@@ -369,8 +377,10 @@ def load_feedback_events() -> list[dict[str, Any]]:
             )
             db_rows = [
                 {
+                    "feedback_id": feedback_id,
                     "item_id": item_id,
                     "item_hash": item_hash,
+                    "observation_id": observation_id,
                     "channel_name": channel_name,
                     "model_version": model_version,
                     "policy_version": policy_version,
@@ -380,13 +390,21 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     "before_score": before_score,
                     "after_score": after_score,
                     "timestamp": timestamp,
+                    "runtime_context": json.loads(runtime_context_json)
+                    if runtime_context_json
+                    else None,
+                    "artifact_provenance": json.loads(artifact_provenance_json)
+                    if artifact_provenance_json
+                    else None,
                     "manual_report": json.loads(manual_report_json)
                     if manual_report_json
                     else None,
                 }
                 for (
+                    feedback_id,
                     item_id,
                     item_hash,
+                    observation_id,
                     channel_name,
                     model_version,
                     policy_version,
@@ -396,6 +414,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     before_score,
                     after_score,
                     timestamp,
+                    runtime_context_json,
+                    artifact_provenance_json,
                     manual_report_json,
                 ) in cursor.fetchall()
             ]
@@ -472,12 +492,91 @@ def load_score_events() -> list[dict[str, Any]]:
     return rows
 
 
+def load_browser_observations() -> list[dict[str, Any]]:
+    db_path = _feedback_db_path()
+    if db_path.exists():
+        with sqlite3.connect(db_path) as connection:
+            _ensure_browser_observation_table(connection)
+            cursor = connection.execute(
+                """
+                SELECT
+                    observation_id,
+                    item_id,
+                    item_hash,
+                    title_snapshot,
+                    channel_name,
+                    channel_url,
+                    link_url,
+                    thumbnail_ref,
+                    description_snapshot,
+                    transcript_excerpt,
+                    metadata_json,
+                    runtime_context_json,
+                    distilled_features_json,
+                    score_snapshot_json,
+                    provenance_json
+                FROM browser_observations
+                ORDER BY rowid ASC
+                """
+            )
+            return [
+                {
+                    "observation_id": observation_id,
+                    "item_id": item_id,
+                    "item_hash": item_hash,
+                    "title_snapshot": title_snapshot,
+                    "channel_name": channel_name,
+                    "channel_url": channel_url,
+                    "link_url": link_url,
+                    "thumbnail_ref": thumbnail_ref,
+                    "description_snapshot": description_snapshot,
+                    "transcript_excerpt": transcript_excerpt,
+                    "metadata": json.loads(metadata_json) if metadata_json else {},
+                    "runtime_context": json.loads(runtime_context_json) if runtime_context_json else {},
+                    "distilled_features": json.loads(distilled_features_json)
+                    if distilled_features_json
+                    else {},
+                    "score_snapshot": json.loads(score_snapshot_json) if score_snapshot_json else {},
+                    "provenance": json.loads(provenance_json) if provenance_json else {},
+                }
+                for (
+                    observation_id,
+                    item_id,
+                    item_hash,
+                    title_snapshot,
+                    channel_name,
+                    channel_url,
+                    link_url,
+                    thumbnail_ref,
+                    description_snapshot,
+                    transcript_excerpt,
+                    metadata_json,
+                    runtime_context_json,
+                    distilled_features_json,
+                    score_snapshot_json,
+                    provenance_json,
+                ) in cursor.fetchall()
+            ]
+    path = _observation_log_path()
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
 def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS feedback_events (
+            feedback_id TEXT,
             item_id TEXT NOT NULL,
             item_hash TEXT,
+            observation_id TEXT,
             channel_name TEXT,
             model_version TEXT NOT NULL,
             policy_version TEXT NOT NULL,
@@ -487,6 +586,8 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
             before_score REAL,
             after_score REAL,
             timestamp TEXT NOT NULL,
+            runtime_context_json TEXT,
+            artifact_provenance_json TEXT,
             manual_report_json TEXT
         )
         """
@@ -497,6 +598,14 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
     }
     if "manual_report_json" not in columns:
         connection.execute("ALTER TABLE feedback_events ADD COLUMN manual_report_json TEXT")
+    if "feedback_id" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN feedback_id TEXT")
+    if "observation_id" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN observation_id TEXT")
+    if "runtime_context_json" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN runtime_context_json TEXT")
+    if "artifact_provenance_json" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN artifact_provenance_json TEXT")
     connection.commit()
 
 
@@ -520,6 +629,31 @@ def _ensure_score_table(connection: sqlite3.Connection) -> None:
     connection.commit()
 
 
+def _ensure_browser_observation_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS browser_observations (
+            observation_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            item_hash TEXT,
+            title_snapshot TEXT NOT NULL,
+            channel_name TEXT,
+            channel_url TEXT,
+            link_url TEXT,
+            thumbnail_ref TEXT,
+            description_snapshot TEXT,
+            transcript_excerpt TEXT,
+            metadata_json TEXT,
+            runtime_context_json TEXT,
+            distilled_features_json TEXT,
+            score_snapshot_json TEXT,
+            provenance_json TEXT NOT NULL
+        )
+        """
+    )
+    connection.commit()
+
+
 def append_feedback_event(payload: dict[str, Any]) -> Path:
     path = _feedback_log_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -532,8 +666,10 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
         connection.execute(
             """
             INSERT INTO feedback_events (
+                feedback_id,
                 item_id,
                 item_hash,
+                observation_id,
                 channel_name,
                 model_version,
                 policy_version,
@@ -543,12 +679,16 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 before_score,
                 after_score,
                 timestamp,
+                runtime_context_json,
+                artifact_provenance_json,
                 manual_report_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                payload.get("feedback_id"),
                 payload.get("item_id"),
                 payload.get("item_hash"),
+                payload.get("observation_id"),
                 payload.get("channel_name"),
                 payload.get("model_version"),
                 payload.get("policy_version"),
@@ -558,9 +698,66 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 payload.get("before_score"),
                 payload.get("after_score"),
                 payload.get("timestamp"),
+                json.dumps(payload.get("runtime_context"), ensure_ascii=True)
+                if payload.get("runtime_context") is not None
+                else None,
+                json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
+                if payload.get("artifact_provenance") is not None
+                else None,
                 json.dumps(payload.get("manual_report"), ensure_ascii=True)
                 if payload.get("manual_report") is not None
                 else None,
+            ),
+        )
+        connection.commit()
+    return path
+
+
+def append_browser_observation(payload: dict[str, Any]) -> Path:
+    path = _observation_log_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=True))
+        handle.write("\n")
+    db_path = _feedback_db_path()
+    with sqlite3.connect(db_path) as connection:
+        _ensure_browser_observation_table(connection)
+        connection.execute(
+            """
+            INSERT INTO browser_observations (
+                observation_id,
+                item_id,
+                item_hash,
+                title_snapshot,
+                channel_name,
+                channel_url,
+                link_url,
+                thumbnail_ref,
+                description_snapshot,
+                transcript_excerpt,
+                metadata_json,
+                runtime_context_json,
+                distilled_features_json,
+                score_snapshot_json,
+                provenance_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload.get("observation_id"),
+                payload.get("item_id"),
+                payload.get("item_hash"),
+                payload.get("title_snapshot"),
+                payload.get("channel_name"),
+                payload.get("channel_url"),
+                payload.get("link_url"),
+                payload.get("thumbnail_ref"),
+                payload.get("description_snapshot"),
+                payload.get("transcript_excerpt"),
+                json.dumps(payload.get("metadata", {}), ensure_ascii=True),
+                json.dumps(payload.get("runtime_context", {}), ensure_ascii=True),
+                json.dumps(payload.get("distilled_features", {}), ensure_ascii=True),
+                json.dumps(payload.get("score_snapshot", {}), ensure_ascii=True),
+                json.dumps(payload.get("provenance", {}), ensure_ascii=True),
             ),
         )
         connection.commit()
@@ -763,4 +960,37 @@ def summarize_score_events(events: list[dict[str, Any]] | None = None) -> dict[s
             sum(float(row.get("uncertainty", 0.0)) for row in rows) / max(len(rows), 1),
             4,
         ),
+    }
+
+
+def summarize_browser_observations(
+    observations: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    rows = observations if observations is not None else load_browser_observations()
+    surface_counts = Counter(
+        str(row.get("runtime_context", {}).get("surface", "unknown"))
+        for row in rows
+        if isinstance(row, dict)
+    )
+    action_counts = Counter(
+        str(row.get("score_snapshot", {}).get("recommended_action", "none"))
+        for row in rows
+        if isinstance(row, dict)
+    )
+    unique_items = {
+        str(row.get("item_id", "")).strip()
+        for row in rows
+        if isinstance(row, dict) and str(row.get("item_id", "")).strip()
+    }
+    with_feedback_link = sum(
+        1
+        for row in rows
+        if isinstance(row, dict) and str(row.get("score_snapshot", {}).get("explanation_id", "")).strip()
+    )
+    return {
+        "total_observations": len(rows),
+        "unique_items": len(unique_items),
+        "surface_counts": dict(sorted(surface_counts.items())),
+        "recommended_action_counts": dict(sorted(action_counts.items())),
+        "with_score_link": with_feedback_link,
     }

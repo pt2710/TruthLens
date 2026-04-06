@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { labelCandidateQueueSchema, labelCandidateSchema } from '@truthlens/shared-schemas';
 
 const API_BASE = (import.meta.env.VITE_TRUTHLENS_API_BASE as string | undefined) ?? 'http://127.0.0.1:8000';
 
-export const annotationQueueNameSchema = z.enum(['review', 'hard-negative', 'disagreement']);
+export const annotationQueueNameSchema = labelCandidateQueueSchema;
 export const annotationResolutionSchema = z.enum([
   'confirmed-risk',
   'confirmed-benign',
@@ -21,23 +22,8 @@ export const adjudicationDecisionSchema = z.object({
   decided_at: z.string().optional().nullable(),
 });
 
-export const queueEntrySchema = z.object({
-  item_id: z.string().min(1),
-  title: z.string().min(1),
-  channel_name: z.string().min(1).optional(),
-  weak_label_score: z.number().optional(),
-  uncertainty_bucket: z.string().optional(),
-  source_trust_flag: z.string().optional(),
-  template_cluster: z.string().optional(),
-  prior_flags: z.number().int().nonnegative().optional(),
-  content_class: z.string().optional(),
-  content_class_confidence: z.number().optional(),
-  dominant_bias_risk: z.string().optional(),
-  bias_review_required: z.boolean().optional(),
-  current_labels: z.record(z.boolean()).default({}),
-  annotator_notes: z.array(z.string()).default([]),
+export const queueEntrySchema = labelCandidateSchema.extend({
   adjudication: adjudicationDecisionSchema.optional(),
-  queue_reason: z.string().optional(),
 });
 
 export const annotationBatchSchema = z.object({
@@ -50,6 +36,7 @@ export const annotationBatchSchema = z.object({
   dominant_bias_coverage: z.record(z.number().int().nonnegative()).default({}),
   annotator_notes_fields: z.array(z.string()),
   source_batch_path: z.string().optional(),
+  supplemental_candidate_batch_path: z.string().optional(),
   adjudication_summary: z
     .object({
       saved_count: z.number().int().nonnegative().default(0),
@@ -61,8 +48,19 @@ export const annotationBatchSchema = z.object({
       content_class_counts: z.record(z.number().int().nonnegative()).default({}),
     })
     .optional(),
+  supplemental_summary: z
+    .object({
+      candidate_count: z.number().int().nonnegative().default(0),
+      feedback_linked_count: z.number().int().nonnegative().default(0),
+      observation_linked_count: z.number().int().nonnegative().default(0),
+      split_blocked_count: z.number().int().nonnegative().default(0),
+      manual_report_linked_count: z.number().int().nonnegative().default(0),
+    })
+    .optional(),
   adjudication_path: z.string().optional(),
   gold_path: z.string().optional(),
+  supplemental_adjudication_path: z.string().optional(),
+  supplemental_gold_path: z.string().optional(),
 });
 
 export const saveAnnotationAdjudicationsRequestSchema = z.object({
@@ -77,6 +75,8 @@ export const saveAnnotationAdjudicationsResponseSchema = z.object({
   saved_count: z.number().int().nonnegative(),
   adjudication_path: z.string().min(1),
   gold_path: z.string().min(1),
+  supplemental_adjudication_path: z.string().optional().nullable(),
+  supplemental_gold_path: z.string().optional().nullable(),
   summary: z.record(z.unknown()),
 });
 

@@ -14,6 +14,7 @@ Interpretation rules:
 - solid blocks represent committed implemented architecture
 - dashed blocks represent optional, offline-only, or future extensions
 - the blueprint must show the separation between perception, verification, policy, and explanation
+- the blueprint must show browser observation / feedback intake as a supplemental, split-safe path rather than as a hidden training write
 - BSEO must appear as an interpretation / policy / search layer, not as the core classifier
 
 Regenerate the committed blueprint renders with:

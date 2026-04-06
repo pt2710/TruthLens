@@ -4,9 +4,12 @@ import pytest
 
 from truthlens_data_pipeline.paths import repo_root
 from truthlens_model_serving import (
+    append_browser_observation,
     append_feedback_event,
     append_score_event,
+    load_browser_observations,
     load_feedback_events,
+    summarize_browser_observations,
     summarize_feedback_events,
 )
 
@@ -43,6 +46,74 @@ def test_feedback_events_are_persisted_to_sqlite_and_jsonl(
     assert len(rows) == 1
     assert rows[0]["explanation_id"] == "exp-1"
     assert summary["total_events"] == 1
+
+
+def test_browser_observations_are_persisted_to_sqlite_and_jsonl(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    append_browser_observation(
+        {
+            "observation_id": "obs-1",
+            "item_id": "item-1",
+            "item_hash": "sig-1",
+            "title_snapshot": "Breaking thumbnail packaging",
+            "channel_name": "Signal Watch",
+            "channel_url": "https://www.youtube.com/@signalwatch",
+            "link_url": "https://www.youtube.com/watch?v=item-1",
+            "thumbnail_ref": "https://i.ytimg.com/vi/item-1/hqdefault.jpg",
+            "description_snapshot": "Description",
+            "transcript_excerpt": "Transcript",
+            "metadata": {"duration_seconds": 120},
+            "runtime_context": {
+                "surface": "extension-feed",
+                "review_requested": False,
+                "source_provenance": "/",
+            },
+            "distilled_features": {
+                "card_index": 0,
+                "link_kind": "watch",
+                "has_thumbnail": True,
+                "has_description_snapshot": True,
+                "has_transcript_excerpt": True,
+                "title_token_count": 3,
+                "description_token_count": 1,
+                "channel_known": True,
+                "duration_seconds": 120,
+            },
+            "score_snapshot": {
+                "risk_score": 0.74,
+                "calibrated_score": 0.71,
+                "uncertainty": 0.21,
+                "recommended_action": "ask-report",
+                "content_class": "news",
+                "content_class_confidence": 0.64,
+                "explanation_id": "exp-1",
+            },
+            "provenance": {
+                "observed_at": "2026-04-06T10:00:00Z",
+                "collector": "extension-dom",
+                "collector_version": "extension-runtime",
+                "session_id": "session-1",
+                "page_url": "https://www.youtube.com/",
+                "source_path": "/",
+            },
+        }
+    )
+
+    db_path = repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
+    jsonl_path = repo_root() / "artifacts" / "reports" / "browser_observations.jsonl"
+    rows = load_browser_observations()
+    summary = summarize_browser_observations(rows)
+
+    assert db_path.exists()
+    assert jsonl_path.exists()
+    assert len(rows) == 1
+    assert rows[0]["observation_id"] == "obs-1"
+    assert summary["total_observations"] == 1
+    assert summary["surface_counts"]["extension-feed"] == 1
 
 
 def test_feedback_summary_computes_channel_trust_score_from_scored_items(

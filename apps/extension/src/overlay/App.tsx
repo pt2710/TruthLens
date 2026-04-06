@@ -54,6 +54,13 @@ const DEFAULT_COMMENTS: IssueCommentState = {
   other: '',
 };
 
+function createClientId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function createFeedbackPayload(
   itemId: string,
   channelName: string,
@@ -62,8 +69,10 @@ function createFeedbackPayload(
   explanationId: string | null,
   manualReport: FeedbackEvent['manual_report'],
   userAction: FeedbackEvent['user_action'],
+  artifactProvenance: FeedbackEvent['artifact_provenance'],
 ): FeedbackEvent {
   return {
+    feedback_id: createClientId('feedback'),
     item_id: itemId,
     item_hash: null,
     channel_name: channelName,
@@ -75,6 +84,12 @@ function createFeedbackPayload(
     before_score: beforeScore,
     after_score: beforeScore,
     timestamp: new Date().toISOString(),
+    runtime_context: {
+      surface: 'extension-watch',
+      review_requested: true,
+      source_provenance: window.location.pathname,
+    },
+    artifact_provenance: artifactProvenance,
     manual_report: manualReport,
   };
 }
@@ -508,6 +523,7 @@ export function App() {
           manualReportTarget.workflowMode === 'verify-transparent'
             ? 'confirm-transparent'
             : 'confirm-report',
+          manualReportTarget.score?.artifact_provenance ?? null,
           ),
       );
       appendStatusLine('TruthLens feedback was stored locally.', 'success');

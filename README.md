@@ -70,6 +70,8 @@ Committed downstream layers:
 - explicit selective deep verification triggers and provenance
 - separate policy engine
 - explanation engine with path, verification, and policy evidence
+- browser observation records with shared provenance and distilled DOM features
+- feedback-linked supplemental label candidates and split-safe adjudication intake
 - human review and manual report flows
 
 Not in the baseline hot path:
@@ -96,6 +98,16 @@ Committed root configuration today:
 - `configs/thresholds/runtime-policy.json` is set to `bseo-shadow`
 - `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
 - `bseo-live` is not promoted yet because runtime governance still blocks live rollout on shadow-observation soak
+
+## Observation And Feedback Intake
+
+TruthLens now treats browser observation and feedback-to-dataset as one shared intake path rather than two disconnected side systems.
+
+- the extension can persist DOM-based browser observation records without any DevTools dependency
+- observation records, feedback events, and supplemental label candidates share provenance-aware contracts
+- linked feedback and manual reports can create supplemental adjudication candidates in the labeling UI
+- those supplemental candidates are explicitly split-blocked and do not append directly to `train`, `validation`, or `test`
+- adjudicated supplemental rows land in separate intake artifacts and require future deterministic ingestion before any training use
 
 ## Benchmarking
 
@@ -167,6 +179,10 @@ These numbers are not production claims.
 
 ![Runtime governance summary](docs/benchmarks/latest/assets/runtime_governance.svg)
 
+### Observation And Feedback Intake
+
+![Observation and feedback intake](docs/benchmarks/latest/assets/observation_feedback_intake.svg)
+
 Additional committed assets:
 
 - [Overall metrics table](docs/benchmarks/latest/assets/overall_metrics_table.md)
@@ -181,6 +197,7 @@ Additional committed assets:
 - [BSEO policy dashboard](docs/benchmarks/latest/interactive/bseo_policy_dashboard.html)
 - [Mutation atlas explorer](docs/benchmarks/latest/interactive/mutation_atlas.html)
 - [Runtime governance dashboard](docs/benchmarks/latest/interactive/runtime_governance_dashboard.html)
+- [Observation and feedback intake summary](docs/benchmarks/latest/assets/observation_feedback_intake.svg)
 
 ## Artifact Provenance
 
@@ -197,6 +214,9 @@ Current benchmark inputs:
 - `configs/thresholds/bseo-policy.json`
 - `configs/thresholds/runtime-policy.json`
 - `artifacts/reports/runtime-governance-latest.json`
+- `artifacts/reports/browser_observations.jsonl` when browser observation intake has been exercised
+- `datasets/labels/supplemental_candidates/latest.json` when supplemental candidates have been derived
+- `datasets/labels/supplemental_adjudication/*.json` and `datasets/labels/supplemental_gold/*.jsonl` for split-blocked supplemental adjudication
 
 ## Quick Start
 
@@ -279,6 +299,7 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - calibration and per-head stability still lag behind the clean fused F1 snapshot
 - history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
 - `bseo-shadow` is promoted, but `bseo-live` still lacks the shadow-soak evidence required for a truthful rollout
+- observation and supplemental intake artifacts depend on actual runtime use, so a clean repo snapshot may legitimately show zero supplemental volume
 - current repo truth is stronger on architecture separation and governance discipline than on large-sample benchmark maturity
 
 ## Next Stages

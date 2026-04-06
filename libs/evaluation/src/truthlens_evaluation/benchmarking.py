@@ -6,8 +6,9 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from truthlens_data_pipeline.paths import ensure_dir, read_json, repo_root, write_json
+from truthlens_data_pipeline.paths import ensure_dir, read_json, read_jsonl, repo_root, write_json
 from truthlens_evaluation.runtime_governance import persist_runtime_governance_summary
+from truthlens_model_serving import summarize_browser_observations
 
 
 ASSET_FILENAMES = (
@@ -19,6 +20,7 @@ ASSET_FILENAMES = (
     "drift_summary.svg",
     "policy_mode_comparison.svg",
     "runtime_governance.svg",
+    "observation_feedback_intake.svg",
     "benchmark_provenance.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
@@ -43,6 +45,13 @@ def _read_json_if_exists(path: Path | None) -> dict[str, Any] | None:
         return None
     payload = read_json(path)
     return payload if isinstance(payload, dict) else None
+
+
+def _read_jsonl_if_exists(path: Path | None) -> list[dict[str, Any]] | None:
+    if path is None or not path.exists():
+        return None
+    rows = read_jsonl(path)
+    return [row for row in rows if isinstance(row, dict)]
 
 
 def _find_latest_json(directory: Path, name_suffix: str) -> Path | None:
@@ -92,6 +101,9 @@ def _artifact_paths() -> dict[str, Path | None]:
     eval_dir = root / "artifacts" / "eval_runs"
     drift_dir = root / "artifacts" / "drift_reports"
     thresholds_dir = root / "configs" / "thresholds"
+    supplemental_candidate_dir = root / "datasets" / "labels" / "supplemental_candidates"
+    supplemental_adjudication_dir = root / "datasets" / "labels" / "supplemental_adjudication"
+    supplemental_gold_dir = root / "datasets" / "labels" / "supplemental_gold"
 
     eval_report_path = (
         eval_dir / f"{build_id}.json"
@@ -139,6 +151,9 @@ def _artifact_paths() -> dict[str, Path | None]:
         "thresholds": threshold_path if threshold_path.exists() else None,
         "bseo_policy": bseo_policy_path if bseo_policy_path.exists() else None,
         "runtime_governance": runtime_governance_path if runtime_governance_path.exists() else None,
+        "supplemental_candidates": _find_latest_json(supplemental_candidate_dir, ".json"),
+        "supplemental_adjudication": _find_latest_json(supplemental_adjudication_dir, ".json"),
+        "supplemental_gold": _find_latest_json(supplemental_gold_dir, ".jsonl"),
     }
 
 
@@ -275,6 +290,31 @@ def _summarize_bseo_policy_artifact(policy: dict[str, Any] | None) -> dict[str, 
     }
 
 
+def _summarize_supplemental_intake(
+    candidate_batch: dict[str, Any] | None,
+    supplemental_adjudication: dict[str, Any] | None,
+    supplemental_gold: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    candidate_payload = candidate_batch or {}
+    summary = dict(candidate_payload.get("summary", {}))
+    adjudication_summary = dict((supplemental_adjudication or {}).get("summary", {}))
+    queues = dict(candidate_payload.get("supplemental_candidates", {}))
+    return {
+      "candidate_count": _safe_int(summary.get("candidate_count")),
+      "feedback_linked_count": _safe_int(summary.get("feedback_linked_count")),
+      "observation_linked_count": _safe_int(summary.get("observation_linked_count")),
+      "manual_report_linked_count": _safe_int(summary.get("manual_report_linked_count")),
+      "split_blocked_count": _safe_int(summary.get("split_blocked_count")),
+      "review_queue_count": len(queues.get("review_queue", [])),
+      "hard_negative_queue_count": len(queues.get("hard_negative_queue", [])),
+      "disagreement_queue_count": len(queues.get("disagreement_queue", [])),
+      "adjudicated_count": _safe_int(adjudication_summary.get("saved_count")),
+      "confirmed_count": _safe_int(adjudication_summary.get("confirmed_count")),
+      "escalation_count": _safe_int(adjudication_summary.get("escalation_count")),
+      "supplemental_gold_count": len(supplemental_gold or []),
+    }
+
+
 def build_benchmark_summary() -> dict[str, Any]:
     runtime_governance = persist_runtime_governance_summary()
     paths = _artifact_paths()
@@ -288,6 +328,10 @@ def build_benchmark_summary() -> dict[str, Any]:
     bseo_report = _read_json_if_exists(paths["bseo_report"])
     mutation_atlas = _read_json_if_exists(paths["mutation_atlas"])
     lineage = read_json(paths["lineage"]) if paths["lineage"] is not None and paths["lineage"].exists() else None
+    supplemental_candidates = _read_json_if_exists(paths["supplemental_candidates"])
+    supplemental_adjudication = _read_json_if_exists(paths["supplemental_adjudication"])
+    supplemental_gold = _read_jsonl_if_exists(paths["supplemental_gold"])
+    browser_observations = summarize_browser_observations()
 
     build_id = str(
         (model_info or {}).get("build_id")
@@ -313,6 +357,11 @@ def build_benchmark_summary() -> dict[str, Any]:
         else dict((bseo_report or {}).get("best_bias_signature", {}))
     )
     bseo_lineage_summary = _summarize_lineage(lineage if isinstance(lineage, list) else None)
+    supplemental_intake = _summarize_supplemental_intake(
+        supplemental_candidates,
+        supplemental_adjudication,
+        supplemental_gold,
+    )
 
     caveats: list[str] = []
     missing: list[str] = []
@@ -350,6 +399,14 @@ def build_benchmark_summary() -> dict[str, Any]:
             caveats.append(
                 f"Drift report compares against only {current_count} current rows, so shift readings are directional rather than statistically robust."
             )
+    if browser_observations["total_observations"] == 0:
+        caveats.append(
+            "No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich."
+        )
+    if supplemental_intake["candidate_count"] == 0:
+        caveats.append(
+            "No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume."
+        )
 
     policy_mode = str((runtime_policy or {}).get("policy_mode", "threshold-default"))
     resolved_mode = policy_mode
@@ -424,6 +481,13 @@ def build_benchmark_summary() -> dict[str, Any]:
             "mutation_bias_atlas": mutation_atlas_payload,
             "lineage": bseo_lineage_summary,
             "available": bool(bseo_policy or bseo_report or simulation_has_bseo),
+        },
+        "supplemental_intake": {
+            "browser_observations": browser_observations,
+            "candidate_batch": supplemental_intake,
+            "candidate_batch_path": _relative(paths["supplemental_candidates"]),
+            "supplemental_adjudication_path": _relative(paths["supplemental_adjudication"]),
+            "supplemental_gold_path": _relative(paths["supplemental_gold"]),
         },
         "caveats": caveats,
         "missing_data": missing,
@@ -956,6 +1020,79 @@ def _write_runtime_governance_svg(summary: dict[str, Any], path: Path) -> None:
     )
 
 
+def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) -> None:
+    intake = dict(summary["supplemental_intake"])
+    observation_summary = dict(intake.get("browser_observations", {}))
+    candidate_summary = dict(intake.get("candidate_batch", {}))
+    body = [
+        _card(
+            40,
+            112,
+            280,
+            150,
+            "Browser observations",
+            str(_safe_int(observation_summary.get("total_observations"))),
+            f"unique_items={_safe_int(observation_summary.get('unique_items'))}",
+        ),
+        _card(
+            350,
+            112,
+            280,
+            150,
+            "Supplemental candidates",
+            str(_safe_int(candidate_summary.get("candidate_count"))),
+            f"split_blocked={_safe_int(candidate_summary.get('split_blocked_count'))}",
+        ),
+        _card(
+            660,
+            112,
+            300,
+            150,
+            "Supplemental adjudication",
+            str(_safe_int(candidate_summary.get("adjudicated_count"))),
+            f"confirmed={_safe_int(candidate_summary.get('confirmed_count'))}, escalations={_safe_int(candidate_summary.get('escalation_count'))}",
+        ),
+        _card(
+            40,
+            282,
+            280,
+            150,
+            "Feedback-linked candidates",
+            str(_safe_int(candidate_summary.get("feedback_linked_count"))),
+            f"manual_reports={_safe_int(candidate_summary.get('manual_report_linked_count'))}",
+        ),
+        _card(
+            350,
+            282,
+            280,
+            150,
+            "Observation-linked candidates",
+            str(_safe_int(candidate_summary.get("observation_linked_count"))),
+            f"review={_safe_int(candidate_summary.get('review_queue_count'))}, hard_negative={_safe_int(candidate_summary.get('hard_negative_queue_count'))}",
+        ),
+        _card(
+            660,
+            282,
+            300,
+            150,
+            "Leakage guard",
+            "blocked",
+            "Supplemental intake remains excluded from direct train/validation/test writes until future deterministic ingestion.",
+            "warn",
+        ),
+    ]
+    path.write_text(
+        _svg_document(
+            "Observation and feedback intake",
+            "Supplemental browser/feedback intake truth. These artifacts are intentionally separate from committed train, validation, and test splits.",
+            1000,
+            470,
+            body,
+        ),
+        encoding="utf-8",
+    )
+
+
 def _write_provenance_svg(summary: dict[str, Any], path: Path) -> None:
     build_id = str(summary.get("build_id") or "n/a")
     model_version = str(summary.get("model_version") or "n/a")
@@ -1118,6 +1255,9 @@ def _overall_metrics_table(summary: dict[str, Any]) -> str:
 def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
     governance = dict(summary["runtime_governance"])
     promotion = dict(governance.get("promotion", {}))
+    intake = dict(summary["supplemental_intake"])
+    browser_observations = dict(intake.get("browser_observations", {}))
+    candidate_batch = dict(intake.get("candidate_batch", {}))
     lines = [
         "# Benchmark Summary",
         "",
@@ -1133,6 +1273,14 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         "## Metrics",
         "",
         _overall_metrics_table(summary).rstrip(),
+        "",
+        "## Observation And Feedback Intake",
+        "",
+        f"- Browser observations: `{browser_observations.get('total_observations', 0)}`",
+        f"- Unique observed items: `{browser_observations.get('unique_items', 0)}`",
+        f"- Supplemental candidates: `{candidate_batch.get('candidate_count', 0)}`",
+        f"- Split-blocked candidates: `{candidate_batch.get('split_blocked_count', 0)}`",
+        f"- Supplemental adjudicated: `{candidate_batch.get('adjudicated_count', 0)}`",
         "",
         "## Runtime Governance",
         "",
@@ -1382,6 +1530,7 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     _write_drift_svg(summary, assets_dir / "drift_summary.svg")
     _write_policy_svg(summary, assets_dir / "policy_mode_comparison.svg")
     _write_runtime_governance_svg(summary, assets_dir / "runtime_governance.svg")
+    _write_observation_feedback_intake_svg(summary, assets_dir / "observation_feedback_intake.svg")
     _write_provenance_svg(summary, assets_dir / "benchmark_provenance.svg")
     _write_bseo_bias_svg(summary, assets_dir / "bseo_bias_profile.svg")
     _write_mutation_atlas_svg(summary, assets_dir / "mutation_bias_atlas.svg")

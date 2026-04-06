@@ -1,12 +1,19 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import type {
+  BrowserObservationRecord,
   ManualReportWorkflowMode,
   ScoreItemRequest,
   ScoreResult,
 } from '@truthlens/shared-schemas';
 
-import { batchScoreFeedItems, fetchFeedbackSummary, sendFeedbackEvent, type FeedbackChannelProfile } from './lib/api';
+import {
+  batchScoreFeedItems,
+  fetchFeedbackSummary,
+  sendBrowserObservation,
+  sendFeedbackEvent,
+  type FeedbackChannelProfile,
+} from './lib/api';
 import {
   buildPersonalizationSnapshot,
   describePersonalizationBucket,
@@ -28,6 +35,7 @@ const SIGNATURE = 'data-truthlens-signature';
 const PERSONALIZATION = 'data-truthlens-personalization';
 const PERSONALIZATION_SCORE = 'data-truthlens-personalization-score';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
+const OBSERVATION_ID = 'data-truthlens-observation-id';
 const UNKNOWN_CHANNEL_NAME = 'Unknown channel';
 const MUSIC_TITLE_MARKERS = [
   'official audio',
@@ -110,6 +118,7 @@ let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let autoOpenedReviewPrompt = false;
+const OBSERVATION_SESSION_ID = createClientId('obs-session');
 
 type PendingCard = {
   card: HTMLElement;
@@ -132,6 +141,13 @@ type ManualReportMessage = {
   pageUrl?: string | null;
   workflowMode?: ManualReportWorkflowMode;
 };
+
+function createClientId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 function mountOverlay() {
   if (document.getElementById(OVERLAY_ID)) {
@@ -417,6 +433,24 @@ function normalizeAssetUrl(value: string | null): string | null {
   }
 }
 
+function inferLinkKind(linkUrl: string | null): 'watch' | 'shorts' | 'other' | 'unknown' {
+  if (!linkUrl) {
+    return 'unknown';
+  }
+  try {
+    const url = new URL(linkUrl, window.location.href);
+    if (url.pathname === '/watch') {
+      return 'watch';
+    }
+    if (url.pathname.startsWith('/shorts/')) {
+      return 'shorts';
+    }
+    return 'other';
+  } catch {
+    return 'unknown';
+  }
+}
+
 function extractCardContext(card: HTMLElement, index: number): PendingCard | null {
   ensureOriginalIndex(card, index);
   const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
@@ -597,10 +631,14 @@ function createFeedbackPayload(
   userAction: string,
   beforeScore: number,
   explanationId: string | null,
+  observationId: string | null,
+  artifactProvenance: ScoreResult['artifact_provenance'],
 ) {
   return {
+    feedback_id: createClientId('feedback'),
     item_id: itemId,
     item_hash: null,
+    observation_id: observationId,
     channel_name: isUnknownChannelName(channelName) ? null : channelName,
     model_version: 'extension-runtime',
     policy_version: 'adaptive-threshold-v1',
@@ -610,7 +648,62 @@ function createFeedbackPayload(
     before_score: beforeScore,
     after_score: beforeScore,
     timestamp: new Date().toISOString(),
+    runtime_context: {
+      surface: 'extension-feed',
+      review_requested: false,
+      source_provenance: window.location.pathname,
+    },
+    artifact_provenance: artifactProvenance,
   } as const;
+}
+
+function buildBrowserObservationRecord(
+  entry: PendingCard,
+  score: ScoreResult,
+): BrowserObservationRecord {
+  const originalIndex = Number(entry.card.getAttribute(ORIGINAL_INDEX));
+  return {
+    observation_id: createClientId('observation'),
+    item_id: entry.itemId,
+    item_hash: entry.signature,
+    title_snapshot: entry.title,
+    channel_name: isUnknownChannelName(entry.channelName) ? null : entry.channelName,
+    channel_url: entry.channelUrl,
+    link_url: entry.linkUrl,
+    thumbnail_ref: entry.thumbnailRef,
+    description_snapshot: entry.descriptionSnapshot,
+    transcript_excerpt: entry.transcriptExcerpt,
+    metadata: entry.request.metadata,
+    runtime_context: entry.request.runtime_context,
+    distilled_features: {
+      card_index: Number.isFinite(originalIndex) ? originalIndex : null,
+      link_kind: inferLinkKind(entry.linkUrl),
+      has_thumbnail: Boolean(entry.thumbnailRef),
+      has_description_snapshot: Boolean(entry.descriptionSnapshot),
+      has_transcript_excerpt: Boolean(entry.transcriptExcerpt),
+      title_token_count: entry.title.trim().split(/\s+/).filter(Boolean).length,
+      description_token_count: (entry.descriptionSnapshot ?? '').trim().split(/\s+/).filter(Boolean).length,
+      channel_known: !isUnknownChannelName(entry.channelName),
+      duration_seconds: entry.request.metadata.duration_seconds ?? null,
+    },
+    score_snapshot: {
+      risk_score: score.risk_score,
+      calibrated_score: score.calibrated_score,
+      uncertainty: score.uncertainty,
+      recommended_action: score.recommended_action,
+      content_class: score.content_class,
+      content_class_confidence: score.content_class_confidence,
+      explanation_id: score.explanation_id,
+    },
+    provenance: {
+      observed_at: new Date().toISOString(),
+      collector: 'extension-dom',
+      collector_version: 'extension-runtime',
+      session_id: OBSERVATION_SESSION_ID,
+      page_url: window.location.href,
+      source_path: window.location.pathname,
+    },
+  };
 }
 
 function attachActions(
@@ -707,6 +800,8 @@ function attachActions(
         'not-misleading',
         score.risk_score,
         score.explanation_id ?? null,
+        card.getAttribute(OBSERVATION_ID),
+        score.artifact_provenance,
       ),
     );
     card.classList.remove('truthlens-card-hidden');
@@ -723,6 +818,8 @@ function attachActions(
         'hide-locally',
         score.risk_score,
         score.explanation_id ?? null,
+        card.getAttribute(OBSERVATION_ID),
+        score.artifact_provenance,
       ),
     );
   });
@@ -741,6 +838,8 @@ function attachActions(
         'mute-channel-local',
         score.risk_score,
         score.explanation_id ?? null,
+        card.getAttribute(OBSERVATION_ID),
+        score.artifact_provenance,
       ),
     );
   });
@@ -779,6 +878,7 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
   ) {
     return null;
   }
+  card.removeAttribute(OBSERVATION_ID);
   card.setAttribute(PROCESSING, 'true');
   return entry;
 }
@@ -824,9 +924,15 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
   } else {
     card.removeAttribute('data-truthlens-review-mode');
   }
+  attachActions(pendingCard, score);
   card.setAttribute(PROCESSED, 'true');
   card.setAttribute(ITEM_ID, itemId);
   card.setAttribute(SIGNATURE, signature);
+  if (!card.getAttribute(OBSERVATION_ID)) {
+    const observation = buildBrowserObservationRecord(pendingCard, score);
+    card.setAttribute(OBSERVATION_ID, observation.observation_id);
+    void sendBrowserObservation(observation);
+  }
   card.removeAttribute(PROCESSING);
 }
 

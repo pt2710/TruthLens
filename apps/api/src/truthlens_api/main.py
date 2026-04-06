@@ -36,10 +36,12 @@ from truthlens_api.youtube_reporting import (
     youtube_reporting_configured,
 )
 from truthlens_model_serving import (
+    append_browser_observation,
     append_feedback_event,
     append_score_event,
     describe_model,
     predict_item_signals,
+    summarize_browser_observations,
     summarize_feedback_events,
     summarize_score_events,
 )
@@ -47,6 +49,7 @@ from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import (
     BatchScoreRequest,
     BatchScoreResponse,
+    BrowserObservationRecord,
     ChannelInfo,
     ExplanationBundlePayload,
     FeedbackEvent,
@@ -238,6 +241,12 @@ def batch_score(payload: BatchScoreRequest) -> BatchScoreResponse:
 def feedback(payload: FeedbackEvent) -> dict[str, str]:
     append_feedback_event(payload.model_dump())
     return {"status": "accepted", "feedback_log_path": settings.feedback_log_path}
+
+
+@app.post("/browser-observation")
+def browser_observation(payload: BrowserObservationRecord) -> dict[str, str]:
+    append_browser_observation(payload.model_dump())
+    return {"status": "accepted", "observation_id": payload.observation_id}
 
 
 @app.get("/annotation-batch/latest")
@@ -554,6 +563,7 @@ def feedback_summary() -> dict[str, object]:
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics() -> str:
     score_summary = summarize_score_events()
+    observation_summary = summarize_browser_observations()
     feedback_summary_payload = summarize_feedback_events()
     policy_profile_payload = get_policy_profile()
     runtime_metrics = policy_profile_payload.get("runtime_metrics", {})
@@ -566,6 +576,9 @@ def metrics() -> str:
         "# HELP truthlens_feedback_events_total Total feedback events recorded by the API.",
         "# TYPE truthlens_feedback_events_total counter",
         f"truthlens_feedback_events_total {feedback_summary_payload['total_events']}",
+        "# HELP truthlens_browser_observations_total Total browser observation records captured by the API.",
+        "# TYPE truthlens_browser_observations_total counter",
+        f"truthlens_browser_observations_total {observation_summary['total_observations']}",
         "# HELP truthlens_score_average_risk Average calibrated risk score over scored items.",
         "# TYPE truthlens_score_average_risk gauge",
         f"truthlens_score_average_risk {score_summary['average_risk_score']}",
@@ -593,6 +606,8 @@ def metrics() -> str:
         lines.append(
             f'truthlens_feedback_action_total{{action="{action}"}} {count}'
         )
+    for surface, count in observation_summary["surface_counts"].items():
+        lines.append(f'truthlens_browser_observation_total{{surface="{surface}"}} {count}')
     for action, count in runtime_metrics.get("final_action_counts", {}).items():
         lines.append(f'truthlens_policy_final_action_total{{action="{action}"}} {count}')
     for path, count in sorted(_REQUEST_COUNTS.items()):

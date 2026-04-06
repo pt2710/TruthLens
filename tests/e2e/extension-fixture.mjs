@@ -120,6 +120,7 @@ async function main() {
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   const feedbackEvents = [];
+  const browserObservations = [];
   const optimizationRequests = [];
   const suggestionRequests = [];
   const youtubeReports = [];
@@ -188,6 +189,15 @@ async function main() {
 
     await page.route('http://127.0.0.1:8000/feedback', async (route) => {
       feedbackEvents.push(JSON.parse(route.request().postData() ?? '{}'));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'accepted' }),
+      });
+    });
+
+    await page.route('http://127.0.0.1:8000/browser-observation', async (route) => {
+      browserObservations.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -388,7 +398,8 @@ async function main() {
 
     assert.equal(batchRequests, 1);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
-    assert.equal(await page.locator('.truthlens-action-row').count(), 0);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 3);
+    assert.equal(browserObservations.length, 3);
 
     const cards = page.locator('[data-truthlens-card]');
     await page.waitForFunction(
@@ -527,7 +538,8 @@ async function main() {
       );
     });
     assert.equal(batchRequests, 2);
-    assert.equal(await page.locator('.truthlens-action-row').count(), 0);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 3);
+    assert.equal(browserObservations.length, 4);
     assert.equal(
       await cards.nth(0).evaluate((element) => element.classList.contains('truthlens-card-blur')),
       false,
@@ -562,12 +574,14 @@ async function main() {
     assert.equal(await cards.nth(3).locator('.truthlens-card-flag').count(), 1);
     assert.equal(await cards.nth(3).getAttribute('data-truthlens-personalization'), 'steady');
     assert.equal(await cards.nth(3).evaluate((element) => element.style.order), '');
-    assert.equal(await page.locator('.truthlens-action-row').count(), 0);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 4);
+    assert.equal(browserObservations.length, 5);
 
     console.log(
       JSON.stringify(
         {
           batchRequests,
+          browserObservations: browserObservations.length,
           feedbackEvents: feedbackEvents.length,
           optimizationRequests: optimizationRequests.length,
           overlayRoots: await page.locator('#truthlens-overlay-root').count(),

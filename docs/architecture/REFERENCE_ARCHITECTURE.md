@@ -25,6 +25,7 @@ Required runtime inputs:
 - `thumbnail`
 - `description_snapshot`
 - `transcript_excerpt` when available
+- browser-observation distilled DOM features when the extension captures them
 - watch-page and metadata signals
 - channel history and channel-level priors
 - user preferences, prior corrections, muted channels
@@ -167,7 +168,19 @@ The shared contract should surface:
 
 Explanation must not pretend a policy or verification reason came from the classifier if it did not.
 
-## 9. Offline Artifact Pipeline
+## 9. Observation, Feedback, And Supplemental Intake
+
+Observation and feedback intake is an explicit adjunct to the runtime, not an implicit training write.
+
+Rules:
+
+- browser observation capture must work from DOM-derived context and may not require DevTools
+- observation records, feedback events, and label candidates must share provenance-aware contracts
+- supplemental candidates may flow into adjudication and labeling UI review
+- adjudicated supplemental rows must remain separate from direct `train` / `validation` / `test` artifacts
+- any future ingestion of supplemental rows must re-enter deterministic dataset governance and split assignment
+
+## 10. Offline Artifact Pipeline
 
 The offline system produces:
 
@@ -181,7 +194,7 @@ The offline system produces:
 
 README benchmark claims must be derived from committed artifacts only.
 
-## 10. Fallback Rules
+## 11. Fallback Rules
 
 Mandatory fallback behavior:
 
@@ -191,7 +204,7 @@ Mandatory fallback behavior:
 - if BSEO artifact is missing or incompatible, stay on threshold policy
 - if explanation evidence is sparse, do not invent causality
 
-## 11. V1 / V2 / V3 Alignment
+## 12. V1 / V2 / V3 Alignment
 
 `V1`
 

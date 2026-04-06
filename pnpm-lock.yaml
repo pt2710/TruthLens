@@ -81,6 +81,9 @@ importers:
 
   apps/labeling-ui:
     dependencies:
+      '@truthlens/shared-schemas':
+        specifier: workspace:*
+        version: link:../../libs/shared-schemas
       react:
         specifier: ^19.0.0
         version: 19.2.4

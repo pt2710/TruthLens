@@ -1,6 +1,7 @@
 import {
   batchScoreRequestSchema,
   batchScoreResponseSchema,
+  browserObservationRecordSchema,
   feedbackEventSchema,
   manualReportOptimizationRequestSchema,
   manualReportOptimizationResponseSchema,
@@ -12,6 +13,7 @@ import {
   youtubeReportRequestSchema,
   youtubeReportResponseSchema,
   type BatchScoreRequest,
+  type BrowserObservationRecord,
   type FeedbackEvent,
   type ManualReportOptimizationRequest,
   type ManualReportOptimizationResponse,
@@ -224,6 +226,21 @@ export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
     });
   } catch {
     // Fail soft in the browser; feedback is advisory and should not block UI interaction.
+  }
+}
+
+export async function sendBrowserObservation(
+  payload: BrowserObservationRecord,
+): Promise<void> {
+  const parsedObservation = browserObservationRecordSchema.parse(payload);
+  try {
+    await fetch(`${API_BASE}/browser-observation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsedObservation),
+    });
+  } catch {
+    // Fail soft in the browser; observation intake should never block UI rendering.
   }
 }
 

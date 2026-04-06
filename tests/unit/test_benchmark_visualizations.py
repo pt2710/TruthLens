@@ -98,11 +98,13 @@ def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
     assert (output_root / "assets/train_validation_eval_overview.svg").exists()
     assert (output_root / "assets/policy_mode_comparison.svg").exists()
     assert (output_root / "assets/runtime_governance.svg").exists()
+    assert (output_root / "assets/observation_feedback_intake.svg").exists()
     assert (output_root / "interactive/metrics_dashboard.html").exists()
     assert (output_root / "interactive/runtime_governance_dashboard.html").exists()
     assert "Data unavailable for this visualization" in (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
     assert summary["runtime_truth"]["configured_policy_mode"] == "threshold-default"
     assert summary["runtime_governance"]["promotion"]["recommended_mode"] == "threshold-default"
+    assert summary["supplemental_intake"]["browser_observations"]["total_observations"] == 0
 
 
 def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(

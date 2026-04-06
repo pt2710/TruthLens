@@ -1,6 +1,6 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-06T05:09:17.814369+00:00`
+- Generated at: `2026-04-06T05:52:39.450518+00:00`
 - Build ID: `build-20260406042818`
 - Model version: `baseline-v1-build-20260406042818`
 - Eval sample count: `44`
@@ -20,6 +20,14 @@
 | PR AUC | 1.000 | 1.000 |
 | Calibration error | 0.220 | 0.220 |
 
+## Observation And Feedback Intake
+
+- Browser observations: `0`
+- Unique observed items: `0`
+- Supplemental candidates: `0`
+- Split-blocked candidates: `0`
+- Supplemental adjudicated: `0`
+
 ## Runtime Governance
 
 - Shadow eligible: `True`
@@ -28,6 +36,8 @@
 
 ## Caveats
 
+- No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich.
+- No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.
 - BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.
 
 ## Missing Data
@@ -47,3 +57,6 @@
 - `thresholds`: `configs/thresholds/default.json`
 - `bseo_policy`: `configs/thresholds/bseo-policy.json`
 - `runtime_governance`: `artifacts/reports/runtime-governance-latest.json`
+- `supplemental_candidates`: `missing`
+- `supplemental_adjudication`: `missing`
+- `supplemental_gold`: `missing`

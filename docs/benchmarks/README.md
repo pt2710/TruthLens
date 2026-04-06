@@ -8,6 +8,7 @@ Rules:
 - Visuals in `docs/benchmarks/latest/assets/` are generated from committed artifacts only.
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
 - Small sample sizes, validation regressions, runtime-governance blockers, and runtime-policy mismatches must be surfaced explicitly.
+- Browser-observation and supplemental-intake volume must be surfaced honestly; zero supplemental volume is a valid committed state.
 
 Primary outputs:
 
@@ -16,6 +17,7 @@ Primary outputs:
 - `latest/verify_summary.json`
 - `latest/verify_summary.md`
 - `latest/assets/*.svg`
+- `latest/assets/observation_feedback_intake.svg`
 - `latest/assets/overall_metrics_table.md`
 - `latest/interactive/*.html`
 - `../../artifacts/reports/runtime-governance-latest.json`

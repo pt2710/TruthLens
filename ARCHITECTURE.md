@@ -25,6 +25,7 @@ That order is strict. Perception, verification, policy, and explanation must not
 
 - Scoring outputs must include `risk_score`, `confidence`, `uncertainty`, `recommended_action`, and `reasons`.
 - Runtime outputs must also surface provenance for path signals, verification state, policy basis, and artifact lineage.
+- Browser observation records and feedback-linked label candidates must use shared provenance-aware contracts.
 - Auto-actions may not trigger from raw model score alone.
 - Selective deep verification must be explicit and fail soft.
 - Heavy LLM assistance must remain outside the baseline scoring hot path.
@@ -33,6 +34,7 @@ That order is strict. Perception, verification, policy, and explanation must not
 - Missing or incompatible artifacts must fall back safely.
 - Training is blocked until governance artifacts validate.
 - Mobile and extension review flows must share stable schemas rather than drift apart.
+- Supplemental browser/feedback intake must stay separate from direct train, validation, and test writes until future deterministic ingestion.
 
 ## Layer Boundaries
 
@@ -103,6 +105,14 @@ BSEO is not the core classifier.
 - `artifacts/` contains trained models, evaluation runs, drift reports, and runtime-relevant exports
 - `docs/` contains architecture, benchmarks, and operational documentation
 - `tests/` contains unit, integration, and end-to-end verification
+
+## Observation And Supplemental Intake
+
+- browser observation capture is DOM-based and must not depend on DevTools
+- feedback events may link back to observation ids and runtime artifact provenance
+- observation and feedback signals can produce supplemental label candidates for adjudication
+- adjudicated supplemental rows remain split-blocked and excluded from direct train/validation/test use
+- future ingestion must assign deterministic split lineage before any supplemental row can become training data
 
 ## Architecture Truth Sources
 

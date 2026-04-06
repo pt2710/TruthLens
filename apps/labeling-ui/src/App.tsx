@@ -145,6 +145,7 @@ function QueueSection({
                 <div className="queue-stack">
                   {item.channel_name ? <p>Channel: {item.channel_name}</p> : null}
                   {item.content_class ? <p>Suggested class: {item.content_class}</p> : null}
+                  <p>Origin: {item.origin}</p>
                   {typeof item.content_class_confidence === 'number' ? (
                     <p>Class confidence: {item.content_class_confidence.toFixed(2)}</p>
                   ) : null}
@@ -153,10 +154,20 @@ function QueueSection({
                   {item.source_trust_flag ? <p>Trust flag: {item.source_trust_flag}</p> : null}
                   {item.template_cluster ? <p>Template: {item.template_cluster}</p> : null}
                   {typeof item.prior_flags === 'number' ? <p>Prior flags: {item.prior_flags}</p> : null}
+                  {item.feedback_summary.total_events > 0 ? (
+                    <p>
+                      Feedback events: {item.feedback_summary.total_events} (risk {item.feedback_summary.risk_event_count},
+                      benign {item.feedback_summary.benign_event_count})
+                    </p>
+                  ) : null}
+                  <p>Split safety: {item.split_safety.split_status}</p>
+                  {item.split_safety.leakage_guard_reason ? (
+                    <p>{item.split_safety.leakage_guard_reason}</p>
+                  ) : null}
                   {item.queue_reason ? <p>{item.queue_reason}</p> : null}
                   {item.annotator_notes.length > 0 ? (
                     <div className="note-list">
-                      {item.annotator_notes.map((note) => (
+                      {item.annotator_notes.map((note: string) => (
                         <span key={note}>{note}</span>
                       ))}
                     </div>
@@ -363,8 +374,15 @@ export function App() {
           </p>
           {batch.generated_at ? <p>Generated at: {batch.generated_at}</p> : null}
           {batch.source_batch_path ? <p>Batch source: {batch.source_batch_path}</p> : null}
+          {batch.supplemental_candidate_batch_path ? (
+            <p>Supplemental candidate batch: {batch.supplemental_candidate_batch_path}</p>
+          ) : null}
           {batch.adjudication_path ? <p>Adjudication file: {batch.adjudication_path}</p> : null}
           {batch.gold_path ? <p>Gold labels: {batch.gold_path}</p> : null}
+          {batch.supplemental_adjudication_path ? (
+            <p>Supplemental adjudication file: {batch.supplemental_adjudication_path}</p>
+          ) : null}
+          {batch.supplemental_gold_path ? <p>Supplemental gold labels: {batch.supplemental_gold_path}</p> : null}
         </div>
         <div className="hero-stats">
           <div>
@@ -378,6 +396,10 @@ export function App() {
           <div>
             <strong>{batch.disagreement_queue.length}</strong>
             <span>Disagreements</span>
+          </div>
+          <div>
+            <strong>{batch.supplemental_summary?.candidate_count ?? 0}</strong>
+            <span>Supplemental</span>
           </div>
         </div>
       </header>

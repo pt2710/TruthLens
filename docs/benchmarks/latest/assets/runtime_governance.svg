@@ -44,5 +44,5 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect class="warn" x="660" y="282" width="300" height="150" rx="14" />
 <text class="label" x="678" y="308">Live blockers</text>
 <text class="value" x="678" y="352">insufficient-shadow-observation-history</text>
-<text class="small" x="678" y="380">shadow_observations=16</text>
+<text class="small" x="678" y="380">shadow_observations=40</text>
 </svg>

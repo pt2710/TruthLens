@@ -67,6 +67,63 @@ class RuntimeContext(BaseModel):
     source_provenance: str | None = None
 
 
+class ObservationDistilledFeatures(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    card_index: int | None = Field(default=None, ge=0)
+    link_kind: Literal["watch", "shorts", "other", "unknown"] = "unknown"
+    has_thumbnail: bool = False
+    has_description_snapshot: bool = False
+    has_transcript_excerpt: bool = False
+    title_token_count: int = Field(default=0, ge=0)
+    description_token_count: int = Field(default=0, ge=0)
+    channel_known: bool = True
+    duration_seconds: int | None = Field(default=None, ge=0)
+
+
+class ObservationScoreSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    risk_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    calibrated_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    uncertainty: float = Field(default=0.0, ge=0.0, le=1.0)
+    recommended_action: RecommendedAction = RecommendedAction.NONE
+    content_class: ContentClass = ContentClass.UNKNOWN
+    content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    explanation_id: str | None = None
+
+
+class ObservationProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    observed_at: str = Field(min_length=1)
+    collector: Literal["extension-dom", "api", "unknown"] = "unknown"
+    collector_version: str | None = None
+    session_id: str | None = None
+    page_url: str | None = None
+    source_path: str | None = None
+
+
+class BrowserObservationRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    observation_id: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    item_hash: str | None = None
+    title_snapshot: str = Field(min_length=1)
+    channel_name: str | None = None
+    channel_url: str | None = None
+    link_url: str | None = None
+    thumbnail_ref: str | None = None
+    description_snapshot: str | None = None
+    transcript_excerpt: str | None = None
+    metadata: ItemMetadata = Field(default_factory=ItemMetadata)
+    runtime_context: RuntimeContext = Field(default_factory=RuntimeContext)
+    distilled_features: ObservationDistilledFeatures = Field(default_factory=ObservationDistilledFeatures)
+    score_snapshot: ObservationScoreSnapshot = Field(default_factory=ObservationScoreSnapshot)
+    provenance: ObservationProvenance
+
+
 class ScoreItemRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -149,6 +206,79 @@ class ArtifactProvenance(BaseModel):
     policy_version: str | None = None
     policy_build_id: str | None = None
     policy_artifact_status: str | None = None
+
+
+class LabelCandidateFeedbackSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total_events: int = Field(default=0, ge=0)
+    risk_event_count: int = Field(default=0, ge=0)
+    benign_event_count: int = Field(default=0, ge=0)
+    manual_report_count: int = Field(default=0, ge=0)
+    last_user_action: str | None = None
+
+
+class LabelCandidateSplitSafety(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_membership: Literal[
+        "existing-batch",
+        "supplemental-intake",
+        "supplemental-adjudicated",
+    ] = "supplemental-intake"
+    split_status: Literal[
+        "assigned",
+        "blocked-until-ingestion",
+        "excluded-from-training",
+    ] = "blocked-until-ingestion"
+    split_name: Literal["train", "validation", "test", "unknown"] = "unknown"
+    dataset_build_id: str | None = None
+    annotation_run_id: str | None = None
+    eligible_for_training: bool = False
+    leakage_guard_reason: str | None = None
+
+
+class LabelCandidateProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    generated_at: str = Field(min_length=1)
+    generator: str = "browser-feedback-intake-v1"
+    candidate_sources: list[
+        Literal["pipeline-batch", "browser-observation", "feedback-event", "manual-report"]
+    ] = Field(default_factory=list)
+    observation_ids: list[str] = Field(default_factory=list)
+    feedback_event_ids: list[str] = Field(default_factory=list)
+    source_paths: list[str] = Field(default_factory=list)
+
+
+LabelCandidateQueue = Literal["review", "hard-negative", "disagreement"]
+
+
+class LabelCandidate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    candidate_id: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    queue_name: LabelCandidateQueue
+    origin: Literal["pipeline-batch", "supplemental-intake"] = "pipeline-batch"
+    title: str = Field(min_length=1)
+    channel_name: str | None = None
+    weak_label_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    uncertainty_bucket: str | None = None
+    source_trust_flag: str | None = None
+    template_cluster: str | None = None
+    prior_flags: int | None = Field(default=None, ge=0)
+    content_class: str = Field(default="unknown", min_length=1)
+    content_class_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    dominant_bias_risk: str | None = None
+    bias_review_required: bool | None = None
+    current_labels: dict[str, bool] = Field(default_factory=dict)
+    annotator_notes: list[str] = Field(default_factory=list)
+    queue_reason: str | None = None
+    distilled_features: ObservationDistilledFeatures | None = None
+    feedback_summary: LabelCandidateFeedbackSummary = Field(default_factory=LabelCandidateFeedbackSummary)
+    provenance: LabelCandidateProvenance
+    split_safety: LabelCandidateSplitSafety = Field(default_factory=LabelCandidateSplitSafety)
 
 
 class ManualReportIssue(BaseModel):
@@ -421,8 +551,10 @@ class BatchScoreResponse(BaseModel):
 class FeedbackEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    feedback_id: str | None = None
     item_id: str = Field(min_length=1)
     item_hash: str | None = None
+    observation_id: str | None = None
     channel_name: str | None = None
     model_version: str = Field(min_length=1)
     policy_version: str = Field(min_length=1)
@@ -432,6 +564,8 @@ class FeedbackEvent(BaseModel):
     before_score: float | None = Field(default=None, ge=0.0, le=1.0)
     after_score: float | None = Field(default=None, ge=0.0, le=1.0)
     timestamp: str = Field(min_length=1)
+    runtime_context: RuntimeContext | None = None
+    artifact_provenance: ArtifactProvenance | None = None
     manual_report: ManualReport | None = None
 
 
