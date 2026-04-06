@@ -104,6 +104,8 @@ Benchmark source of truth:
 - [Benchmark README](docs/benchmarks/README.md)
 - [Latest summary JSON](docs/benchmarks/latest/benchmark_summary.json)
 - [Latest summary Markdown](docs/benchmarks/latest/benchmark_summary.md)
+- [Latest verify JSON](docs/benchmarks/latest/verify_summary.json)
+- [Latest verify Markdown](docs/benchmarks/latest/verify_summary.md)
 
 Current committed snapshot:
 
@@ -225,6 +227,7 @@ pnpm test:e2e
 pnpm runtime:promote-auto
 pnpm docs:render-architecture
 pnpm docs:render-benchmarks
+pnpm docs:render-verify
 ```
 
 ### Training / Simulation Reproduction

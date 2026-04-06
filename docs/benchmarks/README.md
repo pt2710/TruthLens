@@ -13,6 +13,8 @@ Primary outputs:
 
 - `latest/benchmark_summary.json`
 - `latest/benchmark_summary.md`
+- `latest/verify_summary.json`
+- `latest/verify_summary.md`
 - `latest/assets/*.svg`
 - `latest/assets/overall_metrics_table.md`
 - `latest/interactive/*.html`
@@ -23,6 +25,7 @@ Regenerate everything with:
 ```powershell
 pnpm runtime:promote-auto
 pnpm docs:render-benchmarks
+pnpm docs:render-verify
 ```
 
 Current committed caveat:

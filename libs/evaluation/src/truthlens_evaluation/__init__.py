@@ -11,6 +11,7 @@ from .runtime_governance import (
     persist_runtime_governance_summary,
 )
 from .simulation import run_threshold_sweep
+from .verification_summary import build_verify_summary, render_verify_summary, run_verify_commands
 
 __all__ = [
     "apply_runtime_promotion",
@@ -30,7 +31,10 @@ __all__ = [
     "run_evolutionary_search",
     "run_policy_replay",
     "run_contextual_bandit",
+    "run_verify_commands",
     "run_threshold_sweep",
+    "render_verify_summary",
     "search_threshold_family",
     "state_key_for_score",
+    "build_verify_summary",
 ]

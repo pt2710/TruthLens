@@ -12,6 +12,7 @@
     "format": "pnpm exec prettier --check .",
     "docs:render-architecture": "node scripts/render_architecture_diagram.mjs",
     "docs:render-benchmarks": "py -m uv run python scripts/render_benchmark_visualizations.py",
+    "docs:render-verify": "py -m uv run python scripts/render_verify_summary.py",
     "runtime:promote-auto": "py -m uv run python scripts/promote_runtime_policy.py --mode auto"
   },
   "devDependencies": {

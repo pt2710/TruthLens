@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-06T04:49:36.017741+00:00",
+  "generated_at": "2026-04-06T05:09:17.814369+00:00",
   "build_id": "build-20260406042818",
   "model_version": "baseline-v1-build-20260406042818",
   "trained_at": "2026-04-06T04:28:18.606357+00:00",
@@ -28,7 +28,7 @@
     "runtime_policy": "2026-04-06T04:40:02.540092+00:00",
     "thresholds": "2026-04-06T04:28:51.397798+00:00",
     "bseo_policy": "2026-04-06T04:28:51.402820+00:00",
-    "runtime_governance": "2026-04-06T04:49:36.003970+00:00"
+    "runtime_governance": "2026-04-06T05:09:17.802052+00:00"
   },
   "runtime_truth": {
     "configured_policy_mode": "bseo-shadow",
@@ -43,7 +43,7 @@
     "live_eligible": false
   },
   "runtime_governance": {
-    "generated_at": "2026-04-06T04:49:35.998957+00:00",
+    "generated_at": "2026-04-06T05:09:17.799241+00:00",
     "build_id": "build-20260406042818",
     "runtime_policy": {
       "configured_mode": "bseo-shadow",
@@ -59,7 +59,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 0.355,
+        "age_hours": 0.683,
         "build_id": "build-20260406042818",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -80,7 +80,7 @@
       "calibration_error": 0.2201,
       "bseo_objective_score": 0.8344,
       "benign_false_positive_rate": 0.0,
-      "shadow_observation_count": 8
+      "shadow_observation_count": 16
     },
     "promotion": {
       "shadow_eligible": true,
