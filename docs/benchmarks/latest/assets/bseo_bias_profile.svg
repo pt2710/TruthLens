@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="380" viewBox="0 0 1000 380" role="img">
+<style>
+text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+.title { font-size: 24px; font-weight: 700; }
+.subtitle { font-size: 12px; fill: #475569; }
+.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
+.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
+.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
+.label { font-size: 13px; fill: #475569; }
+.value { font-size: 28px; font-weight: 700; }
+.small { font-size: 11px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1; }
+.grid { stroke: #e2e8f0; stroke-width: 1; }
+.legend { font-size: 12px; fill: #334155; }
+.stub { font-size: 16px; font-weight: 600; }
+</style>
+<rect x="0" y="0" width="1000" height="380" fill="#ffffff" />
+<text class="title" x="40" y="48">BSEO bias profile</text>
+<text class="subtitle" x="40" y="72">Macro bias signature from committed BSEO artifacts</text>
+<rect class="warn" x="40" y="112" width="920" height="220" rx="18" />
+<text class="stub" x="72" y="168">Data unavailable for this visualization</text>
+<text class="subtitle" x="72" y="206">No committed BSEO bias signature was available. This is expected when the root repo has</text>
+<text class="subtitle" x="72" y="224">not promoted a bseo-policy artifact or populated bseo simulation output.</text>
+</svg>

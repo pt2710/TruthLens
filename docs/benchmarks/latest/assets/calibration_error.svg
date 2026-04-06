@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img">
+<style>
+text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+.title { font-size: 24px; font-weight: 700; }
+.subtitle { font-size: 12px; fill: #475569; }
+.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
+.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
+.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
+.label { font-size: 13px; fill: #475569; }
+.value { font-size: 28px; font-weight: 700; }
+.small { font-size: 11px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1; }
+.grid { stroke: #e2e8f0; stroke-width: 1; }
+.legend { font-size: 12px; fill: #334155; }
+.stub { font-size: 16px; font-weight: 600; }
+</style>
+<rect x="0" y="0" width="1200" height="500" fill="#ffffff" />
+<text class="title" x="40" y="48">Calibration error comparison</text>
+<text class="subtitle" x="40" y="72">Lower is better. Validation calibration can look perfect on tiny samples and should not be over-interpreted.</text>
+<line class="grid" x1="60" y1="410.0" x2="1140" y2="410.0" />
+<text class="small" x="24" y="414.0">0.00</text>
+<line class="grid" x1="60" y1="350.0" x2="1140" y2="350.0" />
+<text class="small" x="24" y="354.0">0.20</text>
+<line class="grid" x1="60" y1="290.0" x2="1140" y2="290.0" />
+<text class="small" x="24" y="294.0">0.40</text>
+<line class="grid" x1="60" y1="230.0" x2="1140" y2="230.0" />
+<text class="small" x="24" y="234.0">0.60</text>
+<line class="grid" x1="60" y1="170.0" x2="1140" y2="170.0" />
+<text class="small" x="24" y="174.0">0.80</text>
+<line class="grid" x1="60" y1="110.0" x2="1140" y2="110.0" />
+<text class="small" x="24" y="114.0">1.00</text>
+<line class="axis" x1="60" y1="110" x2="60" y2="410" />
+<line class="axis" x1="60" y1="410" x2="1140" y2="410" />
+<rect x="80.0" y="284.4" width="48.0" height="125.6" fill="#7c3aed" rx="6" />
+<text class="small" x="113.8" y="434" text-anchor="middle">text</text>
+<rect x="215.0" y="333.1" width="48.0" height="76.9" fill="#7c3aed" rx="6" />
+<text class="small" x="248.8" y="434" text-anchor="middle">vision</text>
+<rect x="350.0" y="110.3" width="48.0" height="299.7" fill="#7c3aed" rx="6" />
+<text class="small" x="383.8" y="434" text-anchor="middle">metadata</text>
+<rect x="485.0" y="335.0" width="48.0" height="75.0" fill="#7c3aed" rx="6" />
+<text class="small" x="518.8" y="434" text-anchor="middle">history</text>
+<rect x="620.0" y="319.5" width="48.0" height="90.5" fill="#7c3aed" rx="6" />
+<text class="small" x="653.8" y="434" text-anchor="middle">fusion</text>
+<rect x="755.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
+<text class="small" x="788.8" y="434" text-anchor="middle">calibrated</text>
+<rect x="890.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
+<text class="small" x="923.8" y="434" text-anchor="middle">eval</text>
+<rect x="1025.0" y="410.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
+<text class="small" x="1058.8" y="434" text-anchor="middle">validation</text>
+<rect x="60" y="438" width="14" height="14" fill="#7c3aed" rx="3" />
+<text class="legend" x="82" y="450">Calibration error</text>
+</svg>

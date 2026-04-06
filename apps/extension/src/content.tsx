@@ -469,6 +469,11 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
         upload_time: uploadTime,
       },
       user_context: buildUserContext(),
+      runtime_context: {
+        surface: 'extension-feed',
+        review_requested: false,
+        source_provenance: window.location.pathname,
+      },
     },
   };
 }

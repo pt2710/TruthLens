@@ -40,6 +40,14 @@ export const userContextSchema = z.object({
   prior_corrections: z.number().int().nonnegative().default(0),
 });
 
+export const runtimeContextSchema = z.object({
+  surface: z
+    .enum(['extension-feed', 'extension-watch', 'mobile-share', 'api', 'trainer', 'unknown'])
+    .default('unknown'),
+  review_requested: z.boolean().default(false),
+  source_provenance: z.string().optional().nullable(),
+});
+
 export const scoreItemRequestSchema = z.object({
   item_id: z.string().min(1),
   title: z.string().min(1),
@@ -53,6 +61,11 @@ export const scoreItemRequestSchema = z.object({
     muted_channels: [],
     prior_corrections: 0,
   }),
+  runtime_context: runtimeContextSchema.default({
+    surface: 'unknown',
+    review_requested: false,
+    source_provenance: null,
+  }),
 });
 
 export const explanationEvidenceSchema = z.object({
@@ -65,6 +78,7 @@ export const explanationEvidenceSchema = z.object({
     'policy',
     'taxonomy',
     'bias',
+    'verification',
     'user-context',
     'uncertainty',
   ]),
@@ -78,6 +92,44 @@ export const biasProfileSchema = z.object({
   positive_biases: z.array(z.string()).default([]),
   negative_biases: z.array(z.string()).default([]),
   guardrail_applied: z.string().optional().nullable(),
+});
+
+export const verificationStatusSchema = z.enum([
+  'not-requested',
+  'completed',
+  'failed-soft',
+]);
+
+export const verificationTriggerSchema = z.enum([
+  'high-risk',
+  'high-uncertainty',
+  'high-mismatch',
+  'threshold-near',
+  'review-flow',
+]);
+
+export const verificationProvenanceSchema = z.object({
+  status: verificationStatusSchema.default('not-requested'),
+  triggers: z.array(verificationTriggerSchema).default([]),
+  reasons: z.array(z.string()).default([]),
+  summary: z.string().optional().nullable(),
+  review_recommended: z.boolean().default(false),
+});
+
+export const actionDecisionBasisSchema = z.object({
+  threshold_action: recommendedActionSchema.default('none'),
+  final_action: recommendedActionSchema.default('none'),
+  decisive_layer: z.enum(['threshold', 'bseo-live', 'muted-channel']).default('threshold'),
+  verification_considered: z.boolean().default(false),
+  policy_reason: z.string().optional().nullable(),
+});
+
+export const artifactProvenanceSchema = z.object({
+  model_version: z.string().optional().nullable(),
+  model_build_id: z.string().optional().nullable(),
+  policy_version: z.string().optional().nullable(),
+  policy_build_id: z.string().optional().nullable(),
+  policy_artifact_status: z.string().optional().nullable(),
 });
 
 export const manualReportIssueTypeSchema = z.enum([
@@ -270,8 +322,13 @@ export const youtubeReportResponseSchema = z.object({
 export const scoreResultSchema = z
   .object({
     risk_score: z.number().min(0).max(1),
+    fused_score: z.number().min(0).max(1).default(0),
+    calibrated_score: z.number().min(0).max(1).default(0),
     confidence: z.number().min(0).max(1),
     uncertainty: z.number().min(0).max(1),
+    uncertainty_bucket: z.enum(['low', 'medium', 'high']).default('low'),
+    path_scores: z.record(z.number()).default({}),
+    path_contributors: z.record(z.array(z.string())).default({}),
     content_class: contentClassSchema.default('unknown'),
     content_class_confidence: z.number().min(0).max(1).default(0),
     bias_profile: biasProfileSchema.default({
@@ -279,6 +336,29 @@ export const scoreResultSchema = z
       positive_biases: [],
       negative_biases: [],
       guardrail_applied: null,
+    }),
+    verification: verificationProvenanceSchema.default({
+      status: 'not-requested',
+      triggers: [],
+      reasons: [],
+      summary: null,
+      review_recommended: false,
+    }),
+    action_decision_basis: actionDecisionBasisSchema.default({
+      threshold_action: 'none',
+      final_action: 'none',
+      decisive_layer: 'threshold',
+      verification_considered: false,
+      policy_reason: null,
+    }),
+    policy_mode: z.string().default('threshold-default'),
+    resolved_policy_mode: z.string().default('threshold-default'),
+    artifact_provenance: artifactProvenanceSchema.default({
+      model_version: null,
+      model_build_id: null,
+      policy_version: null,
+      policy_build_id: null,
+      policy_artifact_status: null,
     }),
     recommended_action: recommendedActionSchema,
     reasons: z.array(z.string()),
@@ -365,7 +445,13 @@ export type BiasProfile = z.infer<typeof biasProfileSchema>;
 export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;
 export type DatasetRecord = z.infer<typeof datasetRecordSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;
+export type RuntimeContext = z.infer<typeof runtimeContextSchema>;
 export type ManualReportIssueType = z.infer<typeof manualReportIssueTypeSchema>;
+export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
+export type VerificationTrigger = z.infer<typeof verificationTriggerSchema>;
+export type VerificationProvenance = z.infer<typeof verificationProvenanceSchema>;
+export type ActionDecisionBasis = z.infer<typeof actionDecisionBasisSchema>;
+export type ArtifactProvenance = z.infer<typeof artifactProvenanceSchema>;
 export type ManualReportWorkflowMode = z.infer<
   typeof manualReportWorkflowModeSchema
 >;

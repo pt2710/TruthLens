@@ -6,12 +6,29 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from typing import Literal
+from typing import cast
 
 from truthlens_feature_extractors import CONTENT_CLASSES
 from truthlens_explanation_engine.explainer import build_explanation
-from truthlens_model_serving import load_feedback_events, predict_item_signals, summarize_feedback_events
+from truthlens_model_serving import (
+    load_feedback_events,
+    load_model_info,
+    predict_item_signals,
+    summarize_feedback_events,
+)
 from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPEC_VERSION
-from truthlens_shared_schemas.contracts import RecommendedAction, ScoreItemRequest, ScoreResult
+from truthlens_model_serving.verification import run_selective_verification
+from truthlens_shared_schemas.contracts import (
+    ActionDecisionBasis,
+    ArtifactProvenance,
+    BiasProfile,
+    ContentClass,
+    RecommendedAction,
+    ScoreItemRequest,
+    ScoreResult,
+    VerificationProvenance,
+)
 
 DEFAULT_THRESHOLDS = {
     "badge_threshold": 0.35,
@@ -21,7 +38,7 @@ DEFAULT_THRESHOLDS = {
 }
 THRESHOLD_NAMES = tuple(DEFAULT_THRESHOLDS.keys())
 
-DEFAULT_RUNTIME_POLICY_CONFIG = {
+DEFAULT_RUNTIME_POLICY_CONFIG: dict[str, Any] = {
     "policy_mode": "bseo-shadow",
     "bseo_min_confidence": 0.58,
     "bseo_max_uncertainty": 0.45,
@@ -30,7 +47,7 @@ DEFAULT_RUNTIME_POLICY_CONFIG = {
 
 ACTION_NAMES = [action.value for action in RecommendedAction]
 _ACTION_BY_NAME = {action.value: action for action in RecommendedAction}
-_POLICY_RUNTIME_STATS = {
+_POLICY_RUNTIME_STATS: dict[str, Any] = {
     "total_decisions": 0,
     "threshold_decisions": 0,
     "bseo_live_decisions": 0,
@@ -118,12 +135,13 @@ def _normalized_policy_mode(mode: str) -> str:
 
 def _load_runtime_policy_config() -> dict[str, Any]:
     path = _repo_root() / "configs" / "thresholds" / "runtime-policy.json"
-    merged = DEFAULT_RUNTIME_POLICY_CONFIG.copy()
+    merged: dict[str, Any] = DEFAULT_RUNTIME_POLICY_CONFIG.copy()
     if not path.exists():
         payload: dict[str, Any] = {}
     else:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(payload, dict):
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+        payload = cast(dict[str, Any], loaded) if isinstance(loaded, dict) else {}
+    if payload:
         merged.update({key: value for key, value in payload.items() if value is not None})
     if "bseo_min_confidence" not in merged and "rl_min_confidence" in merged:
         merged["bseo_min_confidence"] = merged["rl_min_confidence"]
@@ -344,6 +362,49 @@ def _record_policy_metrics(
         _POLICY_RUNTIME_STATS["fallback_reasons"][fallback_reason] += 1
 
 
+def _uncertainty_bucket(uncertainty: float) -> Literal["low", "medium", "high"]:
+    if uncertainty >= 0.35:
+        return "high"
+    if uncertainty >= 0.2:
+        return "medium"
+    return "low"
+
+
+def _path_scores(signals: Any) -> dict[str, float]:
+    return {
+        "text": round(float(signals.text_score), 4),
+        "vision": round(float(signals.vision_score), 4),
+        "metadata": round(float(signals.metadata_score), 4),
+        "history": round(float(signals.history_score), 4),
+        "anomaly": round(float(signals.anomaly_score), 4),
+        "fusion": round(float(signals.fusion_score), 4),
+        "calibration": round(float(signals.calibrated_score), 4),
+    }
+
+
+def _path_contributors(feature_summary: dict[str, Any]) -> dict[str, list[str]]:
+    mapping = {
+        "text": "text_top_contributors",
+        "vision": "vision_top_contributors",
+        "metadata": "metadata_top_contributors",
+        "history": "history_top_contributors",
+        "anomaly": "anomaly_top_contributors",
+        "fusion": "fusion_top_contributors",
+    }
+    contributors: dict[str, list[str]] = {}
+    for path_name, key in mapping.items():
+        values = feature_summary.get(key, [])
+        if not isinstance(values, list):
+            contributors[path_name] = []
+            continue
+        contributors[path_name] = [
+            str(item.get("name", "")).replace("_", " ")
+            for item in values[:3]
+            if isinstance(item, dict) and item.get("name")
+        ]
+    return contributors
+
+
 def _resolve_bseo_action(
     payload: ScoreItemRequest,
     *,
@@ -397,6 +458,7 @@ def _resolve_bseo_action(
             "artifact_summary": artifact_summary,
             "fallback_reason": "low-class-confidence",
         }
+    assert artifact is not None
     control_genome = artifact.get("control_genome", {}) if artifact is not None else {}
     if not isinstance(control_genome, dict):
         return {
@@ -521,6 +583,14 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
     muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
     muted_channel_key = payload.channel.channel_name.strip().lower()
     muted_channel = bool(muted_channel_key) and muted_channel_key != "unknown channel" and muted_channel_key in muted_channels
+    verification = run_selective_verification(payload, signals, thresholds=thresholds)
+    signals.feature_summary["verification"] = {
+        "status": verification.status,
+        "triggers": list(verification.triggers),
+        "reasons": list(verification.reasons),
+        "summary": verification.summary,
+        "review_recommended": verification.review_recommended,
+    }
 
     threshold_action = _resolve_threshold_action(risk_score, thresholds, muted_channel=muted_channel)
     final_action = threshold_action
@@ -570,28 +640,84 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
         used_bseo_live=used_bseo_live,
     )
     bias_profile = signals.feature_summary.get("bias_profile", {})
+    model_info = load_model_info()
+    artifact_summary = policy_profile["bseo_artifact"]
+    if muted_channel:
+        decisive_layer = "muted-channel"
+    elif used_bseo_live:
+        decisive_layer = "bseo-live"
+    else:
+        decisive_layer = "threshold"
+    policy_reason = signals.feature_summary.get("runtime_policy_note")
+    if not isinstance(policy_reason, str) or not policy_reason:
+        policy_reason = verification.summary if verification.status == "completed" else None
+
+    resolved_verification_status = cast(
+        Literal["not-requested", "completed", "failed-soft"],
+        verification.status,
+    )
+    resolved_verification_triggers = cast(
+        list[Literal["high-risk", "high-uncertainty", "high-mismatch", "threshold-near", "review-flow"]],
+        list(verification.triggers),
+    )
+    resolved_decisive_layer = cast(
+        Literal["threshold", "bseo-live", "muted-channel"],
+        decisive_layer,
+    )
+    resolved_content_class = cast(
+        ContentClass,
+        str(signals.feature_summary.get("content_class", "unknown")),
+    )
 
     return ScoreResult(
         risk_score=round(risk_score, 2),
+        fused_score=round(float(signals.fusion_score), 2),
+        calibrated_score=round(float(signals.calibrated_score), 2),
         confidence=round(confidence, 2),
         uncertainty=round(uncertainty, 2),
-        content_class=str(signals.feature_summary.get("content_class", "unknown")),
+        uncertainty_bucket=_uncertainty_bucket(float(uncertainty)),
+        path_scores=_path_scores(signals),
+        path_contributors=_path_contributors(signals.feature_summary),
+        content_class=resolved_content_class,
         content_class_confidence=round(
             float(signals.feature_summary.get("content_class_confidence", 0.0)),
             2,
         ),
-        bias_profile={
-            "metrics": dict(bias_profile.get("metrics", {})) if isinstance(bias_profile, dict) else {},
-            "positive_biases": list(bias_profile.get("positive_biases", []))
+        bias_profile=BiasProfile(
+            metrics=dict(bias_profile.get("metrics", {})) if isinstance(bias_profile, dict) else {},
+            positive_biases=list(bias_profile.get("positive_biases", []))
             if isinstance(bias_profile, dict)
             else [],
-            "negative_biases": list(bias_profile.get("negative_biases", []))
+            negative_biases=list(bias_profile.get("negative_biases", []))
             if isinstance(bias_profile, dict)
             else [],
-            "guardrail_applied": bias_profile.get("guardrail_applied")
+            guardrail_applied=bias_profile.get("guardrail_applied")
             if isinstance(bias_profile, dict)
             else None,
-        },
+        ),
+        verification=VerificationProvenance(
+            status=resolved_verification_status,
+            triggers=resolved_verification_triggers,
+            reasons=list(verification.reasons),
+            summary=verification.summary,
+            review_recommended=verification.review_recommended,
+        ),
+        action_decision_basis=ActionDecisionBasis(
+            threshold_action=threshold_action,
+            final_action=final_action,
+            decisive_layer=resolved_decisive_layer,
+            verification_considered=verification.status == "completed",
+            policy_reason=policy_reason,
+        ),
+        policy_mode=str(policy_profile["policy_mode"]),
+        resolved_policy_mode=str(policy_profile["resolved_policy_mode"]),
+        artifact_provenance=ArtifactProvenance(
+            model_version=str(model_info.get("model_version", signals.model_version)),
+            model_build_id=model_info.get("build_id"),
+            policy_version=str(policy_profile["policy_version"]),
+            policy_build_id=artifact_summary.get("build_id"),
+            policy_artifact_status=artifact_summary.get("status"),
+        ),
         recommended_action=final_action,
         reasons=explanation.reasons,
         explanation_id=explanation.explanation_id,

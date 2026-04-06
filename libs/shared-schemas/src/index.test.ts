@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   datasetRecordSchema,
   manualReportSuggestionRequestSchema,
+  scoreItemRequestSchema,
   scoreResultSchema,
 } from './index';
 
@@ -25,8 +26,13 @@ describe('shared schemas', () => {
   it('accepts structured explanation payloads for active recommendations', () => {
     const result = scoreResultSchema.safeParse({
       risk_score: 0.8,
+      fused_score: 0.76,
+      calibrated_score: 0.74,
       confidence: 0.9,
       uncertainty: 0.1,
+      uncertainty_bucket: 'low',
+      path_scores: { text: 0.81, vision: 0.64, fusion: 0.76, calibration: 0.74 },
+      path_contributors: { text: ['breaking', 'confirmed'] },
       content_class: 'news',
       content_class_confidence: 0.88,
       bias_profile: {
@@ -34,6 +40,29 @@ describe('shared schemas', () => {
         positive_biases: ['factual-scrutiny'],
         negative_biases: ['sensational-overweighting'],
         guardrail_applied: 'factual-context-amplifies-mismatch',
+      },
+      verification: {
+        status: 'completed',
+        triggers: ['high-risk', 'threshold-near'],
+        reasons: ['Selective verification confirmed elevated packaging mismatch.'],
+        summary: 'Selective verification confirmed elevated packaging mismatch.',
+        review_recommended: true,
+      },
+      action_decision_basis: {
+        threshold_action: 'blur',
+        final_action: 'blur',
+        decisive_layer: 'threshold',
+        verification_considered: true,
+        policy_reason: 'Selective verification confirmed elevated packaging mismatch.',
+      },
+      policy_mode: 'bseo-shadow',
+      resolved_policy_mode: 'bseo-shadow',
+      artifact_provenance: {
+        model_version: 'baseline-v1-build-test',
+        model_build_id: 'build-test',
+        policy_version: 'bseo-control-policy-v1-shadow',
+        policy_build_id: 'build-bseo',
+        policy_artifact_status: 'compatible',
       },
       recommended_action: 'blur',
       reasons: ['Title contains strong sensational framing patterns.'],
@@ -45,6 +74,12 @@ describe('shared schemas', () => {
           label: 'Sensational title framing',
           score: 0.88,
           details: 'Multiple high-intensity claim tokens were detected in the title.',
+        },
+        {
+          kind: 'verification',
+          label: 'Selective deep verification completed',
+          score: 0.74,
+          details: 'Selective verification confirmed elevated packaging mismatch.',
         },
       ],
     });
@@ -95,5 +130,17 @@ describe('shared schemas', () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it('adds runtime context defaults to score requests', () => {
+    const result = scoreItemRequestSchema.parse({
+      item_id: 'item-1',
+      title: 'Breaking aliens confirmed',
+      metadata: {},
+      channel: { channel_name: 'TruthLens Test' },
+    });
+
+    expect(result.runtime_context.surface).toBe('unknown');
+    expect(result.runtime_context.review_requested).toBe(false);
   });
 });

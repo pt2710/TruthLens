@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { scoreResultSchema } from '@truthlens/shared-schemas';
 
 import type { FeedbackChannelProfile } from './api';
 import {
@@ -27,7 +28,7 @@ function buildChannelProfile(overrides: Partial<FeedbackChannelProfile>): Feedba
 describe('buildPersonalizationSnapshot', () => {
   it('boosts high-trust transparent channels when the current item looks consistent', () => {
     const snapshot = buildPersonalizationSnapshot(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.18,
         confidence: 0.84,
         uncertainty: 0.16,
@@ -44,7 +45,7 @@ describe('buildPersonalizationSnapshot', () => {
         explanation_id: null,
         explanation_summary: null,
         evidence: [],
-      },
+      }),
       buildChannelProfile({
         channel_name: 'Context First Media',
         trust_score: 8.6,
@@ -55,7 +56,7 @@ describe('buildPersonalizationSnapshot', () => {
 
     expect(snapshot.bucket).toBe('boosted');
     expect(snapshot.rankingScore).toBeGreaterThan(9.0);
-    expect(shouldShowPersonalizationBadge(snapshot, {
+    expect(shouldShowPersonalizationBadge(snapshot, scoreResultSchema.parse({
       risk_score: 0.18,
       confidence: 0.84,
       uncertainty: 0.16,
@@ -72,12 +73,12 @@ describe('buildPersonalizationSnapshot', () => {
       explanation_id: null,
       explanation_summary: null,
       evidence: [],
-    })).toBe(true);
+    }))).toBe(true);
   });
 
   it('downranks channels with repeated reports and an active misleading recommendation', () => {
     const snapshot = buildPersonalizationSnapshot(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.74,
         confidence: 0.88,
         uncertainty: 0.12,
@@ -94,7 +95,7 @@ describe('buildPersonalizationSnapshot', () => {
         explanation_id: 'exp-card-1',
         explanation_summary: 'Flagged because the title framing is sensational.',
         evidence: [],
-      },
+      }),
       buildChannelProfile({
         channel_name: 'OpenSky Alerts',
         trust_score: 3.4,
@@ -112,7 +113,7 @@ describe('buildPersonalizationSnapshot', () => {
 
   it('keeps moderate-risk cards steady when the channel history is mixed', () => {
     const snapshot = buildPersonalizationSnapshot(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.44,
         confidence: 0.79,
         uncertainty: 0.21,
@@ -129,7 +130,7 @@ describe('buildPersonalizationSnapshot', () => {
         explanation_id: 'exp-card-dynamic',
         explanation_summary: 'Flagged because the dynamic card entered the moderate-risk review band.',
         evidence: [],
-      },
+      }),
       buildChannelProfile({
         channel_name: 'Dynamic Signal Desk',
         trust_score: 5.2,

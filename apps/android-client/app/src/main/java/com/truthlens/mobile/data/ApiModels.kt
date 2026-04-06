@@ -8,6 +8,12 @@ data class UserContextDto(
     @SerializedName("prior_corrections") val priorCorrections: Int = 0,
 )
 
+data class RuntimeContextDto(
+    val surface: String = "unknown",
+    @SerializedName("review_requested") val reviewRequested: Boolean = false,
+    @SerializedName("source_provenance") val sourceProvenance: String? = null,
+)
+
 data class ItemMetadataDto(
     @SerializedName("upload_time") val uploadTime: String? = null,
     @SerializedName("duration_seconds") val durationSeconds: Int? = null,
@@ -29,13 +35,47 @@ data class BiasProfileDto(
     @SerializedName("guardrail_applied") val guardrailApplied: String? = null,
 )
 
+data class VerificationProvenanceDto(
+    val status: String = "not-requested",
+    val triggers: List<String> = emptyList(),
+    val reasons: List<String> = emptyList(),
+    val summary: String? = null,
+    @SerializedName("review_recommended") val reviewRecommended: Boolean = false,
+)
+
+data class ActionDecisionBasisDto(
+    @SerializedName("threshold_action") val thresholdAction: String = "none",
+    @SerializedName("final_action") val finalAction: String = "none",
+    @SerializedName("decisive_layer") val decisiveLayer: String = "threshold",
+    @SerializedName("verification_considered") val verificationConsidered: Boolean = false,
+    @SerializedName("policy_reason") val policyReason: String? = null,
+)
+
+data class ArtifactProvenanceDto(
+    @SerializedName("model_version") val modelVersion: String? = null,
+    @SerializedName("model_build_id") val modelBuildId: String? = null,
+    @SerializedName("policy_version") val policyVersion: String? = null,
+    @SerializedName("policy_build_id") val policyBuildId: String? = null,
+    @SerializedName("policy_artifact_status") val policyArtifactStatus: String? = null,
+)
+
 data class ScoreResultDto(
     @SerializedName("risk_score") val riskScore: Double,
+    @SerializedName("fused_score") val fusedScore: Double = 0.0,
+    @SerializedName("calibrated_score") val calibratedScore: Double = 0.0,
     val confidence: Double,
     val uncertainty: Double,
+    @SerializedName("uncertainty_bucket") val uncertaintyBucket: String = "low",
+    @SerializedName("path_scores") val pathScores: Map<String, Double> = emptyMap(),
+    @SerializedName("path_contributors") val pathContributors: Map<String, List<String>> = emptyMap(),
     @SerializedName("content_class") val contentClass: String = "unknown",
     @SerializedName("content_class_confidence") val contentClassConfidence: Double = 0.0,
     @SerializedName("bias_profile") val biasProfile: BiasProfileDto = BiasProfileDto(),
+    val verification: VerificationProvenanceDto = VerificationProvenanceDto(),
+    @SerializedName("action_decision_basis") val actionDecisionBasis: ActionDecisionBasisDto = ActionDecisionBasisDto(),
+    @SerializedName("policy_mode") val policyMode: String = "threshold-default",
+    @SerializedName("resolved_policy_mode") val resolvedPolicyMode: String = "threshold-default",
+    @SerializedName("artifact_provenance") val artifactProvenance: ArtifactProvenanceDto = ArtifactProvenanceDto(),
     @SerializedName("recommended_action") val recommendedAction: String,
     val reasons: List<String>,
     @SerializedName("explanation_id") val explanationId: String?,

@@ -1,93 +1,116 @@
 # TruthLens Architecture
 
+`docs/architecture/REFERENCE_ARCHITECTURE.md` is the authoritative reference architecture for TruthLens.
+
+This file is the shorter operator-facing contract that points to the runtime truth, repository boundaries, and verification discipline.
+
 ## Mission
 
-TruthLens is a multimodal system for detecting, explaining, filtering, and supporting semi-automated review of misleading video content through a browser extension, a model/policy backend, and a companion Android share client.
+TruthLens is a multimodal detection, explanation, filtering, and human-review support system for misleading video packaging across browser, API, trainer, and Android surfaces.
 
-## System Layers
+## Runtime Order
 
-1. Extension layer
-2. Mobile client layer
-3. Cross-platform client contract layer
-4. Data discovery layer
-5. Acquisition layer
-6. Normalization layer
-7. Dataset governance layer
-8. Feature layer
-9. Inference layer
-10. Policy layer
-11. Explanation layer
-12. Feedback layer
-13. Evaluation layer
-14. Orchestration layer
+TruthLens runtime is organized as:
 
-## Repository Structure
+1. input and context
+2. core multimodal perception
+3. fusion and calibration
+4. selective deep verification
+5. policy and action selection
+6. explanation and review provenance
 
-The repository is organized as a monorepo with:
-
-- `apps/` for runnable surfaces such as the API, extension, trainer, and labeling UI
-- `libs/` for shared schemas, data pipeline code, governance, policy, explanation, model serving, and evaluation
-- `infra/` for Docker, Compose, CI, DB, and migrations
-- `configs/` for environment, threshold, model, labeling, and dataset configuration
-- `datasets/` for tracked manifests/cards and untracked runtime data areas
-- `artifacts/` for model and evaluation outputs
-- `docs/` for architecture, API, workpacks, decisions, and subagent documentation
-- `tests/` for unit, integration, e2e, and fixture coverage
+That order is strict. Perception, verification, policy, and explanation must not be collapsed into one opaque layer.
 
 ## Core Contracts
 
-- All scoring outputs must include `risk_score`, `confidence`, `uncertainty`, `recommended_action`, and `reasons`.
-- Active recommendations require at least one explanation string.
+- Scoring outputs must include `risk_score`, `confidence`, `uncertainty`, `recommended_action`, and `reasons`.
+- Runtime outputs must also surface provenance for path signals, verification state, policy basis, and artifact lineage.
 - Auto-actions may not trigger from raw model score alone.
+- Selective deep verification must be explicit and fail soft.
+- Heavy LLM assistance must remain outside the baseline scoring hot path.
 - Channel history is a supporting signal, not a sole verdict.
-- Feedback events must be auditable and versioned.
-- Model training is blocked until dataset governance artifacts are complete.
-- Optional learned encoder paths must degrade safely to explicit fallback paths when dependencies, artifacts, or runtime media bytes are unavailable.
-- Runtime BSEO policy may only override threshold policy when compatible artifacts exist and guardrails pass.
-- Mobile and extension review flows must share stable versioned schemas rather than diverging client-specific payloads.
+- BSEO may influence policy only through artifact-guarded runtime-safe rules.
+- Missing or incompatible artifacts must fall back safely.
+- Training is blocked until governance artifacts validate.
+- Mobile and extension review flows must share stable schemas rather than drift apart.
 
-## BSEO Interpretation Frame
+## Layer Boundaries
 
-TruthLens treats BSEO as a bias-and-interpretation layer rather than a hardcoded rule engine.
+### Core Multimodal Perception
 
-Two prior lists drive that layer:
+Required:
 
-- benign-by-default contexts that should not be auto-classified as clickbait merely because they are dramatic, stylized, or commercial
-- suspicious-by-default patterns that should trigger higher skepticism because they rely on misleading promises, fake urgency, fake authority, or systematic packaging mismatch
+- text path
+- vision path
+- metadata path
+- cross-signal mismatch logic
 
-This frame is evaluated across the same operational parameters used elsewhere in the system:
+Optional committed sidecars:
 
-- `Thumbnail`
-- `Title`
-- `Description`
-- `Transcription`
-- `Channel`
-- `Other`
+- history path
+- anomaly path
+- bounded learned encoders
 
-The current runtime taxonomy remains fixed to `news`, `commentary`, `documentary`, `music`, `art`, `satire`, `gaming`, `promo`, and `unknown`, but broader priors such as tutorials, reviews, sports, education, official trailers, and user verification are folded into those classes as positive or negative bias frames.
+### Selective Deep Verification
 
-## V1 / V2 / V3 Boundaries
+Verification may run only when triggered by:
 
-- V1: data pipelines, first dataset build, baseline explicit-feature models, calibration, FastAPI scoring, extension overlay, blur/hide, feedback capture, simple explanations
-- V2: optional sentence-transformer text path, optional tiny-CNN thumbnail path, optional LSTM history path, VAE anomaly signal, transcript-title mismatch, personalization, replay simulator
-- V3: optional ViT thumbnail encoder, runtime BSEO action policy (`threshold-default`, `bseo-shadow`, `bseo-live`), mobile analyze/review contract, Android companion/share client, BSEO search / replay / mutation-atlas artifacts promoted into runtime-safe policy artifacts
+- high risk
+- high uncertainty
+- high mismatch
+- threshold-near cases
+- explicit review flows
 
-Post-V3 roadmap remains separate from shipped scope:
+### Policy And Action
 
-- richer video understanding beyond thumbnail/title/metadata/transcript excerpts
-- stronger end-to-end multimodal encoders beyond the current bounded optional paths
-- deeper moderation analytics and operator tooling
-- broader cross-platform expansion beyond the current Android companion scope
+Supported modes:
 
-## Subagent-Friendly Boundaries
+- `threshold-default`
+- `bseo-shadow`
+- `bseo-live`
 
-Safe parallelization targets:
+Compatibility aliases:
 
-- docs/bootstrap
-- repo hygiene and CI
-- data discovery / collection / normalization / auditing
-- shared schemas
-- extension scaffolding
-- API scaffolding
-- model research
-- evaluation and simulation
+- `rl-shadow`
+- `rl-live`
+
+### Explanation And Review
+
+Explanation must distinguish:
+
+- path reasons
+- fused reasons
+- verification reasons
+- policy reasons
+
+## BSEO Placement
+
+BSEO is:
+
+- a bias-structured interpretation frame
+- a bias-aware policy and search layer
+- a runtime-guarded downstream influence
+- an offline artifact-producing evaluation subsystem
+- an explanation-enriching context layer
+
+BSEO is not the core classifier.
+
+## Repository Boundaries
+
+- `apps/` contains runnable surfaces such as API, extension, trainer, Android client, and labeling UI
+- `libs/` contains shared schemas, feature extraction, model serving, explanation, policy, evaluation, governance, and data pipeline logic
+- `configs/` contains thresholds and runtime/training configuration
+- `artifacts/` contains trained models, evaluation runs, drift reports, and runtime-relevant exports
+- `docs/` contains architecture, benchmarks, and operational documentation
+- `tests/` contains unit, integration, and end-to-end verification
+
+## Architecture Truth Sources
+
+Use these in order:
+
+1. `docs/architecture/REFERENCE_ARCHITECTURE.md`
+2. `docs/architecture/truthlens-architecture-blueprint.svg`
+3. `docs/benchmarks/latest/benchmark_summary.json`
+4. runtime config and artifacts under `configs/` and `artifacts/`
+
+If README or diagrams diverge from committed artifacts or runtime contracts, they are stale and must be revised.

@@ -20,7 +20,7 @@ from truthlens_evaluation import (
 )
 from truthlens_model_serving import predict_item_signals
 from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPEC_VERSION
-from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, ScoreItemRequest
+from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, RuntimeContext, ScoreItemRequest
 
 
 def _label(record: dict[str, Any]) -> int:
@@ -61,6 +61,11 @@ def _score_request_from_record(record: dict[str, Any]) -> ScoreItemRequest:
             prior_flags=int(history.get("prior_flags", 0)),
             channel_history_features=history_features,
         ),
+        runtime_context=RuntimeContext(
+            surface="trainer",
+            review_requested=False,
+            source_provenance=str(record.get("source_url", "") or "") or None,
+        ),
     )
 
 
@@ -69,7 +74,7 @@ def main() -> None:
     train_rows = read_jsonl(repo_root() / manifest["artifacts"]["train"])
     test_rows = read_jsonl(repo_root() / manifest["artifacts"]["test"])
 
-    score_rows: list[dict[str, float | int]] = []
+    score_rows: list[dict[str, Any]] = []
     for row in test_rows:
         signals = predict_item_signals(_score_request_from_record(row))
         feature_summary = dict(signals.feature_summary)

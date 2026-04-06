@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from truthlens_data_pipeline.paths import read_json
+from truthlens_evaluation import render_benchmark_bundle
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(__import__("json").dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+
+
+def _seed_common_artifacts(root: Path) -> None:
+    _write_json(
+        root / "artifacts/trained_models/latest/model_info.json",
+        {
+            "build_id": "build-test",
+            "model_version": "baseline-v1-build-test",
+            "trained_at": "2026-04-06T10:00:00+00:00",
+            "head_spec_version": "2026-03-23",
+            "metrics": {"precision": 1.0, "recall": 1.0, "f1": 1.0},
+            "per_head_metrics": {
+                "text": {"metrics": {"precision": 0.4, "recall": 0.9, "f1": 0.55}, "calibration_error": 0.41},
+                "vision": {"metrics": {"precision": 0.8, "recall": 1.0, "f1": 0.89}, "calibration_error": 0.21},
+            },
+        },
+    )
+    _write_json(
+        root / "artifacts/eval_runs/build-test.json",
+        {
+            "build_id": "build-test",
+            "sample_count": 4,
+            "metrics": {"precision": 1.0, "recall": 1.0, "f1": 1.0, "roc_auc": 1.0, "pr_auc": 1.0},
+            "validation_metrics": {
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0,
+                "roc_auc": 1.0,
+                "pr_auc": 1.0,
+            },
+            "calibration_error": 0.0,
+            "validation_calibration_error": 0.0,
+            "confusion_matrix": {"tp": 1, "tn": 3, "fp": 0, "fn": 0},
+        },
+    )
+    _write_json(
+        root / "artifacts/eval_runs/build-test-simulation.json",
+        {
+            "build_id": "build-test",
+            "threshold_sweep": [
+                {"threshold": 0.2, "f1": 1.0, "intervention_cost": -0.8},
+                {"threshold": 0.8, "f1": 1.0, "intervention_cost": -0.8},
+            ],
+            "recommended_thresholds": {
+                "badge_threshold": 0.2,
+                "blur_threshold": 0.45,
+                "report_prompt_threshold": 0.65,
+                "hide_threshold": 0.8,
+            },
+        },
+    )
+    _write_json(
+        root / "artifacts/drift_reports/build-test.json",
+        {
+            "reference_count": 12,
+            "current_count": 4,
+            "title_length_shift": 1.0,
+            "sensational_count_shift": -0.5,
+            "label_rate_shift": -0.5,
+        },
+    )
+    _write_json(root / "configs/thresholds/default.json", {"badge_threshold": 0.2, "blur_threshold": 0.45, "report_prompt_threshold": 0.65, "hide_threshold": 0.8})
+    _write_json(
+        root / "configs/thresholds/runtime-policy.json",
+        {"policy_mode": "threshold-default", "rl_min_confidence": 0.72, "rl_max_uncertainty": 0.35, "rl_artifact_max_age_hours": 168},
+    )
+
+
+def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    _seed_common_artifacts(tmp_path)
+
+    summary = render_benchmark_bundle()
+    output_root = tmp_path / "docs/benchmarks/latest"
+    benchmark_summary = read_json(output_root / "benchmark_summary.json")
+
+    assert benchmark_summary["sample_count"] == 4
+    assert any("only 4" in caveat for caveat in benchmark_summary["caveats"])
+    assert any("No committed configs/thresholds/bseo-policy.json" in caveat for caveat in benchmark_summary["caveats"])
+    assert (output_root / "benchmark_summary.md").exists()
+    assert (output_root / "assets/overall_metrics_table.md").exists()
+    assert (output_root / "assets/train_validation_eval_overview.svg").exists()
+    assert (output_root / "assets/policy_mode_comparison.svg").exists()
+    assert (output_root / "interactive/metrics_dashboard.html").exists()
+    assert "Data unavailable for this visualization" in (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
+    assert summary["runtime_truth"]["configured_policy_mode"] == "threshold-default"
+
+
+def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    _seed_common_artifacts(tmp_path)
+    _write_json(
+        tmp_path / "configs/thresholds/bseo-policy.json",
+        {
+            "build_id": "build-test",
+            "head_spec_version": "2026-03-23",
+            "control_genome": {"global_thresholds": {"badge_threshold": 0.2}},
+        },
+    )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-bseo-lineage.json",
+        [
+            {"candidate_id": "g1-a", "generation": 1, "accepted": True, "objective": 0.82},
+            {"candidate_id": "g1-b", "generation": 1, "accepted": True, "objective": 0.79},
+        ],
+    )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-bseo-report.json",
+        {
+            "best_bias_signature": {
+                "macro": {
+                    "sensational_weight": 0.31,
+                    "crossmodal_rigidity": 0.44,
+                    "channel_prior_dependency": 0.38,
+                    "genre_confusion": 0.22,
+                    "uncertainty_calibration": 0.19,
+                }
+            }
+        },
+    )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-mutation-bias-atlas.json",
+        {
+            "status": "clustered",
+            "usable_mutations": 14,
+            "clusters": [
+                {"cluster_id": 0, "size": 4, "average_delta_f": 0.03, "average_delta_b": -0.01},
+                {"cluster_id": 1, "size": 3, "average_delta_f": 0.02, "average_delta_b": -0.02},
+            ],
+        },
+    )
+
+    render_benchmark_bundle()
+    output_root = tmp_path / "docs/benchmarks/latest"
+    bias_svg = (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
+    atlas_svg = (output_root / "assets/mutation_bias_atlas.svg").read_text(encoding="utf-8")
+    lineage_svg = (output_root / "assets/lineage_overview.svg").read_text(encoding="utf-8")
+
+    assert "Data unavailable for this visualization" not in bias_svg
+    assert "Mutation bias atlas" in atlas_svg
+    assert "Accepted lineage objective scores" in lineage_svg

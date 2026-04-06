@@ -258,6 +258,67 @@ def test_policy_profile_loads_bandit_adjustments(
     assert profile["bandit_adjustments"]["hide_threshold_offset"] == 0.03
 
 
+def test_score_item_surfaces_verification_and_policy_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_policy_engine.engine.predict_item_signals",
+        lambda _payload: _mock_signals(score=0.67, confidence=0.74, uncertainty=0.38),
+    )
+    monkeypatch.setattr(
+        "truthlens_policy_engine.engine.build_explanation",
+        _mock_explanation,
+    )
+    monkeypatch.setattr(
+        "truthlens_policy_engine.engine.get_policy_profile",
+        lambda: {
+            "policy_version": "adaptive-threshold-v1",
+            "policy_mode": "bseo-shadow",
+            "resolved_policy_mode": "bseo-shadow",
+            "effective_thresholds": {
+                "badge_threshold": 0.2,
+                "blur_threshold": 0.45,
+                "report_prompt_threshold": 0.65,
+                "hide_threshold": 0.8,
+            },
+            "runtime_policy_config": {
+                "policy_mode": "bseo-shadow",
+                "resolved_policy_mode": "bseo-shadow",
+                "bseo_min_confidence": 0.58,
+                "bseo_max_uncertainty": 0.45,
+                "bseo_artifact_max_age_hours": 168,
+            },
+            "bseo_artifact": {
+                "status": "compatible",
+                "build_id": "build-bseo-shadow",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "truthlens_policy_engine.engine.load_model_info",
+        lambda: {
+            "model_version": "baseline-v1-test",
+            "build_id": "build-model-test",
+        },
+    )
+
+    result = score_item(
+        ScoreItemRequest(
+            item_id="verification-item",
+            title="Breaking shocking aliens confirmed",
+            transcript_excerpt="A calm review of telescope maintenance and launch scheduling.",
+            channel=ChannelInfo(channel_name="Verification Channel", prior_flags=3),
+            runtime_context={"surface": "mobile-share", "review_requested": True},
+        )
+    )
+
+    assert result.verification.status == "completed"
+    assert "review-flow" in result.verification.triggers
+    assert result.action_decision_basis.verification_considered is True
+    assert result.policy_mode == "bseo-shadow"
+    assert result.artifact_provenance.model_build_id == "build-model-test"
+
+
 def test_policy_profile_loads_evolutionary_summary(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

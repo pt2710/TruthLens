@@ -1,0 +1,386 @@
+{
+  "generated_at": "2026-04-06T04:16:02.789547+00:00",
+  "build_id": "build-20260323000612",
+  "model_version": "baseline-v1-build-20260323000612",
+  "trained_at": "2026-03-23T00:06:12.500359+00:00",
+  "sample_count": 4,
+  "artifact_paths": {
+    "model_info": "artifacts/trained_models/latest/model_info.json",
+    "eval_report": "artifacts/eval_runs/build-20260323000612.json",
+    "simulation": "artifacts/eval_runs/build-20260323000612-simulation.json",
+    "bseo_report": null,
+    "mutation_atlas": null,
+    "lineage": null,
+    "drift_report": "artifacts/drift_reports/build-20260323000612.json",
+    "runtime_policy": "configs/thresholds/runtime-policy.json",
+    "thresholds": "configs/thresholds/default.json",
+    "bseo_policy": null
+  },
+  "artifact_timestamps": {
+    "model_info": "2026-04-05T21:41:01.137404+00:00",
+    "eval_report": "2026-04-05T21:41:01.134542+00:00",
+    "simulation": "2026-04-05T21:41:01.133440+00:00",
+    "bseo_report": null,
+    "mutation_atlas": null,
+    "lineage": null,
+    "drift_report": "2026-04-05T21:41:01.132440+00:00",
+    "runtime_policy": "2026-04-05T21:41:01.150466+00:00",
+    "thresholds": "2026-04-05T21:41:01.149445+00:00",
+    "bseo_policy": null
+  },
+  "runtime_truth": {
+    "configured_policy_mode": "threshold-default",
+    "resolved_policy_mode": "threshold-default",
+    "bseo_artifact_committed": false,
+    "bseo_artifact_compatible": false,
+    "selective_verification_contract_present": true,
+    "heavy_llm_hot_path": false
+  },
+  "metrics": {
+    "eval": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.0,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0
+    },
+    "validation": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "positive_rate": 0.0,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 1.0,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0
+    },
+    "model_snapshot": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_rate": 0.25,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.0,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0
+    },
+    "calibration_error": 0.0,
+    "validation_calibration_error": 0.0,
+    "per_head_metrics": {
+      "text": {
+        "metrics": {
+          "precision": 0.3333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "positive_rate": 0.75,
+          "false_positive_rate": 0.6667,
+          "false_negative_rate": 0.0,
+          "roc_auc": 1.0,
+          "pr_auc": 1.0
+        },
+        "calibration_error": 0.4187
+      },
+      "vision": {
+        "metrics": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "positive_rate": 0.25,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
+          "roc_auc": 1.0,
+          "pr_auc": 1.0
+        },
+        "calibration_error": 0.2562
+      },
+      "metadata": {
+        "metrics": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "positive_rate": 0.75,
+          "false_positive_rate": 1.0,
+          "false_negative_rate": 1.0,
+          "roc_auc": 0.0,
+          "pr_auc": 0.25
+        },
+        "calibration_error": 0.9989
+      },
+      "history": {
+        "metrics": {
+          "precision": 0.25,
+          "recall": 1.0,
+          "f1": 0.4,
+          "positive_rate": 1.0,
+          "false_positive_rate": 1.0,
+          "false_negative_rate": 0.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.25
+        },
+        "calibration_error": 0.25
+      },
+      "fusion": {
+        "metrics": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "positive_rate": 0.25,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
+          "roc_auc": 1.0,
+          "pr_auc": 1.0
+        },
+        "calibration_error": 0.3016
+      },
+      "calibrated": {
+        "metrics": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "positive_rate": 0.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 1.0,
+          "roc_auc": 1.0,
+          "pr_auc": 1.0
+        },
+        "calibration_error": 0.0
+      }
+    },
+    "confusion_matrix": {
+      "tp": 1,
+      "tn": 3,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "thresholds": {
+    "badge_threshold": 0.2,
+    "blur_threshold": 0.45,
+    "report_prompt_threshold": 0.65,
+    "hide_threshold": 0.8
+  },
+  "simulation": {
+    "threshold_sweep": [
+      {
+        "threshold": 0.2,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.25,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.35,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.4,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.45,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.55,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.65,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.75,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.8,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.85,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      },
+      {
+        "threshold": 0.9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.25,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "intervention_cost": -0.8
+      }
+    ],
+    "recommended_thresholds": {
+      "badge_threshold": 0.2,
+      "blur_threshold": 0.45,
+      "report_prompt_threshold": 0.65,
+      "hide_threshold": 0.8
+    },
+    "replay_summary": {},
+    "policy": {},
+    "q_table": {
+      "s0:u2": {
+        "none": 1.0,
+        "badge": 0.4,
+        "blur": -0.3,
+        "ask-report": -0.8,
+        "hide": -1.2
+      },
+      "s3:u0": {
+        "none": -1.1,
+        "badge": 1.18,
+        "blur": 1.88,
+        "ask-report": 2.38,
+        "hide": 1.98
+      }
+    }
+  },
+  "drift": {
+    "reference_count": 12,
+    "current_count": 4,
+    "title_length_shift": 1.0,
+    "sensational_count_shift": -0.5,
+    "label_rate_shift": -0.5
+  },
+  "bseo": {
+    "policy_artifact": {},
+    "report": {},
+    "bias_signature": {},
+    "mutation_bias_atlas": {},
+    "lineage": [],
+    "available": false
+  },
+  "caveats": [
+    "Committed eval sample count is only 4; metrics are unstable and must not be treated as production benchmarks.",
+    "Validation performance is materially weaker than eval performance; treat the current benchmark as a tiny-sample sanity signal, not a stable generalization claim.",
+    "No committed configs/thresholds/bseo-policy.json is present at repo root, so BSEO shadow/live remains a code-supported mode rather than a promoted committed runtime artifact.",
+    "Committed simulation artifacts do not currently include populated BSEO search outputs, lineage logs, or mutation atlas data.",
+    "Drift report compares against only 4 current rows, so shift readings are directional rather than statistically robust."
+  ],
+  "missing_data": [],
+  "output_root": "docs/benchmarks/latest",
+  "asset_files": [
+    "train_validation_eval_overview.svg",
+    "per_head_metrics.svg",
+    "calibration_error.svg",
+    "confusion_matrix_eval.svg",
+    "threshold_sweep.svg",
+    "drift_summary.svg",
+    "policy_mode_comparison.svg",
+    "benchmark_provenance.svg",
+    "bseo_bias_profile.svg",
+    "mutation_bias_atlas.svg",
+    "lineage_overview.svg"
+  ],
+  "interactive_files": [
+    "metrics_dashboard.html",
+    "threshold_explorer.html",
+    "bseo_policy_dashboard.html",
+    "mutation_atlas.html"
+  ]
+}

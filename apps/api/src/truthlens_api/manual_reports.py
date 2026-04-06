@@ -695,7 +695,6 @@ def _build_heuristic_suggestion_response(
     prior_moderate_count = int(channel_profile.get("moderate_request_count", 0)) if channel_profile else 0
     review_context = _resolve_manual_report_context(payload)
     resolved_class = str(review_context["resolved_class"])
-    class_label = str(review_context["class_label"])
     likely_music_content = resolved_class == "music"
     transparent_context_class = bool(review_context["transparent_context_class"])
     factual_context_class = bool(review_context["factual_context_class"])

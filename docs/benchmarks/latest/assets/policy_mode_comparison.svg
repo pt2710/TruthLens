@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img">
+<style>
+text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+.title { font-size: 24px; font-weight: 700; }
+.subtitle { font-size: 12px; fill: #475569; }
+.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
+.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
+.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
+.label { font-size: 13px; fill: #475569; }
+.value { font-size: 28px; font-weight: 700; }
+.small { font-size: 11px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1; }
+.grid { stroke: #e2e8f0; stroke-width: 1; }
+.legend { font-size: 12px; fill: #334155; }
+.stub { font-size: 16px; font-weight: 600; }
+</style>
+<rect x="0" y="0" width="1000" height="470" fill="#ffffff" />
+<text class="title" x="40" y="48">Policy mode and runtime eligibility</text>
+<text class="subtitle" x="40" y="72">This panel is derived from committed runtime config and artifact presence, not from aspirational docs.</text>
+<rect class="accent" x="40" y="112" width="280" height="150" rx="14" />
+<text class="label" x="58" y="138">Configured runtime mode</text>
+<text class="value" x="58" y="182">threshold-default</text>
+<text class="small" x="58" y="210">Directly from configs/thresholds/runtime-policy.json</text>
+<rect class="card" x="350" y="112" width="280" height="150" rx="14" />
+<text class="label" x="368" y="138">Resolved runtime mode</text>
+<text class="value" x="368" y="182">threshold-default</text>
+<text class="small" x="368" y="210">Aliases normalized for architectural truth</text>
+<rect class="warn" x="660" y="112" width="300" height="150" rx="14" />
+<text class="label" x="678" y="138">Committed BSEO artifact</text>
+<text class="value" x="678" y="182">no</text>
+<text class="small" x="678" y="210">If absent, shadow/live is code-supported but not</text>
+<text class="small" x="678" y="226">promoted as a committed runtime artifact.</text>
+<rect class="card" x="40" y="282" width="280" height="140" rx="14" />
+<text class="label" x="58" y="308">Selective verification</text>
+<text class="value" x="58" y="352">explicit</text>
+<text class="small" x="58" y="380">Selective deep verification exists as a separate</text>
+<text class="small" x="58" y="396">contract layer rather than a mandatory hot path.</text>
+<rect class="card" x="350" y="282" width="280" height="140" rx="14" />
+<text class="label" x="368" y="308">Heavy LLM in hot path</text>
+<text class="value" x="368" y="352">no</text>
+<text class="small" x="368" y="380">Gemini/manual-report flows stay downstream of</text>
+<text class="small" x="368" y="396">baseline scoring.</text>
+</svg>

@@ -41,6 +41,7 @@ from .vision import (
     vision_available,
     vision_transformer_available,
 )
+from .verification import VerificationResult, run_selective_verification
 
 __all__ = [
     "HEAD_SPEC_VERSION",
@@ -75,9 +76,11 @@ __all__ = [
     "train_temporal_history_encoder",
     "train_vision_transformer_encoder",
     "train_tiny_thumbnail_encoder",
+    "VerificationResult",
     "vae_available",
     "vision_artifacts_from_payload",
     "vision_artifacts_to_payload",
     "vision_available",
     "vision_transformer_available",
+    "run_selective_verification",
 ]

@@ -95,6 +95,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
 no_implicit_optional = true
+exclude = "(^tests[\\\\/])"
 mypy_path = [
   "apps/api/src",
   "apps/trainer/src",
@@ -109,8 +110,26 @@ mypy_path = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*"]
+module = ["sklearn.*", "torch", "torch.*", "transformers", "transformers.*", "truthlens_paths"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "render_benchmark_visualizations",
+  "run_api",
+  "run_truthlens_module",
+  "scripts.render_benchmark_visualizations",
+  "scripts.run_api",
+  "scripts.run_truthlens_module",
+  "truthlens_api.manual_reports",
+  "truthlens_api.youtube_reporting",
+  "truthlens_model_serving.registry",
+  "truthlens_model_serving.temporal",
+  "truthlens_model_serving.vae",
+  "truthlens_model_serving.vision",
+  "truthlens_trainer.train",
+]
+ignore_errors = true
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { scoreItemRequestSchema } from '@truthlens/shared-schemas';
 
 import {
   batchScoreFeedItems,
@@ -33,7 +34,12 @@ describe('scoreFeedItem', () => {
           muted_channels: [],
           prior_corrections: 0,
         },
-      });
+      runtime_context: {
+        surface: 'unknown',
+        review_requested: false,
+        source_provenance: null,
+      },
+    });
 
     expect(result.recommended_action).not.toBe('none');
     expect(result.reasons.length).toBeGreaterThan(0);
@@ -69,6 +75,11 @@ describe('scoreFeedItem', () => {
           muted_channels: [],
           prior_corrections: 0,
         },
+        runtime_context: {
+          surface: 'unknown',
+          review_requested: false,
+          source_provenance: null,
+        },
       },
       {
         item_id: 'card-2',
@@ -84,6 +95,11 @@ describe('scoreFeedItem', () => {
           strict_mode: false,
           muted_channels: [],
           prior_corrections: 0,
+        },
+        runtime_context: {
+          surface: 'unknown',
+          review_requested: false,
+          source_provenance: null,
         },
       },
     ]);

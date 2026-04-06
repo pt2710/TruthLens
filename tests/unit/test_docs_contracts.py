@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+from truthlens_data_pipeline.paths import repo_root
+
+
+def _read(path: str) -> str:
+    return (repo_root() / path).read_text(encoding="utf-8")
+
+
+def test_architecture_docs_surface_selective_verification_and_bseo_boundaries() -> None:
+    architecture = _read("ARCHITECTURE.md")
+    reference = _read("docs/architecture/REFERENCE_ARCHITECTURE.md")
+    blueprint = _read("docs/architecture/truthlens-architecture-blueprint.mmd")
+
+    assert "selective deep verification" in architecture.lower()
+    assert "bseo is not the core classifier" in reference.lower()
+    assert "selective deep verification" in blueprint.lower()
+    assert "bseo interpretation / search / artifacts" in blueprint.lower()
+
+
+def test_benchmark_docs_point_to_generated_truth_surface() -> None:
+    readme = _read("README.md")
+    benchmark_readme = _read("docs/benchmarks/README.md")
+
+    assert "docs/benchmarks/latest/benchmark_summary.json" in readme
+    assert "tiny-sample" in readme.lower()
+    assert "pnpm docs:render-benchmarks" in benchmark_readme

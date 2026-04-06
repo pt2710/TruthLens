@@ -69,20 +69,32 @@ def test_score_item_contract() -> None:
     )
     assert response.status_code == 200
     payload = response.json()
-    assert set(payload.keys()) == {
+    assert {
         "risk_score",
+        "fused_score",
+        "calibrated_score",
         "confidence",
         "uncertainty",
+        "uncertainty_bucket",
+        "path_scores",
+        "path_contributors",
         "content_class",
         "content_class_confidence",
         "bias_profile",
+        "verification",
+        "action_decision_basis",
+        "policy_mode",
+        "resolved_policy_mode",
+        "artifact_provenance",
         "recommended_action",
         "reasons",
         "explanation_id",
         "explanation_summary",
         "evidence",
-    }
+    }.issubset(payload.keys())
     assert "metrics" in payload["bias_profile"]
+    assert "status" in payload["verification"]
+    assert "threshold_action" in payload["action_decision_basis"]
     if payload["recommended_action"] != "none":
         assert payload["reasons"]
         assert payload["explanation_id"]

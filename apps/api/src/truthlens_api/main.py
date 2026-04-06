@@ -47,6 +47,7 @@ from truthlens_policy_engine import get_policy_profile, score_item
 from truthlens_shared_schemas.contracts import (
     BatchScoreRequest,
     BatchScoreResponse,
+    ChannelInfo,
     ExplanationBundlePayload,
     FeedbackEvent,
     ManualReportWorkflowMode,
@@ -56,6 +57,7 @@ from truthlens_shared_schemas.contracts import (
     ManualReportOptimizationResponse,
     ManualReportSuggestionRequest,
     ManualReportSuggestionResponse,
+    RuntimeContext,
     ScoreItemRequest,
     ScoreResult,
     YouTubeAuthStatus,
@@ -316,18 +318,23 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
         description_snapshot=watch_context.description_snapshot,
         transcript_excerpt=watch_context.transcript_excerpt,
         metadata=watch_context.metadata,
-        channel={
-            "channel_name": watch_context.channel_name,
-            "channel_url": watch_context.channel_url,
-            "prior_flags": reported_item_count,
-            "channel_history_features": {
+        channel=ChannelInfo(
+            channel_name=watch_context.channel_name,
+            channel_url=watch_context.channel_url,
+            prior_flags=reported_item_count,
+            channel_history_features={
                 "channel_risk_mean": round(max(0.0, min(1.0, 1.0 - (trust_score / 10.0))), 4),
                 "repeat_template_rate": round(reported_item_count / max(scored_item_count, 1), 4),
                 "transparent_count": float(transparent_count),
                 "reported_item_count": float(reported_item_count),
             },
-        },
+        ),
         user_context=payload.user_context,
+        runtime_context=RuntimeContext(
+            surface="mobile-share",
+            review_requested=True,
+            source_provenance=payload.target_url,
+        ),
     )
     signals = predict_item_signals(score_request)
     score_result = score_item(score_request)

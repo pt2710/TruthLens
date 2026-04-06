@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from truthlens_data_pipeline.paths import read_json, read_jsonl, relative_path, repo_root, utc_now, write_json, write_jsonl
+from truthlens_data_pipeline.paths import read_json, relative_path, repo_root, utc_now, write_json, write_jsonl
 from truthlens_shared_schemas.contracts import ContentClass
 
 QUEUE_NAME_TO_KEY = {
@@ -176,7 +176,7 @@ def _load_current_adjudications(run_id: str) -> dict[str, Any] | None:
 
 
 def _merged_label_snapshot(entry: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
-    labels = {
+    labels: dict[str, Any] = {
         key: bool(value)
         for key, value in dict(entry.get("current_labels", {})).items()
         if isinstance(key, str)

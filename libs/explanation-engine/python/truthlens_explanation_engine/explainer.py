@@ -53,6 +53,7 @@ def _append_evidence(
         "policy",
         "taxonomy",
         "bias",
+        "verification",
         "user-context",
         "uncertainty",
     ],
@@ -150,6 +151,28 @@ def build_explanation(
             "BSEO parameter frame activated",
             score=min(max(content_class_confidence, 0.0), 1.0) if content_class != "unknown" else None,
             details="Interpretation frame: " + ", ".join(str(frame) for frame in parameter_frames[:6]) + ".",
+        )
+    verification = signals.feature_summary.get("verification", {})
+    if isinstance(verification, dict) and str(verification.get("status", "")) == "completed":
+        verification_summary = str(verification.get("summary") or "").strip() or "Selective verification completed."
+        verification_triggers = [
+            str(value)
+            for value in verification.get("triggers", [])
+            if value
+        ]
+        _append_evidence(
+            evidence,
+            "verification",
+            "Selective deep verification completed",
+            score=min(max(float(signals.calibrated_score), 0.0), 1.0),
+            details=(
+                verification_summary
+                + (
+                    " Triggers: " + ", ".join(verification_triggers) + "."
+                    if verification_triggers
+                    else ""
+                )
+            ),
         )
     muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
     if muted_channels and payload.channel.channel_name.strip().lower() in muted_channels:

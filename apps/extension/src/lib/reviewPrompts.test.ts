@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { scoreResultSchema } from '@truthlens/shared-schemas';
 
 import { inferReviewPromptDecision } from './reviewPrompts';
 
 describe('inferReviewPromptDecision', () => {
   it('suggests a report review for ask-report items', () => {
     const decision = inferReviewPromptDecision(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.73,
         confidence: 0.84,
         uncertainty: 0.16,
@@ -22,7 +23,7 @@ describe('inferReviewPromptDecision', () => {
         explanation_id: 'exp-1',
         explanation_summary: 'summary',
         evidence: [],
-      },
+      }),
       0.08,
     );
 
@@ -36,7 +37,7 @@ describe('inferReviewPromptDecision', () => {
 
   it('suggests transparent verification for low-risk music content', () => {
     const decision = inferReviewPromptDecision(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.14,
         confidence: 0.85,
         uncertainty: 0.15,
@@ -53,7 +54,7 @@ describe('inferReviewPromptDecision', () => {
         explanation_id: null,
         explanation_summary: null,
         evidence: [],
-      },
+      }),
       0.92,
     );
 
@@ -67,7 +68,7 @@ describe('inferReviewPromptDecision', () => {
 
   it('returns no prompt for ordinary badge-level items without strong music evidence', () => {
     const decision = inferReviewPromptDecision(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.24,
         confidence: 0.78,
         uncertainty: 0.22,
@@ -84,7 +85,7 @@ describe('inferReviewPromptDecision', () => {
         explanation_id: 'exp-2',
         explanation_summary: 'summary',
         evidence: [],
-      },
+      }),
       0.12,
     );
 
@@ -93,7 +94,7 @@ describe('inferReviewPromptDecision', () => {
 
   it('routes satire-like ambiguity into a review prompt instead of silent verification', () => {
     const decision = inferReviewPromptDecision(
-      {
+      scoreResultSchema.parse({
         risk_score: 0.29,
         confidence: 0.71,
         uncertainty: 0.31,
@@ -110,7 +111,7 @@ describe('inferReviewPromptDecision', () => {
         explanation_id: 'exp-3',
         explanation_summary: 'summary',
         evidence: [],
-      },
+      }),
       0.08,
     );
 

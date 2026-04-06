@@ -52,6 +52,21 @@ class UserContext(BaseModel):
     prior_corrections: int = Field(default=0, ge=0)
 
 
+class RuntimeContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    surface: Literal[
+        "extension-feed",
+        "extension-watch",
+        "mobile-share",
+        "api",
+        "trainer",
+        "unknown",
+    ] = "unknown"
+    review_requested: bool = False
+    source_provenance: str | None = None
+
+
 class ScoreItemRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -63,6 +78,7 @@ class ScoreItemRequest(BaseModel):
     metadata: ItemMetadata = Field(default_factory=ItemMetadata)
     channel: ChannelInfo
     user_context: UserContext = Field(default_factory=UserContext)
+    runtime_context: RuntimeContext = Field(default_factory=RuntimeContext)
 
 
 class ExplanationEvidence(BaseModel):
@@ -77,6 +93,7 @@ class ExplanationEvidence(BaseModel):
         "policy",
         "taxonomy",
         "bias",
+        "verification",
         "user-context",
         "uncertainty",
     ]
@@ -92,6 +109,46 @@ class BiasProfile(BaseModel):
     positive_biases: list[str] = Field(default_factory=list)
     negative_biases: list[str] = Field(default_factory=list)
     guardrail_applied: str | None = None
+
+
+VerificationStatus = Literal["not-requested", "completed", "failed-soft"]
+VerificationTrigger = Literal[
+    "high-risk",
+    "high-uncertainty",
+    "high-mismatch",
+    "threshold-near",
+    "review-flow",
+]
+
+
+class VerificationProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: VerificationStatus = "not-requested"
+    triggers: list[VerificationTrigger] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
+    summary: str | None = None
+    review_recommended: bool = False
+
+
+class ActionDecisionBasis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    threshold_action: RecommendedAction = RecommendedAction.NONE
+    final_action: RecommendedAction = RecommendedAction.NONE
+    decisive_layer: Literal["threshold", "bseo-live", "muted-channel"] = "threshold"
+    verification_considered: bool = False
+    policy_reason: str | None = None
+
+
+class ArtifactProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model_version: str | None = None
+    model_build_id: str | None = None
+    policy_version: str | None = None
+    policy_build_id: str | None = None
+    policy_artifact_status: str | None = None
 
 
 class ManualReportIssue(BaseModel):
@@ -314,11 +371,21 @@ class ScoreResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     risk_score: float = Field(ge=0.0, le=1.0)
+    fused_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    calibrated_score: float = Field(default=0.0, ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0)
     uncertainty: float = Field(ge=0.0, le=1.0)
+    uncertainty_bucket: Literal["low", "medium", "high"] = "low"
+    path_scores: dict[str, float] = Field(default_factory=dict)
+    path_contributors: dict[str, list[str]] = Field(default_factory=dict)
     content_class: ContentClass = ContentClass.UNKNOWN
     content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     bias_profile: BiasProfile = Field(default_factory=BiasProfile)
+    verification: VerificationProvenance = Field(default_factory=VerificationProvenance)
+    action_decision_basis: ActionDecisionBasis = Field(default_factory=ActionDecisionBasis)
+    policy_mode: str = "threshold-default"
+    resolved_policy_mode: str = "threshold-default"
+    artifact_provenance: ArtifactProvenance = Field(default_factory=ArtifactProvenance)
     recommended_action: RecommendedAction = RecommendedAction.NONE
     reasons: list[str] = Field(default_factory=list)
     explanation_id: str | None = None

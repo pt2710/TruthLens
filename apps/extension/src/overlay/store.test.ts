@@ -1,10 +1,11 @@
 import type { ScoreResult } from '@truthlens/shared-schemas';
+import { scoreResultSchema } from '@truthlens/shared-schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useOverlayStore } from './store';
 
 function score(action: ScoreResult['recommended_action']): ScoreResult {
-  return {
+  return scoreResultSchema.parse({
     risk_score: 0.6,
     confidence: 0.8,
     uncertainty: 0.2,
@@ -21,7 +22,7 @@ function score(action: ScoreResult['recommended_action']): ScoreResult {
     explanation_id: action === 'none' ? null : 'exp-test',
     explanation_summary: action === 'none' ? null : 'reason',
     evidence: [],
-  };
+  });
 }
 
 describe('overlay store', () => {

@@ -1,34 +1,25 @@
-# TruthLens Architecture Visuals
+# TruthLens Architecture Assets
 
-`ARCHITECTURE.md` remains the authoritative architecture contract for TruthLens.
+Authoritative architecture order:
 
-This directory contains the visual companion assets that explain the implemented system as a blueprint-style block diagram:
+1. [Reference architecture](./REFERENCE_ARCHITECTURE.md)
+2. [Architecture contract](../../ARCHITECTURE.md)
+3. [Architecture diagnosis](./TRUTHLENS_ARCHITECTURE_REVISION_DIAGNOSIS.md)
+4. [Blueprint source](./truthlens-architecture-blueprint.mmd)
+5. [Blueprint SVG](./truthlens-architecture-blueprint.svg)
+6. [Blueprint PNG](./truthlens-architecture-blueprint.png)
 
-- [TruthLens architecture blueprint source](./truthlens-architecture-blueprint.mmd)
-- [TruthLens architecture blueprint SVG](./truthlens-architecture-blueprint.svg)
-- [TruthLens architecture blueprint PNG](./truthlens-architecture-blueprint.png)
+Interpretation rules:
 
-To regenerate the committed renders from the Mermaid source:
+- solid blocks represent committed implemented architecture
+- dashed blocks represent optional, offline-only, or future extensions
+- the blueprint must show the separation between perception, verification, policy, and explanation
+- BSEO must appear as an interpretation / policy / search layer, not as the core classifier
+
+Regenerate the committed blueprint renders with:
 
 ```powershell
 pnpm docs:render-architecture
 ```
 
-Interpretation rule:
-
-- Solid blocks and solid arrows represent implemented architecture.
-- Dashed blocks and dashed arrows represent planned or future extensions.
-
-Current implemented optional neural paths that should now appear in the blueprint:
-
-- sentence-transformer text embeddings
-- tiny CNN thumbnail encoder
-- ViT thumbnail encoder
-- VAE packaging-anomaly head
-- temporal LSTM history encoder
-- BSEO interpretation frames and class-conditioned guardrails
-- feature-flagged runtime BSEO action policy with RL compatibility export
-- cross-platform mobile review contract
-- Android Jetpack Compose companion/share client
-
-The blueprint should continue to keep those separate from still-planned extensions such as richer end-to-end multimodal stacks, deeper transcript/video understanding, and broader cross-platform expansion beyond the current Android companion scope.
+If the runtime, artifacts, or README drift away from these visuals, update the visuals rather than leaving two competing versions of TruthLens in the repo.

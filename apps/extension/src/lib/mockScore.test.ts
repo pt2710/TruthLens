@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { scoreItemRequestSchema } from '@truthlens/shared-schemas';
 
 import { createBootstrapScore } from './mockScore';
 
 describe('createBootstrapScore', () => {
   it('flags sensational titles', () => {
-    const result = createBootstrapScore({
+    const result = createBootstrapScore(scoreItemRequestSchema.parse({
       item_id: 'card-1',
       title: 'Breaking secret aliens confirmed',
       thumbnail_ref: null,
@@ -20,7 +21,7 @@ describe('createBootstrapScore', () => {
         muted_channels: [],
         prior_corrections: 0,
       },
-    });
+    }));
 
     expect(result.risk_score).toBeGreaterThan(0.35);
     expect(result.reasons.length).toBeGreaterThan(0);
@@ -31,7 +32,7 @@ describe('createBootstrapScore', () => {
   });
 
   it('hides muted channels immediately', () => {
-    const result = createBootstrapScore({
+    const result = createBootstrapScore(scoreItemRequestSchema.parse({
       item_id: 'card-2',
       title: 'Weekly launch schedule',
       thumbnail_ref: null,
@@ -47,7 +48,7 @@ describe('createBootstrapScore', () => {
         muted_channels: ['Muted Channel'],
         prior_corrections: 0,
       },
-    });
+    }));
 
     expect(result.recommended_action).toBe('hide');
     expect(result.reasons[0]).toContain('muted');

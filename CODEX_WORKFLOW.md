@@ -5,7 +5,7 @@
 Every workpack follows:
 
 ```text
-PROBE -> HYGIENE -> TEST -> PATCH -> VERIFY -> REPORT
+PROBE -> DIAGNOSE -> CONTRACT -> TEST -> PATCH -> VERIFY -> REPORT
 ```
 
 ## Scoped Changes
@@ -22,6 +22,7 @@ PROBE -> HYGIENE -> TEST -> PATCH -> VERIFY -> REPORT
 - Maintain smoke tests for bootstrap workpacks.
 - Run Python static checks and tests before commit.
 - Run TypeScript build, tests, and lint/type checks before commit.
+- Regenerate benchmark and architecture artifacts when the committed truth surface changes.
 
 ## Commit and Push Discipline
 
@@ -42,6 +43,7 @@ PROBE -> HYGIENE -> TEST -> PATCH -> VERIFY -> REPORT
 - Stop and report when a contract cannot be honored safely.
 - Document broken assumptions and environment drift in the report output.
 - Do not silently downgrade contracts or remove required verification steps.
+- Do not leave README, diagrams, benchmark summaries, or runtime artifacts in mutually contradictory states.
 
 ## Data Build Gates
 

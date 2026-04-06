@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
-from .text import count_sensational_tokens, normalize_text, transcript_mismatch_score, uppercase_ratio
+from .text import count_sensational_tokens, normalize_text, uppercase_ratio
 
 CONTENT_CLASSES = (
     "news",
@@ -395,7 +395,6 @@ def infer_content_taxonomy(
 
     sensational_hits = count_sensational_tokens(title)
     uppercase = uppercase_ratio(title)
-    prior_flags = float(channel_history_features.get("prior_flags", 0.0))
     history_music = float(channel_history_features.get("music_likelihood", 0.0))
 
     if "records" in lowered or "vevo" in lowered or history_music > 0.3:
@@ -471,7 +470,7 @@ def infer_bseo_prior_frames(
     resolved_class = content_class if content_class in CONTENT_CLASSES else "unknown"
     history_features = channel_history_features or {}
     combined = _combine_text_parts([title, description, transcript, channel_name]).lower()
-    parameter_frames = {key: [] for key in _BSEO_PARAMETER_KEYS}
+    parameter_frames: dict[str, list[str]] = {key: [] for key in _BSEO_PARAMETER_KEYS}
     positive_contexts: list[str] = []
     negative_contexts: list[str] = []
 

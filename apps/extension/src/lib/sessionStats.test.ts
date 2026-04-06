@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { scoreResultSchema } from '@truthlens/shared-schemas';
 
 import {
   DEFAULT_SESSION_STATS,
@@ -30,7 +31,7 @@ describe('sessionStats', () => {
     const expected: ExtensionSessionStats = {
       itemCount: 12,
       flaggedCount: 5,
-      lastScore: {
+      lastScore: scoreResultSchema.parse({
         risk_score: 0.44,
         confidence: 0.79,
         uncertainty: 0.21,
@@ -47,7 +48,7 @@ describe('sessionStats', () => {
         explanation_id: 'exp-1',
         explanation_summary: 'Example summary',
         evidence: [],
-      },
+      }),
       updatedAt: '2026-04-01T09:00:00Z',
     };
 

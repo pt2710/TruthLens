@@ -6,7 +6,7 @@ Purpose:
 Build a multimodal browser-plugin and backend system for detection, filtering, explanation, and semi-automated reporting support for misleading video content.
 
 Execution principle:
-`PROBE -> HYGIENE -> TEST -> PATCH -> VERIFY -> REPORT`
+`PROBE -> DIAGNOSE -> CONTRACT -> TEST -> PATCH -> VERIFY -> REPORT`
 
 Core rules:
 - See `CODEX_WORKFLOW.md` for execution protocol and workpack discipline.
@@ -15,6 +15,7 @@ Core rules:
 - Do not create an alternative root structure.
 - Keep commits small, explainable, and verified.
 - New workpacks must respect existing contracts.
+- README, diagrams, and benchmark assets are part of the truth surface and must be updated when architecture or artifacts change.
 - Use subagents only for bounded, low-coupled tasks.
 - Parallel agents must not write to the same files without explicit orchestration.
 - Do not run parallel live edits on the same files without explicit worktree discipline.
