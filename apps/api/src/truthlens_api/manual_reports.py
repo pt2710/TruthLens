@@ -11,6 +11,8 @@ from truthlens_api.settings import settings
 from truthlens_model_serving import load_feedback_events, summarize_feedback_events
 from truthlens_shared_schemas.contracts import (
     ManualReportIssue,
+    ManualReviewTag,
+    ManualReviewTagSelection,
     ManualReportOptimizationRequest,
     ManualReportOptimizationResponse,
     ManualReportRequestedOutcome,
@@ -167,6 +169,24 @@ NON_MUSIC_CONTEXT_MARKERS = (
     "gameplay",
     "reaction",
 )
+TUTORIAL_MARKERS = (
+    "tutorial",
+    "how to",
+    "how-to",
+    "guide",
+    "explained",
+    "lesson",
+    "learn",
+)
+WALKTHROUGH_MARKERS = (
+    "walkthrough",
+    "playthrough",
+    "let's play",
+    "lets play",
+    "full run",
+    "speedrun",
+    "build guide",
+)
 TRANSPARENT_CONTEXT_CLASSES = {"music", "art", "gaming"}
 FACTUAL_CONTEXT_CLASSES = {"news", "commentary", "documentary", "promo", "unknown"}
 AMBIGUOUS_CONTEXT_CLASSES = {"satire"}
@@ -181,6 +201,152 @@ CLASS_LABELS = {
     "promo": "promotional",
     "unknown": "mixed or unclear",
 }
+MANUAL_REVIEW_TAG_ORDER = (
+    ManualReviewTag.CLICKBAIT,
+    ManualReviewTag.MUSIC,
+    ManualReviewTag.TUTORIAL,
+    ManualReviewTag.WALKTHROUGH,
+    ManualReviewTag.GAMING,
+    ManualReviewTag.NEWS,
+    ManualReviewTag.DOCUMENTARY,
+    ManualReviewTag.PROMO,
+    ManualReviewTag.SATIRE,
+    ManualReviewTag.ART,
+    ManualReviewTag.UNKNOWN,
+)
+
+
+def _default_tag_rationale(tag: ManualReviewTag) -> str:
+    return {
+        ManualReviewTag.CLICKBAIT: "The packaging looks deceptive enough that TruthLens defaults to a clickbait review.",
+        ManualReviewTag.MUSIC: "The packaging most strongly matches honest music content.",
+        ManualReviewTag.TUTORIAL: "The title and surrounding context look closer to a tutorial than to deceptive packaging.",
+        ManualReviewTag.WALKTHROUGH: "The visible framing looks like a walkthrough or gameplay run rather than deceptive packaging.",
+        ManualReviewTag.GAMING: "The visible framing looks like ordinary gaming content.",
+        ManualReviewTag.NEWS: "The visible framing looks like news or current-affairs content.",
+        ManualReviewTag.DOCUMENTARY: "The visible framing looks like documentary or explanatory content.",
+        ManualReviewTag.PROMO: "The visible framing looks like promotional or trailer-style content.",
+        ManualReviewTag.SATIRE: "The visible framing looks like satire or parody content.",
+        ManualReviewTag.ART: "The visible framing looks like art or creative work rather than deceptive packaging.",
+        ManualReviewTag.UNKNOWN: "TruthLens could not resolve a stronger honest-content category from the available evidence.",
+    }[tag]
+
+
+def _selected_tag(
+    tag: ManualReviewTag,
+    *,
+    selected: bool,
+    confidence: float,
+    rationale: str | None = None,
+) -> ManualReviewTagSelection:
+    bounded_confidence = max(0.0, min(1.0, confidence))
+    return ManualReviewTagSelection(
+        tag=tag,
+        selected=selected,
+        confidence=round(bounded_confidence, 4),
+        rationale=rationale or _default_tag_rationale(tag),
+    )
+
+
+def _preferred_positive_tag(
+    payload: ManualReportSuggestionRequest,
+    resolved_class: str,
+) -> ManualReviewTag:
+    combined = " ".join(
+        _normalize_text(part).lower()
+        for part in (
+            payload.title_snapshot,
+            payload.description_snapshot,
+            payload.transcript_excerpt,
+            payload.channel_name,
+            payload.channel_context,
+        )
+        if part
+    )
+    if _contains_any(combined, WALKTHROUGH_MARKERS):
+        return ManualReviewTag.WALKTHROUGH
+    if _contains_any(combined, TUTORIAL_MARKERS):
+        return ManualReviewTag.TUTORIAL
+    return {
+        "music": ManualReviewTag.MUSIC,
+        "gaming": ManualReviewTag.GAMING,
+        "news": ManualReviewTag.NEWS,
+        "documentary": ManualReviewTag.DOCUMENTARY,
+        "promo": ManualReviewTag.PROMO,
+        "satire": ManualReviewTag.SATIRE,
+        "art": ManualReviewTag.ART,
+    }.get(resolved_class, ManualReviewTag.UNKNOWN)
+
+
+def _build_tag_suggestions(
+    payload: ManualReportSuggestionRequest,
+    *,
+    resolved_class: str,
+    base_confidence: float,
+) -> list[ManualReviewTagSelection]:
+    selected_tag = (
+        ManualReviewTag.CLICKBAIT
+        if payload.workflow_mode == ManualReportWorkflowMode.REPORT
+        else _preferred_positive_tag(payload, resolved_class)
+    )
+    selected_confidence = 0.85 if selected_tag == ManualReviewTag.CLICKBAIT else max(
+        0.45,
+        min(0.95, base_confidence or 0.55),
+    )
+    selections: list[ManualReviewTagSelection] = []
+    for tag in MANUAL_REVIEW_TAG_ORDER:
+        if tag == selected_tag:
+            rationale = (
+                "Report mode assumes suspected deceptive packaging, so TruthLens preselects Clickbait unless you override it."
+                if tag == ManualReviewTag.CLICKBAIT
+                else _default_tag_rationale(tag)
+            )
+            selections.append(
+                _selected_tag(
+                    tag,
+                    selected=True,
+                    confidence=selected_confidence,
+                    rationale=rationale,
+                )
+            )
+            continue
+        if payload.workflow_mode == ManualReportWorkflowMode.REPORT and tag != ManualReviewTag.CLICKBAIT:
+            confidence = 0.18 if tag == _preferred_positive_tag(payload, resolved_class) else 0.05
+        elif payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
+            confidence = 0.24 if tag == ManualReviewTag.CLICKBAIT else 0.08
+        else:
+            confidence = 0.05
+        selections.append(_selected_tag(tag, selected=False, confidence=confidence))
+    return selections
+
+
+def _build_outcome_reason(
+    payload: ManualReportSuggestionRequest,
+    *,
+    resolved_class: str,
+    suggested_outcome: ManualReportRequestedOutcome,
+    has_channel_pattern: bool,
+    weak_text_alignment: bool,
+    title_clickbait: bool,
+) -> str:
+    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
+        selected_tag = _preferred_positive_tag(payload, resolved_class).value
+        return (
+            f"TruthLens found the packaging broadly consistent and therefore recommends a transparency verification under {selected_tag}."
+        )
+    if suggested_outcome == ManualReportRequestedOutcome.REMOVE:
+        return (
+            "TruthLens recommends Remove because the packaging looks materially deceptive and the available evidence suggests a repeated or systematic pattern."
+        )
+    if has_channel_pattern:
+        return (
+            "TruthLens recommends Moderate because the current packaging looks misleading and the channel context adds enough concern for human review, but not enough committed evidence for automatic removal."
+        )
+    if weak_text_alignment or title_clickbait:
+        return (
+            "TruthLens recommends Moderate because the packaging overpromises relative to the visible description or transcript context."
+        )
+    return "TruthLens recommends Moderate because the packaging still needs a human clickbait review."
 
 
 def gemini_available() -> bool:
@@ -494,21 +660,42 @@ def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> di
         if hasattr(payload.content_class, "value")
         else str(payload.content_class)
     ).strip().lower()
+    normalized_title = _normalize_text(payload.title_snapshot)
+    normalized_description = _normalize_text(payload.description_snapshot)
+    normalized_transcript = _normalize_text(payload.transcript_excerpt)
+    normalized_channel_name = _normalize_text(payload.channel_name)
+    normalized_channel_context = _normalize_text(payload.channel_context)
     music_likelihood = _estimate_music_likelihood(
-        title=_normalize_text(payload.title_snapshot),
-        description=_normalize_text(payload.description_snapshot),
-        transcript=_normalize_text(payload.transcript_excerpt),
-        channel_name=_normalize_text(payload.channel_name),
-        channel_context=_normalize_text(payload.channel_context),
+        title=normalized_title,
+        description=normalized_description,
+        transcript=normalized_transcript,
+        channel_name=normalized_channel_name,
+        channel_context=normalized_channel_context,
     )
-    if raw_content_class not in CLASS_LABELS or (
-        raw_content_class == "unknown" and music_likelihood >= 0.45
-    ):
-        resolved_class = "music" if music_likelihood >= 0.45 else "unknown"
-    elif raw_content_class == "unknown" and payload.content_class_confidence < 0.45:
-        resolved_class = "music" if music_likelihood >= 0.45 else "unknown"
-    else:
+    lower_combined = " ".join(
+        part.lower()
+        for part in (
+            normalized_title,
+            normalized_description,
+            normalized_transcript,
+            normalized_channel_name,
+            normalized_channel_context,
+        )
+        if part
+    )
+    non_music_hits = _count_phrase_hits(lower_combined, NON_MUSIC_CONTEXT_MARKERS)
+    if raw_content_class in CLASS_LABELS and raw_content_class != "unknown":
         resolved_class = raw_content_class
+    elif raw_content_class == "unknown":
+        resolved_class = (
+            "music"
+            if music_likelihood >= 0.72
+            and payload.content_class_confidence <= 0.35
+            and non_music_hits == 0
+            else "unknown"
+        )
+    else:
+        resolved_class = "unknown"
     negative_biases = {
         str(bias).strip().lower()
         for bias in payload.bias_profile.negative_biases
@@ -521,6 +708,7 @@ def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> di
         "resolved_class": resolved_class,
         "class_label": CLASS_LABELS.get(resolved_class, "mixed or unclear"),
         "music_likelihood": music_likelihood,
+        "non_music_hits": non_music_hits,
         "transparent_context_class": resolved_class in TRANSPARENT_CONTEXT_CLASSES,
         "factual_context_class": resolved_class in FACTUAL_CONTEXT_CLASSES,
         "ambiguous_context_class": resolved_class in AMBIGUOUS_CONTEXT_CLASSES,
@@ -673,6 +861,7 @@ def _build_heuristic_optimization_response(
         issues=normalized_issues,
         optimization_model=HEURISTIC_OPTIMIZATION_MODEL,
         report_text="\n".join(lines).strip(),
+        selected_tags=payload.selected_tags,
     )
 
 
@@ -837,6 +1026,19 @@ def _build_heuristic_suggestion_response(
         return ManualReportSuggestionResponse(
             issues=issues,
             suggested_outcome=ManualReportRequestedOutcome.MODERATE,
+            suggested_outcome_reason=_build_outcome_reason(
+                payload,
+                resolved_class=resolved_class,
+                suggested_outcome=ManualReportRequestedOutcome.MODERATE,
+                has_channel_pattern=has_channel_pattern,
+                weak_text_alignment=weak_text_alignment,
+                title_clickbait=has_clickbait_title,
+            ),
+            suggested_tags=_build_tag_suggestions(
+                payload,
+                resolved_class=resolved_class,
+                base_confidence=payload.content_class_confidence,
+            ),
             suggestion_model=HEURISTIC_SUGGESTION_MODEL,
         )
 
@@ -978,6 +1180,19 @@ def _build_heuristic_suggestion_response(
     return ManualReportSuggestionResponse(
         issues=issues,
         suggested_outcome=suggested_outcome,
+        suggested_outcome_reason=_build_outcome_reason(
+            payload,
+            resolved_class=resolved_class,
+            suggested_outcome=suggested_outcome,
+            has_channel_pattern=has_channel_pattern,
+            weak_text_alignment=weak_text_alignment,
+            title_clickbait=has_clickbait_title,
+        ),
+        suggested_tags=_build_tag_suggestions(
+            payload,
+            resolved_class=resolved_class,
+            base_confidence=payload.content_class_confidence,
+        ),
         suggestion_model=HEURISTIC_SUGGESTION_MODEL,
     )
 
@@ -1040,12 +1255,39 @@ def _suggestion_schema() -> dict[str, object]:
                 "type": "string",
                 "enum": ["moderate", "remove"],
             },
+            "suggested_outcome_reason": {
+                "type": "string",
+                "description": "A concise explanation for why this outcome was chosen.",
+            },
+            "suggested_tags": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "tag": {
+                            "type": "string",
+                            "enum": [tag.value for tag in MANUAL_REVIEW_TAG_ORDER],
+                        },
+                        "selected": {"type": "boolean"},
+                        "confidence": {"type": "number"},
+                        "rationale": {"type": "string"},
+                    },
+                    "required": ["tag", "selected", "confidence", "rationale"],
+                    "additionalProperties": False,
+                },
+            },
             "suggestion_model": {
                 "type": "string",
                 "description": "Return the model name used for drafting.",
             },
         },
-        "required": ["issues", "suggested_outcome", "suggestion_model"],
+        "required": [
+            "issues",
+            "suggested_outcome",
+            "suggested_outcome_reason",
+            "suggested_tags",
+            "suggestion_model",
+        ],
         "additionalProperties": False,
     }
 
@@ -1164,6 +1406,9 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- If Transcript availability is marked Unavailable, leave Transcript unsuggested instead of writing a generic absence note.\n"
             "- For Channel, use the supplied recent channel-title context and TruthLens channel history before making any broader claim.\n"
             "- For Other, use it for the overall combined packaging assessment.\n"
+            f"- suggested_tags must cover this UI tag set: {', '.join(tag.value for tag in MANUAL_REVIEW_TAG_ORDER)}.\n"
+            "- Select exactly one positive tag as selected=true for this verification workflow, and leave Clickbait unselected unless the visible evidence strongly contradicts the workflow.\n"
+            "- suggested_outcome_reason must explain why this should be treated as transparent and which positive tag fits best.\n"
             "- Avoid vague visual comments such as 'text-heavy'.\n"
             "- Never use generic boilerplate like 'may not accurately represent', 'available text context', 'should still be reviewed', or 'could not be sampled deeply enough'.\n"
             "- Prefer comments like:\n"
@@ -1218,6 +1463,9 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
         "- For Transcript, quote the relevant spoken detail when it exists; if it does not exist, leave Transcript unsuggested.\n"
         "- For Channel, only comment when the supplied channel titles or TruthLens channel history support a recurring pattern; otherwise leave it unsuggested.\n"
         "- For Other, use it for the overall clickbait or manipulative packaging assessment after considering all other fields together.\n"
+        f"- suggested_tags must cover this UI tag set: {', '.join(tag.value for tag in MANUAL_REVIEW_TAG_ORDER)}.\n"
+        "- Select Clickbait as selected=true by default for this report workflow unless the visible evidence strongly contradicts the workflow.\n"
+        "- suggested_outcome_reason must explain why the packaging should be reviewed as clickbait and why the chosen outcome fits.\n"
         "- Do not invent channel-wide abuse or AI-generated-content claims unless the supplied evidence strongly supports it.\n"
         "- Do not use generic comments such as 'Thumbnail appears text-heavy' or comments about colors/fonts unless those traits are the actual misleading mechanism.\n"
         "- Never use generic boilerplate like 'may not accurately represent', 'available text context', 'should still be reviewed', or 'could not be sampled deeply enough'.\n"
@@ -1311,10 +1559,34 @@ def _normalize_suggestion_response(
             )
         )
     suggested_outcome = payload.get("suggested_outcome", "moderate")
+    raw_outcome_reason = _normalize_text(str(payload.get("suggested_outcome_reason") or ""))
+    fallback_reason = fallback.suggested_outcome_reason if fallback else ""
+    normalized_outcome_reason = raw_outcome_reason or fallback_reason
+    raw_tag_entries = payload.get("suggested_tags", [])
+    tags_by_name: dict[str, ManualReviewTagSelection] = {}
+    if isinstance(raw_tag_entries, list):
+        for entry in raw_tag_entries:
+            try:
+                selection = ManualReviewTagSelection.model_validate(entry)
+            except ValidationError:
+                continue
+            tags_by_name[selection.tag.value] = selection
+    fallback_tags_by_name = {
+        selection.tag.value: selection for selection in (fallback.suggested_tags if fallback else [])
+    }
+    normalized_tags: list[ManualReviewTagSelection] = []
+    for tag in MANUAL_REVIEW_TAG_ORDER:
+        selection = tags_by_name.get(tag.value) or fallback_tags_by_name.get(tag.value)
+        if selection is None:
+            normalized_tags.append(_selected_tag(tag, selected=False, confidence=0.0))
+            continue
+        normalized_tags.append(selection)
     suggestion_model = str(payload.get("suggestion_model") or settings.gemini_model)
     return ManualReportSuggestionResponse(
         issues=normalized_issues,
         suggested_outcome=ManualReportRequestedOutcome(suggested_outcome),
+        suggested_outcome_reason=normalized_outcome_reason,
+        suggested_tags=normalized_tags,
         suggestion_model=suggestion_model,
     )
 
@@ -1322,10 +1594,10 @@ def _normalize_suggestion_response(
 def suggest_manual_report(
     payload: ManualReportSuggestionRequest,
 ) -> ManualReportSuggestionResponse:
-    if not gemini_available():
-        raise RuntimeError("Gemini suggestions are not configured.")
-    prompt = _build_suggestion_prompt(payload)
     heuristic_fallback = _build_heuristic_suggestion_response(payload)
+    if not gemini_available():
+        return heuristic_fallback
+    prompt = _build_suggestion_prompt(payload)
     thumbnail_attempts = [payload.thumbnail_ref] if payload.thumbnail_ref else []
     thumbnail_attempts.append(None)
 
@@ -1342,6 +1614,8 @@ def suggest_manual_report(
             return ManualReportSuggestionResponse(
                 issues=normalized.issues,
                 suggested_outcome=normalized.suggested_outcome,
+                suggested_outcome_reason=normalized.suggested_outcome_reason,
+                suggested_tags=normalized.suggested_tags,
                 suggestion_model=settings.gemini_model,
             )
         except (httpx.HTTPError, ValidationError, ValueError, json.JSONDecodeError):
@@ -1374,6 +1648,7 @@ def optimize_manual_report(
             issues=normalized_issues,
             optimization_model=settings.gemini_model,
             report_text=optimized.report_text,
+            selected_tags=payload.selected_tags,
         )
     except (httpx.HTTPError, ValidationError, ValueError, json.JSONDecodeError):
         return _build_heuristic_optimization_response(payload)

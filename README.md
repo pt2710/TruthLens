@@ -16,7 +16,7 @@ Current committed root-repo truth:
 - selective deep verification is explicit and fail-soft
 - heavy LLM assistance remains downstream in review and report drafting, not in the baseline hot path
 - a compatible `configs/thresholds/bseo-policy.json` is now committed and the root runtime is promoted to `bseo-shadow`
-- `bseo-live` is still intentionally blocked by governance because committed shadow-observation history is still far below the live threshold
+- current governance artifacts now mark `bseo-live` as eligible, but the committed root runtime remains pinned to `bseo-shadow` until an explicit promotion changes `configs/thresholds/runtime-policy.json`
 - committed benchmarks are larger than the earlier tiny-sample snapshot, but they are still repository artifacts rather than production performance claims
 
 ## Architecture Summary
@@ -41,7 +41,7 @@ Authoritative architecture references:
 
 ## Architecture Visual
 
-![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.svg)
+![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.png)
 
 - [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
 - [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
@@ -70,13 +70,16 @@ Committed downstream layers:
 - explicit selective deep verification triggers and provenance
 - separate policy engine
 - explanation engine with path, verification, and policy evidence
+- distinct `Report` and `Verify` draft-generation flows with heuristic fail-soft suggestions when Gemini is unavailable
+- user-facing manual review tags that stay separate from core `content_class` and separate from packaging issue types
+- collection-scope review and reporting previews for resolvable YouTube mixes and playlists
 - browser observation records with shared provenance and distilled DOM features
 - feedback-linked supplemental label candidates and split-safe adjudication intake
 - human review and manual report flows
 
 Not in the baseline hot path:
 
-- Gemini report drafting assistance
+- Gemini wording assistance for report optimization and richer draft text
 - any always-on heavy LLM classifier
 - unguarded BSEO-live takeover
 
@@ -97,7 +100,7 @@ Committed root configuration today:
 
 - `configs/thresholds/runtime-policy.json` is set to `bseo-shadow`
 - `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
-- `bseo-live` is not promoted yet because runtime governance still blocks live rollout on shadow-observation soak
+- `bseo-live` is not promoted in the committed root runtime yet, even though current governance artifacts now mark it eligible for deliberate promotion
 
 ## Observation And Feedback Intake
 
@@ -106,8 +109,19 @@ TruthLens now treats browser observation and feedback-to-dataset as one shared i
 - the extension can persist DOM-based browser observation records without any DevTools dependency
 - observation records, feedback events, and supplemental label candidates share provenance-aware contracts
 - linked feedback and manual reports can create supplemental adjudication candidates in the labeling UI
+- manual review submissions can carry selected review tags and collection-scope provenance without writing directly into baseline train/validation/eval splits
 - those supplemental candidates are explicitly split-blocked and do not append directly to `train`, `validation`, or `test`
 - adjudicated supplemental rows land in separate intake artifacts and require future deterministic ingestion before any training use
+
+## Review And Collection Workflow
+
+- `recommended_action = blur` remains part of the internal policy contract, but the extension now keeps thumbnails visible and presents `blur` as a warning-state rather than a visual obstruction.
+- `Report` and `Verify` now use distinct draft intents. `Report` defaults toward `Clickbait`, while `Verify` defaults toward a positive tag such as `Music`, `Tutorial`, `Gaming`, or `Documentary` when the scored context supports it.
+- manual review tags are a user-facing classification layer. They are not the same thing as the six packaging issue types (`thumbnail`, `title`, `description`, `transcript`, `channel`, `other`) and they do not replace the core runtime `content_class`.
+- when Gemini is not configured or errors during draft suggestion, TruthLens falls back to explicit local heuristics instead of blocking the normal review flow.
+- when the extension can resolve a YouTube mix or playlist from DOM and URL context, it opens a collection preview first, requires confirmation, and then applies batch review provenance across the resolved members.
+- direct external YouTube reporting for collection scope is best-effort only. TruthLens reports resolved watch URLs item-by-item and never claims that unresolved collection members were externally reported.
+- direct YouTube API reporting is account-dependent. If the authenticated account does not expose a usable misleading-report category through `videoAbuseReportReasons`, TruthLens now routes single-item reports straight to YouTube’s in-page report flow instead of first triggering a known failing API call.
 
 ## Benchmarking
 
@@ -130,7 +144,7 @@ Current committed snapshot:
 | `configured runtime mode` | `bseo-shadow` |
 | `resolved runtime mode` | `bseo-shadow` |
 | `governance recommended mode` | `bseo-shadow` |
-| `max promotable mode` | `bseo-shadow` |
+| `max promotable mode` | `bseo-live` |
 
 Current eval vs validation snapshot from committed artifacts:
 
@@ -151,7 +165,8 @@ These numbers are not production claims.
 - eval and validation are both very strong on this committed split; that symmetry should be read as a clean repository benchmark, not as broad real-world proof
 - overall calibration error remains `0.220`, so ranking confidence is still less mature than the binary F1 snapshot suggests
 - per-head metrics are uneven: text/fusion are strong, while history and anomaly remain much weaker sidecars
-- `bseo-live` is still blocked because committed shadow-observation history is still far below the live threshold of `200`
+- current governance artifacts mark `bseo-live` as eligible, but the committed runtime remains on `bseo-shadow` until a deliberate promotion changes the root policy file
+- collection-scope review/report support is implemented in the extension and shared schemas, but committed benchmark volume for collection-batch intake may still be zero until the flow is exercised against real browser observations
 
 ## Evaluation And Visualization
 
@@ -298,12 +313,12 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - committed benchmarks are stronger than before but still small enough that README should not read like a product benchmark sheet
 - calibration and per-head stability still lag behind the clean fused F1 snapshot
 - history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
-- `bseo-shadow` is promoted, but `bseo-live` still lacks the shadow-soak evidence required for a truthful rollout
+- `bseo-shadow` remains the committed runtime default even though current governance artifacts now show `bseo-live` as eligible
 - observation and supplemental intake artifacts depend on actual runtime use, so a clean repo snapshot may legitimately show zero supplemental volume
 - current repo truth is stronger on architecture separation and governance discipline than on large-sample benchmark maturity
 
 ## Next Stages
 
-1. accumulate real shadow-observation history and only then reconsider `bseo-live`
+1. decide whether to deliberately promote `bseo-live` now that current governance artifacts mark it eligible, or keep `bseo-shadow` as the conservative committed default
 2. grow benchmark coverage beyond the current `44` eval rows so README metrics become less brittle
 3. keep turning benchmark and provenance artifacts into richer operator dashboards and runtime governance views

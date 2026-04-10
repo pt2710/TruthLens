@@ -54,6 +54,9 @@ export const observationDistilledFeaturesSchema = z.object({
   has_thumbnail: z.boolean().default(false),
   has_description_snapshot: z.boolean().default(false),
   has_transcript_excerpt: z.boolean().default(false),
+  collection_scope_type: z.enum(['single', 'mix', 'playlist']).default('single'),
+  collection_member_count: z.number().int().nonnegative().default(1),
+  collection_resolved_member_count: z.number().int().nonnegative().default(1),
   title_token_count: z.number().int().nonnegative().default(0),
   description_token_count: z.number().int().nonnegative().default(0),
   channel_known: z.boolean().default(true),
@@ -77,6 +80,49 @@ export const observationProvenanceSchema = z.object({
   session_id: z.string().optional().nullable(),
   page_url: z.string().optional().nullable(),
   source_path: z.string().optional().nullable(),
+});
+
+export const manualReviewTagSchema = z.enum([
+  'Clickbait',
+  'Music',
+  'Tutorial',
+  'Walkthrough',
+  'Gaming',
+  'News',
+  'Documentary',
+  'Promo',
+  'Satire',
+  'Art',
+  'Unknown',
+]);
+
+export const manualReviewCollectionMemberSchema = z.object({
+  item_id: z.string().min(1),
+  title_snapshot: z.string().optional().nullable(),
+  channel_name: z.string().optional().nullable(),
+  link_url: z.string().url().optional().nullable(),
+  thumbnail_ref: z.string().optional().nullable(),
+  resolved: z.boolean().default(true),
+});
+
+export const manualReviewCollectionScopeSchema = z.object({
+  scope_type: z.enum(['single', 'mix', 'playlist']).default('single'),
+  scope_id: z.string().min(1),
+  collection_title: z.string().optional().nullable(),
+  source_item_id: z.string().optional().nullable(),
+  source_link_url: z.string().url().optional().nullable(),
+  trigger_origin: z.enum(['single-item', 'collection-preview']).default('single-item'),
+  apply_to_all: z.boolean().default(false),
+  resolved_member_count: z.number().int().nonnegative().default(1),
+  unresolved_member_count: z.number().int().nonnegative().default(0),
+  member_items: z.array(manualReviewCollectionMemberSchema).default([]),
+});
+
+export const manualReviewTagSelectionSchema = z.object({
+  tag: manualReviewTagSchema,
+  selected: z.boolean(),
+  confidence: z.number().min(0).max(1).optional().nullable(),
+  rationale: z.string().optional().nullable(),
 });
 
 export const browserObservationRecordSchema = z.object({
@@ -114,6 +160,7 @@ export const browserObservationRecordSchema = z.object({
     content_class_confidence: 0,
     explanation_id: null,
   }),
+  collection_scope: manualReviewCollectionScopeSchema.optional().nullable(),
   provenance: observationProvenanceSchema,
 });
 
@@ -252,6 +299,8 @@ export const labelCandidateSchema = z.object({
   content_class_confidence: z.number().min(0).max(1).optional().nullable(),
   dominant_bias_risk: z.string().optional().nullable(),
   bias_review_required: z.boolean().optional().nullable(),
+  selected_tags: z.array(manualReviewTagSchema).default([]),
+  collection_scope: manualReviewCollectionScopeSchema.optional().nullable(),
   current_labels: z.record(z.boolean()).default({}),
   annotator_notes: z.array(z.string()).default([]),
   queue_reason: z.string().optional().nullable(),
@@ -307,6 +356,10 @@ export const manualReportSchema = z.object({
   transcript_excerpt: z.string().optional().nullable(),
   issues: z.array(manualReportIssueSchema).min(1),
   requested_outcome: manualReportRequestedOutcomeSchema.default('moderate'),
+  suggested_outcome_reason: z.string().optional().nullable(),
+  selected_tags: z.array(manualReviewTagSchema).default([]),
+  suggested_tags: z.array(manualReviewTagSelectionSchema).default([]),
+  collection_scope: manualReviewCollectionScopeSchema.optional().nullable(),
   optimize_requested: z.boolean().default(false),
   optimize_applied: z.boolean().default(false),
   optimization_model: z.string().optional().nullable(),
@@ -320,6 +373,8 @@ export const manualReportOptimizationRequestSchema = z.object({
   channel_name: z.string().min(1),
   transcript_excerpt: z.string().optional().nullable(),
   requested_outcome: manualReportRequestedOutcomeSchema.default('moderate'),
+  selected_tags: z.array(manualReviewTagSchema).default([]),
+  collection_scope: manualReviewCollectionScopeSchema.optional().nullable(),
   issues: z
     .array(
       z.object({
@@ -339,6 +394,7 @@ export const manualReportOptimizationResponseSchema = z.object({
   ),
   optimization_model: z.string().min(1),
   report_text: z.string().min(1),
+  selected_tags: z.array(manualReviewTagSchema).default([]),
 });
 
 export const manualReportSuggestionIssueSchema = z.object({
@@ -362,6 +418,7 @@ export const manualReportSuggestionRequestSchema = z.object({
   reasons: z.array(z.string()).default([]),
   content_class: contentClassSchema.default('unknown'),
   content_class_confidence: z.number().min(0).max(1).default(0),
+  collection_scope: manualReviewCollectionScopeSchema.optional().nullable(),
   bias_profile: biasProfileSchema.default({
     metrics: {},
     positive_biases: [],
@@ -373,6 +430,8 @@ export const manualReportSuggestionRequestSchema = z.object({
 export const manualReportSuggestionResponseSchema = z.object({
   issues: z.array(manualReportSuggestionIssueSchema).length(6),
   suggested_outcome: manualReportRequestedOutcomeSchema,
+  suggested_outcome_reason: z.string().min(1),
+  suggested_tags: z.array(manualReviewTagSelectionSchema).min(1),
   suggestion_model: z.string().min(1),
 });
 
@@ -446,6 +505,8 @@ export const youtubeAuthStatusSchema = z.object({
   connected: z.boolean(),
   auth_url: z.string().url().optional().nullable(),
   channel_name: z.string().optional().nullable(),
+  direct_reporting_supported: z.boolean().default(false),
+  direct_reporting_detail: z.string().optional().nullable(),
 });
 
 export const youtubeReportRequestSchema = z.object({
@@ -597,6 +658,10 @@ export type ObservationDistilledFeatures = z.infer<typeof observationDistilledFe
 export type ObservationScoreSnapshot = z.infer<typeof observationScoreSnapshotSchema>;
 export type ObservationProvenance = z.infer<typeof observationProvenanceSchema>;
 export type BrowserObservationRecord = z.infer<typeof browserObservationRecordSchema>;
+export type ManualReviewTag = z.infer<typeof manualReviewTagSchema>;
+export type ManualReviewCollectionMember = z.infer<typeof manualReviewCollectionMemberSchema>;
+export type ManualReviewCollectionScope = z.infer<typeof manualReviewCollectionScopeSchema>;
+export type ManualReviewTagSelection = z.infer<typeof manualReviewTagSelectionSchema>;
 export type ManualReportIssueType = z.infer<typeof manualReportIssueTypeSchema>;
 export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
 export type VerificationTrigger = z.infer<typeof verificationTriggerSchema>;

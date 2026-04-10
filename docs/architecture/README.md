@@ -23,4 +23,6 @@ Regenerate the committed blueprint renders with:
 pnpm docs:render-architecture
 ```
 
+The PNG render is the GitHub-primary artifact for README embedding. The SVG remains the editable source render, but the PNG must stay sharp and readable enough for direct repository-page viewing.
+
 If the runtime, artifacts, or README drift away from these visuals, update the visuals rather than leaving two competing versions of TruthLens in the repo.

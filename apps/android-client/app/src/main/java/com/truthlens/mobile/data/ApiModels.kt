@@ -121,6 +121,8 @@ data class YouTubeAuthStatusDto(
     val connected: Boolean,
     @SerializedName("auth_url") val authUrl: String?,
     @SerializedName("channel_name") val channelName: String?,
+    @SerializedName("direct_reporting_supported") val directReportingSupported: Boolean = false,
+    @SerializedName("direct_reporting_detail") val directReportingDetail: String? = null,
 )
 
 data class MobileResolvedWatchContextDto(

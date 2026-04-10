@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   datasetRecordSchema,
+  manualReportSchema,
   manualReportSuggestionRequestSchema,
   scoreItemRequestSchema,
   scoreResultSchema,
@@ -127,6 +128,52 @@ describe('shared schemas', () => {
         negative_biases: [],
         guardrail_applied: 'music-context-dampens-crossmodal-rigidity',
       },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts manual review tags and collection provenance on manual reports', () => {
+    const result = manualReportSchema.safeParse({
+      workflow_mode: 'report',
+      target_url: 'https://www.youtube.com/watch?v=123&list=RD123',
+      title_snapshot: 'Secret lab leak footage',
+      transcript_excerpt: null,
+      issues: [{ issue_type: 'title', comment: 'The title overstates certainty.' }],
+      requested_outcome: 'moderate',
+      selected_tags: ['Clickbait'],
+      suggested_tags: [
+        {
+          tag: 'Clickbait',
+          selected: true,
+          confidence: 0.92,
+          rationale: 'Report mode defaults to Clickbait.',
+        },
+      ],
+      collection_scope: {
+        scope_type: 'mix',
+        scope_id: 'RD123',
+        collection_title: 'Signal Watch Mix',
+        source_item_id: '123',
+        source_link_url: 'https://www.youtube.com/watch?v=123&list=RD123',
+        trigger_origin: 'collection-preview',
+        apply_to_all: true,
+        resolved_member_count: 2,
+        unresolved_member_count: 1,
+        member_items: [
+          {
+            item_id: '123',
+            title_snapshot: 'Secret lab leak footage',
+            channel_name: 'Signal Watch',
+            link_url: 'https://www.youtube.com/watch?v=123&list=RD123',
+            thumbnail_ref: 'https://img.youtube.com/vi/123/default.jpg',
+            resolved: true,
+          },
+        ],
+      },
+      optimize_requested: false,
+      optimize_applied: false,
+      report_text: 'Please review the misleading packaging.',
     });
 
     expect(result.success).toBe(true);

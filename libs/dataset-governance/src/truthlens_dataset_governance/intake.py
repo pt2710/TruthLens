@@ -89,6 +89,30 @@ def _issue_types(events: list[dict[str, Any]]) -> set[str]:
     return issue_types
 
 
+def _selected_tags(events: list[dict[str, Any]]) -> set[str]:
+    tags: set[str] = set()
+    for event in events:
+        manual_report = event.get("manual_report")
+        if not isinstance(manual_report, dict):
+            continue
+        for tag in manual_report.get("selected_tags", []):
+            normalized = str(tag).strip()
+            if normalized:
+                tags.add(normalized)
+    return tags
+
+
+def _latest_collection_scope(events: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for event in reversed(events):
+        manual_report = event.get("manual_report")
+        if not isinstance(manual_report, dict):
+            continue
+        collection_scope = manual_report.get("collection_scope")
+        if isinstance(collection_scope, dict):
+            return collection_scope
+    return None
+
+
 def _queue_name(risk_events: int, benign_events: int, notable_observation: bool) -> str:
     if risk_events and benign_events:
         return "disagreement"
@@ -218,8 +242,10 @@ def build_supplemental_candidate_batch(run_id: str | None = None) -> dict[str, A
         content_class_confidence = float(score_snapshot.get("content_class_confidence", 0.0) or 0.0)
         queue_name = _queue_name(risk_events, benign_events, notable_observation)
         issue_types = _issue_types(item_feedback)
+        selected_tags = sorted(_selected_tags(item_feedback))
+        collection_scope = _latest_collection_scope(item_feedback)
         current_labels = {
-            "clickbait": risk_events > 0,
+            "clickbait": risk_events > 0 or "Clickbait" in selected_tags,
             "deceptive_divergence": bool(
                 issue_types.intersection({"thumbnail", "title", "description", "transcript", "channel"})
             )
@@ -263,10 +289,17 @@ def build_supplemental_candidate_batch(run_id: str | None = None) -> dict[str, A
             "content_class_confidence": round(content_class_confidence, 4),
             "dominant_bias_risk": "feedback-linked-review" if risk_events else "feedback-linked-benign",
             "bias_review_required": current_labels["bias_review_required"],
+            "selected_tags": selected_tags,
+            "collection_scope": collection_scope,
             "current_labels": current_labels,
             "annotator_notes": [
                 f"Supplemental intake candidate derived from {len(item_observations)} browser observation(s) and {len(item_feedback)} feedback event(s).",
                 f"Risk feedback={risk_events}, benign feedback={benign_events}, manual reports={manual_reports}.",
+                (
+                    f"Selected manual-review tags: {', '.join(selected_tags)}."
+                    if selected_tags
+                    else "Selected manual-review tags: none recorded."
+                ),
             ],
             "queue_reason": (
                 "Conflicting browser/feedback signals require adjudication."

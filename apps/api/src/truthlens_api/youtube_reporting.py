@@ -23,6 +23,10 @@ MISLEADING_THUMBNAIL_SECONDARY_REASON_ID = "28"
 OTHER_MISLEADING_INFO_SECONDARY_REASON_ID = "31"
 
 
+class YouTubeDirectReportingUnsupportedError(RuntimeError):
+    """Raised when the current YouTube account cannot use the direct reporting API for misleading content."""
+
+
 def youtube_reporting_configured() -> bool:
     return bool(
         (settings.youtube_client_id or "").strip()
@@ -199,6 +203,11 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
             connected=False,
             auth_url=None,
             channel_name=None,
+            direct_reporting_supported=False,
+            direct_reporting_detail=(
+                "Add TRUTHLENS_YOUTUBE_CLIENT_ID, TRUTHLENS_YOUTUBE_CLIENT_SECRET, "
+                "and TRUTHLENS_YOUTUBE_REDIRECT_URI to enable direct reporting."
+            ),
         )
 
     token_payload = _load_token_payload()
@@ -208,6 +217,10 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
             connected=False,
             auth_url=build_youtube_authorization_url(),
             channel_name=None,
+            direct_reporting_supported=False,
+            direct_reporting_detail=(
+                "Connect your YouTube account to let TruthLens submit direct reports."
+            ),
         )
 
     try:
@@ -219,13 +232,20 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
             connected=False,
             auth_url=build_youtube_authorization_url(),
             channel_name=None,
+            direct_reporting_supported=False,
+            direct_reporting_detail=(
+                "TruthLens could not refresh the current YouTube authorization."
+            ),
         )
 
+    direct_reporting_supported, direct_reporting_detail = probe_direct_reporting_capability(access_token)
     return YouTubeAuthStatus(
         configured=True,
         connected=True,
         auth_url=None,
         channel_name=channel_name,
+        direct_reporting_supported=direct_reporting_supported,
+        direct_reporting_detail=direct_reporting_detail,
     )
 
 
@@ -375,11 +395,25 @@ def _choose_best_reason(
     return preferred_reason, _pick_secondary_reason(matched_reason or {}, issue_types)
 
 
+def probe_direct_reporting_capability(access_token: str) -> tuple[bool, str | None]:
+    try:
+        reasons = _list_video_report_reasons(access_token)
+        _choose_best_reason(reasons, ["title", "thumbnail"])
+    except RuntimeError as error:
+        return False, str(error)
+    except httpx.HTTPError as error:
+        return False, f"TruthLens could not verify direct YouTube reporting capability: {error}"
+    return True, "Direct YouTube API reporting is available for this account."
+
+
 def submit_youtube_report(payload: YouTubeReportRequest) -> YouTubeReportResponse:
     access_token = _get_access_token()
     video_id = _extract_video_id(payload.target_url)
     reasons = _list_video_report_reasons(access_token)
-    selected_reason, selected_secondary_reason = _choose_best_reason(reasons, payload.issue_types)
+    try:
+        selected_reason, selected_secondary_reason = _choose_best_reason(reasons, payload.issue_types)
+    except RuntimeError as error:
+        raise YouTubeDirectReportingUnsupportedError(str(error)) from error
 
     report_payload: dict[str, object] = {
         "videoId": video_id,

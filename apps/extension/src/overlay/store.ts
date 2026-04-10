@@ -1,4 +1,8 @@
-import type { ManualReportWorkflowMode, ScoreResult } from '@truthlens/shared-schemas';
+import type {
+  ManualReportWorkflowMode,
+  ManualReviewCollectionScope,
+  ScoreResult,
+} from '@truthlens/shared-schemas';
 import { create } from 'zustand';
 
 import { persistExtensionSessionStats } from '../lib/sessionStats';
@@ -13,6 +17,7 @@ export type ManualReportTarget = {
   thumbnailRef: string | null;
   descriptionSnapshot: string | null;
   transcriptExcerpt: string | null;
+  collectionScope: ManualReviewCollectionScope | null;
   score: ScoreResult | null;
 };
 

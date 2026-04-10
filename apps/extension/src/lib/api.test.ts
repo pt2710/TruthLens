@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { scoreItemRequestSchema } from '@truthlens/shared-schemas';
 
 import {
   batchScoreFeedItems,
@@ -122,12 +121,13 @@ describe('scoreFeedItem', () => {
       optimizeManualReportComments({
         workflow_mode: 'report',
         target_url: 'https://www.youtube.com/watch?v=card-1',
-        title_snapshot: 'Breaking aliens confirmed',
-        channel_name: 'Test channel',
-        transcript_excerpt: 'A transcript excerpt.',
-        requested_outcome: 'moderate',
-        issues: [{ issue_type: 'title', comment: 'The title makes a misleading certainty claim.' }],
-      }),
+      title_snapshot: 'Breaking aliens confirmed',
+      channel_name: 'Test channel',
+      transcript_excerpt: 'A transcript excerpt.',
+      requested_outcome: 'moderate',
+      selected_tags: [],
+      issues: [{ issue_type: 'title', comment: 'The title makes a misleading certainty claim.' }],
+    }),
     ).rejects.toThrow('Gemini optimization is not configured for this API.');
   });
 
@@ -159,6 +159,7 @@ describe('scoreFeedItem', () => {
       channel_name: 'Test channel',
       transcript_excerpt: 'A transcript excerpt.',
       requested_outcome: 'moderate',
+      selected_tags: [],
       issues: [{ issue_type: 'title', comment: 'The title makes a misleading certainty claim.' }],
     });
 
@@ -189,6 +190,16 @@ describe('scoreFeedItem', () => {
             { issue_type: 'other', suggested: true, comment: 'The packaging resembles clickbait.' },
           ],
           suggested_outcome: 'moderate',
+          suggested_outcome_reason:
+            'TruthLens recommends Moderate because the packaging overpromises relative to the visible context.',
+          suggested_tags: [
+            {
+              tag: 'Clickbait',
+              selected: true,
+              confidence: 0.88,
+              rationale: 'Report mode defaults to Clickbait.',
+            },
+          ],
           suggestion_model: 'gemini-2.5-flash',
         }),
       }),
@@ -213,8 +224,10 @@ describe('scoreFeedItem', () => {
     });
 
     expect(suggestion.suggested_outcome).toBe('moderate');
+    expect(suggestion.suggested_outcome_reason).toContain('packaging');
     expect(suggestion.suggestion_model).toBe('gemini-2.5-flash');
     expect(suggestion.issues).toHaveLength(6);
+    expect(suggestion.suggested_tags[0]?.tag).toBe('Clickbait');
     expect(suggestion.issues.find((issue) => issue.issue_type === 'thumbnail')?.suggested).toBe(true);
   });
 
@@ -228,6 +241,8 @@ describe('scoreFeedItem', () => {
           connected: true,
           auth_url: null,
           channel_name: 'TruthLens Test Channel',
+          direct_reporting_supported: true,
+          direct_reporting_detail: 'Direct YouTube API reporting is available for this account.',
         }),
       }),
     );
@@ -236,6 +251,7 @@ describe('scoreFeedItem', () => {
 
     expect(status.connected).toBe(true);
     expect(status.channel_name).toBe('TruthLens Test Channel');
+    expect(status.direct_reporting_supported).toBe(true);
   });
 
   it('submits a direct YouTube report through the API', async () => {

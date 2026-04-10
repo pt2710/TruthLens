@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-06T05:52:39.450518+00:00",
+  "generated_at": "2026-04-10T20:15:39.600347+00:00",
   "build_id": "build-20260406042818",
   "model_version": "baseline-v1-build-20260406042818",
   "trained_at": "2026-04-06T04:28:18.606357+00:00",
@@ -31,7 +31,7 @@
     "runtime_policy": "2026-04-06T04:40:02.540092+00:00",
     "thresholds": "2026-04-06T04:28:51.397798+00:00",
     "bseo_policy": "2026-04-06T04:28:51.402820+00:00",
-    "runtime_governance": "2026-04-06T05:52:39.436647+00:00",
+    "runtime_governance": "2026-04-10T20:15:39.550807+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null
@@ -44,12 +44,12 @@
     "selective_verification_contract_present": true,
     "heavy_llm_hot_path": false,
     "recommended_policy_mode": "bseo-shadow",
-    "max_promotable_mode": "bseo-shadow",
+    "max_promotable_mode": "bseo-live",
     "shadow_eligible": true,
-    "live_eligible": false
+    "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-04-06T05:52:39.436647+00:00",
+    "generated_at": "2026-04-10T20:15:39.550806+00:00",
     "build_id": "build-20260406042818",
     "runtime_policy": {
       "configured_mode": "bseo-shadow",
@@ -65,7 +65,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 1.406,
+        "age_hours": 111.789,
         "build_id": "build-20260406042818",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -86,17 +86,15 @@
       "calibration_error": 0.2201,
       "bseo_objective_score": 0.8344,
       "benign_false_positive_rate": 0.0,
-      "shadow_observation_count": 40
+      "shadow_observation_count": 643
     },
     "promotion": {
       "shadow_eligible": true,
       "shadow_blockers": [],
-      "live_eligible": false,
-      "live_blockers": [
-        "insufficient-shadow-observation-history"
-      ],
+      "live_eligible": true,
+      "live_blockers": [],
       "recommended_mode": "bseo-shadow",
-      "max_promotable_mode": "bseo-shadow"
+      "max_promotable_mode": "bseo-live"
     }
   },
   "metrics": {
@@ -880,11 +878,18 @@
   },
   "supplemental_intake": {
     "browser_observations": {
-      "total_observations": 0,
-      "unique_items": 0,
-      "surface_counts": {},
-      "recommended_action_counts": {},
-      "with_score_link": 0
+      "total_observations": 997,
+      "unique_items": 460,
+      "surface_counts": {
+        "extension-feed": 997
+      },
+      "recommended_action_counts": {
+        "ask-report": 4,
+        "badge": 47,
+        "blur": 942,
+        "none": 4
+      },
+      "with_score_link": 997
     },
     "candidate_batch": {
       "candidate_count": 0,
@@ -898,16 +903,17 @@
       "adjudicated_count": 0,
       "confirmed_count": 0,
       "escalation_count": 0,
-      "supplemental_gold_count": 0
+      "supplemental_gold_count": 0,
+      "collection_scoped_count": 0,
+      "selected_tag_counts": {}
     },
     "candidate_batch_path": null,
     "supplemental_adjudication_path": null,
     "supplemental_gold_path": null
   },
   "caveats": [
-    "No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich.",
     "No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.",
-    "BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history."
+    "No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot."
   ],
   "missing_data": [],
   "output_root": "docs/benchmarks/latest",

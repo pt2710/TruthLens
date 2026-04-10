@@ -274,7 +274,7 @@ def test_manual_report_optimize_endpoint_returns_structured_payload(
     assert "confirmed fact" in payload["report_text"]
 
 
-def test_manual_report_suggest_endpoint_returns_503_without_gemini_key(
+def test_manual_report_suggest_endpoint_returns_heuristic_payload_without_gemini_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("truthlens_api.main.settings.gemini_api_key", None)
@@ -291,8 +291,11 @@ def test_manual_report_suggest_endpoint_returns_503_without_gemini_key(
         },
     )
 
-    assert response.status_code == 503
-    assert "not configured" in response.json()["detail"].lower()
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["suggestion_model"] == "truthlens-heuristic-fallback-v1"
+    assert payload["suggested_outcome_reason"]
+    assert payload["suggested_tags"][0]["tag"] == "Clickbait"
 
 
 def test_manual_report_suggest_endpoint_returns_structured_payload(
@@ -319,6 +322,15 @@ def test_manual_report_suggest_endpoint_returns_structured_payload(
                 {"issue_type": "other", "suggested": True, "comment": "The packaging resembles clickbait."},
             ],
             "suggested_outcome": "moderate",
+            "suggested_outcome_reason": "TruthLens recommends Moderate because the packaging overpromises.",
+            "suggested_tags": [
+                {
+                    "tag": "Clickbait",
+                    "selected": True,
+                    "confidence": 0.91,
+                    "rationale": "Report mode defaults to Clickbait.",
+                }
+            ],
             "suggestion_model": "gemini-2.5-flash",
         },
     )
@@ -338,8 +350,10 @@ def test_manual_report_suggest_endpoint_returns_structured_payload(
     assert response.status_code == 200
     payload = response.json()
     assert payload["suggested_outcome"] == "moderate"
+    assert payload["suggested_outcome_reason"]
     assert payload["suggestion_model"] == "gemini-2.5-flash"
     assert len(payload["issues"]) == 6
+    assert payload["suggested_tags"][0]["tag"] == "Clickbait"
     assert payload["issues"][0]["issue_type"] == "thumbnail"
 
 
@@ -378,6 +392,8 @@ def test_youtube_auth_status_endpoint_reports_missing_config(
             "connected": False,
             "auth_url": None,
             "channel_name": None,
+            "direct_reporting_supported": False,
+            "direct_reporting_detail": "YouTube OAuth is not configured.",
         },
     )
 
@@ -387,6 +403,7 @@ def test_youtube_auth_status_endpoint_reports_missing_config(
     payload = response.json()
     assert payload["configured"] is False
     assert payload["connected"] is False
+    assert payload["direct_reporting_supported"] is False
 
 
 def test_youtube_report_endpoint_returns_503_without_oauth_config(
@@ -435,6 +452,33 @@ def test_youtube_report_endpoint_returns_reported_payload(
     payload = response.json()
     assert payload["status"] == "reported"
     assert payload["reason_label"] == "Spam or misleading"
+
+
+def test_youtube_report_endpoint_returns_409_when_direct_reporting_is_unsupported(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from truthlens_api.youtube_reporting import YouTubeDirectReportingUnsupportedError
+
+    monkeypatch.setattr("truthlens_api.main.youtube_reporting_configured", lambda: True)
+
+    def _raise(payload):
+        raise YouTubeDirectReportingUnsupportedError(
+            "YouTube did not return a suitable 'Spam or misleading' report category for this account."
+        )
+
+    monkeypatch.setattr("truthlens_api.main.submit_youtube_report", _raise)
+
+    response = client.post(
+        "/youtube/report",
+        json={
+            "target_url": "https://www.youtube.com/watch?v=item-manual-report",
+            "report_text": "Please review this video for misleading framing.",
+            "issue_types": ["title", "thumbnail"],
+        },
+    )
+
+    assert response.status_code == 409
+    assert "spam or misleading" in response.json()["detail"].lower()
 
 
 def test_feedback_summary_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -1,13 +1,13 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-06T05:52:39.450518+00:00`
+- Generated at: `2026-04-10T20:15:39.600347+00:00`
 - Build ID: `build-20260406042818`
 - Model version: `baseline-v1-build-20260406042818`
 - Eval sample count: `44`
 - Configured runtime policy mode: `bseo-shadow`
 - Resolved runtime policy mode: `bseo-shadow`
 - Governance recommended mode: `bseo-shadow`
-- Max promotable mode: `bseo-shadow`
+- Max promotable mode: `bseo-live`
 
 ## Metrics
 
@@ -22,8 +22,8 @@
 
 ## Observation And Feedback Intake
 
-- Browser observations: `0`
-- Unique observed items: `0`
+- Browser observations: `997`
+- Unique observed items: `460`
 - Supplemental candidates: `0`
 - Split-blocked candidates: `0`
 - Supplemental adjudicated: `0`
@@ -31,14 +31,12 @@
 ## Runtime Governance
 
 - Shadow eligible: `True`
-- Live eligible: `False`
-- Live blockers: `insufficient-shadow-observation-history`
+- Live eligible: `True`
 
 ## Caveats
 
-- No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich.
 - No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.
-- BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.
+- No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.
 
 ## Missing Data
 

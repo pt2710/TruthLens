@@ -65,6 +65,7 @@ describe('overlay store', () => {
       thumbnailRef: 'https://example.com/thumb-3.jpg',
       descriptionSnapshot: 'Metadata snippet referencing the claimed leak.',
       transcriptExcerpt: 'Short transcript excerpt with vague claims.',
+      collectionScope: null,
       score: score('ask-report'),
     });
 

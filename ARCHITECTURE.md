@@ -26,6 +26,7 @@ That order is strict. Perception, verification, policy, and explanation must not
 - Scoring outputs must include `risk_score`, `confidence`, `uncertainty`, `recommended_action`, and `reasons`.
 - Runtime outputs must also surface provenance for path signals, verification state, policy basis, and artifact lineage.
 - Browser observation records and feedback-linked label candidates must use shared provenance-aware contracts.
+- Manual review tags must remain separate from the six packaging issue types and separate from the core runtime `content_class`.
 - Auto-actions may not trigger from raw model score alone.
 - Selective deep verification must be explicit and fail soft.
 - Heavy LLM assistance must remain outside the baseline scoring hot path.
@@ -35,6 +36,9 @@ That order is strict. Perception, verification, policy, and explanation must not
 - Training is blocked until governance artifacts validate.
 - Mobile and extension review flows must share stable schemas rather than drift apart.
 - Supplemental browser/feedback intake must stay separate from direct train, validation, and test writes until future deterministic ingestion.
+- `recommended_action = blur` may remain in the policy contract for compatibility, but extension presentation must keep thumbnails visible unless a separate `hide` policy is selected.
+- `report` and `verify-transparent` must stay behaviorally distinct in draft suggestions, tag defaults, and collection-scope review semantics even though they share the same base contracts.
+- direct `/youtube/report` availability is account-dependent; extension flows must preflight capability truth and use YouTube’s in-page flow instead of knowingly triggering an unsupported direct API path.
 
 ## Layer Boundaries
 
@@ -84,6 +88,8 @@ Explanation must distinguish:
 - fused reasons
 - verification reasons
 - policy reasons
+- manual review tag suggestions
+- collection-scope provenance
 
 ## BSEO Placement
 
@@ -111,6 +117,9 @@ BSEO is not the core classifier.
 - browser observation capture is DOM-based and must not depend on DevTools
 - feedback events may link back to observation ids and runtime artifact provenance
 - observation and feedback signals can produce supplemental label candidates for adjudication
+- collection-scope review actions for mixes and playlists must preserve both collection-level and per-item provenance
+- external platform reporting may run best-effort per resolved member, but unresolved collection members must remain explicit skips rather than implied successes
+- if the authenticated YouTube account does not expose a usable misleading-report category, direct API reporting is unavailable and the browser extension must route single-item reports through the page flow or store collection review only inside TruthLens
 - adjudicated supplemental rows remain split-blocked and excluded from direct train/validation/test use
 - future ingestion must assign deterministic split lineage before any supplemental row can become training data
 

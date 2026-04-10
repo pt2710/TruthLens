@@ -165,8 +165,19 @@ The shared contract should surface:
 - action decision basis
 - policy mode and resolved policy mode
 - artifact provenance
+- manual review tag suggestions and selections
+- collection scope, resolved member counts, and collection trigger provenance
 
 Explanation must not pretend a policy or verification reason came from the classifier if it did not.
+
+Review-flow rules:
+
+- `report` and `verify-transparent` share contracts but must not share the same intent or default classification behavior
+- `report` should default toward `Clickbait`
+- `verify-transparent` should default toward an honest-content tag when supported by scored context
+- `recommended_action = blur` remains a policy signal, but the extension UI keeps thumbnails visible and uses non-blurring warning presentation
+- optional Gemini assistance may improve wording, but draft suggestion must fail soft to local heuristics
+- direct `/youtube/report` calls must be gated by account capability truth; if the authenticated account lacks a usable misleading-report category, TruthLens must route single-item reports to the in-page flow instead of knowingly issuing a failing direct API request
 
 ## 9. Observation, Feedback, And Supplemental Intake
 
@@ -177,6 +188,9 @@ Rules:
 - browser observation capture must work from DOM-derived context and may not require DevTools
 - observation records, feedback events, and label candidates must share provenance-aware contracts
 - supplemental candidates may flow into adjudication and labeling UI review
+- collection-scoped review/report actions must carry explicit `single` / `mix` / `playlist` scope and resolved member counts
+- collection batching must preview before apply and must never imply that unresolved external report targets were submitted
+- if direct YouTube API reporting is unsupported for the authenticated account, collection reporting must degrade to internal TruthLens provenance only rather than claiming an external batch report
 - adjudicated supplemental rows must remain separate from direct `train` / `validation` / `test` artifacts
 - any future ingestion of supplemental rows must re-enter deterministic dataset governance and split assignment
 

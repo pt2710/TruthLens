@@ -275,6 +275,22 @@ async function main() {
             },
           ],
           suggested_outcome: 'moderate',
+          suggested_outcome_reason:
+            'TruthLens recommends Moderate because the packaging overstates certainty across multiple signals.',
+          suggested_tags: [
+            {
+              tag: 'Clickbait',
+              selected: true,
+              confidence: 0.94,
+              rationale: 'Report mode defaults to Clickbait for this packaging profile.',
+            },
+            {
+              tag: 'News',
+              selected: false,
+              confidence: 0.21,
+              rationale: 'News context is weaker than the deceptive packaging signal.',
+            },
+          ],
           suggestion_model: 'gemini-2.5-flash',
         }),
       });
@@ -370,6 +386,8 @@ async function main() {
           connected: true,
           auth_url: null,
           channel_name: 'TruthLens Test Channel',
+          direct_reporting_supported: true,
+          direct_reporting_detail: 'Direct YouTube API reporting is available for this account.',
         }),
       });
     });
@@ -377,7 +395,7 @@ async function main() {
     await page.route('http://127.0.0.1:8000/youtube/report', async (route) => {
       youtubeReports.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
-        status: 400,
+        status: 409,
         contentType: 'application/json',
         body: JSON.stringify({
           detail:
@@ -389,7 +407,7 @@ async function main() {
     await page.goto(`${baseUrl}/tests/fixtures/youtube-feed.html`);
     await page.addScriptTag({
       type: 'module',
-      url: `${baseUrl}/apps/extension/dist/content.js`,
+      path: resolve(repoRoot, 'apps/extension/dist/content.js'),
     });
 
     await page.waitForFunction(

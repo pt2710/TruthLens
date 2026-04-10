@@ -43,12 +43,12 @@
     &quot;selective_verification_contract_present&quot;: true,
     &quot;heavy_llm_hot_path&quot;: false,
     &quot;recommended_policy_mode&quot;: &quot;bseo-shadow&quot;,
-    &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;,
     &quot;shadow_eligible&quot;: true,
-    &quot;live_eligible&quot;: false
+    &quot;live_eligible&quot;: true
   },
   &quot;runtime_governance&quot;: {
-    &quot;generated_at&quot;: &quot;2026-04-06T05:52:39.436647+00:00&quot;,
+    &quot;generated_at&quot;: &quot;2026-04-10T20:15:39.550806+00:00&quot;,
     &quot;build_id&quot;: &quot;build-20260406042818&quot;,
     &quot;runtime_policy&quot;: {
       &quot;configured_mode&quot;: &quot;bseo-shadow&quot;,
@@ -64,7 +64,7 @@
         &quot;stale&quot;: false,
         &quot;status&quot;: &quot;compatible&quot;,
         &quot;reason&quot;: null,
-        &quot;age_hours&quot;: 1.406,
+        &quot;age_hours&quot;: 111.789,
         &quot;build_id&quot;: &quot;build-20260406042818&quot;,
         &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
       },
@@ -85,17 +85,15 @@
       &quot;calibration_error&quot;: 0.2201,
       &quot;bseo_objective_score&quot;: 0.8344,
       &quot;benign_false_positive_rate&quot;: 0.0,
-      &quot;shadow_observation_count&quot;: 40
+      &quot;shadow_observation_count&quot;: 643
     },
     &quot;promotion&quot;: {
       &quot;shadow_eligible&quot;: true,
       &quot;shadow_blockers&quot;: [],
-      &quot;live_eligible&quot;: false,
-      &quot;live_blockers&quot;: [
-        &quot;insufficient-shadow-observation-history&quot;
-      ],
+      &quot;live_eligible&quot;: true,
+      &quot;live_blockers&quot;: [],
       &quot;recommended_mode&quot;: &quot;bseo-shadow&quot;,
-      &quot;max_promotable_mode&quot;: &quot;bseo-shadow&quot;
+      &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;
     }
   },
   &quot;metrics&quot;: {
@@ -232,9 +230,8 @@
     }
   },
   &quot;caveats&quot;: [
-    &quot;No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich.&quot;,
     &quot;No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.&quot;,
-    &quot;BSEO live is not currently eligible. Max promotable committed mode is `bseo-shadow`. Live blockers: insufficient-shadow-observation-history.&quot;
+    &quot;No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.&quot;
   ],
   &quot;artifact_paths&quot;: {
     &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,

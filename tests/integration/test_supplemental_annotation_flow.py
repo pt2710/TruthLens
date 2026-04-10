@@ -95,6 +95,28 @@ def test_browser_observation_and_feedback_become_supplemental_adjudication(
                 "workflow_mode": "report",
                 "target_url": "https://www.youtube.com/watch?v=watch-supp-1",
                 "title_snapshot": "Breaking update on transfer talks",
+                "selected_tags": ["Clickbait"],
+                "collection_scope": {
+                    "scope_type": "mix",
+                    "scope_id": "RD-watch-supp-1",
+                    "collection_title": "Signal Watch Mix",
+                    "source_item_id": "watch-supp-1",
+                    "source_link_url": "https://www.youtube.com/watch?v=watch-supp-1&list=RD-watch-supp-1",
+                    "trigger_origin": "collection-preview",
+                    "apply_to_all": True,
+                    "resolved_member_count": 2,
+                    "unresolved_member_count": 0,
+                    "member_items": [
+                        {
+                            "item_id": "watch-supp-1",
+                            "title_snapshot": "Breaking update on transfer talks",
+                            "channel_name": "Signal Watch",
+                            "link_url": "https://www.youtube.com/watch?v=watch-supp-1&list=RD-watch-supp-1",
+                            "thumbnail_ref": "https://i.ytimg.com/vi/watch-supp-1/hqdefault.jpg",
+                            "resolved": True,
+                        }
+                    ],
+                },
                 "issues": [
                     {
                         "issue_type": "title",
@@ -117,6 +139,8 @@ def test_browser_observation_and_feedback_become_supplemental_adjudication(
         item for item in batch_payload["review_queue"] if item["item_id"] == "watch-supp-1"
     )
     assert supplemental_item["origin"] == "supplemental-intake"
+    assert supplemental_item["selected_tags"] == ["Clickbait"]
+    assert supplemental_item["collection_scope"]["scope_type"] == "mix"
     assert supplemental_item["split_safety"]["eligible_for_training"] is False
     assert batch_payload["supplemental_summary"]["candidate_count"] >= 1
 

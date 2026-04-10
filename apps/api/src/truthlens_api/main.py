@@ -29,6 +29,7 @@ from truthlens_api.mobile import (
 )
 from truthlens_api.settings import settings
 from truthlens_api.youtube_reporting import (
+    YouTubeDirectReportingUnsupportedError,
     build_youtube_authorization_url,
     complete_youtube_authorization,
     get_youtube_auth_status,
@@ -412,9 +413,12 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
             "youtube-auth",
             "Checked YouTube reporting availability.",
             details=(
-                f"Connected as {youtube_auth.channel_name}."
-                if youtube_auth.connected and youtube_auth.channel_name
-                else "Direct YouTube reporting is not connected yet."
+                (
+                    f"Connected as {youtube_auth.channel_name}. {youtube_auth.direct_reporting_detail}"
+                    if youtube_auth.connected and youtube_auth.channel_name
+                    else youtube_auth.direct_reporting_detail
+                )
+                or "Direct YouTube reporting is not connected yet."
             ),
         )
     )
@@ -464,11 +468,6 @@ def optimize_report(
 def suggest_report(
     payload: ManualReportSuggestionRequest,
 ) -> ManualReportSuggestionResponse:
-    if not gemini_available():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Gemini suggestions are not configured for this API.",
-        )
     try:
         return suggest_manual_report(payload)
     except httpx.HTTPError as error:
@@ -532,6 +531,11 @@ def youtube_report(payload: YouTubeReportRequest) -> YouTubeReportResponse:
         )
     try:
         return submit_youtube_report(payload)
+    except YouTubeDirectReportingUnsupportedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
     except httpx.HTTPError as error:
         response_text = ""
         if isinstance(error, httpx.HTTPStatusError):

@@ -74,7 +74,6 @@ export function createBootstrapScore(item: ScoreItemRequest): ScoreResult {
   const uppercaseRatio = alphaLetters > 0 ? uppercaseLetters / alphaLetters : 0;
   const punctuationIntensity = (item.title.match(/[!?]/g) ?? []).length;
   const titleTokenCount = item.title.split(/\s+/).filter(Boolean).length;
-  const transcriptText = item.transcript_excerpt?.toLowerCase() ?? '';
   const titleKeywords = keywordSet(item.title);
   const transcriptKeywords = keywordSet(item.transcript_excerpt ?? '');
   const overlap =

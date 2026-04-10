@@ -105,6 +105,28 @@ def test_supplemental_candidate_batch_derives_split_safe_candidates(
                 "workflow_mode": "report",
                 "target_url": "https://www.youtube.com/watch?v=watch-1",
                 "title_snapshot": "Breaking update on transfer talks",
+                "selected_tags": ["Clickbait"],
+                "collection_scope": {
+                    "scope_type": "playlist",
+                    "scope_id": "PL-beats",
+                    "collection_title": "Transfer Watch Playlist",
+                    "source_item_id": "watch-1",
+                    "source_link_url": "https://www.youtube.com/watch?v=watch-1&list=PL-beats",
+                    "trigger_origin": "collection-preview",
+                    "apply_to_all": True,
+                    "resolved_member_count": 3,
+                    "unresolved_member_count": 1,
+                    "member_items": [
+                        {
+                            "item_id": "watch-1",
+                            "title_snapshot": "Breaking update on transfer talks",
+                            "channel_name": "Signal Watch",
+                            "link_url": "https://www.youtube.com/watch?v=watch-1&list=PL-beats",
+                            "thumbnail_ref": "https://i.ytimg.com/vi/watch-1/hqdefault.jpg",
+                            "resolved": True,
+                        }
+                    ],
+                },
                 "issues": [
                     {
                         "issue_type": "title",
@@ -127,4 +149,6 @@ def test_supplemental_candidate_batch_derives_split_safe_candidates(
     assert candidate["split_safety"]["eligible_for_training"] is False
     assert candidate["split_safety"]["split_status"] == "blocked-until-ingestion"
     assert candidate["feedback_summary"]["risk_event_count"] == 1
+    assert candidate["selected_tags"] == ["Clickbait"]
+    assert candidate["collection_scope"]["scope_type"] == "playlist"
     assert "browser-observation" in candidate["provenance"]["candidate_sources"]

@@ -196,6 +196,15 @@ def test_suggest_manual_report_normalizes_missing_issue_types(
                                                 },
                                             ],
                                             "suggested_outcome": "moderate",
+                                            "suggested_outcome_reason": "TruthLens recommends Moderate because the packaging overpromises.",
+                                            "suggested_tags": [
+                                                {
+                                                    "tag": "Clickbait",
+                                                    "selected": True,
+                                                    "confidence": 0.91,
+                                                    "rationale": "Report mode defaults to Clickbait.",
+                                                }
+                                            ],
                                             "suggestion_model": "LLM_Report_Generator",
                                         }
                                     )
@@ -241,6 +250,8 @@ def test_suggest_manual_report_normalizes_missing_issue_types(
 
     assert result.suggestion_model == "gemini-2.5-flash"
     assert result.suggested_outcome.value == "moderate"
+    assert result.suggested_outcome_reason
+    assert result.suggested_tags[0].tag.value == "Clickbait"
     assert len(result.issues) == 6
     assert result.issues[0].issue_type == "thumbnail"
     assert result.issues[0].suggested is True
@@ -313,6 +324,7 @@ def test_suggest_manual_report_falls_back_to_heuristics_when_gemini_fails(
 
     assert call_count == 2
     assert result.suggestion_model == "truthlens-heuristic-fallback-v1"
+    assert result.suggested_tags[0].tag.value == "Clickbait"
     issue_map = {issue.issue_type: issue for issue in result.issues}
     assert issue_map["thumbnail"].suggested is True
     assert 'title phrases "stay out"' in issue_map["thumbnail"].comment.lower()
@@ -373,6 +385,7 @@ def test_suggest_manual_report_can_choose_remove_for_strong_systematic_signals(
     )
 
     assert result.suggested_outcome.value == "remove"
+    assert result.suggested_tags[0].tag.value == "Clickbait"
 
 
 def test_suggest_manual_report_uses_music_aware_heuristics(
@@ -416,6 +429,8 @@ def test_suggest_manual_report_uses_music_aware_heuristics(
     )
 
     assert result.suggestion_model == "truthlens-heuristic-fallback-v1"
+    assert any(tag.tag.value == "Clickbait" and tag.selected for tag in result.suggested_tags)
+    assert any(tag.tag.value == "Music" for tag in result.suggested_tags)
     issue_map = {issue.issue_type: issue for issue in result.issues}
     assert "music content" in issue_map["thumbnail"].comment.lower()
     assert "artist, track, or release" in issue_map["title"].comment.lower()
@@ -547,6 +562,15 @@ def test_suggest_manual_report_preserves_unsuggested_gemini_fields(
                                                 },
                                             ],
                                             "suggested_outcome": "moderate",
+                                            "suggested_outcome_reason": "TruthLens recommends Moderate because the packaging overpromises.",
+                                            "suggested_tags": [
+                                                {
+                                                    "tag": "Clickbait",
+                                                    "selected": True,
+                                                    "confidence": 0.88,
+                                                    "rationale": "Report mode defaults to Clickbait.",
+                                                }
+                                            ],
                                             "suggestion_model": "LLM_Report_Generator",
                                         }
                                     )

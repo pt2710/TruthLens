@@ -113,6 +113,15 @@ def _mock_suggestion_payload(*, model_name: str) -> dict[str, object]:
             },
         ],
         "suggested_outcome": "moderate",
+        "suggested_outcome_reason": "TruthLens recommends Moderate because the packaging overpromises.",
+        "suggested_tags": [
+            {
+                "tag": "Clickbait",
+                "selected": True,
+                "confidence": 0.91,
+                "rationale": "Report mode defaults to Clickbait.",
+            }
+        ],
         "suggestion_model": model_name,
     }
 

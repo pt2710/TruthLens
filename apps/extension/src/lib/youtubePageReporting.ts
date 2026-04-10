@@ -66,10 +66,18 @@ function normalizeComparableUrl(value: string | null): string | null {
     const url = new URL(value, window.location.href);
     if (url.pathname === '/watch') {
       const videoId = url.searchParams.get('v');
-      return videoId ? `/watch?v=${videoId}` : url.pathname;
+      const listId = url.searchParams.get('list');
+      if (!videoId) {
+        return url.pathname;
+      }
+      return listId ? `/watch?v=${videoId}&list=${listId}` : `/watch?v=${videoId}`;
     }
     if (url.pathname.startsWith('/shorts/')) {
       return url.pathname;
+    }
+    if (url.pathname === '/playlist') {
+      const listId = url.searchParams.get('list');
+      return listId ? `/playlist?list=${listId}` : url.pathname;
     }
     return url.toString();
   } catch {

@@ -1,7 +1,11 @@
 import httpx
 import pytest
 
-from truthlens_api.youtube_reporting import _choose_best_reason, _list_video_report_reasons
+from truthlens_api.youtube_reporting import (
+    _choose_best_reason,
+    _list_video_report_reasons,
+    probe_direct_reporting_capability,
+)
 
 
 class _MockResponse:
@@ -112,3 +116,54 @@ def test_choose_best_reason_refuses_unrelated_categories() -> None:
             ],
             ["title"],
         )
+
+
+def test_probe_direct_reporting_capability_returns_false_when_misleading_reason_is_missing(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.youtube_reporting._list_video_report_reasons",
+        lambda access_token: [
+            {
+                "id": "G",
+                "snippet": {
+                    "label": "Sex or nudity",
+                    "secondaryReasons": [],
+                },
+            }
+        ],
+    )
+
+    supported, detail = probe_direct_reporting_capability("test-access-token")
+
+    assert supported is False
+    assert detail is not None
+    assert "spam or misleading" in detail.lower()
+
+
+def test_probe_direct_reporting_capability_returns_true_when_reason_is_available(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.youtube_reporting._list_video_report_reasons",
+        lambda access_token: [
+            {
+                "id": "S",
+                "snippet": {
+                    "label": "Spam or misleading",
+                    "secondaryReasons": [
+                        {
+                            "id": "31",
+                            "label": "Other misleading info",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+
+    supported, detail = probe_direct_reporting_capability("test-access-token")
+
+    assert supported is True
+    assert detail is not None
+    assert "available" in detail.lower()

@@ -299,6 +299,23 @@ def _summarize_supplemental_intake(
     summary = dict(candidate_payload.get("summary", {}))
     adjudication_summary = dict((supplemental_adjudication or {}).get("summary", {}))
     queues = dict(candidate_payload.get("supplemental_candidates", {}))
+    all_candidates = [
+        candidate
+        for queue in queues.values()
+        if isinstance(queue, list)
+        for candidate in queue
+        if isinstance(candidate, dict)
+    ]
+    tag_counter: dict[str, int] = {}
+    collection_scoped_count = 0
+    for candidate in all_candidates:
+        for tag in candidate.get("selected_tags", []):
+            normalized = str(tag).strip()
+            if normalized:
+                tag_counter[normalized] = tag_counter.get(normalized, 0) + 1
+        collection_scope = candidate.get("collection_scope")
+        if isinstance(collection_scope, dict) and str(collection_scope.get("scope_type", "single")) != "single":
+            collection_scoped_count += 1
     return {
       "candidate_count": _safe_int(summary.get("candidate_count")),
       "feedback_linked_count": _safe_int(summary.get("feedback_linked_count")),
@@ -312,6 +329,8 @@ def _summarize_supplemental_intake(
       "confirmed_count": _safe_int(adjudication_summary.get("confirmed_count")),
       "escalation_count": _safe_int(adjudication_summary.get("escalation_count")),
       "supplemental_gold_count": len(supplemental_gold or []),
+      "collection_scoped_count": collection_scoped_count,
+      "selected_tag_counts": tag_counter,
     }
 
 
@@ -406,6 +425,10 @@ def build_benchmark_summary() -> dict[str, Any]:
     if supplemental_intake["candidate_count"] == 0:
         caveats.append(
             "No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume."
+        )
+    if supplemental_intake.get("collection_scoped_count", 0) == 0:
+        caveats.append(
+            "No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot."
         )
 
     policy_mode = str((runtime_policy or {}).get("policy_mode", "threshold-default"))
@@ -1059,7 +1082,7 @@ def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) 
             150,
             "Feedback-linked candidates",
             str(_safe_int(candidate_summary.get("feedback_linked_count"))),
-            f"manual_reports={_safe_int(candidate_summary.get('manual_report_linked_count'))}",
+            f"manual_reports={_safe_int(candidate_summary.get('manual_report_linked_count'))}, collection_scoped={_safe_int(candidate_summary.get('collection_scoped_count'))}",
         ),
         _card(
             350,

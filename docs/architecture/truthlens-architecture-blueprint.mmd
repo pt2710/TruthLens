@@ -116,7 +116,7 @@ subgraph policy_layer["6. Policy And Action"]
   bseo_shadow["bseo-shadow"]
   bseo_live["bseo-live"]
   guardrails["Artifact + confidence + uncertainty guardrails"]
-  action_map["Action selection<br/>none | badge | blur | ask-report | hide"]
+  action_map["Action selection<br/>none | badge | blur(signal-only) | ask-report | hide"]
 end
 class threshold_default,bseo_shadow,bseo_live,guardrails,action_map policy
 
@@ -139,9 +139,9 @@ bseo_live --> action_map
 
 subgraph explanation["7. Explanation And Review Provenance"]
   explanation_engine["Explanation engine<br/>path | fused | verification | policy reasons"]
-  review_payloads["Stable review payloads<br/>API | extension | mobile"]
-  manual_review["Manual report / verify flows"]
-  gemini["Gemini assistance for review drafting"]
+  review_payloads["Stable review payloads<br/>API | extension | mobile | tags | collection provenance"]
+  manual_review["Manual report / verify flows<br/>distinct drafts + classification tags + collection preview + page-flow fallback"]
+  gemini["Optional Gemini wording assistance<br/>heuristic suggestion fallback stays fail-soft"]
 end
 class explanation_engine,review_payloads,manual_review,gemini implemented
 
@@ -153,7 +153,7 @@ explanation_engine --> review_payloads --> manual_review
 manual_review --> gemini
 
 subgraph intake["8. Observation / Feedback Intake"]
-  feedback_events["Feedback events<br/>shared contracts + provenance"]
+  feedback_events["Feedback events<br/>shared contracts + provenance + collection scope"]
   label_candidates["Supplemental label candidates"]
   split_safety["Split-blocked adjudicated intake<br/>never direct train/validation/test append"]
 end

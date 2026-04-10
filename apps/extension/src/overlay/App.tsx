@@ -3,6 +3,9 @@ import type {
   FeedbackEvent,
   ManualReportIssueType,
   ManualReportRequestedOutcome,
+  ManualReviewCollectionScope,
+  ManualReviewTag,
+  ManualReviewTagSelection,
   YouTubeAuthStatus,
 } from '@truthlens/shared-schemas';
 
@@ -25,9 +28,23 @@ const ISSUE_OPTIONS: Array<{ issueType: ManualReportIssueType; label: string }> 
   { issueType: 'channel', label: 'Channel' },
   { issueType: 'other', label: 'Other' },
 ];
+const TAG_OPTIONS: Array<{ tag: ManualReviewTag; label: string }> = [
+  { tag: 'Clickbait', label: 'Clickbait' },
+  { tag: 'Music', label: 'Music' },
+  { tag: 'Tutorial', label: 'Tutorial' },
+  { tag: 'Walkthrough', label: 'Walkthrough' },
+  { tag: 'Gaming', label: 'Gaming' },
+  { tag: 'News', label: 'News' },
+  { tag: 'Documentary', label: 'Documentary' },
+  { tag: 'Promo', label: 'Promo' },
+  { tag: 'Satire', label: 'Satire' },
+  { tag: 'Art', label: 'Art' },
+  { tag: 'Unknown', label: 'Unknown' },
+];
 
 type SelectedIssueState = Record<ManualReportIssueType, boolean>;
 type IssueCommentState = Record<ManualReportIssueType, string>;
+type SelectedTagState = Record<ManualReviewTag, boolean>;
 type LiveStatusTone = 'info' | 'success' | 'error';
 
 type LiveStatusEntry = {
@@ -52,6 +69,19 @@ const DEFAULT_COMMENTS: IssueCommentState = {
   transcript: '',
   channel: '',
   other: '',
+};
+const DEFAULT_SELECTED_TAGS: SelectedTagState = {
+  Clickbait: false,
+  Music: false,
+  Tutorial: false,
+  Walkthrough: false,
+  Gaming: false,
+  News: false,
+  Documentary: false,
+  Promo: false,
+  Satire: false,
+  Art: false,
+  Unknown: false,
 };
 
 function createClientId(prefix: string): string {
@@ -98,18 +128,27 @@ function buildDraftReportText(
   title: string,
   channelName: string,
   requestedOutcome: ManualReportRequestedOutcome,
+  workflowMode: 'report' | 'verify-transparent',
+  selectedTags: ManualReviewTag[],
+  suggestedOutcomeReason: string | null,
   issues: Array<{ label: string; comment: string }>,
 ): string {
   const openingLine =
-    requestedOutcome === 'remove'
-      ? 'Requested action: Please remove this content because the presentation appears materially misleading.'
-      : 'Requested action: Please moderate this content so the presentation becomes consistent and non-misleading.';
+    workflowMode === 'verify-transparent'
+      ? `Transparency verification: this appears to be honest ${selectedTags.join(', ') || 'content'}.`
+      : requestedOutcome === 'remove'
+        ? 'Requested action: Please remove this content because the presentation appears materially misleading.'
+        : 'Requested action: Please moderate this content so the presentation becomes consistent and non-misleading.';
   const lines = [
     openingLine,
     `Video: "${title}"`,
     `Channel: ${channelName}`,
+    ...(selectedTags.length > 0 ? [`Selected tags: ${selectedTags.join(', ')}`] : []),
+    ...(suggestedOutcomeReason ? [`TruthLens rationale: ${suggestedOutcomeReason}`] : []),
     '',
-    'Requested review for potentially misleading presentation in these areas:',
+    workflowMode === 'verify-transparent'
+      ? 'Transparency notes:'
+      : 'Requested review for potentially misleading presentation in these areas:',
     ...issues.map((issue) => `- ${issue.label}: ${issue.comment}`),
   ];
 
@@ -121,7 +160,34 @@ function requestedOutcomeLabel(value: ManualReportRequestedOutcome): string {
 }
 
 function shouldUsePageReportFallback(message: string): boolean {
-  return message.includes("did not return a suitable 'Spam or misleading' report category");
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("did not return a suitable 'spam or misleading' report category") ||
+    normalized.includes("could not verify direct youtube reporting capability") ||
+    normalized.includes("youtube oauth has not been connected yet") ||
+    normalized.includes("youtube oauth is not configured") ||
+    normalized.includes("youtube oauth token is missing") ||
+    normalized.includes("youtube report submission failed: 409") ||
+    normalized.includes("youtube report submission failed: 503")
+  );
+}
+
+function selectedTagsFromSuggestions(
+  suggestions: ManualReviewTagSelection[],
+): SelectedTagState {
+  const nextState = { ...DEFAULT_SELECTED_TAGS };
+  suggestions.forEach((selection) => {
+    nextState[selection.tag] = selection.selected;
+  });
+  return nextState;
+}
+
+function selectedTagList(selectedTags: SelectedTagState): ManualReviewTag[] {
+  return TAG_OPTIONS.filter(({ tag }) => selectedTags[tag]).map(({ tag }) => tag);
+}
+
+function isCollectionBatch(scope: ManualReviewCollectionScope | null): boolean {
+  return Boolean(scope && scope.scope_type !== 'single' && scope.member_items.length > 1);
 }
 
 async function openTargetUrl(url: string | null): Promise<void> {
@@ -143,10 +209,13 @@ export function App() {
   const { manualReportTarget, closeManualReport } = useOverlayStore();
   const [selectedIssues, setSelectedIssues] = useState<SelectedIssueState>(DEFAULT_SELECTED_ISSUES);
   const [comments, setComments] = useState<IssueCommentState>(DEFAULT_COMMENTS);
+  const [selectedTags, setSelectedTags] = useState<SelectedTagState>(DEFAULT_SELECTED_TAGS);
+  const [suggestedTags, setSuggestedTags] = useState<ManualReviewTagSelection[]>([]);
   const [originalComments, setOriginalComments] = useState<Partial<IssueCommentState>>({});
   const [optimizeChoice, setOptimizeChoice] = useState<'yes' | 'no'>('no');
   const [requestedOutcome, setRequestedOutcome] =
     useState<ManualReportRequestedOutcome>('moderate');
+  const [suggestedOutcomeReason, setSuggestedOutcomeReason] = useState<string | null>(null);
   const [optimizationApplied, setOptimizationApplied] = useState(false);
   const [optimizationModel, setOptimizationModel] = useState<string | null>(null);
   const [optimizedReportText, setOptimizedReportText] = useState<string | null>(null);
@@ -160,6 +229,7 @@ export function App() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [statusEntries, setStatusEntries] = useState<LiveStatusEntry[]>([]);
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
+  const [collectionConfirmed, setCollectionConfirmed] = useState(false);
   const statusIdRef = useRef(0);
 
   function appendStatusLine(message: string, tone: LiveStatusTone = 'info') {
@@ -178,9 +248,16 @@ export function App() {
     statusIdRef.current = manualReportTarget ? 1 : 0;
     setSelectedIssues(DEFAULT_SELECTED_ISSUES);
     setComments(DEFAULT_COMMENTS);
+    setSelectedTags(
+      manualReportTarget?.workflowMode === 'verify-transparent'
+        ? { ...DEFAULT_SELECTED_TAGS, Unknown: true }
+        : { ...DEFAULT_SELECTED_TAGS, Clickbait: true },
+    );
+    setSuggestedTags([]);
     setOriginalComments({});
     setOptimizeChoice('no');
     setRequestedOutcome('moderate');
+    setSuggestedOutcomeReason(null);
     setOptimizationApplied(false);
     setOptimizationModel(null);
     setOptimizedReportText(null);
@@ -193,6 +270,7 @@ export function App() {
     setErrorMessage(null);
     setSuccessMessage(null);
     setSubmissionCompleted(false);
+    setCollectionConfirmed(false);
     setStatusEntries(
       manualReportTarget
         ? [
@@ -227,11 +305,13 @@ export function App() {
           setYouTubeAuthStatus(status);
           appendStatusLine(
             status.connected
-              ? `YouTube direct reporting is connected${status.channel_name ? ` as ${status.channel_name}` : ''}.`
+              ? status.direct_reporting_supported
+                ? `YouTube direct reporting is connected${status.channel_name ? ` as ${status.channel_name}` : ''}.`
+                : `${status.channel_name ? `Connected as ${status.channel_name}. ` : ''}${status.direct_reporting_detail ?? 'TruthLens will use YouTube’s in-page report flow for direct reports.'}`
               : status.configured
                 ? 'YouTube reporting is configured but still needs account authorization.'
                 : 'YouTube direct reporting is not configured in the local API.',
-            status.connected ? 'success' : 'info',
+            status.connected && status.direct_reporting_supported ? 'success' : 'info',
           );
         })
         .catch(() => {
@@ -291,6 +371,7 @@ export function App() {
         reasons: manualReportTarget.score?.reasons ?? [],
         content_class: manualReportTarget.score?.content_class ?? 'unknown',
         content_class_confidence: manualReportTarget.score?.content_class_confidence ?? 0,
+        collection_scope: manualReportTarget.collectionScope,
         bias_profile: manualReportTarget.score?.bias_profile ?? {
           metrics: {},
           positive_biases: [],
@@ -311,9 +392,17 @@ export function App() {
         }
         setSelectedIssues(nextSelected);
         setComments(nextComments);
+        setSelectedTags(selectedTagsFromSuggestions(draft.suggested_tags));
+        setSuggestedTags(draft.suggested_tags);
         setRequestedOutcome(draft.suggested_outcome);
+        setSuggestedOutcomeReason(draft.suggested_outcome_reason);
         setDraftModel(draft.suggestion_model);
-        appendStatusLine('Initial draft suggestions are ready for review.', 'success');
+        appendStatusLine(
+          draft.suggestion_model.startsWith('truthlens-heuristic-')
+            ? 'Initial TruthLens draft suggestions are ready using local heuristics.'
+            : 'Initial draft suggestions are ready for review.',
+          'success',
+        );
       })
       .catch((error) => {
         if (cancelled) {
@@ -359,7 +448,26 @@ export function App() {
       comment: comments[issueType].trim(),
     }),
   );
+  const activeTags = selectedTagList(selectedTags);
   const missingComments = activeIssues.some((issue) => issue.comment.length === 0);
+  const collectionScope = manualReportTarget?.collectionScope ?? null;
+  const collectionBatch = isCollectionBatch(collectionScope);
+  const batchTargets =
+    collectionBatch && collectionConfirmed && collectionScope
+      ? collectionScope.member_items
+      : [];
+  const hasDirectReportTarget =
+    manualReportTarget?.workflowMode === 'verify-transparent'
+      ? true
+      : collectionBatch
+        ? batchTargets.some((member) => Boolean(member.link_url))
+        : Boolean(manualReportTarget?.linkUrl);
+  const canUseDirectYouTubeReporting =
+    youtubeAuthStatus?.connected === true && youtubeAuthStatus.direct_reporting_supported;
+  const canUseSingleItemPageFallback =
+    manualReportTarget?.workflowMode !== 'verify-transparent' &&
+    !collectionBatch &&
+    Boolean(manualReportTarget?.linkUrl);
   const previewText = manualReportTarget
     ? optimizationApplied && optimizedReportText
       ? optimizedReportText
@@ -367,16 +475,21 @@ export function App() {
           manualReportTarget.title,
           manualReportTarget.channelName,
           requestedOutcome,
+          manualReportTarget.workflowMode,
+          activeTags,
+          suggestedOutcomeReason,
           activeIssues,
         )
     : '';
   const canSubmit =
     manualReportTarget !== null &&
     activeIssues.length > 0 &&
+    activeTags.length > 0 &&
     !missingComments &&
     (!manualReportTarget || optimizeChoice === 'no' || optimizationApplied) &&
+    (!collectionBatch || collectionConfirmed) &&
     (manualReportTarget?.workflowMode === 'verify-transparent' ||
-      (Boolean(manualReportTarget?.linkUrl) && youtubeAuthStatus?.connected === true));
+      (collectionBatch ? true : Boolean(canUseSingleItemPageFallback || hasDirectReportTarget)));
 
   function clearOptimizationState() {
     setOptimizationApplied(false);
@@ -397,16 +510,25 @@ export function App() {
     try {
       const response = await optimizeManualReportComments({
         workflow_mode: manualReportTarget.workflowMode,
-        target_url: manualReportTarget.linkUrl,
-        title_snapshot: manualReportTarget.title,
-        channel_name: manualReportTarget.channelName,
-        transcript_excerpt: manualReportTarget.transcriptExcerpt,
-        requested_outcome: requestedOutcome,
-        issues: activeIssues.map((issue) => ({
-          issue_type: issue.issueType,
-          comment: issue.comment,
-        })),
-      });
+      target_url: manualReportTarget.linkUrl,
+      title_snapshot: manualReportTarget.title,
+      channel_name: manualReportTarget.channelName,
+      transcript_excerpt: manualReportTarget.transcriptExcerpt,
+      requested_outcome: requestedOutcome,
+      selected_tags: activeTags,
+      collection_scope:
+        collectionBatch && collectionScope
+          ? {
+              ...collectionScope,
+              apply_to_all: collectionConfirmed,
+              trigger_origin: collectionConfirmed ? 'collection-preview' : 'single-item',
+            }
+          : null,
+      issues: activeIssues.map((issue) => ({
+        issue_type: issue.issueType,
+        comment: issue.comment,
+      })),
+    });
       const nextComments = { ...comments };
       const nextOriginalComments: Partial<IssueCommentState> = {};
       for (const issue of response.issues) {
@@ -444,11 +566,11 @@ export function App() {
   async function handleSubmit() {
     if (!manualReportTarget || !canSubmit) {
       setErrorMessage(
-        'Rapporten kr\u00e6ver mindst \u00e9n udfyldt fejlbeskrivelse og en aktiv YouTube-forbindelse.',
+        'Rapporten kr\u00e6ver mindst \u00e9n udfyldt fejlbeskrivelse og en tilg\u00e6ngelig YouTube-reportvej.',
       );
       return;
     }
-    if (!manualReportTarget.linkUrl) {
+    if (!hasDirectReportTarget) {
       setErrorMessage('TruthLens could not determine a YouTube video URL for this report.');
       return;
     }
@@ -457,76 +579,203 @@ export function App() {
     setErrorMessage(null);
     setSuccessMessage(null);
     setSubmissionCompleted(false);
-    const manualReport = {
+    const effectiveCollectionScope =
+      collectionBatch && collectionScope
+        ? {
+            ...collectionScope,
+            apply_to_all: true,
+            trigger_origin: 'collection-preview' as const,
+          }
+        : collectionScope;
+    const reviewUserAction =
+      manualReportTarget.workflowMode === 'verify-transparent'
+        ? 'confirm-transparent'
+        : 'confirm-report';
+    const collectionSummaryAction = `${reviewUserAction}-collection`;
+    const manualReportIssues = activeIssues.map((issue) => ({
+      issue_type: issue.issueType,
+      comment: comments[issue.issueType].trim(),
+      original_comment: originalComments[issue.issueType] ?? null,
+    }));
+    const reviewTargets =
+      collectionBatch && collectionConfirmed && effectiveCollectionScope
+        ? effectiveCollectionScope.member_items
+        : [
+            {
+              item_id: manualReportTarget.itemId,
+              title_snapshot: manualReportTarget.title,
+              channel_name: manualReportTarget.channelName,
+              link_url: manualReportTarget.linkUrl,
+              thumbnail_ref: manualReportTarget.thumbnailRef,
+              resolved: Boolean(manualReportTarget.linkUrl),
+            },
+          ];
+
+    const buildManualReport = (target: {
+      item_id: string;
+      title_snapshot?: string | null;
+      link_url?: string | null;
+      thumbnail_ref?: string | null;
+    }) => ({
       workflow_mode: manualReportTarget.workflowMode,
-      target_url: manualReportTarget.linkUrl,
-      thumbnail_ref: manualReportTarget.thumbnailRef,
-      title_snapshot: manualReportTarget.title,
+      target_url: target.link_url ?? null,
+      thumbnail_ref: target.thumbnail_ref ?? manualReportTarget.thumbnailRef,
+      title_snapshot: target.title_snapshot ?? manualReportTarget.title,
       transcript_excerpt: manualReportTarget.transcriptExcerpt,
-      issues: activeIssues.map((issue) => ({
-        issue_type: issue.issueType,
-        comment: comments[issue.issueType].trim(),
-        original_comment: originalComments[issue.issueType] ?? null,
-      })),
+      issues: manualReportIssues,
       requested_outcome: requestedOutcome,
+      suggested_outcome_reason: suggestedOutcomeReason,
+      selected_tags: activeTags,
+      suggested_tags: suggestedTags,
+      collection_scope: effectiveCollectionScope,
       optimize_requested: optimizeChoice === 'yes',
       optimize_applied: optimizationApplied,
       optimization_model: optimizationModel,
       report_text: previewText,
-    } as const;
+    } as const);
 
     try {
       let successText: string;
       if (manualReportTarget.workflowMode === 'verify-transparent') {
-        appendStatusLine('Saving a positive transparency verification to TruthLens…');
-        successText =
-          'Den positive transparens-verifikation blev gemt lokalt som TruthLens-feedback.';
-      } else {
-        appendStatusLine('Submitting the report to YouTube…');
-        const issueTypes = activeIssues.map((issue) => issue.issueType);
-        try {
-          const youtubeReport = await submitYouTubeReport({
-            target_url: manualReportTarget.linkUrl,
-            report_text: previewText,
-            issue_types: issueTypes,
-          });
-          successText = youtubeReport.secondary_reason_label
-            ? `Rapporten blev sendt direkte til YouTube under "${youtubeReport.reason_label}" / "${youtubeReport.secondary_reason_label}"`
-            : `Rapporten blev sendt direkte til YouTube under "${youtubeReport.reason_label}"`;
-          appendStatusLine('YouTube accepted the direct TruthLens report.', 'success');
-        } catch (error) {
-          const detail =
-            error instanceof Error ? error.message : 'Rapporten kunne ikke sendes lige nu.';
-          if (!shouldUsePageReportFallback(detail)) {
-            throw error;
-          }
-
+        appendStatusLine(
+          collectionBatch && collectionConfirmed
+            ? `Saving a positive transparency verification for ${reviewTargets.length} collection items…`
+            : 'Saving a positive transparency verification to TruthLens…',
+        );
+        successText = collectionBatch && collectionConfirmed
+          ? `Den positive transparens-verifikation blev gemt lokalt for ${reviewTargets.length} items i samlingen.`
+          : 'Den positive transparens-verifikation blev gemt lokalt som TruthLens-feedback.';
+      } else if (collectionBatch && collectionConfirmed && effectiveCollectionScope) {
+        const resolvableTargets = reviewTargets.filter((target) => Boolean(target.link_url));
+        let reportedCount = 0;
+        let failedCount = 0;
+        const skippedCount = reviewTargets.length - resolvableTargets.length;
+        if (!canUseDirectYouTubeReporting) {
           appendStatusLine(
-            'Direct YouTube API reporting was unavailable, so TruthLens is trying the in-page report flow…',
+            youtubeAuthStatus?.direct_reporting_detail ??
+              'Direct YouTube API reporting is unavailable for this account, so TruthLens will only store internal batch review provenance for this collection.',
+          );
+          successText = `TruthLens stored the batch review for this ${effectiveCollectionScope.scope_type} inside TruthLens only. It skipped ${reviewTargets.length} external collection reports because direct YouTube API reporting is unavailable for this account.`;
+        } else {
+          appendStatusLine(
+            `Submitting direct YouTube reports for ${resolvableTargets.length} item(s) in this ${effectiveCollectionScope.scope_type}…`,
+          );
+          for (const target of reviewTargets) {
+            if (!target.link_url) {
+              appendStatusLine(
+                `Skipped one collection item because TruthLens could not resolve a watch URL.`,
+              );
+              continue;
+            }
+            try {
+              await submitYouTubeReport({
+                target_url: target.link_url,
+                report_text: previewText,
+                issue_types: activeIssues.map((issue) => issue.issueType),
+              });
+              reportedCount += 1;
+              appendStatusLine(
+                `Direct YouTube report accepted for "${target.title_snapshot ?? target.item_id}".`,
+                'success',
+              );
+            } catch (error) {
+              failedCount += 1;
+              appendStatusLine(
+                error instanceof Error
+                  ? `Could not report "${target.title_snapshot ?? target.item_id}": ${error.message}`
+                  : `Could not report "${target.title_snapshot ?? target.item_id}".`,
+                'error',
+              );
+            }
+          }
+          successText =
+            reportedCount > 0
+              ? `TruthLens reported ${reportedCount} collection item(s) directly to YouTube, skipped ${skippedCount}, and saw ${failedCount} API failure(s). Internal batch review provenance was still stored for the whole collection.`
+              : `TruthLens could not submit any external YouTube reports for this collection. It skipped ${skippedCount} unresolved item(s), saw ${failedCount} API failure(s), and stored the batch review only inside TruthLens.`;
+        }
+      } else {
+        const issueTypes = activeIssues.map((issue) => issue.issueType);
+        if (!canUseDirectYouTubeReporting) {
+          appendStatusLine(
+            youtubeAuthStatus?.direct_reporting_detail ??
+              'Direct YouTube API reporting is unavailable, so TruthLens is trying the in-page report flow…',
           );
           const youtubePageReport = await submitYouTubePageReport(manualReportTarget, issueTypes);
           successText = youtubePageReport.secondary_reason_label
             ? `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}" / "${youtubePageReport.secondary_reason_label}"`
             : `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}"`;
           appendStatusLine('The in-page YouTube report flow completed successfully.', 'success');
+        } else {
+          appendStatusLine('Submitting the report to YouTube…');
+          try {
+            const youtubeReport = await submitYouTubeReport({
+              target_url: manualReportTarget.linkUrl!,
+              report_text: previewText,
+              issue_types: issueTypes,
+            });
+            successText = youtubeReport.secondary_reason_label
+              ? `Rapporten blev sendt direkte til YouTube under "${youtubeReport.reason_label}" / "${youtubeReport.secondary_reason_label}"`
+              : `Rapporten blev sendt direkte til YouTube under "${youtubeReport.reason_label}"`;
+            appendStatusLine('YouTube accepted the direct TruthLens report.', 'success');
+          } catch (error) {
+            const detail =
+              error instanceof Error ? error.message : 'Rapporten kunne ikke sendes lige nu.';
+            if (!shouldUsePageReportFallback(detail)) {
+              throw error;
+            }
+
+            appendStatusLine(
+              'Direct YouTube API reporting was unavailable, so TruthLens is trying the in-page report flow…',
+            );
+            const youtubePageReport = await submitYouTubePageReport(manualReportTarget, issueTypes);
+            successText = youtubePageReport.secondary_reason_label
+              ? `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}" / "${youtubePageReport.secondary_reason_label}"`
+              : `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}"`;
+            appendStatusLine('The in-page YouTube report flow completed successfully.', 'success');
+          }
         }
       }
 
-      await sendFeedbackEvent(
-        createFeedbackPayload(
-          manualReportTarget.itemId,
-          manualReportTarget.channelName,
-          manualReportTarget.score?.recommended_action ?? 'none',
-          manualReportTarget.score?.risk_score ?? null,
-          manualReportTarget.score?.explanation_id ?? null,
-          manualReport,
-          manualReportTarget.workflowMode === 'verify-transparent'
-            ? 'confirm-transparent'
-            : 'confirm-report',
-          manualReportTarget.score?.artifact_provenance ?? null,
+      if (collectionBatch && collectionConfirmed) {
+        await sendFeedbackEvent(
+          createFeedbackPayload(
+            manualReportTarget.itemId,
+            manualReportTarget.channelName,
+            manualReportTarget.score?.recommended_action ?? 'none',
+            manualReportTarget.score?.risk_score ?? null,
+            manualReportTarget.score?.explanation_id ?? null,
+            buildManualReport({
+              item_id: manualReportTarget.itemId,
+              title_snapshot: manualReportTarget.title,
+              link_url: manualReportTarget.linkUrl,
+              thumbnail_ref: manualReportTarget.thumbnailRef,
+            }),
+            collectionSummaryAction,
+            manualReportTarget.score?.artifact_provenance ?? null,
           ),
+        );
+      }
+
+      for (const target of reviewTargets) {
+        await sendFeedbackEvent(
+          createFeedbackPayload(
+            target.item_id,
+            target.channel_name ?? manualReportTarget.channelName,
+            manualReportTarget.score?.recommended_action ?? 'none',
+            manualReportTarget.score?.risk_score ?? null,
+            manualReportTarget.score?.explanation_id ?? null,
+            buildManualReport(target),
+            reviewUserAction,
+            manualReportTarget.score?.artifact_provenance ?? null,
+          ),
+        );
+      }
+      appendStatusLine(
+        collectionBatch && collectionConfirmed
+          ? `TruthLens feedback was stored locally for ${reviewTargets.length} collection item(s).`
+          : 'TruthLens feedback was stored locally.',
+        'success',
       );
-      appendStatusLine('TruthLens feedback was stored locally.', 'success');
       setSuccessMessage(
         manualReportTarget.workflowMode === 'verify-transparent'
           ? successText
@@ -581,8 +830,8 @@ export function App() {
 
             <p className="truthlens-report-intro">
               {manualReportTarget.workflowMode === 'verify-transparent'
-                ? 'Mark what appears transparent and consistent. A note field appears under each checked area.'
-                : 'Mark what looks wrong. A note field appears under each checked issue.'}
+                ? 'Mark what appears transparent and consistent. Choose the honest content tag TruthLens suggests, then adjust any packaging notes that need correction.'
+                : 'Mark what looks wrong. TruthLens will preselect Clickbait, but you can override the classification tag before submitting the review.'}
             </p>
 
             {manualReportTarget.score ? (
@@ -618,6 +867,45 @@ export function App() {
               </div>
             ) : null}
 
+            {collectionBatch && collectionScope ? (
+              <div className="truthlens-score-summary">
+                <p className="truthlens-preview-label">Collection scope</p>
+                <div className="truthlens-score-summary-grid">
+                  <p className="truthlens-score-summary-item">
+                    TruthLens detected a {collectionScope.scope_type} with{' '}
+                    {collectionScope.member_items.length} visible member(s).
+                  </p>
+                  <p className="truthlens-score-summary-item">
+                    Resolved watch URLs: {collectionScope.resolved_member_count}. Unresolved items:{' '}
+                    {collectionScope.unresolved_member_count}.
+                  </p>
+                  <p className="truthlens-score-summary-item">
+                    Preview titles:{' '}
+                    {collectionScope.member_items
+                      .slice(0, 4)
+                      .map((member) => member.title_snapshot ?? member.item_id)
+                      .join(' | ')}
+                  </p>
+                </div>
+                <label className="truthlens-collection-confirm">
+                  <input
+                    checked={collectionConfirmed}
+                    onChange={(event) => {
+                      setCollectionConfirmed(event.target.checked);
+                      setErrorMessage(null);
+                      setSuccessMessage(null);
+                    }}
+                    type="checkbox"
+                  />
+                  <span>
+                    Apply this {manualReportTarget.workflowMode === 'verify-transparent' ? 'verification' : 'report'}
+                    {' '}to all {collectionScope.member_items.length} visible items in the same{' '}
+                    {collectionScope.scope_type}.
+                  </span>
+                </label>
+              </div>
+            ) : null}
+
             <div className="truthlens-live-status" aria-live="polite" aria-atomic="false">
               <p className="truthlens-preview-label">Live status</p>
               <ul className="truthlens-live-status-list">
@@ -630,6 +918,39 @@ export function App() {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            <div className="truthlens-report-grid">
+              {TAG_OPTIONS.map(({ tag, label }) => {
+                const suggestion = suggestedTags.find((entry) => entry.tag === tag) ?? null;
+                return (
+                  <label className="truthlens-issue-card truthlens-tag-card" key={tag}>
+                    <span className="truthlens-issue-toggle">
+                      <input
+                        checked={selectedTags[tag]}
+                        onChange={(event) => {
+                          setSelectedTags((state) => ({
+                            ...state,
+                            [tag]: event.target.checked,
+                          }));
+                          setErrorMessage(null);
+                          setSuccessMessage(null);
+                        }}
+                        type="checkbox"
+                      />
+                      <span>{label}</span>
+                    </span>
+                    {suggestion?.rationale ? (
+                      <p className="truthlens-tag-rationale">
+                        {suggestion.rationale}
+                        {typeof suggestion.confidence === 'number'
+                          ? ` (${Math.round(suggestion.confidence * 100)}%)`
+                          : ''}
+                      </p>
+                    ) : null}
+                  </label>
+                );
+              })}
             </div>
 
             <div className="truthlens-report-grid">
@@ -663,7 +984,11 @@ export function App() {
                         setErrorMessage(null);
                         setSuccessMessage(null);
                       }}
-                      placeholder={`Describe the ${label.toLowerCase()} issue briefly.`}
+                      placeholder={
+                        manualReportTarget.workflowMode === 'verify-transparent'
+                          ? `Describe briefly why the ${label.toLowerCase()} looks honest or consistent.`
+                          : `Describe the ${label.toLowerCase()} issue briefly.`
+                      }
                       rows={3}
                       value={comments[issueType]}
                     />
@@ -704,6 +1029,10 @@ export function App() {
                   <span>Remove</span>
                 </label>
               </fieldset>
+            ) : null}
+
+            {suggestedOutcomeReason ? (
+              <p className="truthlens-preview-meta">TruthLens recommendation: {suggestedOutcomeReason}</p>
             ) : null}
 
             <fieldset className="truthlens-optimize-choice">
@@ -756,17 +1085,34 @@ export function App() {
                 {isLoadingYouTubeStatus ? (
                   <p className="truthlens-preview-empty">Checking local YouTube connection...</p>
                 ) : youtubeAuthStatus?.connected ? (
-                  <p className="truthlens-platform-message">
-                    Direct reporting is connected
-                    {youtubeAuthStatus.channel_name ? ` as ${youtubeAuthStatus.channel_name}` : ''}. If
-                    the YouTube API does not expose a misleading category for this account, TruthLens
-                    will fall back to YouTube&apos;s in-page report flow on the current feed card.
-                  </p>
+                  youtubeAuthStatus.direct_reporting_supported ? (
+                    <p className="truthlens-platform-message">
+                      Direct reporting is connected
+                      {youtubeAuthStatus.channel_name ? ` as ${youtubeAuthStatus.channel_name}` : ''}. If
+                      the YouTube API later stops exposing a misleading category for this account,
+                      TruthLens
+                      {collectionBatch
+                        ? ' will keep unresolved collection members as internal TruthLens review state only.'
+                        : ' will fall back to YouTube&apos;s in-page report flow on the current feed card.'}
+                    </p>
+                  ) : (
+                    <p className="truthlens-platform-message">
+                      {youtubeAuthStatus.channel_name
+                        ? `Connected as ${youtubeAuthStatus.channel_name}. `
+                        : ''}
+                      {youtubeAuthStatus.direct_reporting_detail ??
+                        'This account cannot use direct YouTube API reporting for misleading reports right now.'}{' '}
+                      {collectionBatch
+                        ? 'TruthLens will store collection batch review provenance internally instead of claiming an external batch report.'
+                        : 'TruthLens will use YouTube’s in-page report flow on the current card instead of the direct API.'}
+                    </p>
+                  )
                 ) : youtubeAuthStatus?.configured ? (
                   <>
                     <p className="truthlens-platform-message">
-                      Connect your YouTube account once to let TruthLens submit reports without
-                      opening the video page.
+                      Connect your YouTube account once to let TruthLens use direct API reporting
+                      when the account supports it. Single-item reports can still use YouTube&apos;s
+                      in-page flow without the local OAuth connection.
                     </p>
                     <button
                       className="truthlens-secondary-button"
@@ -783,7 +1129,8 @@ export function App() {
                     Add <code>TRUTHLENS_YOUTUBE_CLIENT_ID</code>,{' '}
                     <code>TRUTHLENS_YOUTUBE_CLIENT_SECRET</code>, and{' '}
                     <code>TRUTHLENS_YOUTUBE_REDIRECT_URI</code> to <code>.env</code>, then restart
-                    the API.
+                    the API if you want direct API reporting. Single-item reports can still fall
+                    back to YouTube&apos;s in-page flow.
                   </p>
                 )}
               </div>
@@ -805,6 +1152,31 @@ export function App() {
                       {manualReportTarget.workflowMode === 'verify-transparent'
                         ? 'Transparent / non-clickbait verification'
                         : requestedOutcomeLabel(requestedOutcome)}
+                    </p>
+                    {suggestedOutcomeReason ? (
+                      <p className="truthlens-preview-channel">{suggestedOutcomeReason}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="truthlens-preview-section">
+                    <p className="truthlens-preview-section-title">Selected tags</p>
+                    {activeTags.length > 0 ? (
+                      <p className="truthlens-preview-channel">{activeTags.join(', ')}</p>
+                    ) : (
+                      <p className="truthlens-preview-empty">
+                        Choose at least one classification tag before submitting.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="truthlens-preview-section">
+                    <p className="truthlens-preview-section-title">Scope</p>
+                    <p className="truthlens-preview-channel">
+                      {collectionBatch && collectionScope
+                        ? collectionConfirmed
+                          ? `Apply to all ${collectionScope.member_items.length} visible items in the same ${collectionScope.scope_type}.`
+                          : `Collection detected (${collectionScope.member_items.length} visible items). Confirmation is required before batch submit.`
+                        : 'Single item'}
                     </p>
                   </div>
 
@@ -842,7 +1214,7 @@ export function App() {
                 <p className="truthlens-preview-meta">Optimized with {optimizationModel}</p>
               ) : null}
               {isLoadingDrafts ? (
-                <p className="truthlens-preview-meta">Drafting initial suggestions with Gemini...</p>
+                <p className="truthlens-preview-meta">Drafting initial suggestions with TruthLens...</p>
               ) : null}
               {!isLoadingDrafts && draftModel ? (
                 <p className="truthlens-preview-meta">
@@ -870,8 +1242,12 @@ export function App() {
                     ? 'Saving...'
                     : 'Reporting...'
                   : manualReportTarget.workflowMode === 'verify-transparent'
-                    ? 'Verify'
-                    : 'Report'}
+                    ? collectionBatch && collectionConfirmed
+                      ? `Verify ${batchTargets.length} items`
+                      : 'Verify'
+                    : collectionBatch && collectionConfirmed
+                      ? `Report ${batchTargets.length} items`
+                      : 'Report'}
               </button>
               <button
                 className="truthlens-secondary-button"

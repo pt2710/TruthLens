@@ -75,6 +75,9 @@ class ObservationDistilledFeatures(BaseModel):
     has_thumbnail: bool = False
     has_description_snapshot: bool = False
     has_transcript_excerpt: bool = False
+    collection_scope_type: Literal["single", "mix", "playlist"] = "single"
+    collection_member_count: int = Field(default=1, ge=0)
+    collection_resolved_member_count: int = Field(default=1, ge=0)
     title_token_count: int = Field(default=0, ge=0)
     description_token_count: int = Field(default=0, ge=0)
     channel_known: bool = True
@@ -104,6 +107,55 @@ class ObservationProvenance(BaseModel):
     source_path: str | None = None
 
 
+class ManualReviewTag(str, Enum):
+    CLICKBAIT = "Clickbait"
+    MUSIC = "Music"
+    TUTORIAL = "Tutorial"
+    WALKTHROUGH = "Walkthrough"
+    GAMING = "Gaming"
+    NEWS = "News"
+    DOCUMENTARY = "Documentary"
+    PROMO = "Promo"
+    SATIRE = "Satire"
+    ART = "Art"
+    UNKNOWN = "Unknown"
+
+
+class ManualReviewCollectionMember(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: str = Field(min_length=1)
+    title_snapshot: str | None = None
+    channel_name: str | None = None
+    link_url: str | None = None
+    thumbnail_ref: str | None = None
+    resolved: bool = True
+
+
+class ManualReviewCollectionScope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    scope_type: Literal["single", "mix", "playlist"] = "single"
+    scope_id: str = Field(min_length=1)
+    collection_title: str | None = None
+    source_item_id: str | None = None
+    source_link_url: str | None = None
+    trigger_origin: Literal["single-item", "collection-preview"] = "single-item"
+    apply_to_all: bool = False
+    resolved_member_count: int = Field(default=1, ge=0)
+    unresolved_member_count: int = Field(default=0, ge=0)
+    member_items: list[ManualReviewCollectionMember] = Field(default_factory=list)
+
+
+class ManualReviewTagSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tag: ManualReviewTag
+    selected: bool
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    rationale: str | None = None
+
+
 class BrowserObservationRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -121,6 +173,7 @@ class BrowserObservationRecord(BaseModel):
     runtime_context: RuntimeContext = Field(default_factory=RuntimeContext)
     distilled_features: ObservationDistilledFeatures = Field(default_factory=ObservationDistilledFeatures)
     score_snapshot: ObservationScoreSnapshot = Field(default_factory=ObservationScoreSnapshot)
+    collection_scope: ManualReviewCollectionScope | None = None
     provenance: ObservationProvenance
 
 
@@ -272,6 +325,8 @@ class LabelCandidate(BaseModel):
     content_class_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     dominant_bias_risk: str | None = None
     bias_review_required: bool | None = None
+    selected_tags: list[ManualReviewTag] = Field(default_factory=list)
+    collection_scope: ManualReviewCollectionScope | None = None
     current_labels: dict[str, bool] = Field(default_factory=dict)
     annotator_notes: list[str] = Field(default_factory=list)
     queue_reason: str | None = None
@@ -316,6 +371,10 @@ class ManualReport(BaseModel):
     transcript_excerpt: str | None = None
     issues: list[ManualReportIssue] = Field(min_length=1)
     requested_outcome: ManualReportRequestedOutcome = ManualReportRequestedOutcome.MODERATE
+    suggested_outcome_reason: str | None = None
+    selected_tags: list[ManualReviewTag] = Field(default_factory=list)
+    suggested_tags: list[ManualReviewTagSelection] = Field(default_factory=list)
+    collection_scope: ManualReviewCollectionScope | None = None
     optimize_requested: bool = False
     optimize_applied: bool = False
     optimization_model: str | None = None
@@ -331,6 +390,8 @@ class ManualReportOptimizationRequest(BaseModel):
     channel_name: str = Field(min_length=1)
     transcript_excerpt: str | None = None
     requested_outcome: ManualReportRequestedOutcome = ManualReportRequestedOutcome.MODERATE
+    selected_tags: list[ManualReviewTag] = Field(default_factory=list)
+    collection_scope: ManualReviewCollectionScope | None = None
     issues: list[ManualReportIssue] = Field(min_length=1)
 
 
@@ -340,6 +401,7 @@ class ManualReportOptimizationResponse(BaseModel):
     issues: list[ManualReportIssue] = Field(min_length=1)
     optimization_model: str = Field(min_length=1)
     report_text: str = Field(min_length=1)
+    selected_tags: list[ManualReviewTag] = Field(default_factory=list)
 
 
 class ManualReportSuggestionIssue(BaseModel):
@@ -374,6 +436,7 @@ class ManualReportSuggestionRequest(BaseModel):
     reasons: list[str] = Field(default_factory=list)
     content_class: ContentClass = ContentClass.UNKNOWN
     content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    collection_scope: ManualReviewCollectionScope | None = None
     bias_profile: BiasProfile = Field(default_factory=BiasProfile)
 
 
@@ -382,6 +445,8 @@ class ManualReportSuggestionResponse(BaseModel):
 
     issues: list[ManualReportSuggestionIssue] = Field(min_length=6, max_length=6)
     suggested_outcome: ManualReportRequestedOutcome
+    suggested_outcome_reason: str = Field(min_length=1)
+    suggested_tags: list[ManualReviewTagSelection] = Field(min_length=1)
     suggestion_model: str = Field(min_length=1)
 
 
@@ -468,6 +533,8 @@ class YouTubeAuthStatus(BaseModel):
     connected: bool
     auth_url: str | None = None
     channel_name: str | None = None
+    direct_reporting_supported: bool = False
+    direct_reporting_detail: str | None = None
 
 
 class YouTubeReportRequest(BaseModel):

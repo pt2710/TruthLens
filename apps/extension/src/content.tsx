@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import type {
   BrowserObservationRecord,
   ManualReportWorkflowMode,
+  ManualReviewCollectionMember,
+  ManualReviewCollectionScope,
   ScoreItemRequest,
   ScoreResult,
 } from '@truthlens/shared-schemas';
@@ -16,7 +18,6 @@ import {
 } from './lib/api';
 import {
   buildPersonalizationSnapshot,
-  describePersonalizationBucket,
   shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
 } from './lib/personalization';
@@ -166,7 +167,9 @@ function extractText(card: HTMLElement, selector: string): string | null {
 
 function buildItemId(card: HTMLElement, index: number): string {
   const href =
-    card.querySelector<HTMLAnchorElement>('a#thumbnail, a[href*="watch"], a[href*="/shorts/"]')?.href || '';
+    card.querySelector<HTMLAnchorElement>(
+      'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
+    )?.href || '';
   if (href) {
     return href;
   }
@@ -408,10 +411,18 @@ function normalizeComparableUrl(value: string | null): string | null {
     const url = new URL(value, window.location.href);
     if (url.pathname === '/watch') {
       const videoId = url.searchParams.get('v');
-      return videoId ? `/watch?v=${videoId}` : url.pathname;
+      const listId = url.searchParams.get('list');
+      if (!videoId) {
+        return url.pathname;
+      }
+      return listId ? `/watch?v=${videoId}&list=${listId}` : `/watch?v=${videoId}`;
     }
     if (url.pathname.startsWith('/shorts/')) {
       return url.pathname;
+    }
+    if (url.pathname === '/playlist') {
+      const listId = url.searchParams.get('list');
+      return listId ? `/playlist?list=${listId}` : url.pathname;
     }
     return url.toString();
   } catch {
@@ -451,6 +462,45 @@ function inferLinkKind(linkUrl: string | null): 'watch' | 'shorts' | 'other' | '
   }
 }
 
+function parseCollectionIdentity(
+  linkUrl: string | null,
+): { scopeType: 'single' | 'mix' | 'playlist'; scopeId: string | null } {
+  if (!linkUrl) {
+    return { scopeType: 'single', scopeId: null };
+  }
+  try {
+    const url = new URL(linkUrl, window.location.href);
+    const listId = url.searchParams.get('list');
+    if (!listId) {
+      return { scopeType: 'single', scopeId: null };
+    }
+    return {
+      scopeType: listId.startsWith('RD') ? 'mix' : 'playlist',
+      scopeId: listId,
+    };
+  } catch {
+    return { scopeType: 'single', scopeId: null };
+  }
+}
+
+function collectionTitleFromCard(card: HTMLElement): string | null {
+  const selectors = [
+    '#video-title',
+    'a[title]',
+    'yt-formatted-string#text',
+    'h3',
+    '#header-description',
+    '#subtitle',
+  ];
+  for (const selector of selectors) {
+    const value = card.querySelector<HTMLElement>(selector)?.textContent?.trim();
+    if (value) {
+      return value;
+    }
+  }
+  return null;
+}
+
 function extractCardContext(card: HTMLElement, index: number): PendingCard | null {
   ensureOriginalIndex(card, index);
   const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
@@ -459,7 +509,9 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   const descriptionSnapshot = extractText(card, '#description-text, #metadata-line, .metadata-snippet');
   const transcriptExcerpt = descriptionSnapshot;
   const linkUrl =
-    card.querySelector<HTMLAnchorElement>('a#thumbnail, a[href*="watch"], a[href*="/shorts/"]')
+    card.querySelector<HTMLAnchorElement>(
+      'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
+    )
       ?.href || null;
   const durationSeconds = parseDurationSeconds(
     extractText(
@@ -512,11 +564,75 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   };
 }
 
+function resolveCollectionMembers(
+  sourceEntry: PendingCard,
+): { collectionScope: ManualReviewCollectionScope | null; resolvedMembers: ManualReviewCollectionMember[] } {
+  const { scopeType, scopeId } = parseCollectionIdentity(sourceEntry.linkUrl);
+  if (!scopeId) {
+    return { collectionScope: null, resolvedMembers: [] };
+  }
+
+  const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
+  const membersById = new Map<string, ManualReviewCollectionMember>();
+
+  cards.forEach((card, index) => {
+    const entry = extractCardContext(card, index);
+    if (!entry) {
+      return;
+    }
+    const identity = parseCollectionIdentity(entry.linkUrl);
+    if (identity.scopeId !== scopeId) {
+      return;
+    }
+    membersById.set(entry.itemId, {
+      item_id: entry.itemId,
+      title_snapshot: entry.title,
+      channel_name: isUnknownChannelName(entry.channelName) ? null : entry.channelName,
+      link_url: entry.linkUrl,
+      thumbnail_ref: entry.thumbnailRef,
+      resolved: Boolean(entry.linkUrl),
+    });
+  });
+
+  if (!membersById.has(sourceEntry.itemId)) {
+    membersById.set(sourceEntry.itemId, {
+      item_id: sourceEntry.itemId,
+      title_snapshot: sourceEntry.title,
+      channel_name: isUnknownChannelName(sourceEntry.channelName) ? null : sourceEntry.channelName,
+      link_url: sourceEntry.linkUrl,
+      thumbnail_ref: sourceEntry.thumbnailRef,
+      resolved: Boolean(sourceEntry.linkUrl),
+    });
+  }
+
+  const resolvedMembers = Array.from(membersById.values());
+  const resolvedMemberCount = resolvedMembers.filter((member) => member.resolved && member.link_url).length;
+  const unresolvedMemberCount = resolvedMembers.length - resolvedMemberCount;
+
+  return {
+    resolvedMembers,
+    collectionScope: {
+      scope_type: scopeType,
+      scope_id: scopeId,
+      collection_title: collectionTitleFromCard(sourceEntry.card) ?? sourceEntry.title,
+      source_item_id: sourceEntry.itemId,
+      source_link_url: sourceEntry.linkUrl,
+      trigger_origin: 'single-item',
+      apply_to_all: false,
+      resolved_member_count: resolvedMemberCount,
+      unresolved_member_count: unresolvedMemberCount,
+      member_items: resolvedMembers,
+    },
+  };
+}
+
 function buildManualReportTarget(
   entry: PendingCard,
   score: ScoreResult | null,
   workflowMode: ManualReportWorkflowMode,
 ): ManualReportTarget {
+  const { collectionScope } = resolveCollectionMembers(entry);
   return {
     itemId: entry.itemId,
     workflowMode,
@@ -527,6 +643,7 @@ function buildManualReportTarget(
     thumbnailRef: entry.thumbnailRef,
     descriptionSnapshot: entry.descriptionSnapshot,
     transcriptExcerpt: entry.transcriptExcerpt,
+    collectionScope,
     score,
   };
 }
@@ -561,7 +678,6 @@ function syncPersonalizationPresentation(
     : channelTrustProfiles[normalizeChannelKey(channelName)];
   const personalization = buildPersonalizationSnapshot(score, profile);
   const trustTone = getScoreTone(personalization.rankingScore);
-  const bucketLabel = describePersonalizationBucket(personalization.bucket);
   const shouldShowFlag = shouldShowPersonalizationBadge(personalization, score);
 
   card.classList.remove('truthlens-card-boosted');
@@ -662,6 +778,7 @@ function buildBrowserObservationRecord(
   score: ScoreResult,
 ): BrowserObservationRecord {
   const originalIndex = Number(entry.card.getAttribute(ORIGINAL_INDEX));
+  const { collectionScope } = resolveCollectionMembers(entry);
   return {
     observation_id: createClientId('observation'),
     item_id: entry.itemId,
@@ -681,6 +798,9 @@ function buildBrowserObservationRecord(
       has_thumbnail: Boolean(entry.thumbnailRef),
       has_description_snapshot: Boolean(entry.descriptionSnapshot),
       has_transcript_excerpt: Boolean(entry.transcriptExcerpt),
+      collection_scope_type: collectionScope?.scope_type ?? 'single',
+      collection_member_count: collectionScope?.member_items.length ?? 1,
+      collection_resolved_member_count: collectionScope?.resolved_member_count ?? 1,
       title_token_count: entry.title.trim().split(/\s+/).filter(Boolean).length,
       description_token_count: (entry.descriptionSnapshot ?? '').trim().split(/\s+/).filter(Boolean).length,
       channel_known: !isUnknownChannelName(entry.channelName),
@@ -703,6 +823,7 @@ function buildBrowserObservationRecord(
       page_url: window.location.href,
       source_path: window.location.pathname,
     },
+    collection_scope: collectionScope,
   };
 }
 
@@ -890,11 +1011,11 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
 
   syncPersonalizationPresentation(card, score, pendingCard.channelName);
 
-  if (score.recommended_action === 'blur') {
-    card.classList.add('truthlens-card-blur');
-  }
   if (score.recommended_action === 'hide') {
     card.classList.add('truthlens-card-hidden');
+  }
+  if (score.recommended_action === 'blur') {
+    card.classList.add('truthlens-card-blur');
   }
   const musicLikelihood = Number(
     pendingCard.request.channel.channel_history_features.music_likelihood ?? 0,

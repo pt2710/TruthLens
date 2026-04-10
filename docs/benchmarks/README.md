@@ -9,6 +9,8 @@ Rules:
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
 - Small sample sizes, validation regressions, runtime-governance blockers, and runtime-policy mismatches must be surfaced explicitly.
 - Browser-observation and supplemental-intake volume must be surfaced honestly; zero supplemental volume is a valid committed state.
+- Collection-scope review/report support may be committed before collection-batch artifact volume exists; zero committed collection intake must be called out rather than hidden.
+- `blur` may remain an internal action label, but GitHub-facing docs and visuals must describe the current extension behavior truthfully as a visible warning-state rather than a forced visual blur.
 
 Primary outputs:
 
@@ -34,4 +36,4 @@ Current committed caveat:
 
 - The present root-artifact benchmark reflects a materially larger sample than the previous tiny-sample snapshot, but it is still a repository benchmark rather than a production claim.
 - `bseo-shadow` is committed and promoted.
-- `bseo-live` remains blocked until sufficient shadow-observation history exists in committed governance artifacts.
+- current governance artifacts may mark `bseo-live` as eligible before the repo actually promotes it; docs must distinguish eligibility from the committed active runtime mode.

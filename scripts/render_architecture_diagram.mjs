@@ -27,6 +27,8 @@ const pngPath = path.join(
   'truthlens-architecture-blueprint.png',
 );
 const mermaidBundlePath = require.resolve('mermaid/dist/mermaid.min.js');
+const targetPngWidth = 3200;
+const pngPadding = 48;
 
 const diagramText = fs.readFileSync(inputPath, 'utf8');
 const mermaidScript = fs.readFileSync(mermaidBundlePath, 'utf8');
@@ -38,7 +40,7 @@ const browser = await chromium.launch({
 
 try {
   const page = await browser.newPage({
-    viewport: { width: 2600, height: 3600 },
+    viewport: { width: 3600, height: 4200 },
     deviceScaleFactor: 2,
   });
 
@@ -55,12 +57,13 @@ try {
           }
           #app {
             width: max-content;
-            padding: 24px;
+            padding: ${pngPadding}px;
             background: #ffffff;
           }
           svg {
             display: block;
             background: #ffffff;
+            max-width: none !important;
           }
         </style>
       </head>
@@ -72,7 +75,7 @@ try {
     { waitUntil: 'load' },
   );
 
-  await page.evaluate(async (source) => {
+  await page.evaluate(async ({ source, targetWidth }) => {
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'loose',
@@ -89,27 +92,28 @@ try {
       throw new Error('Architecture render root was not found.');
     }
     app.innerHTML = svg;
-  }, diagramText);
+
+    const renderedSvg = app.querySelector('svg');
+    if (!renderedSvg) {
+      throw new Error('Architecture SVG was not rendered into the page.');
+    }
+
+    const viewBox = renderedSvg.getAttribute('viewBox');
+    const [, , rawWidth, rawHeight] = (viewBox ?? '').split(/\s+/).map(Number);
+    const aspectWidth = Number.isFinite(rawWidth) && rawWidth > 0 ? rawWidth : 1;
+    const aspectHeight = Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : 1;
+    const targetHeight = Math.round((aspectHeight / aspectWidth) * targetWidth);
+
+    renderedSvg.setAttribute('width', String(targetWidth));
+    renderedSvg.setAttribute('height', String(targetHeight));
+    renderedSvg.style.width = `${targetWidth}px`;
+    renderedSvg.style.height = `${targetHeight}px`;
+  }, { source: diagramText, targetWidth: targetPngWidth });
 
   const svg = await page.locator('#app svg').evaluate((node) => node.outerHTML);
   fs.writeFileSync(svgPath, svg, 'utf8');
-
-  const box = await page.locator('#app svg').boundingBox();
-  if (!box) {
-    throw new Error(
-      'Rendered architecture diagram did not produce a visible SVG.',
-    );
-  }
-
-  const padding = 16;
-  await page.screenshot({
+  await page.locator('#app').screenshot({
     path: pngPath,
-    clip: {
-      x: Math.max(box.x - padding, 0),
-      y: Math.max(box.y - padding, 0),
-      width: box.width + padding * 2,
-      height: box.height + padding * 2,
-    },
   });
 } finally {
   await browser.close();

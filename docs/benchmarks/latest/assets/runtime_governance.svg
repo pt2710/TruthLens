@@ -24,7 +24,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="58" y="226">committed artifacts and guardrails.</text>
 <rect class="card" x="350" y="112" width="280" height="150" rx="14" />
 <text class="label" x="368" y="138">Max promotable mode</text>
-<text class="value" x="368" y="182">bseo-shadow</text>
+<text class="value" x="368" y="182">bseo-live</text>
 <text class="small" x="368" y="210">Live is only eligible after calibration, lineage,</text>
 <text class="small" x="368" y="226">atlas, and shadow-soak checks pass.</text>
 <rect class="card" x="660" y="112" width="300" height="150" rx="14" />
@@ -41,8 +41,8 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="label" x="368" y="308">Atlas + lineage</text>
 <text class="value" x="368" y="352">clustered | lineage=125</text>
 <text class="small" x="368" y="380">usable_mutations=106</text>
-<rect class="warn" x="660" y="282" width="300" height="150" rx="14" />
+<rect class="accent" x="660" y="282" width="300" height="150" rx="14" />
 <text class="label" x="678" y="308">Live blockers</text>
-<text class="value" x="678" y="352">insufficient-shadow-observation-history</text>
-<text class="small" x="678" y="380">shadow_observations=40</text>
+<text class="value" x="678" y="352">none</text>
+<text class="small" x="678" y="380">shadow_observations=643</text>
 </svg>
