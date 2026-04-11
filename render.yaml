@@ -1,0 +1,44 @@
+services:
+  - type: web
+    runtime: docker
+    name: truthlens-beta-api
+    dockerfilePath: ./infra/docker/api.Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready
+    disk:
+      name: truthlens-runtime
+      mountPath: /var/data/truthlens
+      sizeGB: 10
+    envVars:
+      - key: TRUTHLENS_ENV
+        value: beta
+      - key: TRUTHLENS_PUBLIC_API_BASE
+        sync: false
+      - key: TRUTHLENS_DATABASE_URL
+        fromDatabase:
+          name: truthlens-beta-db
+          property: connectionString
+      - key: TRUTHLENS_RUNTIME_EVENT_STORE
+        value: postgres
+      - key: TRUTHLENS_LOCAL_EVENT_FALLBACK_ENABLED
+        value: "false"
+      - key: TRUTHLENS_STORAGE_ROOT
+        value: /var/data/truthlens
+      - key: TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED
+        value: "false"
+      - key: TRUTHLENS_API_KEY
+        sync: false
+      - key: TRUTHLENS_GEMINI_API_KEY
+        sync: false
+      - key: TRUTHLENS_GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: TRUTHLENS_YOUTUBE_CLIENT_ID
+        sync: false
+      - key: TRUTHLENS_YOUTUBE_CLIENT_SECRET
+        sync: false
+      - key: TRUTHLENS_YOUTUBE_REDIRECT_URI
+        sync: false
+
+databases:
+  - name: truthlens-beta-db
+    databaseName: truthlens_beta

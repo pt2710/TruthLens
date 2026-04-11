@@ -6,6 +6,7 @@ Rules:
 
 - Benchmark claims in `README.md` must trace back to `docs/benchmarks/latest/benchmark_summary.json`.
 - Visuals in `docs/benchmarks/latest/assets/` are generated from committed artifacts only.
+- The public repo keeps curated benchmark truth surfaces and metadata, not every raw eval/drift payload or binary model bundle.
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
 - Small sample sizes, validation regressions, runtime-governance blockers, and runtime-policy mismatches must be surfaced explicitly.
 - Browser-observation and supplemental-intake volume must be surfaced honestly; zero supplemental volume is a valid committed state.

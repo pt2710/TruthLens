@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a scoped improvement for TruthLens.
+title: "[feature] "
+labels:
+  - docs
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user or operator problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Keep the proposal concrete and scoped.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Primary surface
+      options:
+        - extension
+        - api
+        - android
+        - training
+        - policy
+        - dataset-governance
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks or tradeoffs

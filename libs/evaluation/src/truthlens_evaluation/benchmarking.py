@@ -958,10 +958,10 @@ def _write_drift_svg(summary: dict[str, Any], path: Path) -> None:
         value_x = zero_x + 10 if value >= 0 else zero_x - 82
         body.append(f'<text class="small" x="{value_x:.1f}" y="{y + 18}">{value:+.3f}</text>')
     body.append(
-        f'<text class="small" x="52" y="584">Positive means the current sample is higher than the reference sample on that feature. Negative means lower.</text>'
+        '<text class="small" x="52" y="584">Positive means the current sample is higher than the reference sample on that feature. Negative means lower.</text>'
     )
     body.append(
-        f'<text class="small" x="52" y="606">Near-zero values mean the committed report saw little measured shift on that metric at the current sample size. They do not prove universal no-drift.</text>'
+        '<text class="small" x="52" y="606">Near-zero values mean the committed report saw little measured shift on that metric at the current sample size. They do not prove universal no-drift.</text>'
     )
     path.write_text(
         _svg_document(

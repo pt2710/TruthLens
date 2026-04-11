@@ -1,4 +1,6 @@
+from dataclasses import dataclass, field
 from pathlib import Path
+import importlib
 
 import pytest
 
@@ -9,6 +11,7 @@ from truthlens_model_serving import (
     append_score_event,
     load_browser_observations,
     load_feedback_events,
+    load_score_events,
     summarize_browser_observations,
     summarize_feedback_events,
 )
@@ -277,3 +280,149 @@ def test_feedback_summary_ignores_unknown_channel_profiles(
     summary = summarize_feedback_events(load_feedback_events())
 
     assert "unknown channel" not in summary["channel_profiles"]
+
+
+class _FakeCursor:
+    def __init__(self, rows: list[tuple[object, ...]]) -> None:
+        self._rows = rows
+
+    def fetchall(self) -> list[tuple[object, ...]]:
+        return list(self._rows)
+
+
+class _FakeConnection:
+    def __init__(self, store: "_FakePgStore") -> None:
+        self._store = store
+
+    def __enter__(self) -> "_FakeConnection":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+    def execute(self, sql: str, params: tuple[object, ...] | None = None) -> _FakeCursor:
+        normalized = " ".join(sql.split()).lower()
+        if normalized.startswith("create table"):
+            return _FakeCursor([])
+        if "insert into feedback_events" in normalized:
+            self._store.feedback_events.append(params or ())
+            return _FakeCursor([])
+        if "insert into score_events" in normalized:
+            self._store.score_events.append(params or ())
+            return _FakeCursor([])
+        if "insert into browser_observations" in normalized:
+            self._store.browser_observations.append(params or ())
+            return _FakeCursor([])
+        if "from feedback_events" in normalized:
+            return _FakeCursor(list(self._store.feedback_events))
+        if "from score_events" in normalized:
+            return _FakeCursor(list(self._store.score_events))
+        if "from browser_observations" in normalized:
+            return _FakeCursor(list(self._store.browser_observations))
+        raise AssertionError(f"Unexpected SQL in fake Postgres connection: {sql}")
+
+    def commit(self) -> None:
+        self._store.commit_count += 1
+
+
+@dataclass
+class _FakePgStore:
+    feedback_events: list[tuple[object, ...]] = field(default_factory=list)
+    score_events: list[tuple[object, ...]] = field(default_factory=list)
+    browser_observations: list[tuple[object, ...]] = field(default_factory=list)
+    commit_count: int = 0
+    dsn: str | None = None
+
+
+class _FakePsycopg:
+    def __init__(self, store: _FakePgStore) -> None:
+        self._store = store
+
+    def connect(self, dsn: str) -> _FakeConnection:
+        self._store.dsn = dsn
+        return _FakeConnection(self._store)
+
+
+def test_postgres_runtime_event_store_persists_feedback_scores_and_observations(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    registry = importlib.import_module("truthlens_model_serving.registry")
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    monkeypatch.setenv("TRUTHLENS_RUNTIME_EVENT_STORE", "postgres")
+    monkeypatch.setenv("TRUTHLENS_DATABASE_URL", "postgresql+psycopg://truthlens:truthlens@localhost:5432/truthlens")
+    monkeypatch.setenv("TRUTHLENS_LOCAL_EVENT_FALLBACK_ENABLED", "false")
+
+    fake_store = _FakePgStore()
+    monkeypatch.setattr(registry, "psycopg", _FakePsycopg(fake_store))
+
+    registry.ensure_runtime_event_store()
+
+    append_feedback_event(
+        {
+            "feedback_id": "feedback-pg-1",
+            "item_id": "item-pg-1",
+            "item_hash": None,
+            "observation_id": "obs-pg-1",
+            "channel_name": "Signal Watch",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "action_shown": "badge",
+            "user_action": "report",
+            "explanation_id": "exp-pg-1",
+            "before_score": 0.62,
+            "after_score": 0.81,
+            "timestamp": "2026-04-11T12:00:00Z",
+            "runtime_context": {"surface": "extension-feed"},
+            "manual_report": {"requested_outcome": "moderate"},
+        }
+    )
+    append_score_event(
+        {
+            "item_id": "item-pg-1",
+            "channel_name": "Signal Watch",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "recommended_action": "ask-report",
+            "risk_score": 0.81,
+            "confidence": 0.73,
+            "uncertainty": 0.19,
+            "explanation_id": "exp-pg-1",
+            "timestamp": "2026-04-11T12:00:05Z",
+        }
+    )
+    append_browser_observation(
+        {
+            "observation_id": "obs-pg-1",
+            "item_id": "item-pg-1",
+            "item_hash": "hash-pg-1",
+            "title_snapshot": "Breaking packaging",
+            "channel_name": "Signal Watch",
+            "channel_url": "https://www.youtube.com/@signalwatch",
+            "link_url": "https://www.youtube.com/watch?v=item-pg-1",
+            "thumbnail_ref": "https://i.ytimg.com/vi/item-pg-1/hqdefault.jpg",
+            "description_snapshot": "Description",
+            "transcript_excerpt": "Transcript",
+            "metadata": {"duration_seconds": 120},
+            "runtime_context": {"surface": "extension-feed"},
+            "distilled_features": {"card_index": 0},
+            "score_snapshot": {"recommended_action": "ask-report"},
+            "provenance": {"collector": "extension-dom", "observed_at": "2026-04-11T12:00:06Z"},
+        }
+    )
+
+    feedback_rows = load_feedback_events()
+    score_rows = load_score_events()
+    observation_rows = load_browser_observations()
+
+    assert registry.runtime_event_store_backend() == "postgres"
+    assert fake_store.dsn == "postgresql://truthlens:truthlens@localhost:5432/truthlens"
+    assert len(feedback_rows) == 1
+    assert feedback_rows[0]["feedback_id"] == "feedback-pg-1"
+    assert feedback_rows[0]["runtime_context"] == {"surface": "extension-feed"}
+    assert len(score_rows) == 1
+    assert score_rows[0]["recommended_action"] == "ask-report"
+    assert len(observation_rows) == 1
+    assert observation_rows[0]["provenance"]["collector"] == "extension-dom"
+    assert not (repo_root() / "artifacts" / "reports" / "feedback_events.jsonl").exists()
+    assert not (repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3").exists()

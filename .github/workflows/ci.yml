@@ -4,14 +4,26 @@ on:
   push:
     branches:
       - main
-      - codex/**
   pull_request:
   schedule:
     - cron: '0 2 * * *'
 
 jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Release hygiene audit
+        run: python scripts/release_hygiene_audit.py
+
   python:
     runs-on: ubuntu-latest
+    needs: hygiene
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,6 +42,7 @@ jobs:
 
   typescript:
     runs-on: ubuntu-latest
+    needs: hygiene
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,6 +63,7 @@ jobs:
 
   extension-e2e:
     runs-on: ubuntu-latest
+    needs: typescript
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,6 +80,7 @@ jobs:
 
   runtime-smoke:
     runs-on: ubuntu-latest
+    needs: python
     env:
       PYTHONPATH: apps/api/src:apps/trainer/src:libs/shared-schemas/python:libs/feature-extractors/src:libs/data-pipeline/src:libs/dataset-governance/src:libs/policy-engine/python:libs/explanation-engine/python:libs/evaluation/src:libs/model-serving/python
     steps:

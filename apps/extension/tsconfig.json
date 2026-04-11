@@ -2,11 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["chrome", "vitest/globals", "node"],
+    "types": ["chrome", "vitest/globals", "node", "vite/client"],
     "baseUrl": ".",
     "paths": {
       "@truthlens/shared-schemas": ["../../libs/shared-schemas/src"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.ts"]
 }

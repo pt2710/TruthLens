@@ -27,8 +27,8 @@ import {
 } from '@truthlens/shared-schemas';
 
 import { createBootstrapScore } from './mockScore';
+import { buildTruthLensApiUrl } from './runtimeConfig';
 
-const API_BASE = 'http://127.0.0.1:8000';
 const scoreCache = new Map<string, ScoreResult>();
 
 type BackgroundOptimizeResponse =
@@ -149,7 +149,7 @@ export async function scoreFeedItem(
   }
 
   try {
-    const response = await fetch(`${API_BASE}/score-item`, {
+    const response = await fetch(buildTruthLensApiUrl('/score-item'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedItem),
@@ -191,7 +191,7 @@ export async function batchScoreFeedItems(
   }
 
   try {
-    const response = await fetch(`${API_BASE}/batch-score`, {
+    const response = await fetch(buildTruthLensApiUrl('/batch-score'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: uncachedItems }),
@@ -219,7 +219,7 @@ export async function batchScoreFeedItems(
 export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
   const parsedEvent = feedbackEventSchema.parse(payload);
   try {
-    await fetch(`${API_BASE}/feedback`, {
+    await fetch(buildTruthLensApiUrl('/feedback'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedEvent),
@@ -234,7 +234,7 @@ export async function sendBrowserObservation(
 ): Promise<void> {
   const parsedObservation = browserObservationRecordSchema.parse(payload);
   try {
-    await fetch(`${API_BASE}/browser-observation`, {
+    await fetch(buildTruthLensApiUrl('/browser-observation'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedObservation),
@@ -249,7 +249,7 @@ export async function optimizeManualReportComments(
 ): Promise<ManualReportOptimizationResponse> {
   const parsedRequest = manualReportOptimizationRequestSchema.parse(payload);
   try {
-    const response = await fetch(`${API_BASE}/manual-report/optimize`, {
+    const response = await fetch(buildTruthLensApiUrl('/manual-report/optimize'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedRequest),
@@ -289,7 +289,7 @@ export async function suggestManualReportComments(
   payload: ManualReportSuggestionRequest,
 ): Promise<ManualReportSuggestionResponse> {
   const parsedRequest = manualReportSuggestionRequestSchema.parse(payload);
-  const response = await fetch(`${API_BASE}/manual-report/suggest`, {
+  const response = await fetch(buildTruthLensApiUrl('/manual-report/suggest'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(parsedRequest),
@@ -311,7 +311,7 @@ export async function suggestManualReportComments(
 
 export async function fetchModelInfo(): Promise<ModelInfo> {
   try {
-    const response = await fetch(`${API_BASE}/model-info`);
+    const response = await fetch(buildTruthLensApiUrl('/model-info'));
     if (!response.ok) {
       throw new Error(`Model info request failed: ${response.status}`);
     }
@@ -327,7 +327,7 @@ export async function fetchModelInfo(): Promise<ModelInfo> {
 
 export async function fetchPolicyInfo(): Promise<PolicyInfo> {
   try {
-    const response = await fetch(`${API_BASE}/policy-info`);
+    const response = await fetch(buildTruthLensApiUrl('/policy-info'));
     if (!response.ok) {
       throw new Error(`Policy info request failed: ${response.status}`);
     }
@@ -352,7 +352,7 @@ export async function fetchPolicyInfo(): Promise<PolicyInfo> {
 
 export async function fetchFeedbackSummary(): Promise<FeedbackSummary> {
   try {
-    const response = await fetch(`${API_BASE}/feedback-summary`);
+    const response = await fetch(buildTruthLensApiUrl('/feedback-summary'));
     if (!response.ok) {
       throw new Error(`Feedback summary request failed: ${response.status}`);
     }
@@ -367,7 +367,7 @@ export async function fetchFeedbackSummary(): Promise<FeedbackSummary> {
 }
 
 export async function fetchYouTubeAuthStatus(): Promise<YouTubeAuthStatus> {
-  const response = await fetch(`${API_BASE}/youtube/auth/status`);
+  const response = await fetch(buildTruthLensApiUrl('/youtube/auth/status'));
   if (!response.ok) {
     throw new Error(`YouTube auth status request failed: ${response.status}`);
   }
@@ -378,7 +378,7 @@ export async function submitYouTubeReport(
   payload: YouTubeReportRequest,
 ): Promise<YouTubeReportResponse> {
   const parsedRequest = youtubeReportRequestSchema.parse(payload);
-  const response = await fetch(`${API_BASE}/youtube/report`, {
+  const response = await fetch(buildTruthLensApiUrl('/youtube/report'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(parsedRequest),

@@ -13,6 +13,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "TRUTHLENS_DEFAULT_API_BASE", "\"https://truthlens-beta-api.onrender.com/\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -21,6 +22,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "TRUTHLENS_DEFAULT_API_BASE", "\"http://10.0.2.2:8000/\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -41,6 +45,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

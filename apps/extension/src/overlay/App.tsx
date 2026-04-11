@@ -16,6 +16,7 @@ import {
   suggestManualReportComments,
   submitYouTubeReport,
 } from '../lib/api';
+import { buildTruthLensApiUrl } from '../lib/runtimeConfig';
 import { fetchYouTubeWatchMetadata } from '../lib/youtubeWatchMetadata';
 import { submitYouTubePageReport } from '../lib/youtubePageReporting';
 import { useOverlayStore } from './store';
@@ -310,7 +311,7 @@ export function App() {
                 : `${status.channel_name ? `Connected as ${status.channel_name}. ` : ''}${status.direct_reporting_detail ?? 'TruthLens will use YouTube’s in-page report flow for direct reports.'}`
               : status.configured
                 ? 'YouTube reporting is configured but still needs account authorization.'
-                : 'YouTube direct reporting is not configured in the local API.',
+                : 'YouTube direct reporting is not configured for the current TruthLens API.',
             status.connected && status.direct_reporting_supported ? 'success' : 'info',
           );
         })
@@ -318,8 +319,8 @@ export function App() {
           if (cancelled) {
             return;
           }
-          setErrorMessage('Could not load YouTube reporting status from the local API.');
-          appendStatusLine('Could not load YouTube reporting status from the local API.', 'error');
+          setErrorMessage('Could not load YouTube reporting status from the current TruthLens API.');
+          appendStatusLine('Could not load YouTube reporting status from the current TruthLens API.', 'error');
         })
         .finally(() => {
           if (!cancelled) {
@@ -797,7 +798,7 @@ export function App() {
   }
 
   async function handleConnectYouTube() {
-    const authUrl = youtubeAuthStatus?.auth_url ?? 'http://127.0.0.1:8000/youtube/auth/start';
+    const authUrl = youtubeAuthStatus?.auth_url ?? buildTruthLensApiUrl('/youtube/auth/start');
     setErrorMessage(null);
     setSuccessMessage(null);
     appendStatusLine('Opening the YouTube authorization flow…');
@@ -1083,7 +1084,7 @@ export function App() {
               <div className="truthlens-platform-status">
                 <p className="truthlens-preview-label">YouTube reporting</p>
                 {isLoadingYouTubeStatus ? (
-                  <p className="truthlens-preview-empty">Checking local YouTube connection...</p>
+                  <p className="truthlens-preview-empty">Checking YouTube reporting availability...</p>
                 ) : youtubeAuthStatus?.connected ? (
                   youtubeAuthStatus.direct_reporting_supported ? (
                     <p className="truthlens-platform-message">
@@ -1112,7 +1113,7 @@ export function App() {
                     <p className="truthlens-platform-message">
                       Connect your YouTube account once to let TruthLens use direct API reporting
                       when the account supports it. Single-item reports can still use YouTube&apos;s
-                      in-page flow without the local OAuth connection.
+                      in-page flow without a direct OAuth connection.
                     </p>
                     <button
                       className="truthlens-secondary-button"
@@ -1127,10 +1128,11 @@ export function App() {
                 ) : (
                   <p className="truthlens-platform-message">
                     Add <code>TRUTHLENS_YOUTUBE_CLIENT_ID</code>,{' '}
-                    <code>TRUTHLENS_YOUTUBE_CLIENT_SECRET</code>, and{' '}
-                    <code>TRUTHLENS_YOUTUBE_REDIRECT_URI</code> to <code>.env</code>, then restart
-                    the API if you want direct API reporting. Single-item reports can still fall
-                    back to YouTube&apos;s in-page flow.
+                    <code>TRUTHLENS_YOUTUBE_CLIENT_SECRET</code>, and either{' '}
+                    <code>TRUTHLENS_PUBLIC_API_BASE</code> or{' '}
+                    <code>TRUTHLENS_YOUTUBE_REDIRECT_URI</code> to the hosted API environment if
+                    you want direct API reporting later. The first external beta keeps this path
+                    disabled and falls back to YouTube&apos;s in-page flow.
                   </p>
                 )}
               </div>

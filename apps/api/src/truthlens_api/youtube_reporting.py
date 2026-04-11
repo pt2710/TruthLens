@@ -8,7 +8,7 @@ from urllib.parse import urlencode, urlparse
 import httpx
 
 from truthlens_api.settings import settings
-from truthlens_data_pipeline.paths import ensure_dir, read_json, repo_root, write_json
+from truthlens_data_pipeline.paths import ensure_dir, read_json, resolve_runtime_path, write_json
 from truthlens_shared_schemas.contracts import (
     YouTubeAuthStatus,
     YouTubeReportRequest,
@@ -31,16 +31,16 @@ def youtube_reporting_configured() -> bool:
     return bool(
         (settings.youtube_client_id or "").strip()
         and (settings.youtube_client_secret or "").strip()
-        and (settings.youtube_redirect_uri or "").strip()
+        and settings.resolved_youtube_redirect_uri.strip()
     )
 
 
 def _token_path() -> Path:
-    return repo_root() / settings.youtube_token_path
+    return resolve_runtime_path(settings.youtube_token_path)
 
 
 def _oauth_state_path() -> Path:
-    return repo_root() / settings.youtube_oauth_state_path
+    return resolve_runtime_path(settings.youtube_oauth_state_path)
 
 
 def _read_json_file(path: Path) -> dict[str, object] | None:
@@ -61,7 +61,7 @@ def _build_auth_url(state: str) -> str:
     query = urlencode(
         {
             "client_id": settings.youtube_client_id or "",
-            "redirect_uri": settings.youtube_redirect_uri,
+            "redirect_uri": settings.resolved_youtube_redirect_uri,
             "response_type": "code",
             "scope": settings.youtube_auth_scope,
             "access_type": "offline",
@@ -165,7 +165,7 @@ def complete_youtube_authorization(code: str, state: str) -> None:
             "client_secret": settings.youtube_client_secret or "",
             "code": code,
             "grant_type": "authorization_code",
-            "redirect_uri": settings.youtube_redirect_uri,
+            "redirect_uri": settings.resolved_youtube_redirect_uri,
         },
         timeout=30.0,
     )
@@ -206,7 +206,7 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
             direct_reporting_supported=False,
             direct_reporting_detail=(
                 "Add TRUTHLENS_YOUTUBE_CLIENT_ID, TRUTHLENS_YOUTUBE_CLIENT_SECRET, "
-                "and TRUTHLENS_YOUTUBE_REDIRECT_URI to enable direct reporting."
+                "and TRUTHLENS_PUBLIC_API_BASE or TRUTHLENS_YOUTUBE_REDIRECT_URI to enable direct reporting."
             ),
         )
 
@@ -238,7 +238,14 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
             ),
         )
 
-    direct_reporting_supported, direct_reporting_detail = probe_direct_reporting_capability(access_token)
+    if not settings.youtube_direct_reporting_enabled:
+        direct_reporting_supported = False
+        direct_reporting_detail = (
+            "Direct YouTube API reporting is disabled for the hosted beta. "
+            "TruthLens currently supports manual report drafting and optimization only."
+        )
+    else:
+        direct_reporting_supported, direct_reporting_detail = probe_direct_reporting_capability(access_token)
     return YouTubeAuthStatus(
         configured=True,
         connected=True,
@@ -407,6 +414,10 @@ def probe_direct_reporting_capability(access_token: str) -> tuple[bool, str | No
 
 
 def submit_youtube_report(payload: YouTubeReportRequest) -> YouTubeReportResponse:
+    if not settings.youtube_direct_reporting_enabled:
+        raise YouTubeDirectReportingUnsupportedError(
+            "Direct YouTube API reporting is disabled for the current hosted beta."
+        )
     access_token = _get_access_token()
     video_id = _extract_video_id(payload.target_url)
     reasons = _list_video_report_reasons(access_token)

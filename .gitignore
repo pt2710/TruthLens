@@ -20,6 +20,8 @@ __pycache__/
 .codex/environments/
 artifacts/**
 !artifacts/**/.gitkeep
+!artifacts/reports/runtime-governance-latest.json
+!artifacts/trained_models/latest/model_info.json
 datasets/raw/**
 !datasets/raw/**/.gitkeep
 datasets/interim/**

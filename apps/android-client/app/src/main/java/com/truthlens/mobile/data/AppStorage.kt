@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.truthlens.mobile.BuildConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -27,7 +28,7 @@ class SettingsStore(
 
     val settingsFlow: Flow<AppSettings> = context.truthLensDataStore.data.map { preferences ->
         AppSettings(
-            apiBaseUrl = preferences[Keys.ApiBaseUrl] ?: "http://10.0.2.2:8000/",
+            apiBaseUrl = preferences[Keys.ApiBaseUrl] ?: BuildConfig.TRUTHLENS_DEFAULT_API_BASE,
             apiKey = preferences[Keys.ApiKey] ?: "",
             autoOptimizeDrafts = preferences[Keys.AutoOptimize] ?: true,
             showDebugInfo = preferences[Keys.ShowDebug] ?: false,

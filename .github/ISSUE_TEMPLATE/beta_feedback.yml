@@ -1,0 +1,31 @@
+name: Beta feedback
+description: Share tester feedback about usefulness, friction, or false positives.
+title: "[beta] "
+labels:
+  - docs
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What video/page context were you testing?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What TruthLens did
+      description: Include trigger behavior, action, and explanation quality.
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Friction or confusion
+      description: What slowed you down or felt wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement

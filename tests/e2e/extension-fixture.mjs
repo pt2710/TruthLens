@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const repoRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const apiBase = 'https://truthlens-beta-api.onrender.com';
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -174,7 +175,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/batch-score', async (route) => {
+    await page.route(`${apiBase}/batch-score`, async (route) => {
       batchRequests += 1;
       const body = JSON.parse(route.request().postData() ?? '{}');
       const results = Object.fromEntries(
@@ -187,7 +188,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/feedback', async (route) => {
+    await page.route(`${apiBase}/feedback`, async (route) => {
       feedbackEvents.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 200,
@@ -196,7 +197,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/browser-observation', async (route) => {
+    await page.route(`${apiBase}/browser-observation`, async (route) => {
       browserObservations.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 200,
@@ -205,7 +206,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/manual-report/optimize', async (route) => {
+    await page.route(`${apiBase}/manual-report/optimize`, async (route) => {
       optimizationRequests.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 200,
@@ -224,7 +225,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/manual-report/suggest', async (route) => {
+    await page.route(`${apiBase}/manual-report/suggest`, async (route) => {
       if (route.request().method() !== 'POST') {
         await route.fulfill({
           status: 204,
@@ -296,7 +297,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/feedback-summary', async (route) => {
+    await page.route(`${apiBase}/feedback-summary`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -377,7 +378,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/youtube/auth/status', async (route) => {
+    await page.route(`${apiBase}/youtube/auth/status`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -392,7 +393,7 @@ async function main() {
       });
     });
 
-    await page.route('http://127.0.0.1:8000/youtube/report', async (route) => {
+    await page.route(`${apiBase}/youtube/report`, async (route) => {
       youtubeReports.push(JSON.parse(route.request().postData() ?? '{}'));
       await route.fulfill({
         status: 409,

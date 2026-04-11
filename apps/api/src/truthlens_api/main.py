@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from time import monotonic
 import httpx
@@ -41,7 +43,9 @@ from truthlens_model_serving import (
     append_feedback_event,
     append_score_event,
     describe_model,
+    ensure_runtime_event_store,
     predict_item_signals,
+    runtime_event_store_backend,
     summarize_browser_observations,
     summarize_feedback_events,
     summarize_score_events,
@@ -69,12 +73,21 @@ from truthlens_shared_schemas.contracts import (
     YouTubeReportResponse,
 )
 
-app = FastAPI(title="TruthLens API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    ensure_runtime_event_store()
+    yield
+
+
+app = FastAPI(title="TruthLens API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=(
         r"^https://www\.youtube\.com$|"
         r"^chrome-extension://.*$|"
+        r"^https://.*\.onrender\.com$|"
+        r"^https://.*\.github\.io$|"
         r"^http://(127\.0\.0\.1|localhost)(:\d+)?$"
     ),
     allow_credentials=False,
@@ -181,7 +194,11 @@ async def security_middleware(request: Request, call_next: Any) -> Any:
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "env": settings.env}
+    return {
+        "status": "ok",
+        "env": settings.env,
+        "event_store": runtime_event_store_backend(),
+    }
 
 
 @app.get("/ready")
@@ -194,6 +211,7 @@ def ready() -> dict[str, object]:
         "artifact_status": artifact_status,
         "policy_version": policy.get("policy_version"),
         "model_version": model.get("model_version"),
+        "event_store": runtime_event_store_backend(),
     }
 
 
@@ -241,13 +259,21 @@ def batch_score(payload: BatchScoreRequest) -> BatchScoreResponse:
 @app.post("/feedback")
 def feedback(payload: FeedbackEvent) -> dict[str, str]:
     append_feedback_event(payload.model_dump())
-    return {"status": "accepted", "feedback_log_path": settings.feedback_log_path}
+    return {
+        "status": "accepted",
+        "feedback_log_path": settings.feedback_log_path,
+        "event_store": runtime_event_store_backend(),
+    }
 
 
 @app.post("/browser-observation")
 def browser_observation(payload: BrowserObservationRecord) -> dict[str, str]:
     append_browser_observation(payload.model_dump())
-    return {"status": "accepted", "observation_id": payload.observation_id}
+    return {
+        "status": "accepted",
+        "observation_id": payload.observation_id,
+        "event_store": runtime_event_store_backend(),
+    }
 
 
 @app.get("/annotation-batch/latest")

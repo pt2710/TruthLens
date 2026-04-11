@@ -9,6 +9,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+try:
+    import psycopg
+except ImportError:  # pragma: no cover - optional dependency
+    psycopg = None
+
 from sklearn import __version__ as sklearn_version
 from sklearn.exceptions import InconsistentVersionWarning
 try:
@@ -28,11 +33,14 @@ from truthlens_feature_extractors import (
     text_encoder_resolution_payload,
     vision_encoder_resolution_payload,
 )
+from truthlens_data_pipeline.paths import resolve_runtime_path, runtime_storage_root
 
 VISION_FEATURE_VERSION = "vision-v2"
 VISION_FEATURE_COUNT = 12
 HEAD_SPEC_VERSION = "2026-04-02"
 ARCHITECTURE_PLAN_VERSION = "2026-04-02"
+EVENT_STORE_LOCAL = "local"
+EVENT_STORE_POSTGRES = "postgres"
 
 
 def _repo_root() -> Path:
@@ -42,28 +50,65 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
+def _runtime_root() -> Path:
+    return runtime_storage_root()
+
+
 def _source_repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
 def _feedback_log_path() -> Path:
-    return _repo_root() / "artifacts" / "reports" / "feedback_events.jsonl"
+    return resolve_runtime_path("artifacts/reports/feedback_events.jsonl")
 
 
 def _score_log_path() -> Path:
-    return _repo_root() / "artifacts" / "reports" / "score_events.jsonl"
+    return resolve_runtime_path("artifacts/reports/score_events.jsonl")
 
 
 def _observation_log_path() -> Path:
-    return _repo_root() / "artifacts" / "reports" / "browser_observations.jsonl"
+    return resolve_runtime_path("artifacts/reports/browser_observations.jsonl")
 
 
 def _feedback_db_path() -> Path:
-    return _repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
+    return resolve_runtime_path("artifacts/reports/feedback_events.sqlite3")
+
+
+def _runtime_event_store_mode() -> str:
+    raw_value = os.getenv("TRUTHLENS_RUNTIME_EVENT_STORE", EVENT_STORE_LOCAL).strip().lower()
+    if raw_value in {EVENT_STORE_LOCAL, EVENT_STORE_POSTGRES}:
+        return raw_value
+    return EVENT_STORE_LOCAL
+
+
+def runtime_event_store_backend() -> str:
+    return _runtime_event_store_mode()
+
+
+def _local_event_fallback_enabled() -> bool:
+    raw_value = os.getenv("TRUTHLENS_LOCAL_EVENT_FALLBACK_ENABLED", "true").strip().lower()
+    return raw_value not in {"0", "false", "no", "off"}
+
+
+def _postgres_dsn() -> str | None:
+    raw_value = os.getenv("TRUTHLENS_DATABASE_URL", "").strip()
+    if not raw_value:
+        return None
+    if raw_value.startswith("postgresql+psycopg://"):
+        return "postgresql://" + raw_value.removeprefix("postgresql+psycopg://")
+    return raw_value
+
+
+def _postgres_available() -> bool:
+    return _runtime_event_store_mode() == EVENT_STORE_POSTGRES and _postgres_dsn() is not None and psycopg is not None
+
+
+def _should_write_local_fallback() -> bool:
+    return _runtime_event_store_mode() == EVENT_STORE_LOCAL or _local_event_fallback_enabled()
 
 
 def model_dir() -> Path:
-    path = _repo_root() / "artifacts" / "trained_models" / "latest"
+    path = _runtime_root() / "artifacts" / "trained_models" / "latest"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -348,6 +393,8 @@ def load_model_info() -> dict[str, Any]:
 
 
 def load_feedback_events() -> list[dict[str, Any]]:
+    if _postgres_available():
+        return _load_feedback_events_postgres()
     db_path = _feedback_db_path()
     if db_path.exists():
         with sqlite3.connect(db_path) as connection:
@@ -433,6 +480,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
 
 
 def load_score_events() -> list[dict[str, Any]]:
+    if _postgres_available():
+        return _load_score_events_postgres()
     db_path = _feedback_db_path()
     if db_path.exists():
         with sqlite3.connect(db_path) as connection:
@@ -493,6 +542,8 @@ def load_score_events() -> list[dict[str, Any]]:
 
 
 def load_browser_observations() -> list[dict[str, Any]]:
+    if _postgres_available():
+        return _load_browser_observations_postgres()
     db_path = _feedback_db_path()
     if db_path.exists():
         with sqlite3.connect(db_path) as connection:
@@ -654,18 +705,97 @@ def _ensure_browser_observation_table(connection: sqlite3.Connection) -> None:
     connection.commit()
 
 
-def append_feedback_event(payload: dict[str, Any]) -> Path:
-    path = _feedback_log_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, ensure_ascii=True))
-        handle.write("\n")
-    db_path = _feedback_db_path()
-    with sqlite3.connect(db_path) as connection:
-        _ensure_feedback_table(connection)
-        connection.execute(
+def _postgres_connect():
+    dsn = _postgres_dsn()
+    if psycopg is None or not dsn:
+        raise RuntimeError("Postgres runtime event storage is not configured.")
+    return psycopg.connect(dsn)
+
+
+def _ensure_postgres_feedback_table(connection: Any) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS feedback_events (
+            feedback_id TEXT,
+            item_id TEXT NOT NULL,
+            item_hash TEXT,
+            observation_id TEXT,
+            channel_name TEXT,
+            model_version TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            action_shown TEXT NOT NULL,
+            user_action TEXT NOT NULL,
+            explanation_id TEXT,
+            before_score DOUBLE PRECISION,
+            after_score DOUBLE PRECISION,
+            timestamp TEXT NOT NULL,
+            runtime_context_json TEXT,
+            artifact_provenance_json TEXT,
+            manual_report_json TEXT
+        )
+        """
+    )
+
+
+def _ensure_postgres_score_table(connection: Any) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS score_events (
+            item_id TEXT NOT NULL,
+            channel_name TEXT,
+            model_version TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            recommended_action TEXT NOT NULL,
+            risk_score DOUBLE PRECISION NOT NULL,
+            confidence DOUBLE PRECISION NOT NULL,
+            uncertainty DOUBLE PRECISION NOT NULL,
+            explanation_id TEXT,
+            timestamp TEXT NOT NULL
+        )
+        """
+    )
+
+
+def _ensure_postgres_browser_observation_table(connection: Any) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS browser_observations (
+            observation_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            item_hash TEXT,
+            title_snapshot TEXT NOT NULL,
+            channel_name TEXT,
+            channel_url TEXT,
+            link_url TEXT,
+            thumbnail_ref TEXT,
+            description_snapshot TEXT,
+            transcript_excerpt TEXT,
+            metadata_json TEXT,
+            runtime_context_json TEXT,
+            distilled_features_json TEXT,
+            score_snapshot_json TEXT,
+            provenance_json TEXT NOT NULL
+        )
+        """
+    )
+
+
+def ensure_runtime_event_store() -> None:
+    if not _postgres_available():
+        return
+    with _postgres_connect() as connection:
+        _ensure_postgres_feedback_table(connection)
+        _ensure_postgres_score_table(connection)
+        _ensure_postgres_browser_observation_table(connection)
+        connection.commit()
+
+
+def _load_feedback_events_postgres() -> list[dict[str, Any]]:
+    with _postgres_connect() as connection:
+        _ensure_postgres_feedback_table(connection)
+        cursor = connection.execute(
             """
-            INSERT INTO feedback_events (
+            SELECT
                 feedback_id,
                 item_id,
                 item_hash,
@@ -682,49 +812,106 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                 runtime_context_json,
                 artifact_provenance_json,
                 manual_report_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                payload.get("feedback_id"),
-                payload.get("item_id"),
-                payload.get("item_hash"),
-                payload.get("observation_id"),
-                payload.get("channel_name"),
-                payload.get("model_version"),
-                payload.get("policy_version"),
-                payload.get("action_shown"),
-                payload.get("user_action"),
-                payload.get("explanation_id"),
-                payload.get("before_score"),
-                payload.get("after_score"),
-                payload.get("timestamp"),
-                json.dumps(payload.get("runtime_context"), ensure_ascii=True)
-                if payload.get("runtime_context") is not None
-                else None,
-                json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
-                if payload.get("artifact_provenance") is not None
-                else None,
-                json.dumps(payload.get("manual_report"), ensure_ascii=True)
-                if payload.get("manual_report") is not None
-                else None,
-            ),
-        )
-        connection.commit()
-    return path
-
-
-def append_browser_observation(payload: dict[str, Any]) -> Path:
-    path = _observation_log_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, ensure_ascii=True))
-        handle.write("\n")
-    db_path = _feedback_db_path()
-    with sqlite3.connect(db_path) as connection:
-        _ensure_browser_observation_table(connection)
-        connection.execute(
+            FROM feedback_events
+            ORDER BY timestamp ASC, item_id ASC
             """
-            INSERT INTO browser_observations (
+        )
+        return [
+            {
+                "feedback_id": feedback_id,
+                "item_id": item_id,
+                "item_hash": item_hash,
+                "observation_id": observation_id,
+                "channel_name": channel_name,
+                "model_version": model_version,
+                "policy_version": policy_version,
+                "action_shown": action_shown,
+                "user_action": user_action,
+                "explanation_id": explanation_id,
+                "before_score": before_score,
+                "after_score": after_score,
+                "timestamp": timestamp,
+                "runtime_context": json.loads(runtime_context_json) if runtime_context_json else None,
+                "artifact_provenance": json.loads(artifact_provenance_json)
+                if artifact_provenance_json
+                else None,
+                "manual_report": json.loads(manual_report_json) if manual_report_json else None,
+            }
+            for (
+                feedback_id,
+                item_id,
+                item_hash,
+                observation_id,
+                channel_name,
+                model_version,
+                policy_version,
+                action_shown,
+                user_action,
+                explanation_id,
+                before_score,
+                after_score,
+                timestamp,
+                runtime_context_json,
+                artifact_provenance_json,
+                manual_report_json,
+            ) in cursor.fetchall()
+        ]
+
+
+def _load_score_events_postgres() -> list[dict[str, Any]]:
+    with _postgres_connect() as connection:
+        _ensure_postgres_score_table(connection)
+        cursor = connection.execute(
+            """
+            SELECT
+                item_id,
+                channel_name,
+                model_version,
+                policy_version,
+                recommended_action,
+                risk_score,
+                confidence,
+                uncertainty,
+                explanation_id,
+                timestamp
+            FROM score_events
+            ORDER BY timestamp ASC, item_id ASC
+            """
+        )
+        return [
+            {
+                "item_id": item_id,
+                "channel_name": channel_name,
+                "model_version": model_version,
+                "policy_version": policy_version,
+                "recommended_action": recommended_action,
+                "risk_score": risk_score,
+                "confidence": confidence,
+                "uncertainty": uncertainty,
+                "explanation_id": explanation_id,
+                "timestamp": timestamp,
+            }
+            for (
+                item_id,
+                channel_name,
+                model_version,
+                policy_version,
+                recommended_action,
+                risk_score,
+                confidence,
+                uncertainty,
+                explanation_id,
+                timestamp,
+            ) in cursor.fetchall()
+        ]
+
+
+def _load_browser_observations_postgres() -> list[dict[str, Any]]:
+    with _postgres_connect() as connection:
+        _ensure_postgres_browser_observation_table(connection)
+        cursor = connection.execute(
+            """
+            SELECT
                 observation_id,
                 item_id,
                 item_hash,
@@ -740,68 +927,324 @@ def append_browser_observation(payload: dict[str, Any]) -> Path:
                 distilled_features_json,
                 score_snapshot_json,
                 provenance_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                payload.get("observation_id"),
-                payload.get("item_id"),
-                payload.get("item_hash"),
-                payload.get("title_snapshot"),
-                payload.get("channel_name"),
-                payload.get("channel_url"),
-                payload.get("link_url"),
-                payload.get("thumbnail_ref"),
-                payload.get("description_snapshot"),
-                payload.get("transcript_excerpt"),
-                json.dumps(payload.get("metadata", {}), ensure_ascii=True),
-                json.dumps(payload.get("runtime_context", {}), ensure_ascii=True),
-                json.dumps(payload.get("distilled_features", {}), ensure_ascii=True),
-                json.dumps(payload.get("score_snapshot", {}), ensure_ascii=True),
-                json.dumps(payload.get("provenance", {}), ensure_ascii=True),
-            ),
+            FROM browser_observations
+            ORDER BY observation_id ASC
+            """
         )
-        connection.commit()
+        return [
+            {
+                "observation_id": observation_id,
+                "item_id": item_id,
+                "item_hash": item_hash,
+                "title_snapshot": title_snapshot,
+                "channel_name": channel_name,
+                "channel_url": channel_url,
+                "link_url": link_url,
+                "thumbnail_ref": thumbnail_ref,
+                "description_snapshot": description_snapshot,
+                "transcript_excerpt": transcript_excerpt,
+                "metadata": json.loads(metadata_json) if metadata_json else {},
+                "runtime_context": json.loads(runtime_context_json) if runtime_context_json else {},
+                "distilled_features": json.loads(distilled_features_json)
+                if distilled_features_json
+                else {},
+                "score_snapshot": json.loads(score_snapshot_json) if score_snapshot_json else {},
+                "provenance": json.loads(provenance_json) if provenance_json else {},
+            }
+            for (
+                observation_id,
+                item_id,
+                item_hash,
+                title_snapshot,
+                channel_name,
+                channel_url,
+                link_url,
+                thumbnail_ref,
+                description_snapshot,
+                transcript_excerpt,
+                metadata_json,
+                runtime_context_json,
+                distilled_features_json,
+                score_snapshot_json,
+                provenance_json,
+            ) in cursor.fetchall()
+        ]
+
+def append_feedback_event(payload: dict[str, Any]) -> Path:
+    path = _feedback_log_path()
+    if _should_write_local_fallback():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=True))
+            handle.write("\n")
+        db_path = _feedback_db_path()
+        with sqlite3.connect(db_path) as connection:
+            _ensure_feedback_table(connection)
+            connection.execute(
+                """
+                INSERT INTO feedback_events (
+                    feedback_id,
+                    item_id,
+                    item_hash,
+                    observation_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    action_shown,
+                    user_action,
+                    explanation_id,
+                    before_score,
+                    after_score,
+                    timestamp,
+                    runtime_context_json,
+                    artifact_provenance_json,
+                    manual_report_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payload.get("feedback_id"),
+                    payload.get("item_id"),
+                    payload.get("item_hash"),
+                    payload.get("observation_id"),
+                    payload.get("channel_name"),
+                    payload.get("model_version"),
+                    payload.get("policy_version"),
+                    payload.get("action_shown"),
+                    payload.get("user_action"),
+                    payload.get("explanation_id"),
+                    payload.get("before_score"),
+                    payload.get("after_score"),
+                    payload.get("timestamp"),
+                    json.dumps(payload.get("runtime_context"), ensure_ascii=True)
+                    if payload.get("runtime_context") is not None
+                    else None,
+                    json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
+                    if payload.get("artifact_provenance") is not None
+                    else None,
+                    json.dumps(payload.get("manual_report"), ensure_ascii=True)
+                    if payload.get("manual_report") is not None
+                    else None,
+                ),
+            )
+            connection.commit()
+    if _postgres_available():
+        with _postgres_connect() as connection:
+            _ensure_postgres_feedback_table(connection)
+            connection.execute(
+                """
+                INSERT INTO feedback_events (
+                    feedback_id,
+                    item_id,
+                    item_hash,
+                    observation_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    action_shown,
+                    user_action,
+                    explanation_id,
+                    before_score,
+                    after_score,
+                    timestamp,
+                    runtime_context_json,
+                    artifact_provenance_json,
+                    manual_report_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    payload.get("feedback_id"),
+                    payload.get("item_id"),
+                    payload.get("item_hash"),
+                    payload.get("observation_id"),
+                    payload.get("channel_name"),
+                    payload.get("model_version"),
+                    payload.get("policy_version"),
+                    payload.get("action_shown"),
+                    payload.get("user_action"),
+                    payload.get("explanation_id"),
+                    payload.get("before_score"),
+                    payload.get("after_score"),
+                    payload.get("timestamp"),
+                    json.dumps(payload.get("runtime_context"), ensure_ascii=True)
+                    if payload.get("runtime_context") is not None
+                    else None,
+                    json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
+                    if payload.get("artifact_provenance") is not None
+                    else None,
+                    json.dumps(payload.get("manual_report"), ensure_ascii=True)
+                    if payload.get("manual_report") is not None
+                    else None,
+                ),
+            )
+            connection.commit()
+    return path
+
+
+def append_browser_observation(payload: dict[str, Any]) -> Path:
+    path = _observation_log_path()
+    if _should_write_local_fallback():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=True))
+            handle.write("\n")
+        db_path = _feedback_db_path()
+        with sqlite3.connect(db_path) as connection:
+            _ensure_browser_observation_table(connection)
+            connection.execute(
+                """
+                INSERT INTO browser_observations (
+                    observation_id,
+                    item_id,
+                    item_hash,
+                    title_snapshot,
+                    channel_name,
+                    channel_url,
+                    link_url,
+                    thumbnail_ref,
+                    description_snapshot,
+                    transcript_excerpt,
+                    metadata_json,
+                    runtime_context_json,
+                    distilled_features_json,
+                    score_snapshot_json,
+                    provenance_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payload.get("observation_id"),
+                    payload.get("item_id"),
+                    payload.get("item_hash"),
+                    payload.get("title_snapshot"),
+                    payload.get("channel_name"),
+                    payload.get("channel_url"),
+                    payload.get("link_url"),
+                    payload.get("thumbnail_ref"),
+                    payload.get("description_snapshot"),
+                    payload.get("transcript_excerpt"),
+                    json.dumps(payload.get("metadata", {}), ensure_ascii=True),
+                    json.dumps(payload.get("runtime_context", {}), ensure_ascii=True),
+                    json.dumps(payload.get("distilled_features", {}), ensure_ascii=True),
+                    json.dumps(payload.get("score_snapshot", {}), ensure_ascii=True),
+                    json.dumps(payload.get("provenance", {}), ensure_ascii=True),
+                ),
+            )
+            connection.commit()
+    if _postgres_available():
+        with _postgres_connect() as connection:
+            _ensure_postgres_browser_observation_table(connection)
+            connection.execute(
+                """
+                INSERT INTO browser_observations (
+                    observation_id,
+                    item_id,
+                    item_hash,
+                    title_snapshot,
+                    channel_name,
+                    channel_url,
+                    link_url,
+                    thumbnail_ref,
+                    description_snapshot,
+                    transcript_excerpt,
+                    metadata_json,
+                    runtime_context_json,
+                    distilled_features_json,
+                    score_snapshot_json,
+                    provenance_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    payload.get("observation_id"),
+                    payload.get("item_id"),
+                    payload.get("item_hash"),
+                    payload.get("title_snapshot"),
+                    payload.get("channel_name"),
+                    payload.get("channel_url"),
+                    payload.get("link_url"),
+                    payload.get("thumbnail_ref"),
+                    payload.get("description_snapshot"),
+                    payload.get("transcript_excerpt"),
+                    json.dumps(payload.get("metadata", {}), ensure_ascii=True),
+                    json.dumps(payload.get("runtime_context", {}), ensure_ascii=True),
+                    json.dumps(payload.get("distilled_features", {}), ensure_ascii=True),
+                    json.dumps(payload.get("score_snapshot", {}), ensure_ascii=True),
+                    json.dumps(payload.get("provenance", {}), ensure_ascii=True),
+                ),
+            )
+            connection.commit()
     return path
 
 
 def append_score_event(payload: dict[str, Any]) -> Path:
     path = _score_log_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, ensure_ascii=True))
-        handle.write("\n")
-    db_path = _feedback_db_path()
-    with sqlite3.connect(db_path) as connection:
-        _ensure_score_table(connection)
-        connection.execute(
-            """
-            INSERT INTO score_events (
-                item_id,
-                channel_name,
-                model_version,
-                policy_version,
-                recommended_action,
-                risk_score,
-                confidence,
-                uncertainty,
-                explanation_id,
-                timestamp
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                payload.get("item_id"),
-                payload.get("channel_name"),
-                payload.get("model_version"),
-                payload.get("policy_version"),
-                payload.get("recommended_action"),
-                payload.get("risk_score"),
-                payload.get("confidence"),
-                payload.get("uncertainty"),
-                payload.get("explanation_id"),
-                payload.get("timestamp"),
-            ),
-        )
-        connection.commit()
+    if _should_write_local_fallback():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=True))
+            handle.write("\n")
+        db_path = _feedback_db_path()
+        with sqlite3.connect(db_path) as connection:
+            _ensure_score_table(connection)
+            connection.execute(
+                """
+                INSERT INTO score_events (
+                    item_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    recommended_action,
+                    risk_score,
+                    confidence,
+                    uncertainty,
+                    explanation_id,
+                    timestamp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payload.get("item_id"),
+                    payload.get("channel_name"),
+                    payload.get("model_version"),
+                    payload.get("policy_version"),
+                    payload.get("recommended_action"),
+                    payload.get("risk_score"),
+                    payload.get("confidence"),
+                    payload.get("uncertainty"),
+                    payload.get("explanation_id"),
+                    payload.get("timestamp"),
+                ),
+            )
+            connection.commit()
+    if _postgres_available():
+        with _postgres_connect() as connection:
+            _ensure_postgres_score_table(connection)
+            connection.execute(
+                """
+                INSERT INTO score_events (
+                    item_id,
+                    channel_name,
+                    model_version,
+                    policy_version,
+                    recommended_action,
+                    risk_score,
+                    confidence,
+                    uncertainty,
+                    explanation_id,
+                    timestamp
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    payload.get("item_id"),
+                    payload.get("channel_name"),
+                    payload.get("model_version"),
+                    payload.get("policy_version"),
+                    payload.get("recommended_action"),
+                    payload.get("risk_score"),
+                    payload.get("confidence"),
+                    payload.get("uncertainty"),
+                    payload.get("explanation_id"),
+                    payload.get("timestamp"),
+                ),
+            )
+            connection.commit()
     return path
 
 

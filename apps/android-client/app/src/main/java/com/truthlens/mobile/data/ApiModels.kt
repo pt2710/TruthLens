@@ -1,6 +1,7 @@
 package com.truthlens.mobile.data
 
 import com.google.gson.annotations.SerializedName
+import com.truthlens.mobile.BuildConfig
 
 data class UserContextDto(
     @SerializedName("strict_mode") val strictMode: Boolean = false,
@@ -225,7 +226,7 @@ data class YouTubeReportResponseDto(
 )
 
 data class AppSettings(
-    val apiBaseUrl: String = "http://10.0.2.2:8000/",
+    val apiBaseUrl: String = BuildConfig.TRUTHLENS_DEFAULT_API_BASE,
     val apiKey: String = "",
     val autoOptimizeDrafts: Boolean = true,
     val showDebugInfo: Boolean = false,

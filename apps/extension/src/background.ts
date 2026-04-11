@@ -1,6 +1,7 @@
+import { buildTruthLensApiUrl } from './lib/runtimeConfig';
+
 export const MANUAL_REPORT_MENU_ID = 'truthlens-manual-report';
 export const VERIFY_TRANSPARENT_MENU_ID = 'truthlens-verify-transparent';
-const API_BASE = 'http://127.0.0.1:8000';
 
 export function buildManualReportMenuOptions(): chrome.contextMenus.CreateProperties {
   return {
@@ -62,7 +63,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onInstalled) {
     }
 
     if (message?.type === 'TRUTHLENS_OPTIMIZE_MANUAL_REPORT') {
-      void fetch(`${API_BASE}/manual-report/optimize`, {
+      void fetch(buildTruthLensApiUrl('/manual-report/optimize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(message.payload),

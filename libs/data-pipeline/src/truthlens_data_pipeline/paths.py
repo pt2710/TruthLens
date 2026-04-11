@@ -15,6 +15,18 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
+def runtime_storage_root() -> Path:
+    override = os.getenv("TRUTHLENS_STORAGE_ROOT")
+    if override:
+        return Path(override).resolve()
+    return repo_root()
+
+
+def resolve_runtime_path(relative_path: str) -> Path:
+    normalized = relative_path.replace("\\", "/").lstrip("/")
+    return runtime_storage_root() / normalized
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 

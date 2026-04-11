@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-04-11T11:55:42.636666+00:00",
+  "build_id": "build-20260411064344",
+  "runtime_policy": {
+    "configured_mode": "bseo-live",
+    "resolved_mode": "bseo-live",
+    "bseo_min_confidence": 0.58,
+    "bseo_max_uncertainty": 0.45,
+    "bseo_artifact_max_age_hours": 168.0
+  },
+  "artifacts": {
+    "bseo_policy": {
+      "available": true,
+      "compatible": true,
+      "stale": false,
+      "status": "compatible",
+      "reason": null,
+      "age_hours": 5.2,
+      "build_id": "build-20260411064344",
+      "policy_version": "bseo-control-policy-v1"
+    },
+    "lineage_count": 125,
+    "mutation_atlas_status": "clustered",
+    "usable_mutations": 115
+  },
+  "dataset": {
+    "train_count": 190,
+    "validation_count": 76,
+    "test_count": 76,
+    "eval_sample_count": 76
+  },
+  "performance": {
+    "eval_f1": 1.0,
+    "validation_f1": 1.0,
+    "validation_gap": 0.0,
+    "calibration_error": 0.1455,
+    "bseo_objective_score": 0.8301,
+    "benign_false_positive_rate": 0.0,
+    "shadow_observation_count": 911
+  },
+  "promotion": {
+    "shadow_eligible": true,
+    "shadow_blockers": [],
+    "live_eligible": true,
+    "live_blockers": [],
+    "recommended_mode": "bseo-live",
+    "max_promotable_mode": "bseo-live"
+  }
+}

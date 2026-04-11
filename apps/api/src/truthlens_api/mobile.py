@@ -19,7 +19,7 @@ from truthlens_shared_schemas.contracts import (
 )
 
 WATCH_HEADERS = {
-    "User-Agent": "TruthLensMobile/0.1 (+https://localhost)",
+    "User-Agent": "TruthLensMobile/0.1 (+https://github.com/pt2710/TruthLens---Browser-plugin)",
 }
 
 TRANSPARENT_REVIEW_CLASSES = {"music", "art", "gaming"}

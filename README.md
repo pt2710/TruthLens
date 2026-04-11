@@ -8,6 +8,52 @@ TruthLens is a multimodal browser-extension, API, trainer, and Android-share sys
 
 The repository already contains a hybrid scoring stack, optional learned paths, anomaly and history sidecars, BSEO policy/search code, trainer and simulation artifacts, explanation contracts, extension/mobile surfaces, and architecture tooling. This README is the GitHub-facing truth surface for what is actually committed now.
 
+## Public Beta Positioning
+
+TruthLens is not being positioned as a broad public launch yet. The current target is a controlled, extension-first hosted beta with GitHub as the primary truth surface.
+
+What works now:
+
+- Chromium extension flows for scoring, explanations, visible warning-state actions, manual review, and report drafting
+- FastAPI endpoints for scoring, feedback, browser observation intake, manual report drafting, metrics, and runtime policy/model inspection
+- trainer, simulation, BSEO policy artifacts, benchmark renders, and governance surfaces
+- Android share-client code for config-parity and internal validation
+
+What is deliberately not part of the first external beta:
+
+- browser-store distribution
+- Android as a public beta surface
+- direct YouTube OAuth/report-submit as a user-facing hosted-beta contract
+- any always-on heavy LLM classifier in the baseline runtime
+
+Support matrix for the first hosted beta:
+
+| Surface | Status |
+| --- | --- |
+| Chromium desktop extension on YouTube | first supported external beta surface |
+| Hosted API | required for beta |
+| Android share client | internal / experimental |
+| Firefox | not committed as supported |
+| iOS | not committed as supported |
+
+Benchmark caveat up front:
+
+- the metrics and visuals in this repo are committed internal artifact evidence
+- they are useful for repo truth, regression tracking, and governance
+- they are not broad real-world product claims
+
+## Extension Beta Quick Start
+
+For the first external beta path, use the hosted API plus an unpacked Chromium extension.
+
+1. Read the hosted deployment contract: [Render hosted beta guide](docs/deployment/render-beta.md)
+2. Use the starter managed deployment blueprint if you want Render to provision the beta baseline: [`render.yaml`](render.yaml)
+3. Read the tester install path: [Extension beta install](docs/beta-install.md)
+4. Use the current architecture and benchmark surfaces as the technical truth:
+   - [Architecture docs](docs/architecture/README.md)
+   - [Benchmark docs](docs/benchmarks/README.md)
+5. Keep in mind that direct YouTube OAuth/report-submit is intentionally disabled for the first hosted beta; TruthLens supports manual report drafting and page-level fallback flows instead.
+
 ## Repo Status
 
 Current committed root-repo truth:
@@ -254,6 +300,7 @@ Explicitly kept out of the baseline hot path:
 - Gemini is used only as downstream wording assistance for report optimization and richer draft text after scoring, policy selection, and review-state construction are already complete
 - there is no always-on heavy LLM classifier inside the default perception, fusion, calibration, or policy loop
 - `bseo-live` is not allowed to self-promote without committed policy artifacts, compatibility checks, calibration and performance guardrails, and runtime-governance approval
+- direct YouTube OAuth/report-submit is intentionally outside the first hosted beta contract even though the internal code paths exist behind configuration
 
 ## Policy Modes
 
@@ -402,26 +449,30 @@ Additional committed assets:
 
 ## Artifact Provenance
 
-Current benchmark inputs:
+Public curated source control keeps:
 
 - `artifacts/trained_models/latest/model_info.json`
-- `artifacts/eval_runs/build-20260411064344.json`
-- `artifacts/eval_runs/build-20260411064344-simulation.json`
-- `artifacts/eval_runs/build-20260411064344-bseo-report.json`
-- `artifacts/eval_runs/build-20260411064344-bseo-lineage.json`
-- `artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json`
-- `artifacts/drift_reports/build-20260411064344.json`
+- `artifacts/reports/runtime-governance-latest.json`
 - `configs/thresholds/default.json`
 - `configs/thresholds/bseo-policy.json`
 - `configs/thresholds/runtime-policy.json`
-- `artifacts/reports/runtime-governance-latest.json`
-- `artifacts/reports/browser_observations.jsonl` when browser observation intake has been exercised
-- `datasets/labels/supplemental_candidates/latest.json` when supplemental candidates have been derived
-- `datasets/labels/supplemental_adjudication/*.json` and `datasets/labels/supplemental_gold/*.jsonl` for split-blocked supplemental adjudication
+- `datasets/dataset_cards/latest.md`
+- `datasets/manifests/builds/latest.json`
+- `docs/benchmarks/latest/*`
 
-## Quick Start
+Generated or private operator artifacts are intentionally not part of the public source tree:
 
-### Python
+- raw eval and simulation payloads
+- drift payload history
+- raw/interim/processed/label dataset payloads
+- binary model bundles
+- runtime-local JSONL event stores
+
+Hosted beta is expected to use external artifact storage or a mounted runtime storage root for promoted model bundles and runtime-local state. See [Render hosted beta guide](docs/deployment/render-beta.md).
+
+## Developer Quick Start
+
+### Local Python API
 
 ```powershell
 py -m uv sync --group dev
@@ -431,7 +482,7 @@ py -m uv run ruff check .
 py -m uv run mypy .
 ```
 
-### TypeScript
+### Extension And Labeling UI
 
 ```powershell
 pnpm install
@@ -464,7 +515,7 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - `apps/` runnable surfaces: API, extension, Android client, trainer, labeling UI
 - `libs/` shared schemas, feature extraction, model serving, policy, explanation, evaluation, governance, data pipeline
 - `configs/` thresholds and runtime/training configuration
-- `artifacts/` trained models, eval runs, drift reports, exported runtime artifacts
+- `artifacts/` curated public runtime metadata plus local/private operator artifacts outside the public source contract
 - `docs/` architecture, benchmarks, and supporting documentation
 - `tests/` unit, integration, and end-to-end verification
 
@@ -505,6 +556,6 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 
 ## Next Stages
 
-1. keep growing benchmark coverage beyond the current `76` eval rows so README metrics become less brittle
-2. keep exercising live BSEO runtime with richer browser-observation history and supplemental adjudication volume
-3. keep turning benchmark and provenance artifacts into richer operator dashboards and runtime governance views
+1. harden the hosted beta around Postgres-backed runtime events and curated external model artifact promotion
+2. run a small extension-only tester cohort before any broader public repo or launch push
+3. stabilize contributor ramps only after hosted beta feedback reduces avoidable setup and support noise

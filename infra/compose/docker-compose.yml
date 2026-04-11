@@ -7,20 +7,26 @@ services:
       POSTGRES_PASSWORD: truthlens
     ports:
       - "5432:5432"
-
-  redis:
-    image: redis:8.6
-    ports:
-      - "6379:6379"
-
   api:
     build:
       context: ../..
       dockerfile: infra/docker/api.Dockerfile
     env_file:
       - ../../.env.example
+    environment:
+      TRUTHLENS_ENV: local-docker
+      TRUTHLENS_PUBLIC_API_BASE: http://127.0.0.1:8000
+      TRUTHLENS_RUNTIME_EVENT_STORE: postgres
+      TRUTHLENS_LOCAL_EVENT_FALLBACK_ENABLED: true
+      TRUTHLENS_STORAGE_ROOT: /data
+      TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED: false
     ports:
       - "8000:8000"
     depends_on:
       - postgres
+    volumes:
+      - truthlens-runtime:/data
+
+volumes:
+  truthlens-runtime:
       - redis

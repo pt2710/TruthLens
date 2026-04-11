@@ -1,1 +1,0 @@
-The calibration update reduced noise and improved the quality of long exposure captures.

@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     database_url: str = "postgresql+psycopg://truthlens:truthlens@localhost:5432/truthlens"
     redis_url: str = "redis://localhost:6379/0"
+    runtime_event_store: str = "local"
+    local_event_fallback_enabled: bool = True
+    storage_root: str | None = None
     model_version: str = "bootstrap-v0"
     policy_version: str = "bootstrap-v0"
     log_level: str = "INFO"
@@ -19,13 +22,22 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.5-flash"
     gemini_api_base: str = "https://generativelanguage.googleapis.com/v1beta"
+    public_api_base: str = "http://127.0.0.1:8000"
+    youtube_direct_reporting_enabled: bool = False
     youtube_client_id: str | None = None
     youtube_client_secret: str | None = None
-    youtube_redirect_uri: str = "http://127.0.0.1:8000/youtube/auth/callback"
+    youtube_redirect_uri: str | None = None
     youtube_auth_scope: str = "https://www.googleapis.com/auth/youtube.force-ssl"
     youtube_token_path: str = "artifacts/reports/youtube_oauth_token.json"
     youtube_oauth_state_path: str = "artifacts/reports/youtube_oauth_state.json"
     youtube_language: str = "en-US"
+
+    @property
+    def resolved_youtube_redirect_uri(self) -> str:
+        configured = (self.youtube_redirect_uri or "").strip()
+        if configured:
+            return configured
+        return f"{self.public_api_base.rstrip('/')}/youtube/auth/callback"
 
 
 settings = Settings()

@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a concrete defect in TruthLens.
+title: "[bug] "
+labels:
+  - needs reproduction
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What broke, and where?
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - extension
+        - api
+        - android
+        - training
+        - policy
+        - dataset-governance
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include URLs, commands, env assumptions, or screenshots when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
