@@ -8,6 +8,16 @@ TruthLens is a multimodal browser-extension, API, trainer, and Android-share sys
 
 The repository already contains a hybrid scoring stack, optional learned paths, anomaly and history sidecars, BSEO policy/search code, trainer and simulation artifacts, explanation contracts, extension/mobile surfaces, and architecture tooling. This README is the GitHub-facing truth surface for what is actually committed now.
 
+## First 60 Seconds
+
+- TruthLens is currently a controlled extension-first beta project, not a broad public launch.
+- The public repo is curated for repo truth: docs, policies, manifests, benchmark surfaces, and governance stay committed; raw payloads and heavy private artifacts do not.
+- The first supported external path is an unpacked Chromium extension pointed at a real hosted API origin.
+- Direct YouTube OAuth/report-submit is intentionally outside the first hosted beta.
+- Current closure status and proof notes:
+  - [Public hardening audit](docs/decision-records/wave1-public-hardening-audit.md)
+  - [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
+
 ## Public Beta Positioning
 
 TruthLens is not being positioned as a broad public launch yet. The current target is a controlled, extension-first hosted beta with GitHub as the primary truth surface.
@@ -52,7 +62,8 @@ For the first external beta path, use the hosted API plus an unpacked Chromium e
 4. Use the current architecture and benchmark surfaces as the technical truth:
    - [Architecture docs](docs/architecture/README.md)
    - [Benchmark docs](docs/benchmarks/README.md)
-5. Keep in mind that direct YouTube OAuth/report-submit is intentionally disabled for the first hosted beta; TruthLens supports manual report drafting and page-level fallback flows instead.
+5. Check the current live-hosted proof status before treating a hostname as real beta truth: [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
+6. Keep in mind that direct YouTube OAuth/report-submit is intentionally disabled for the first hosted beta; TruthLens supports manual report drafting and page-level fallback flows instead.
 
 ## Repo Status
 

@@ -37,6 +37,8 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     benchmark_readme = _read("docs/benchmarks/README.md")
     beta_install = _read("docs/beta-install.md")
     deployment_guide = _read("docs/deployment/render-beta.md")
+    hosted_verification = _read("docs/deployment/hosted-beta-verification.md")
+    hardening_audit = _read("docs/decision-records/wave1-public-hardening-audit.md")
     render_blueprint = _read("render.yaml")
     security = _read("SECURITY.md")
     conduct = _read("CODE_OF_CONDUCT.md")
@@ -47,9 +49,12 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "docs/architecture/truthlens-runtime-decision-flow.png" in readme
     assert "docs/architecture/truthlens-governance-feedback-loop.png" in readme
     assert "## public beta positioning" in readme.lower()
+    assert "## first 60 seconds" in readme.lower()
     assert "## extension beta quick start" in readme.lower()
     assert "docs/beta-install.md" in readme
     assert "docs/deployment/render-beta.md" in readme
+    assert "docs/deployment/hosted-beta-verification.md" in readme
+    assert "docs/decision-records/wave1-public-hardening-audit.md" in readme
     assert "docs/benchmarks/latest/benchmark_summary.json" in readme
     assert "docs/benchmarks/latest/verify_summary.json" in readme
     assert "docs/benchmarks/latest/assets/observation_feedback_intake.svg" in readme
@@ -63,8 +68,13 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "runtime governance" in readme.lower()
     assert "runtime-governance-latest.json" in readme
     assert "hosted api plus unpacked chromium extension" in beta_install.lower()
+    assert "there is no committed live default hostname" in beta_install.lower()
     assert "render web service" in deployment_guide.lower()
     assert "postgres" in deployment_guide.lower()
+    assert "not a live hosted beta proof" in hosted_verification.lower()
+    assert "x-render-routing: no-server" in hosted_verification.lower()
+    assert "release_hygiene_audit.py" in hardening_audit
+    assert "returned no commits" in hardening_audit.lower()
     assert "truthlens-beta-api" in render_blueprint
     assert "truthlens-beta-db" in render_blueprint
     assert "TRUTHLENS_DATABASE_URL" in render_blueprint

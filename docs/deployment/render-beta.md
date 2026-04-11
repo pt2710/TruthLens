@@ -3,6 +3,7 @@
 TruthLens' first hosted beta target is a single-instance stateful deployment on Render.
 
 A starter Render Blueprint is committed at [`render.yaml`](../../render.yaml) so the hosted beta contract is executable instead of doc-only.
+The committed repo does not currently publish a verified live Render hostname as default truth. The current proof status is tracked in [Hosted beta verification](./hosted-beta-verification.md).
 
 ## Reference topology
 

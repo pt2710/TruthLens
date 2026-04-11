@@ -2,6 +2,7 @@
 
 TruthLens' first external beta is extension-only and expects a hosted API.
 The supported install path is a hosted API plus unpacked Chromium extension.
+There is no committed live default hostname in the public repo. External beta bundles must be pointed at the real hosted origin explicitly.
 
 ## What this beta includes
 
@@ -18,17 +19,16 @@ The supported install path is a hosted API plus unpacked Chromium extension.
 
 ## Install the extension
 
-1. Build the extension bundle:
+1. Set the live hosted beta origin for the build:
+
+   ```powershell
+   $env:VITE_TRUTHLENS_API_BASE="https://<your-live-hosted-beta-origin>"
+   ```
+
+2. Build the extension bundle:
 
    ```powershell
    pnpm install
-   pnpm --filter @truthlens/extension build
-   ```
-
-2. Point the extension build at the hosted API if you are not using the default hosted beta base:
-
-   ```powershell
-   $env:VITE_TRUTHLENS_API_BASE="https://truthlens-beta-api.onrender.com"
    pnpm --filter @truthlens/extension build
    ```
 
@@ -41,6 +41,7 @@ The supported install path is a hosted API plus unpacked Chromium extension.
 
 - if Gemini is not configured server-side, TruthLens falls back to heuristic draft suggestions
 - if direct YouTube API reporting is unavailable or disabled, TruthLens falls back to manual/page-level review flows
+- if no live hosted beta origin is configured at build time, the extension cannot be treated as a real external beta build
 - benchmark visuals in the repo are engineering truth surfaces, not mass-market claims
 
 ## If you are running locally instead

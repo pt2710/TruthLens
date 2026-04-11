@@ -3,7 +3,7 @@ import { labelCandidateQueueSchema, labelCandidateSchema } from '@truthlens/shar
 
 const API_BASE = (
   import.meta.env.VITE_TRUTHLENS_API_BASE as string | undefined
-) ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : 'https://truthlens-beta-api.onrender.com');
+) ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : 'https://truthlens-beta-host.invalid');
 
 export const annotationQueueNameSchema = labelCandidateQueueSchema;
 export const annotationResolutionSchema = z.enum([

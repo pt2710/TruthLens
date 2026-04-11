@@ -119,11 +119,15 @@
           </a>
           <a class="card" href="./beta-install.md">
             <strong>Install the extension beta</strong>
-            Hosted API plus unpacked Chromium build.
+            Hosted API plus unpacked Chromium build, with an explicit live beta origin.
           </a>
           <a class="card" href="./deployment/render-beta.md">
             <strong>Review the hosted-beta contract</strong>
             Render web service + persistent disk + Postgres.
+          </a>
+          <a class="card" href="./deployment/hosted-beta-verification.md">
+            <strong>Check hosted proof status</strong>
+            See whether the committed hosted beta origin is actually live.
           </a>
         </div>
       </section>
@@ -149,6 +153,13 @@
           <p>
             Repo visuals and metrics are committed engineering evidence. They support governance and
             regression tracking, not broad marketing claims.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>Current closure gap</h2>
+          <p>
+            The hosted beta contract is committed, but live deployment proof must be verified before a
+            public tester wave should rely on a default hosted hostname.
           </p>
         </div>
       </section>

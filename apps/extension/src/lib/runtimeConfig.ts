@@ -1,6 +1,5 @@
 const LOCAL_DEV_API_BASE = 'http://127.0.0.1:8000';
-const HOSTED_BETA_API_BASE = 'https://truthlens-beta-api.onrender.com';
-
+const HOSTED_BETA_API_BASE = 'https://truthlens-beta-host.invalid';
 function normalizeApiBase(rawValue: string): string {
   return rawValue.replace(/\/+$/, '');
 }
@@ -17,8 +16,9 @@ export function resolveTruthLensApiBase(): string {
 }
 
 export function buildTruthLensApiUrl(path: string): string {
+  const apiBase = resolveTruthLensApiBase();
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${resolveTruthLensApiBase()}${normalizedPath}`;
+  return `${apiBase}${normalizedPath}`;
 }
 
 export { HOSTED_BETA_API_BASE, LOCAL_DEV_API_BASE };
