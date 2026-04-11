@@ -4,27 +4,39 @@
     <meta charset="utf-8" />
     <title>TruthLens metrics dashboard</title>
     <style>
-      body { font-family: "Segoe UI", Arial, sans-serif; margin: 24px; color: #0f172a; background: #f8fafc; }
+      body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+      main { max-width: 1180px; margin: 0 auto; padding: 28px; }
       h1, h2 { margin-top: 0; }
-      .card { background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 18px; margin-bottom: 18px; }
-      code, pre { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px; overflow: auto; }
+      .card { background: white; border: 1px solid #cbd5e1; border-radius: 18px; padding: 20px; margin-bottom: 18px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05); }
+      .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 18px; }
+      .metric { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 16px; }
+      .metric.warn { background: #fff7ed; border-color: #fdba74; }
+      .metric strong { display: block; font-size: 13px; color: #475569; margin-bottom: 8px; }
+      .metric span { display: block; font-size: 28px; font-weight: 700; }
+      code, pre { background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 12px; overflow: auto; }
       table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+      th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }
       th { background: #eff6ff; }
       .warn { background: #fff7ed; border-color: #fdba74; }
       .muted { color: #475569; }
+      ul { margin: 0; padding-left: 20px; }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>TruthLens metrics dashboard</h1>
-      <p class="muted">Generated from committed artifacts. This page is static and deterministic.</p>
-    </div>
-    
+    <main>
+      <div class="card">
+        <h1>TruthLens metrics dashboard</h1>
+        <p class="muted">Generated from committed artifacts. This page is static, deterministic, and should agree with README and the benchmark summary JSON.</p>
+      </div>
+      
         <div class="card">
           <h2>Current snapshot</h2>
-          <p><strong>Build ID:</strong> build-20260406042818</p>
-          <p><strong>Eval sample count:</strong> 44</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Build ID</strong><span>build-20260411062330</span></div>
+            <div class="metric"><strong>Eval sample count</strong><span>44</span></div>
+            <div class="metric"><strong>Configured mode</strong><span>bseo-shadow</span></div>
+            <div class="metric"><strong>Recommended mode</strong><span>bseo-shadow</span></div>
+          </div>
         </div>
         <div class="card">
           <h2>Eval vs validation</h2>
@@ -42,11 +54,11 @@
           <ul><li>No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.</li><li>No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.</li></ul>
         </div>
         
-    <div class="card">
-      <h2>Embedded summary payload</h2>
-      <pre>{
-  &quot;build_id&quot;: &quot;build-20260406042818&quot;,
-  &quot;model_version&quot;: &quot;baseline-v1-build-20260406042818&quot;,
+      <div class="card">
+        <h2>Embedded summary payload</h2>
+        <pre>{
+  &quot;build_id&quot;: &quot;build-20260411062330&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260411062330&quot;,
   &quot;sample_count&quot;: 44,
   &quot;runtime_truth&quot;: {
     &quot;configured_policy_mode&quot;: &quot;bseo-shadow&quot;,
@@ -61,8 +73,8 @@
     &quot;live_eligible&quot;: true
   },
   &quot;runtime_governance&quot;: {
-    &quot;generated_at&quot;: &quot;2026-04-10T20:15:39.550806+00:00&quot;,
-    &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+    &quot;generated_at&quot;: &quot;2026-04-11T06:25:42.222069+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260411062330&quot;,
     &quot;runtime_policy&quot;: {
       &quot;configured_mode&quot;: &quot;bseo-shadow&quot;,
       &quot;resolved_mode&quot;: &quot;bseo-shadow&quot;,
@@ -77,8 +89,8 @@
         &quot;stale&quot;: false,
         &quot;status&quot;: &quot;compatible&quot;,
         &quot;reason&quot;: null,
-        &quot;age_hours&quot;: 111.789,
-        &quot;build_id&quot;: &quot;build-20260406042818&quot;,
+        &quot;age_hours&quot;: 0.037,
+        &quot;build_id&quot;: &quot;build-20260411062330&quot;,
         &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
       },
       &quot;lineage_count&quot;: 125,
@@ -98,7 +110,7 @@
       &quot;calibration_error&quot;: 0.2201,
       &quot;bseo_objective_score&quot;: 0.8344,
       &quot;benign_false_positive_rate&quot;: 0.0,
-      &quot;shadow_observation_count&quot;: 643
+      &quot;shadow_observation_count&quot;: 911
     },
     &quot;promotion&quot;: {
       &quot;shadow_eligible&quot;: true,
@@ -248,12 +260,12 @@
   ],
   &quot;artifact_paths&quot;: {
     &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
-    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260406042818.json&quot;,
-    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260406042818-simulation.json&quot;,
-    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-report.json&quot;,
-    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json&quot;,
-    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260406042818-bseo-lineage.json&quot;,
-    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260406042818.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260411062330.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260411062330-simulation.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260411062330-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260411062330-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260411062330.json&quot;,
     &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
     &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
     &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,
@@ -263,6 +275,7 @@
     &quot;supplemental_gold&quot;: null
   }
 }</pre>
-    </div>
+      </div>
+    </main>
   </body>
 </html>

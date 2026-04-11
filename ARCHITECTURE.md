@@ -97,6 +97,8 @@ BSEO is:
 
 - a bias-structured interpretation frame
 - a bias-aware policy and search layer
+- a positive-bias preservation mechanism for benign or honest contexts such as music, art, satire, and similar non-clickbait classes
+- a negative-bias penalty mechanism for deceptive, report-worthy clickbait packaging
 - a runtime-guarded downstream influence
 - an offline artifact-producing evaluation subsystem
 - an explanation-enriching context layer

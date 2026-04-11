@@ -132,9 +132,11 @@ BSEO is treated as:
 
 1. a bias-structured interpretation frame
 2. a bias-aware policy and search layer
-3. a runtime-guarded downstream decision influence
-4. an artifact-producing offline evaluation subsystem
-5. an explanation-enriching context layer
+3. a positive-bias preservation mechanism for benign or honest contexts such as music, art, satire, and similar non-clickbait classes
+4. a negative-bias penalty mechanism for deceptive, report-worthy clickbait packaging
+5. a runtime-guarded downstream decision influence
+6. an artifact-producing offline evaluation subsystem
+7. an explanation-enriching context layer
 
 BSEO is not the core classifier.
 

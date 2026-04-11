@@ -1,14 +1,14 @@
 # TruthLens Verify Summary
 
-- Generated at: `2026-04-10T20:15:48.759615+00:00`
+- Generated at: `2026-04-11T06:25:54.357558+00:00`
 - Overall status: `passed`
 - Commands passed: `9/9`
-- Total duration (s): `91.285`
+- Total duration (s): `98.222`
 
 ## Benchmark Context
 
-- Build ID: `build-20260406042818`
-- Model version: `baseline-v1-build-20260406042818`
+- Build ID: `build-20260411062330`
+- Model version: `baseline-v1-build-20260411062330`
 - Eval sample count: `44`
 - Configured runtime mode: `bseo-shadow`
 - Resolved runtime mode: `bseo-shadow`
@@ -18,15 +18,15 @@
 
 | Command | Status | Exit code | Duration (s) |
 | --- | --- | ---: | ---: |
-| `pytest` | `passed` | 0 | 47.315 |
-| `ruff` | `passed` | 0 | 0.15 |
-| `mypy` | `passed` | 0 | 0.987 |
-| `pnpm-typecheck` | `passed` | 0 | 9.083 |
-| `pnpm-test` | `passed` | 0 | 7.785 |
-| `pnpm-build` | `passed` | 0 | 8.924 |
-| `docs-render-architecture` | `passed` | 0 | 5.072 |
-| `docs-render-benchmarks` | `passed` | 0 | 3.093 |
-| `pnpm-test-e2e` | `passed` | 0 | 8.876 |
+| `pytest` | `passed` | 0 | 46.51 |
+| `ruff` | `passed` | 0 | 0.141 |
+| `mypy` | `passed` | 0 | 1.004 |
+| `pnpm-typecheck` | `passed` | 0 | 8.711 |
+| `pnpm-test` | `passed` | 0 | 7.217 |
+| `pnpm-build` | `passed` | 0 | 8.275 |
+| `docs-render-architecture` | `passed` | 0 | 10.647 |
+| `docs-render-benchmarks` | `passed` | 0 | 4.002 |
+| `pnpm-test-e2e` | `passed` | 0 | 11.715 |
 
 ## Output Excerpts
 
@@ -37,7 +37,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 ```text
 ........................................................................ [ 66%]
 ....................................                                     [100%]
-108 passed in 45.88s
+108 passed in 44.82s
 ```
 
 ### `ruff`
@@ -92,12 +92,12 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/PT-Xb/Desktop/Arbejde_og_Udvikling_af_Machine_learning_og_software/TruthLens/libs/shared-schemas[39m
 
- [32m✓[39m src/index.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/index.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 22:15:16
-[2m   Duration [22m 576ms[2m (transform 98ms, setup 0ms, collect 126ms, tests 8ms, environment 0ms, prepare 160ms)[22m
+[2m   Start at [22m 08:25:13
+[2m   Duration [22m 515ms[2m (transform 93ms, setup 0ms, collect 121ms, tests 7ms, environment 0ms, prepare 155ms)[22m
 
 
 > @truthlens/extension@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
@@ -106,22 +106,22 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/PT-Xb/Desktop/Arbejde_og_Udvikling_af_Machine_learning_og_software/TruthLens/apps/extension[39m
 
- [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/lib/api.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/api.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 17[2mms[22m[39m
  [32m✓[39m src/overlay/store.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 53[2mms[22m[39m
- [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
  [32m✓[39m src/lib/sessionStats.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
  [32m✓[39m src/lib/youtubeWatchMetadata.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/background.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 370[2mms[22m[39m
+ [32m✓[39m src/background.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 340[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
 [2m      Tests [22m [1m[32m34 passed[39m[22m[90m (34)[39m
-[2m   Start at [22m 22:15:18
-[2m   Duration [22m 2.38s[2m (transform 510ms, setup 0ms, collect 1.19s, tests 502ms, environment 3.48s, prepare 2.22s)[22m
+[2m   Start at [22m 08:25:15
+[2m   Duration [22m 2.12s[2m (transform 448ms, setup 0ms, collect 1.06s, tests 462ms, environment 3.09s, prepare 1.88s)[22m
 
 
 > @truthlens/labeling-ui@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\labeling-ui
@@ -130,12 +130,12 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/PT-Xb/Desktop/Arbejde_og_Udvikling_af_Machine_learning_og_software/TruthLens/apps/labeling-ui[39m
 
- [32m✓[39m src/lib/annotationBatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/annotationBatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m   Start at [22m 22:15:21
-[2m   Duration [22m 586ms[2m (transform 101ms, setup 0ms, collect 137ms, tests 7ms, environment 0ms, prepare 153ms)[22m
+[2m   Start at [22m 08:25:18
+[2m   Duration [22m 523ms[2m (transform 92ms, setup 0ms, collect 130ms, tests 6ms, environment 0ms, prepare 135ms)[22m
 ```
 
 ### `pnpm-build`
@@ -162,7 +162,7 @@ computing gzip size...
 [2mdist/[22m[32mpopup.html     [39m[1m[2m  0.32 kB[22m[1m[22m[2m │ gzip:  0.22 kB[22m
 [2mdist/[22m[36mbackground.js  [39m[1m[2m  1.76 kB[22m[1m[22m[2m │ gzip:  0.86 kB[22m
 [2mdist/[22m[36mpopup.js       [39m[1m[2m271.33 kB[22m[1m[22m[2m │ gzip: 78.22 kB[22m
-[32m✓ built in 1.13s[39m
+[32m✓ built in 1.05s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 51 modules transformed.
@@ -170,7 +170,7 @@ rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.07 kB[22m[1m[22m[2m │ gzip:  1.86 kB[22m
 [2mdist/[22m[36mcontent.js          [39m[1m[2m332.41 kB[22m[1m[22m[2m │ gzip: 96.77 kB[22m
-[32m✓ built in 1.28s[39m
+[32m✓ built in 1.22s[39m
 Extension build verified.
 
 > @truthlens/labeling-ui@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\labeling-ui
@@ -185,7 +185,7 @@ computing gzip size...
 [2mdist/[22m[32mannotation-batch.data.json  [39m[1m[2m160.61 kB[22m[1m[22m[2m │ gzip:  6.65 kB[22m
 [2mdist/[22m[35massets/index-KaTrgatk.css   [39m[1m[2m  3.61 kB[22m[1m[22m[2m │ gzip:  1.15 kB[22m
 [2mdist/[22m[36massets/index-DqmK03-V.js    [39m[1m[2m277.76 kB[22m[1m[22m[2m │ gzip: 79.68 kB[22m
-[32m✓ built in 1.21s[39m
+[32m✓ built in 1.06s[39m
 ```
 
 ### `docs-render-architecture`
@@ -203,19 +203,19 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 
 ```text
 {
-  "generated_at": "2026-04-10T20:15:39.600347+00:00",
-  "build_id": "build-20260406042818",
-  "model_version": "baseline-v1-build-20260406042818",
-  "trained_at": "2026-04-06T04:28:18.606357+00:00",
+  "generated_at": "2026-04-11T06:25:42.313810+00:00",
+  "build_id": "build-20260411062330",
+  "model_version": "baseline-v1-build-20260411062330",
+  "trained_at": "2026-04-11T06:23:30.230173+00:00",
   "sample_count": 44,
   "artifact_paths": {
     "model_info": "artifacts/trained_models/latest/model_info.json",
-    "eval_report": "artifacts/eval_runs/build-20260406042818.json",
-    "simulation": "artifacts/eval_runs/build-20260406042818-simulation.json",
-    "bseo_report": "artifacts/eval_runs/build-20260406042818-bseo-report.json",
-    "mutation_atlas": "artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json",
-    "lineage": "artifacts/eval_runs/build-20260406042818-bseo-lineage.json",
-    "drift_report": "artifacts/drift_reports/build-20260406042818.json",
+    "eval_report": "artifacts/eval_runs/build-20260411062330.json",
+    "simulation": "artifacts/eval_runs/build-20260411062330-simulation.json",
+    "bseo_report": "artifacts/eval_runs/build-20260411062330-bseo-report.json",
+    "mutation_atlas": "artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json",
+    "lineage": "artifacts/eval_runs/build-20260411062330-bseo-lineage.json",
+    "drift_report": "artifacts/drift_reports/build-20260411062330.json",
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
     "bseo_policy": "configs/thresholds/bseo-policy.json",
@@ -225,17 +225,17 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
     "supplemental_gold": null
   },
   "artifact_timestamps": {
-    "model_info": "2026-04-06T04:28:26.682182+00:00",
-    "eval_report": "2026-04-06T04:28:26.684195+00:00",
-    "simulation": "2026-04-06T04:28:51.362790+00:00",
-    "bseo_report": "2026-04-06T04:28:51.365789+00:00",
-    "mutation_atlas": "2026-04-06T04:28:51.393782+00:00",
-    "lineage": "2026-04-06T04:28:51.393782+00:00",
-    "drift_report": "2026-04-06T04:28:51.395790+00:00",
-    "runtime_policy": "2026-04-06T04:40:02.540092+00:00",
-    "thresholds": "2026-04-06T04:28:51.397798+00:00",
-    "bseo_policy": "2026-04-06T04:28:51.402820+00:00",
-    "runtime_governance": "2026-04-10T20:15:39.550807+00:00",
+    "model_info": "2026-04-11T06:23:36.407985+00:00",
+    "eval_report": "2026-04-11T06:23:36.409737+00:00",
+    "simulation": "2026-04-11T06:23:55.973593+00:00",
+    "bseo_report": "2026-04-11T06:23:55.975710+00:00",
+    "mutation_atlas": "2026-04-11T06:23:55.994568+00:00",
+    "lineage": "2026-04-11T06:23:55.994568+00:00",
+    "drift_report": "2026-04-11T06:23:55.998186+00:00",
+    "runtime_policy": "2026-04-11T06:24:04.497706+00:00",
+    "thresholds": "2026-04-11T06:23:55.998186+00:00",
+    "bseo_policy": "2026-04-11T06:23:56.002341+00:00",
+    "runtime_governance": "2026-04-11T06:25:42.224079+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null
@@ -253,8 +253,8 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-04-10T20:15:39.550806+00:00",
-    "build_id": "build-20260406042818",
+    "generated_at": "2026-04-11T06:25:42.222069+00:00",
+    "build_id": "build-20260411062330",
     "runtime_policy": {
       "configured_mode": "bseo-shadow",
       "resolved_mode": "bseo-shadow",
@@ -269,8 +269,8 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 111.789,
-        "build_id": "build-20260406042818",
+        "age_hours": 0.037,
+        "build_id": "build-20260411062330",
         "policy_version": "bseo-control-policy-v1"
       },
       "lineage_count": 125,
@@ -290,7 +290,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
       "calibration_error": 0.2201,
       "bseo_objective_score": 0.8344,
       "benign_false_positive_rate": 0.0,
-      "shadow_observation_count": 643
+      "shadow_observation_count": 911
     },
     "promotion": {
       "shadow_eligible": true,
@@ -338,7 +338,7 @@ computing gzip size...
 [2mdist/[22m[32mpopup.html     [39m[1m[2m  0.32 kB[22m[1m[22m[2m │ gzip:  0.22 kB[22m
 [2mdist/[22m[36mbackground.js  [39m[1m[2m  1.76 kB[22m[1m[22m[2m │ gzip:  0.86 kB[22m
 [2mdist/[22m[36mpopup.js       [39m[1m[2m271.33 kB[22m[1m[22m[2m │ gzip: 78.22 kB[22m
-[32m✓ built in 1.13s[39m
+[32m✓ built in 1.07s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 51 modules transformed.
@@ -346,7 +346,7 @@ rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.07 kB[22m[1m[22m[2m │ gzip:  1.86 kB[22m
 [2mdist/[22m[36mcontent.js          [39m[1m[2m332.41 kB[22m[1m[22m[2m │ gzip: 96.77 kB[22m
-[32m✓ built in 1.36s[39m
+[32m✓ built in 1.22s[39m
 Extension build verified.
 {
   "batchRequests": 3,

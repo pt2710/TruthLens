@@ -1,8 +1,8 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-10T20:15:39.600347+00:00`
-- Build ID: `build-20260406042818`
-- Model version: `baseline-v1-build-20260406042818`
+- Generated at: `2026-04-11T06:25:42.313810+00:00`
+- Build ID: `build-20260411062330`
+- Model version: `baseline-v1-build-20260411062330`
 - Eval sample count: `44`
 - Configured runtime policy mode: `bseo-shadow`
 - Resolved runtime policy mode: `bseo-shadow`
@@ -22,8 +22,9 @@
 
 ## Observation And Feedback Intake
 
-- Browser observations: `997`
-- Unique observed items: `460`
+- Browser observations: `1459`
+- Unique observed items: `671`
+- Observation rows linked back to scored items: `1459`
 - Supplemental candidates: `0`
 - Split-blocked candidates: `0`
 - Supplemental adjudicated: `0`
@@ -32,6 +33,8 @@
 
 - Shadow eligible: `True`
 - Live eligible: `True`
+- Shadow observation count: `911`
+- BSEO objective score: `0.8344`
 
 ## Caveats
 
@@ -45,12 +48,12 @@
 ## Artifact Provenance
 
 - `model_info`: `artifacts/trained_models/latest/model_info.json`
-- `eval_report`: `artifacts/eval_runs/build-20260406042818.json`
-- `simulation`: `artifacts/eval_runs/build-20260406042818-simulation.json`
-- `bseo_report`: `artifacts/eval_runs/build-20260406042818-bseo-report.json`
-- `mutation_atlas`: `artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json`
-- `lineage`: `artifacts/eval_runs/build-20260406042818-bseo-lineage.json`
-- `drift_report`: `artifacts/drift_reports/build-20260406042818.json`
+- `eval_report`: `artifacts/eval_runs/build-20260411062330.json`
+- `simulation`: `artifacts/eval_runs/build-20260411062330-simulation.json`
+- `bseo_report`: `artifacts/eval_runs/build-20260411062330-bseo-report.json`
+- `mutation_atlas`: `artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json`
+- `lineage`: `artifacts/eval_runs/build-20260411062330-bseo-lineage.json`
+- `drift_report`: `artifacts/drift_reports/build-20260411062330.json`
 - `runtime_policy`: `configs/thresholds/runtime-policy.json`
 - `thresholds`: `configs/thresholds/default.json`
 - `bseo_policy`: `configs/thresholds/bseo-policy.json`

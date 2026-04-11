@@ -1,0 +1,42 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "20px",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#334155",
+    "background": "#ffffff"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "htmlLabels": true,
+    "nodeSpacing": 54,
+    "rankSpacing": 72
+  }
+}}%%
+flowchart LR
+
+classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:1.8px,color:#0f172a;
+classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:1.8px,color:#0f172a;
+classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:1.8px,color:#0f172a;
+classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
+
+input["Input + context<br/>package metadata, transcript signals, channel priors, runtime context"]:::implemented
+perception["Perception stack<br/>text | vision | metadata | mismatch | history | anomaly"]:::implemented
+fusion["Fusion + calibration<br/>risk_score | confidence | uncertainty | path contributors"]:::contract
+triggers["Selective verification triggers<br/>high-risk | high-uncertainty | high-mismatch | threshold-near | review-flow"]:::contract
+verification["Selective deep verification<br/>consistency, contradiction, plausibility, richer rationale"]:::contract
+bseo["BSEO interpretation frame<br/>class-conditioned bias structuring"]:::offline
+guardrails["Artifact + confidence + uncertainty guardrails"]:::policy
+policy["Action selection<br/>none | badge | blur(signal-only) | ask-report | hide"]:::policy
+explanation["Explanation + review provenance<br/>path reasons | verification reasons | policy reasons"]:::contract
+review["Manual review / report / verify flows<br/>distinct drafts, tags, collection preview, page-flow fallback"]:::implemented
+
+input --> perception --> fusion
+fusion --> triggers --> verification
+fusion --> policy
+verification --> policy
+fusion --> explanation
+verification --> explanation
+bseo --> guardrails --> policy
+policy --> explanation --> review

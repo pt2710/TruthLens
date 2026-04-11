@@ -32,6 +32,98 @@ TruthLens runtime is organized as:
 
 BSEO is not the core classifier. It is placed as a bias-structured interpretation, policy, search, and artifact layer downstream of calibrated scoring.
 
+## BSEO
+
+`BSEO` stands for `Bias Structured Evolutionary Optimization`.
+
+In TruthLens, BSEO is the committed answer to a practical moderation problem: the system should not pretend that all bias must be erased. It should instead structure bias so the runtime can distinguish between bias that protects honest, benign, or stylistically intense content and bias that amplifies deceptive clickbait packaging.
+
+That means TruthLens treats bias in two directions at once:
+
+- positive bias preservation for benign contexts such as `music`, `art`, `satire`, `gaming`, and other honest non-clickbait formats where expressive thumbnails, stylized titles, or non-literal packaging can be legitimate
+- negative bias penalty for deceptive packaging where the thumbnail, title, transcript promise, channel priors, or uncertainty pattern indicate manipulative clickbait behavior that should be surfaced for review or reporting
+
+BSEO therefore acts as a structured interpretation and policy layer downstream of calibrated scoring. It does not replace the classifier. It conditions how TruthLens should interpret packaging pressure, mismatch, context, and class guardrails before selecting a runtime action.
+
+The committed implementation uses the following bias primitive vector:
+
+$$
+b(x) = \left[
+\text{sensational\_weight}(x),
+\text{crossmodal\_rigidity}(x),
+\text{channel\_prior\_dependency}(x),
+\text{genre\_confusion}(x),
+\text{uncertainty\_calibration}(x)
+\right].
+$$
+
+Class-conditioned policy scoring then extends the calibrated base score with structured bias terms:
+
+$$
+s_{\mathrm{policy}}(x,\theta) =
+\operatorname{clip}\Big(
+s_{\mathrm{base}}(x)
++ 0.14\,m(x)\,\omega_{\mathrm{mismatch}}(c)
++ 0.10\,q(x)\,\omega_{\mathrm{sensational}}(c)
++ 0.08\,d_{\mathrm{channel}}(x)\,\tau_{\mathrm{channel}}
++ 0.06\,u(x)\,\beta_{\mathrm{uncertainty}}
++ \Delta_{\mathrm{class}}(c)
+\Big),
+$$
+
+where `\theta` is the control genome, `c` is the inferred content class, `m(x)` is mismatch pressure, `q(x)` is sensational pressure, `d_channel(x)` is channel-prior dependency, and `u(x)` is uncertainty-sensitive escalation.
+
+The class-conditioned threshold frame is:
+
+$$
+\tau_c(\theta) = \operatorname{normalize}\!\left(\tau_{\mathrm{global}}(\theta) + \delta_c(\theta)\right),
+$$
+
+and the resulting runtime action is:
+
+$$
+a(x) =
+\operatorname{action}\!\left(
+s_{\mathrm{policy}}(x,\theta),
+\tau_c(\theta)
+\right)
+\in
+\{\texttt{none}, \texttt{badge}, \texttt{blur}, \texttt{ask-report}, \texttt{hide}\}.
+$$
+
+The committed search objective follows the same weighted structure as the implementation in `libs/evaluation/src/truthlens_evaluation/bseo.py`:
+
+$$
+J(\theta) =
+0.45\,D(\theta)
++ 0.20\,C(\theta)
++ 0.15\,K(\theta)
++ 0.10\,M(\theta)
+- 0.05\,L(\theta)
+- 0.05\,G(\theta),
+$$
+
+with:
+
+- `D(\theta)` = detection quality
+- `C(\theta)` = context sensitivity
+- `K(\theta)` = calibration quality
+- `M(\theta)` = mutation stability
+- `L(\theta)` = channel lock-in risk
+- `G(\theta)` = genre confusion penalty
+
+Negative-bias movement is tracked explicitly rather than hidden inside one scalar:
+
+$$
+\Delta B_{\mathrm{neg}} =
+B_{\mathrm{neg}}(\theta_{\mathrm{child}})
+- B_{\mathrm{neg}}(\theta_{\mathrm{parent}}).
+$$
+
+Accepted mutations are therefore expected to improve detection quality without increasing harmful negative-bias accumulation, benign false-positive regressions, calibration regressions, or unstable intervention behavior.
+
+This is the committed TruthLens interpretation frame, not a claim that the repo has solved general bias modeling. The claim is narrower and implementation-bound: TruthLens works better when bias is classified, weighted, and guarded according to context than when it is treated as something that must be removed absolutely.
+
 Authoritative architecture references:
 
 - [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -41,11 +133,27 @@ Authoritative architecture references:
 
 ## Architecture Visual
 
+### System Overview
+
 ![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.png)
+
+### Runtime Decision Flow
+
+![TruthLens runtime decision flow](docs/architecture/truthlens-runtime-decision-flow.png)
+
+### Governance And Feedback Loop
+
+![TruthLens governance and feedback loop](docs/architecture/truthlens-governance-feedback-loop.png)
 
 - [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
 - [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
 - [PNG render](docs/architecture/truthlens-architecture-blueprint.png)
+- [Runtime decision flow source](docs/architecture/truthlens-runtime-decision-flow.mmd)
+- [Runtime decision flow SVG](docs/architecture/truthlens-runtime-decision-flow.svg)
+- [Runtime decision flow PNG](docs/architecture/truthlens-runtime-decision-flow.png)
+- [Governance feedback loop source](docs/architecture/truthlens-governance-feedback-loop.mmd)
+- [Governance feedback loop SVG](docs/architecture/truthlens-governance-feedback-loop.svg)
+- [Governance feedback loop PNG](docs/architecture/truthlens-governance-feedback-loop.png)
 
 ## Current Implemented Runtime
 
@@ -132,14 +240,15 @@ Benchmark source of truth:
 - [Latest summary Markdown](docs/benchmarks/latest/benchmark_summary.md)
 - [Latest verify JSON](docs/benchmarks/latest/verify_summary.json)
 - [Latest verify Markdown](docs/benchmarks/latest/verify_summary.md)
+- [Runtime governance JSON](artifacts/reports/runtime-governance-latest.json)
 
 Current committed snapshot:
 
 | Field | Value |
 | --- | --- |
-| `build_id` | `build-20260406042818` |
-| `model_version` | `baseline-v1-build-20260406042818` |
-| `trained_at` | `2026-04-06T04:28:18.606357+00:00` |
+| `build_id` | `build-20260411062330` |
+| `model_version` | `baseline-v1-build-20260411062330` |
+| `trained_at` | `2026-04-11T06:23:30.230173+00:00` |
 | `eval sample_count` | `44` |
 | `configured runtime mode` | `bseo-shadow` |
 | `resolved runtime mode` | `bseo-shadow` |
@@ -156,6 +265,17 @@ Current eval vs validation snapshot from committed artifacts:
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
 | Calibration error | 0.220 | 0.220 |
+
+Current generated observation and governance snapshot from the same render-time summary:
+
+| Field | Value |
+| --- | --- |
+| `browser observations` | `1459` |
+| `unique observed items` | `671` |
+| `score-linked observation rows` | `1459` |
+| `shadow observation count` | `911` |
+
+These moving counts are also surfaced in `docs/benchmarks/latest/benchmark_summary.md` and the regenerated intake/governance visuals, which remain the authoritative generated truth surface.
 
 ## Metrics Caveats
 
@@ -219,12 +339,12 @@ Additional committed assets:
 Current benchmark inputs:
 
 - `artifacts/trained_models/latest/model_info.json`
-- `artifacts/eval_runs/build-20260406042818.json`
-- `artifacts/eval_runs/build-20260406042818-simulation.json`
-- `artifacts/eval_runs/build-20260406042818-bseo-report.json`
-- `artifacts/eval_runs/build-20260406042818-bseo-lineage.json`
-- `artifacts/eval_runs/build-20260406042818-mutation-bias-atlas.json`
-- `artifacts/drift_reports/build-20260406042818.json`
+- `artifacts/eval_runs/build-20260411062330.json`
+- `artifacts/eval_runs/build-20260411062330-simulation.json`
+- `artifacts/eval_runs/build-20260411062330-bseo-report.json`
+- `artifacts/eval_runs/build-20260411062330-bseo-lineage.json`
+- `artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json`
+- `artifacts/drift_reports/build-20260411062330.json`
 - `configs/thresholds/default.json`
 - `configs/thresholds/bseo-policy.json`
 - `configs/thresholds/runtime-policy.json`

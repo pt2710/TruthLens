@@ -540,6 +540,10 @@ def _wrap_text(value: str, width: int) -> list[str]:
     return lines
 
 
+def _pretty_label(value: str) -> str:
+    return value.replace("_", " ")
+
+
 def _svg_document(title: str, subtitle: str, width: int, height: int, body: list[str]) -> str:
     escaped_title = escape(title)
     escaped_subtitle = escape(subtitle)
@@ -548,22 +552,24 @@ def _svg_document(title: str, subtitle: str, width: int, height: int, body: list
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img">',
             "<style>",
             "text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }",
-            ".title { font-size: 24px; font-weight: 700; }",
-            ".subtitle { font-size: 12px; fill: #475569; }",
-            ".card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }",
-            ".accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }",
-            ".warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }",
-            ".label { font-size: 13px; fill: #475569; }",
-            ".value { font-size: 28px; font-weight: 700; }",
-            ".small { font-size: 11px; fill: #64748b; }",
-            ".axis { stroke: #94a3b8; stroke-width: 1; }",
+            ".title { font-size: 34px; font-weight: 700; }",
+            ".subtitle { font-size: 16px; fill: #475569; }",
+            ".card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 20; }",
+            ".accent { fill: #eff6ff; stroke: #60a5fa; stroke-width: 1.5; rx: 20; }",
+            ".warn { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.5; rx: 20; }",
+            ".label { font-size: 15px; font-weight: 600; fill: #475569; }",
+            ".value { font-size: 32px; font-weight: 700; }",
+            ".value-compact { font-size: 22px; font-weight: 700; }",
+            ".small { font-size: 13px; fill: #64748b; }",
+            ".axis { stroke: #94a3b8; stroke-width: 1.2; }",
             ".grid { stroke: #e2e8f0; stroke-width: 1; }",
-            ".legend { font-size: 12px; fill: #334155; }",
-            ".stub { font-size: 16px; font-weight: 600; }",
+            ".legend { font-size: 14px; fill: #334155; }",
+            ".stub { font-size: 20px; font-weight: 600; }",
             "</style>",
-            f'<rect x="0" y="0" width="{width}" height="{height}" fill="#ffffff" />',
-            f'<text class="title" x="40" y="48">{escaped_title}</text>',
-            f'<text class="subtitle" x="40" y="72">{escaped_subtitle}</text>',
+            f'<rect x="0" y="0" width="{width}" height="{height}" fill="#f8fafc" />',
+            f'<rect x="20" y="20" width="{width - 40}" height="{height - 40}" fill="#ffffff" rx="26" />',
+            f'<text class="title" x="52" y="68">{escaped_title}</text>',
+            f'<text class="subtitle" x="52" y="98">{escaped_subtitle}</text>',
             *body,
             "</svg>",
         ]
@@ -580,66 +586,73 @@ def _card(
     note: str = "",
     accent: str = "card",
 ) -> str:
-    lines = [f'<rect class="{accent}" x="{x}" y="{y}" width="{width}" height="{height}" rx="14" />']
-    lines.append(f'<text class="label" x="{x + 18}" y="{y + 26}">{escape(label)}</text>')
-    lines.append(f'<text class="value" x="{x + 18}" y="{y + 70}">{escape(value)}</text>')
+    lines = [f'<rect class="{accent}" x="{x}" y="{y}" width="{width}" height="{height}" rx="20" />']
+    lines.append(f'<text class="label" x="{x + 22}" y="{y + 32}">{escape(label)}</text>')
+    value_lines = _wrap_text(value, max(16, int((width - 44) / 13)))
+    value_class = "value" if len(value_lines) == 1 and len(value_lines[0]) <= 22 else "value-compact"
+    for index, line in enumerate(value_lines[:2]):
+        lines.append(
+            f'<text class="{value_class}" x="{x + 22}" y="{y + 82 + index * 26}">{escape(line)}</text>'
+        )
     if note:
-        for index, line in enumerate(_wrap_text(note, 52)):
-            lines.append(f'<text class="small" x="{x + 18}" y="{y + 98 + index * 16}">{escape(line)}</text>')
+        note_start = y + 122 + max(len(value_lines) - 1, 0) * 16
+        for index, line in enumerate(_wrap_text(note, max(26, int((width - 44) / 8)))):
+            lines.append(f'<text class="small" x="{x + 22}" y="{note_start + index * 18}">{escape(line)}</text>')
     return "\n".join(lines)
 
 
 def _stub_svg(title: str, subtitle: str, message: str, path: Path) -> None:
     body = [
-        '<rect class="warn" x="40" y="112" width="920" height="220" rx="18" />',
-        f'<text class="stub" x="72" y="168">{escape("Data unavailable for this visualization")}</text>',
+        '<rect class="warn" x="52" y="132" width="1176" height="230" rx="24" />',
+        f'<text class="stub" x="88" y="196">{escape("Data unavailable for this visualization")}</text>',
     ]
-    for index, line in enumerate(_wrap_text(message, 88)):
-        body.append(f'<text class="subtitle" x="72" y="{206 + index * 18}">{escape(line)}</text>')
-    path.write_text(_svg_document(title, subtitle, 1000, 380, body), encoding="utf-8")
+    for index, line in enumerate(_wrap_text(message, 104)):
+        body.append(f'<text class="subtitle" x="88" y="{244 + index * 22}">{escape(line)}</text>')
+    path.write_text(_svg_document(title, subtitle, 1280, 420, body), encoding="utf-8")
 
 
 def _write_overview_svg(summary: dict[str, Any], path: Path) -> None:
     eval_metrics = dict(summary["metrics"]["eval"])
     validation_metrics = dict(summary["metrics"]["validation"])
     cards = [
-        _card(40, 112, 290, 150, "Eval F1", _format_metric(_safe_float(eval_metrics.get("f1"))), "Committed eval snapshot"),
+        _card(52, 132, 360, 182, "Eval F1", _format_metric(_safe_float(eval_metrics.get("f1"))), "Committed eval snapshot"),
         _card(
-            355,
-            112,
-            290,
-            150,
+            436,
+            132,
+            360,
+            182,
             "Validation F1",
             _format_metric(_safe_float(validation_metrics.get("f1"))),
             "Cross-check against validation split",
         ),
         _card(
-            670,
-            112,
-            290,
-            150,
+            820,
+            132,
+            360,
+            182,
             "Eval sample count",
             str(summary.get("sample_count") or "n/a"),
             "Very small n must be treated as unstable",
             "warn" if (summary.get("sample_count") or 0) < 30 else "accent",
         ),
-        _card(40, 282, 290, 150, "Eval precision", _format_metric(_safe_float(eval_metrics.get("precision")))),
-        _card(355, 282, 290, 150, "Eval recall", _format_metric(_safe_float(eval_metrics.get("recall")))),
+        _card(52, 338, 360, 182, "Eval precision", _format_metric(_safe_float(eval_metrics.get("precision")))),
+        _card(436, 338, 360, 182, "Eval recall", _format_metric(_safe_float(eval_metrics.get("recall")))),
         _card(
-            670,
-            282,
-            290,
-            150,
+            820,
+            338,
+            360,
+            182,
             "Validation calibration",
             _format_metric(_safe_float(summary["metrics"]["validation_calibration_error"])),
+            "Calibration remains more informative than the perfect binary snapshot alone.",
         ),
     ]
     path.write_text(
         _svg_document(
             "TruthLens benchmark overview",
             "Current committed evaluation and validation snapshot. Training metrics are not published in the current root artifacts.",
-            1000,
-            470,
+            1240,
+            568,
             cards,
         ),
         encoding="utf-8",
@@ -658,12 +671,12 @@ def _bar_chart(
     if not categories:
         _stub_svg(title, subtitle, "No categories were available in the source artifacts.", path)
         return
-    width = 1200
-    height = 500
-    chart_x = 60
-    chart_y = 110
-    chart_w = 1080
-    chart_h = 300
+    width = 1400
+    height = 620
+    chart_x = 86
+    chart_y = 154
+    chart_w = 1240
+    chart_h = 340
     group_width = chart_w / max(len(categories), 1)
     bar_width = max(18.0, min(48.0, group_width / max(len(series) + 1, 2)))
     body: list[str] = []
@@ -671,13 +684,13 @@ def _bar_chart(
         y = chart_y + chart_h - (chart_h * step / 5.0)
         label = f"{(y_max * step / 5.0):.2f}"
         body.append(f'<line class="grid" x1="{chart_x}" y1="{y:.1f}" x2="{chart_x + chart_w}" y2="{y:.1f}" />')
-        body.append(f'<text class="small" x="{chart_x - 36}" y="{y + 4:.1f}">{escape(label)}</text>')
+        body.append(f'<text class="small" x="{chart_x - 48}" y="{y + 5:.1f}">{escape(label)}</text>')
     body.append(f'<line class="axis" x1="{chart_x}" y1="{chart_y}" x2="{chart_x}" y2="{chart_y + chart_h}" />')
     body.append(
         f'<line class="axis" x1="{chart_x}" y1="{chart_y + chart_h}" x2="{chart_x + chart_w}" y2="{chart_y + chart_h}" />'
     )
     for category_index, category in enumerate(categories):
-        group_x = chart_x + category_index * group_width + 20
+        group_x = chart_x + category_index * group_width + 26
         for series_index, (_, color, values) in enumerate(series):
             value = values[category_index]
             safe_value = max(0.0, min(value, y_max))
@@ -687,14 +700,17 @@ def _bar_chart(
             body.append(
                 f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{bar_height:.1f}" fill="{color}" rx="6" />'
             )
-        body.append(
-            f'<text class="small" x="{group_x + group_width / 4:.1f}" y="{chart_y + chart_h + 24}" text-anchor="middle">{escape(category)}</text>'
-        )
+        label_lines = _wrap_text(_pretty_label(category), 16)
+        label_x = group_x + group_width / 4
+        for line_index, line in enumerate(label_lines[:2]):
+            body.append(
+                f'<text class="small" x="{label_x:.1f}" y="{chart_y + chart_h + 28 + line_index * 16}" text-anchor="middle">{escape(line)}</text>'
+            )
     legend_x = chart_x
     for index, (name, color, _) in enumerate(series):
-        item_x = legend_x + index * 190
-        body.append(f'<rect x="{item_x}" y="438" width="14" height="14" fill="{color}" rx="3" />')
-        body.append(f'<text class="legend" x="{item_x + 22}" y="450">{escape(name)}</text>')
+        item_x = legend_x + index * 220
+        body.append(f'<rect x="{item_x}" y="540" width="16" height="16" fill="{color}" rx="4" />')
+        body.append(f'<text class="legend" x="{item_x + 24}" y="553">{escape(name)}</text>')
     path.write_text(_svg_document(title, subtitle, width, height, body), encoding="utf-8")
 
 
@@ -741,7 +757,7 @@ def _write_calibration_svg(summary: dict[str, Any], path: Path) -> None:
         categories=categories,
         series=[("Calibration error", "#7c3aed", values)],
         path=path,
-        y_max=max(max(values, default=0.0), 1.0),
+        y_max=max(max(values, default=0.0) * 1.25, 0.35),
     )
 
 
@@ -769,7 +785,7 @@ def _write_confusion_svg(summary: dict[str, Any], path: Path) -> None:
         intensity = int(255 - (value / max(max_value, 1)) * 110)
         fill = f"rgb({intensity}, {intensity}, 255)"
         body.append(
-            f'<rect x="{x}" y="{y}" width="180" height="90" rx="14" fill="{fill}" stroke="#94a3b8" stroke-width="1.5" />'
+            f'<rect x="{x}" y="{y}" width="180" height="90" rx="18" fill="{fill}" stroke="#94a3b8" stroke-width="1.5" />'
         )
         body.append(f'<text class="label" x="{x + 18}" y="{y + 28}">{label}</text>')
         body.append(f'<text class="value" x="{x + 18}" y="{y + 68}">{value}</text>')
@@ -780,8 +796,8 @@ def _write_confusion_svg(summary: dict[str, Any], path: Path) -> None:
         _svg_document(
             "Eval confusion matrix",
             "Counts from the committed eval artifact. With n this small, matrix cells are descriptive, not conclusive.",
-            640,
-            420,
+            720,
+            460,
             body,
         ),
         encoding="utf-8",
@@ -798,12 +814,12 @@ def _write_threshold_sweep_svg(summary: dict[str, Any], path: Path) -> None:
             path,
         )
         return
-    width = 1100
-    height = 500
-    chart_x = 80
-    chart_y = 120
-    chart_w = 940
-    chart_h = 280
+    width = 1320
+    height = 580
+    chart_x = 96
+    chart_y = 154
+    chart_w = 1128
+    chart_h = 304
     thresholds = [_safe_float(entry.get("threshold")) for entry in sweep]
     f1_values = [_safe_float(entry.get("f1")) for entry in sweep]
     costs = [_safe_float(entry.get("intervention_cost")) for entry in sweep]
@@ -815,7 +831,7 @@ def _write_threshold_sweep_svg(summary: dict[str, Any], path: Path) -> None:
     for step in range(6):
         y = chart_y + chart_h - (chart_h * step / 5.0)
         body.append(f'<line class="grid" x1="{chart_x}" y1="{y:.1f}" x2="{chart_x + chart_w}" y2="{y:.1f}" />')
-        body.append(f'<text class="small" x="{chart_x - 42}" y="{y + 4:.1f}">{step / 5.0:.2f}</text>')
+        body.append(f'<text class="small" x="{chart_x - 50}" y="{y + 5:.1f}">{step / 5.0:.2f}</text>')
     body.append(f'<line class="axis" x1="{chart_x}" y1="{chart_y}" x2="{chart_x}" y2="{chart_y + chart_h}" />')
     body.append(
         f'<line class="axis" x1="{chart_x}" y1="{chart_y + chart_h}" x2="{chart_x + chart_w}" y2="{chart_y + chart_h}" />'
@@ -834,13 +850,13 @@ def _write_threshold_sweep_svg(summary: dict[str, Any], path: Path) -> None:
     for index, threshold in enumerate(thresholds):
         x = chart_x + (index / max(len(thresholds) - 1, 1)) * chart_w
         body.append(
-            f'<text class="small" x="{x:.1f}" y="{chart_y + chart_h + 24}" text-anchor="middle">{threshold:.2f}</text>'
+            f'<text class="small" x="{x:.1f}" y="{chart_y + chart_h + 30}" text-anchor="middle">{threshold:.2f}</text>'
         )
-    body.append('<rect x="80" y="430" width="14" height="14" fill="#2563eb" rx="3" />')
-    body.append('<text class="legend" x="102" y="442">F1</text>')
-    body.append('<rect x="160" y="430" width="14" height="14" fill="#c2410c" rx="3" />')
-    body.append('<text class="legend" x="182" y="442">Normalized intervention cost</text>')
-    body.append(f'<text class="small" x="80" y="468">Intervention cost range in source artifact: {cost_min:.3f} to {cost_max:.3f}</text>')
+    body.append('<rect x="96" y="516" width="16" height="16" fill="#2563eb" rx="4" />')
+    body.append('<text class="legend" x="120" y="530">F1</text>')
+    body.append('<rect x="176" y="516" width="16" height="16" fill="#c2410c" rx="4" />')
+    body.append('<text class="legend" x="200" y="530">Normalized intervention cost</text>')
+    body.append(f'<text class="small" x="96" y="558">Intervention cost range in source artifact: {cost_min:.3f} to {cost_max:.3f}</text>')
     path.write_text(
         _svg_document(
             "Threshold sweep",
@@ -863,12 +879,12 @@ def _write_drift_svg(summary: dict[str, Any], path: Path) -> None:
         ("Sensational count shift", _safe_float(drift.get("sensational_count_shift"))),
         ("Label rate shift", _safe_float(drift.get("label_rate_shift"))),
     ]
-    width = 960
-    height = 430
-    chart_x = 120
-    chart_y = 120
-    chart_w = 760
-    chart_h = 200
+    width = 1120
+    height = 480
+    chart_x = 160
+    chart_y = 150
+    chart_w = 860
+    chart_h = 210
     max_abs = max(abs(value) for _, value in metrics) or 1.0
     body: list[str] = []
     zero_x = chart_x + chart_w / 2
@@ -884,11 +900,11 @@ def _write_drift_svg(summary: dict[str, Any], path: Path) -> None:
             x = zero_x - span
             width_value = span
             color = "#c2410c"
-        body.append(f'<text class="label" x="40" y="{y + 18}">{escape(label)}</text>')
+        body.append(f'<text class="label" x="52" y="{y + 18}">{escape(label)}</text>')
         body.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{width_value:.1f}" height="28" fill="{color}" rx="8" />')
         body.append(f'<text class="small" x="{zero_x + 10}" y="{y + 18}">{value:.3f}</text>')
     body.append(
-        f'<text class="small" x="40" y="372">Reference rows: {_safe_int(drift.get("reference_count"))} | Current rows: {_safe_int(drift.get("current_count"))}</text>'
+        f'<text class="small" x="52" y="414">Reference rows: {_safe_int(drift.get("reference_count"))} | Current rows: {_safe_int(drift.get("current_count"))}</text>'
     )
     path.write_text(
         _svg_document(
@@ -906,59 +922,69 @@ def _write_policy_svg(summary: dict[str, Any], path: Path) -> None:
     runtime = dict(summary["runtime_truth"])
     body = [
         _card(
-            40,
-            112,
-            280,
-            150,
+            52,
+            132,
+            360,
+            182,
             "Configured runtime mode",
             str(runtime.get("configured_policy_mode", "n/a")),
             "Directly from configs/thresholds/runtime-policy.json",
             "accent",
         ),
         _card(
-            350,
-            112,
-            280,
-            150,
+            436,
+            132,
+            360,
+            182,
             "Resolved runtime mode",
             str(runtime.get("resolved_policy_mode", "n/a")),
             "Aliases normalized for architectural truth",
         ),
         _card(
-            660,
-            112,
-            300,
-            150,
+            820,
+            132,
+            360,
+            182,
             "Committed BSEO artifact",
             "yes" if runtime.get("bseo_artifact_committed") else "no",
             "If absent, shadow/live is code-supported but not promoted as a committed runtime artifact.",
             "warn" if not runtime.get("bseo_artifact_committed") else "accent",
         ),
         _card(
-            40,
-            282,
-            280,
-            140,
+            52,
+            338,
+            360,
+            176,
             "Selective verification",
             "explicit",
             "Selective deep verification exists as a separate contract layer rather than a mandatory hot path.",
         ),
         _card(
-            350,
-            282,
-            280,
-            140,
+            436,
+            338,
+            360,
+            176,
             "Heavy LLM in hot path",
             "no",
             "Gemini/manual-report flows stay downstream of baseline scoring.",
+        ),
+        _card(
+            820,
+            338,
+            360,
+            176,
+            "Governance recommendation",
+            str(runtime.get("recommended_policy_mode", "n/a")),
+            f"Max promotable mode = {runtime.get('max_promotable_mode', 'n/a')}",
+            "accent",
         ),
     ]
     path.write_text(
         _svg_document(
             "Policy mode and runtime eligibility",
             "This panel is derived from committed runtime config and artifact presence, not from aspirational docs.",
-            1000,
-            470,
+            1240,
+            562,
             body,
         ),
         encoding="utf-8",
@@ -975,56 +1001,56 @@ def _write_runtime_governance_svg(summary: dict[str, Any], path: Path) -> None:
     live_blocker_text = ", ".join(str(value) for value in live_blockers[:4]) or "none"
     body = [
         _card(
-            40,
-            112,
-            280,
-            150,
+            52,
+            132,
+            360,
+            188,
             "Recommended mode",
             str(promotion.get("recommended_mode", "n/a")),
             "The highest runtime mode currently justified by committed artifacts and guardrails.",
             "accent" if str(promotion.get("recommended_mode", "")) != "threshold-default" else "warn",
         ),
         _card(
-            350,
-            112,
-            280,
-            150,
+            436,
+            132,
+            360,
+            188,
             "Max promotable mode",
             str(promotion.get("max_promotable_mode", "n/a")),
             "Live is only eligible after calibration, lineage, atlas, and shadow-soak checks pass.",
         ),
         _card(
-            660,
-            112,
-            300,
-            150,
+            820,
+            132,
+            360,
+            188,
             "Current eval footprint",
             f"test={_safe_int(dataset.get('test_count'))} | eval={_safe_int(dataset.get('eval_sample_count'))}",
             "Governance summaries are only credible when dataset counts are large enough to matter.",
         ),
         _card(
-            40,
-            282,
-            280,
-            150,
+            52,
+            346,
+            360,
+            188,
             "Objective + calibration",
             f"obj={_safe_float(performance.get('bseo_objective_score')):.3f} | ece={_safe_float(performance.get('calibration_error')):.3f}",
             "BSEO promotion stays downstream of fused/calibrated scoring quality.",
         ),
         _card(
-            350,
-            282,
-            280,
-            150,
+            436,
+            346,
+            360,
+            188,
             "Atlas + lineage",
             f"{artifacts.get('mutation_atlas_status', 'n/a')} | lineage={_safe_int(artifacts.get('lineage_count'))}",
             f"usable_mutations={_safe_int(artifacts.get('usable_mutations'))}",
         ),
         _card(
-            660,
-            282,
-            300,
-            150,
+            820,
+            346,
+            360,
+            188,
             "Live blockers",
             live_blocker_text,
             f"shadow_observations={_safe_int(performance.get('shadow_observation_count'))}",
@@ -1035,8 +1061,8 @@ def _write_runtime_governance_svg(summary: dict[str, Any], path: Path) -> None:
         _svg_document(
             "Runtime governance summary",
             "Promotion truth from committed BSEO artifacts, performance guardrails, and observed shadow history.",
-            1000,
-            470,
+            1240,
+            582,
             body,
         ),
         encoding="utf-8",
@@ -1049,55 +1075,55 @@ def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) 
     candidate_summary = dict(intake.get("candidate_batch", {}))
     body = [
         _card(
-            40,
-            112,
-            280,
-            150,
+            52,
+            132,
+            360,
+            188,
             "Browser observations",
             str(_safe_int(observation_summary.get("total_observations"))),
-            f"unique_items={_safe_int(observation_summary.get('unique_items'))}",
+            f"unique_items={_safe_int(observation_summary.get('unique_items'))}, score_links={_safe_int(observation_summary.get('with_score_link'))}",
         ),
         _card(
-            350,
-            112,
-            280,
-            150,
+            436,
+            132,
+            360,
+            188,
             "Supplemental candidates",
             str(_safe_int(candidate_summary.get("candidate_count"))),
             f"split_blocked={_safe_int(candidate_summary.get('split_blocked_count'))}",
         ),
         _card(
-            660,
-            112,
-            300,
-            150,
+            820,
+            132,
+            360,
+            188,
             "Supplemental adjudication",
             str(_safe_int(candidate_summary.get("adjudicated_count"))),
             f"confirmed={_safe_int(candidate_summary.get('confirmed_count'))}, escalations={_safe_int(candidate_summary.get('escalation_count'))}",
         ),
         _card(
-            40,
-            282,
-            280,
-            150,
+            52,
+            346,
+            360,
+            188,
             "Feedback-linked candidates",
             str(_safe_int(candidate_summary.get("feedback_linked_count"))),
             f"manual_reports={_safe_int(candidate_summary.get('manual_report_linked_count'))}, collection_scoped={_safe_int(candidate_summary.get('collection_scoped_count'))}",
         ),
         _card(
-            350,
-            282,
-            280,
-            150,
+            436,
+            346,
+            360,
+            188,
             "Observation-linked candidates",
             str(_safe_int(candidate_summary.get("observation_linked_count"))),
             f"review={_safe_int(candidate_summary.get('review_queue_count'))}, hard_negative={_safe_int(candidate_summary.get('hard_negative_queue_count'))}",
         ),
         _card(
-            660,
-            282,
-            300,
-            150,
+            820,
+            346,
+            360,
+            188,
             "Leakage guard",
             "blocked",
             "Supplemental intake remains excluded from direct train/validation/test writes until future deterministic ingestion.",
@@ -1108,8 +1134,8 @@ def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) 
         _svg_document(
             "Observation and feedback intake",
             "Supplemental browser/feedback intake truth. These artifacts are intentionally separate from committed train, validation, and test splits.",
-            1000,
-            470,
+            1240,
+            582,
             body,
         ),
         encoding="utf-8",
@@ -1123,23 +1149,23 @@ def _write_provenance_svg(summary: dict[str, Any], path: Path) -> None:
     sample_count = str(summary.get("sample_count") or "n/a")
     timestamps = summary.get("artifact_timestamps", {})
     cards = [
-        _card(40, 112, 290, 150, "Build ID", build_id, "Artifact lineage anchor"),
-        _card(355, 112, 290, 150, "Model version", model_version, "Snapshot from trained model info"),
-        _card(670, 112, 290, 150, "Eval sample count", sample_count, "Committed evaluation sample size"),
+        _card(52, 132, 360, 182, "Build ID", build_id, "Artifact lineage anchor"),
+        _card(436, 132, 360, 182, "Model version", model_version, "Snapshot from trained model info"),
+        _card(820, 132, 360, 182, "Eval sample count", sample_count, "Committed evaluation sample size"),
         _card(
-            40,
-            282,
-            920,
-            140,
+            52,
+            338,
+            1128,
+            176,
             "Artifact timestamps",
             "committed",
             f"model_info={timestamps.get('model_info')} | eval={timestamps.get('eval_report')} | drift={timestamps.get('drift_report')}",
         ),
         _card(
-            40,
-            442,
-            920,
-            140,
+            52,
+            536,
+            1128,
+            170,
             "Training timestamp",
             trained_at,
             "If this timestamp and current docs diverge, the docs are stale.",
@@ -1149,8 +1175,8 @@ def _write_provenance_svg(summary: dict[str, Any], path: Path) -> None:
         _svg_document(
             "Benchmark provenance",
             "Every benchmark claim in README should trace back to these committed artifacts.",
-            1000,
-            620,
+            1240,
+            756,
             cards,
         ),
         encoding="utf-8",
@@ -1176,6 +1202,7 @@ def _write_bseo_bias_svg(summary: dict[str, Any], path: Path) -> None:
         categories=categories,
         series=[("Macro bias", "#7c3aed", values)],
         path=path,
+        y_max=max(max(values, default=0.0) * 1.3, 0.45),
     )
 
 
@@ -1200,17 +1227,17 @@ def _write_mutation_atlas_svg(summary: dict[str, Any], path: Path) -> None:
         )
         return
     body = [
-        _card(40, 112, 280, 150, "Atlas status", status),
-        _card(350, 112, 280, 150, "Usable mutations", str(_safe_int(atlas.get("usable_mutations")))),
-        _card(660, 112, 280, 150, "Cluster count", str(len(clusters))),
+        _card(52, 132, 360, 182, "Atlas status", status),
+        _card(436, 132, 360, 182, "Usable mutations", str(_safe_int(atlas.get("usable_mutations")))),
+        _card(820, 132, 360, 182, "Cluster count", str(len(clusters))),
     ]
     for index, cluster in enumerate(clusters[:3]):
         body.append(
             _card(
-                40 + index * 310,
-                282,
-                280,
-                150,
+                52 + index * 384,
+                338,
+                360,
+                182,
                 f"Cluster {cluster.get('cluster_id')}",
                 f"size={_safe_int(cluster.get('size'))}",
                 f"avg dF={_safe_float(cluster.get('average_delta_f')):.3f}, avg dB={_safe_float(cluster.get('average_delta_b')):.3f}",
@@ -1220,8 +1247,8 @@ def _write_mutation_atlas_svg(summary: dict[str, Any], path: Path) -> None:
         _svg_document(
             "Mutation bias atlas",
             "Cluster overview from committed BSEO lineage artifacts.",
-            1000,
-            470,
+            1240,
+            568,
             body,
         ),
         encoding="utf-8",
@@ -1247,7 +1274,7 @@ def _write_lineage_svg(summary: dict[str, Any], path: Path) -> None:
         categories=categories,
         series=[("Objective", "#2563eb", objective)],
         path=path,
-        y_max=max(max(objective, default=0.0), 1.0),
+        y_max=max(max(objective, default=0.0) * 1.15, 0.9),
     )
 
 
@@ -1301,6 +1328,7 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         "",
         f"- Browser observations: `{browser_observations.get('total_observations', 0)}`",
         f"- Unique observed items: `{browser_observations.get('unique_items', 0)}`",
+        f"- Observation rows linked back to scored items: `{browser_observations.get('with_score_link', 0)}`",
         f"- Supplemental candidates: `{candidate_batch.get('candidate_count', 0)}`",
         f"- Split-blocked candidates: `{candidate_batch.get('split_blocked_count', 0)}`",
         f"- Supplemental adjudicated: `{candidate_batch.get('adjudicated_count', 0)}`",
@@ -1309,6 +1337,8 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         "",
         f"- Shadow eligible: `{promotion.get('shadow_eligible', False)}`",
         f"- Live eligible: `{promotion.get('live_eligible', False)}`",
+        f"- Shadow observation count: `{governance.get('performance', {}).get('shadow_observation_count', 0)}`",
+        f"- BSEO objective score: `{governance.get('performance', {}).get('bseo_objective_score', 'n/a')}`",
     ]
     shadow_blockers = list(promotion.get("shadow_blockers", []))
     live_blockers = list(promotion.get("live_blockers", []))
@@ -1355,27 +1385,36 @@ def _write_dashboard(summary: dict[str, Any], path: Path, title: str, body_html:
     <meta charset="utf-8" />
     <title>{escape(title)}</title>
     <style>
-      body {{ font-family: "Segoe UI", Arial, sans-serif; margin: 24px; color: #0f172a; background: #f8fafc; }}
+      body {{ font-family: "Segoe UI", Arial, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }}
+      main {{ max-width: 1180px; margin: 0 auto; padding: 28px; }}
       h1, h2 {{ margin-top: 0; }}
-      .card {{ background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 18px; margin-bottom: 18px; }}
-      code, pre {{ background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px; overflow: auto; }}
+      .card {{ background: white; border: 1px solid #cbd5e1; border-radius: 18px; padding: 20px; margin-bottom: 18px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05); }}
+      .metric-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 18px; }}
+      .metric {{ background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 16px; }}
+      .metric.warn {{ background: #fff7ed; border-color: #fdba74; }}
+      .metric strong {{ display: block; font-size: 13px; color: #475569; margin-bottom: 8px; }}
+      .metric span {{ display: block; font-size: 28px; font-weight: 700; }}
+      code, pre {{ background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 12px; overflow: auto; }}
       table {{ border-collapse: collapse; width: 100%; }}
-      th, td {{ border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }}
+      th, td {{ border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }}
       th {{ background: #eff6ff; }}
       .warn {{ background: #fff7ed; border-color: #fdba74; }}
       .muted {{ color: #475569; }}
+      ul {{ margin: 0; padding-left: 20px; }}
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>{escape(title)}</h1>
-      <p class="muted">Generated from committed artifacts. This page is static and deterministic.</p>
-    </div>
-    {body_html}
-    <div class="card">
-      <h2>Embedded summary payload</h2>
-      <pre>{escape(payload)}</pre>
-    </div>
+    <main>
+      <div class="card">
+        <h1>{escape(title)}</h1>
+        <p class="muted">Generated from committed artifacts. This page is static, deterministic, and should agree with README and the benchmark summary JSON.</p>
+      </div>
+      {body_html}
+      <div class="card">
+        <h2>Embedded summary payload</h2>
+        <pre>{escape(payload)}</pre>
+      </div>
+    </main>
   </body>
 </html>
 """
@@ -1403,8 +1442,12 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         f"""
         <div class="card">
           <h2>Current snapshot</h2>
-          <p><strong>Build ID:</strong> {escape(str(summary.get('build_id') or 'n/a'))}</p>
-          <p><strong>Eval sample count:</strong> {escape(str(summary.get('sample_count') or 'n/a'))}</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Build ID</strong><span>{escape(str(summary.get('build_id') or 'n/a'))}</span></div>
+            <div class="metric"><strong>Eval sample count</strong><span>{escape(str(summary.get('sample_count') or 'n/a'))}</span></div>
+            <div class="metric"><strong>Configured mode</strong><span>{escape(str(summary['runtime_truth']['configured_policy_mode']))}</span></div>
+            <div class="metric"><strong>Recommended mode</strong><span>{escape(str(summary['runtime_truth']['recommended_policy_mode']))}</span></div>
+          </div>
         </div>
         <div class="card">
           <h2>Eval vs validation</h2>
@@ -1432,6 +1475,12 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         "TruthLens threshold explorer",
         f"""
         <div class="card">
+          <div class="metric-grid">
+            <div class="metric"><strong>Build ID</strong><span>{escape(str(summary.get('build_id') or 'n/a'))}</span></div>
+            <div class="metric"><strong>Sweep points</strong><span>{escape(str(len(summary["simulation"]["threshold_sweep"])))}</span></div>
+          </div>
+        </div>
+        <div class="card">
           <h2>Threshold sweep table</h2>
           <table>
             <thead><tr><th>Threshold</th><th>F1</th><th>Intervention cost</th></tr></thead>
@@ -1455,11 +1504,13 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         f"""
         <div class="card">
           <h2>Runtime policy truth</h2>
-          <p><strong>Configured mode:</strong> {escape(str(summary['runtime_truth']['configured_policy_mode']))}</p>
-          <p><strong>Resolved mode:</strong> {escape(str(summary['runtime_truth']['resolved_policy_mode']))}</p>
-          <p><strong>Recommended mode:</strong> {escape(str(summary['runtime_truth']['recommended_policy_mode']))}</p>
-          <p><strong>Max promotable mode:</strong> {escape(str(summary['runtime_truth']['max_promotable_mode']))}</p>
-          <p><strong>Committed BSEO artifact:</strong> {escape('yes' if summary['runtime_truth']['bseo_artifact_committed'] else 'no')}</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Configured mode</strong><span>{escape(str(summary['runtime_truth']['configured_policy_mode']))}</span></div>
+            <div class="metric"><strong>Resolved mode</strong><span>{escape(str(summary['runtime_truth']['resolved_policy_mode']))}</span></div>
+            <div class="metric"><strong>Recommended mode</strong><span>{escape(str(summary['runtime_truth']['recommended_policy_mode']))}</span></div>
+            <div class="metric"><strong>Max promotable mode</strong><span>{escape(str(summary['runtime_truth']['max_promotable_mode']))}</span></div>
+            <div class="metric"><strong>Committed BSEO artifact</strong><span>{escape('yes' if summary['runtime_truth']['bseo_artifact_committed'] else 'no')}</span></div>
+          </div>
         </div>
         <div class="card">
           <h2>BSEO macro bias profile</h2>
@@ -1485,8 +1536,11 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         f"""
         <div class="card">
           <h2>Atlas status</h2>
-          <p><strong>Status:</strong> {escape(str(atlas.get('status', 'missing')))}</p>
-          <p><strong>Usable mutations:</strong> {escape(str(_safe_int(atlas.get('usable_mutations'))))}</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Status</strong><span>{escape(str(atlas.get('status', 'missing')))}</span></div>
+            <div class="metric"><strong>Usable mutations</strong><span>{escape(str(_safe_int(atlas.get('usable_mutations'))))}</span></div>
+            <div class="metric"><strong>Cluster count</strong><span>{escape(str(len(atlas.get('clusters', []))))}</span></div>
+          </div>
         </div>
         <div class="card">
           <h2>Clusters</h2>
@@ -1511,17 +1565,21 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         f"""
         <div class="card">
           <h2>Promotion truth</h2>
-          <p><strong>Configured mode:</strong> {escape(str(summary['runtime_truth']['configured_policy_mode']))}</p>
-          <p><strong>Recommended mode:</strong> {escape(str(promotion.get('recommended_mode', 'n/a')))}</p>
-          <p><strong>Max promotable mode:</strong> {escape(str(promotion.get('max_promotable_mode', 'n/a')))}</p>
-          <p><strong>Shadow eligible:</strong> {escape(str(promotion.get('shadow_eligible', False)))}</p>
-          <p><strong>Live eligible:</strong> {escape(str(promotion.get('live_eligible', False)))}</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Configured mode</strong><span>{escape(str(summary['runtime_truth']['configured_policy_mode']))}</span></div>
+            <div class="metric"><strong>Recommended mode</strong><span>{escape(str(promotion.get('recommended_mode', 'n/a')))}</span></div>
+            <div class="metric"><strong>Max promotable mode</strong><span>{escape(str(promotion.get('max_promotable_mode', 'n/a')))}</span></div>
+            <div class="metric"><strong>Shadow eligible</strong><span>{escape(str(promotion.get('shadow_eligible', False)))}</span></div>
+            <div class="metric"><strong>Live eligible</strong><span>{escape(str(promotion.get('live_eligible', False)))}</span></div>
+          </div>
         </div>
         <div class="card">
           <h2>Observed runtime evidence</h2>
-          <p><strong>Shadow observations:</strong> {escape(str(_safe_int(dict(governance.get('performance', {})).get('shadow_observation_count'))))}</p>
-          <p><strong>Eval sample count:</strong> {escape(str(_safe_int(dict(governance.get('dataset', {})).get('eval_sample_count'))))}</p>
-          <p><strong>Mutation atlas status:</strong> {escape(str(dict(governance.get('artifacts', {})).get('mutation_atlas_status', 'n/a')))}</p>
+          <div class="metric-grid">
+            <div class="metric"><strong>Shadow observations</strong><span>{escape(str(_safe_int(dict(governance.get('performance', {})).get('shadow_observation_count'))))}</span></div>
+            <div class="metric"><strong>Eval sample count</strong><span>{escape(str(_safe_int(dict(governance.get('dataset', {})).get('eval_sample_count'))))}</span></div>
+            <div class="metric"><strong>Mutation atlas status</strong><span>{escape(str(dict(governance.get('artifacts', {})).get('mutation_atlas_status', 'n/a')))}</span></div>
+          </div>
         </div>
         <div class="card warn">
           <h2>Shadow blockers</h2>

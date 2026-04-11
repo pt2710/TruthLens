@@ -1,7 +1,7 @@
 {
-  "model_version": "baseline-v1-build-20260406042818",
-  "trained_at": "2026-04-06T04:28:18.606357+00:00",
-  "build_id": "build-20260406042818",
+  "model_version": "baseline-v1-build-20260411062330",
+  "trained_at": "2026-04-11T06:23:30.230173+00:00",
+  "build_id": "build-20260411062330",
   "head_spec_version": "2026-04-02",
   "head_specs": [
     {
@@ -295,7 +295,7 @@
       "encoder": "q-learning-plus-search",
       "backend": "simulation-and-policy-stack",
       "runtime_path": "policy-layer",
-      "notes": "Implemented feature-flagged threshold-default, rl-shadow, and rl-live modes backed by simulation artifacts plus runtime guardrails."
+      "notes": "Implemented feature-flagged threshold-default, bseo-shadow, and bseo-live modes backed by simulation artifacts plus runtime guardrails, with rl-shadow and rl-live retained only as compatibility aliases."
     },
     {
       "component_id": "cross-platform-client",
