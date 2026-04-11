@@ -16,6 +16,14 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
 
 
+def _write_jsonl(path: Path, rows: list[object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=True) for row in rows) + ("\n" if rows else ""),
+        encoding="utf-8",
+    )
+
+
 def _seed_runtime_artifacts(root: Path, *, build_id: str = "build-governance") -> None:
     now = datetime.now(timezone.utc).isoformat()
     _write_json(
@@ -134,3 +142,38 @@ def test_apply_runtime_promotion_auto_writes_bseo_shadow_policy(
     assert runtime_policy["policy_mode"] == "bseo-shadow"
     assert runtime_policy["rl_min_confidence"] == runtime_policy["bseo_min_confidence"]
     assert governance_latest["runtime_policy"]["configured_mode"] == "bseo-shadow"
+
+
+def test_runtime_governance_recommends_live_when_live_guardrails_clear(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    _seed_runtime_artifacts(tmp_path, build_id="build-live-ready")
+    _write_jsonl(
+        tmp_path / "artifacts/reports/score_events.jsonl",
+        [
+            {
+                "item_id": f"item-{index}",
+                "channel_name": "Signal Watch Europe",
+                "model_version": "baseline-v1-build-live-ready",
+                "policy_version": "bseo-control-policy-v1-shadow",
+                "recommended_action": "ask-report",
+                "risk_score": 0.81,
+                "confidence": 0.84,
+                "uncertainty": 0.18,
+                "explanation_id": f"exp-{index}",
+                "timestamp": "2026-04-11T06:00:00+00:00",
+            }
+            for index in range(240)
+        ],
+    )
+
+    summary = build_runtime_governance_summary()
+    auto_summary = apply_runtime_promotion(mode="auto")
+    runtime_policy = read_json(tmp_path / "configs/thresholds/runtime-policy.json")
+
+    assert summary["promotion"]["live_eligible"] is True
+    assert summary["promotion"]["recommended_mode"] == "bseo-live"
+    assert auto_summary["promotion"]["applied_mode"] == "bseo-live"
+    assert runtime_policy["policy_mode"] == "bseo-live"

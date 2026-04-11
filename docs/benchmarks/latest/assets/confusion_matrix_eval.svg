@@ -1,34 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460" role="img">
 <style>
 text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
-.title { font-size: 24px; font-weight: 700; }
-.subtitle { font-size: 12px; fill: #475569; }
-.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
-.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
-.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
-.label { font-size: 13px; fill: #475569; }
-.value { font-size: 28px; font-weight: 700; }
-.small { font-size: 11px; fill: #64748b; }
-.axis { stroke: #94a3b8; stroke-width: 1; }
+.title { font-size: 34px; font-weight: 700; }
+.subtitle { font-size: 16px; fill: #475569; }
+.card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 20; }
+.accent { fill: #eff6ff; stroke: #60a5fa; stroke-width: 1.5; rx: 20; }
+.warn { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.5; rx: 20; }
+.label { font-size: 15px; font-weight: 600; fill: #475569; }
+.value { font-size: 32px; font-weight: 700; }
+.value-compact { font-size: 22px; font-weight: 700; }
+.small { font-size: 13px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1.2; }
 .grid { stroke: #e2e8f0; stroke-width: 1; }
-.legend { font-size: 12px; fill: #334155; }
-.stub { font-size: 16px; font-weight: 600; }
+.legend { font-size: 14px; fill: #334155; }
+.stub { font-size: 20px; font-weight: 600; }
 </style>
-<rect x="0" y="0" width="640" height="420" fill="#ffffff" />
-<text class="title" x="40" y="48">Eval confusion matrix</text>
-<text class="subtitle" x="40" y="72">Counts from the committed eval artifact. With n this small, matrix cells are descriptive, not conclusive.</text>
-<rect x="120" y="140" width="180" height="90" rx="14" fill="rgb(145, 145, 255)" stroke="#94a3b8" stroke-width="1.5" />
+<rect x="0" y="0" width="720" height="460" fill="#f8fafc" />
+<rect x="20" y="20" width="680" height="420" fill="#ffffff" rx="26" />
+<text class="title" x="52" y="68">Eval confusion matrix</text>
+<text class="subtitle" x="52" y="98">Counts from the committed eval artifact. With n this small, matrix cells are descriptive, not conclusive.</text>
+<rect x="120" y="140" width="180" height="90" rx="18" fill="rgb(145, 145, 255)" stroke="#94a3b8" stroke-width="1.5" />
 <text class="label" x="138" y="168">TP</text>
-<text class="value" x="138" y="208">28</text>
-<rect x="340" y="140" width="180" height="90" rx="14" fill="rgb(255, 255, 255)" stroke="#94a3b8" stroke-width="1.5" />
+<text class="value" x="138" y="208">40</text>
+<rect x="340" y="140" width="180" height="90" rx="18" fill="rgb(255, 255, 255)" stroke="#94a3b8" stroke-width="1.5" />
 <text class="label" x="358" y="168">FP</text>
 <text class="value" x="358" y="208">0</text>
-<rect x="120" y="260" width="180" height="90" rx="14" fill="rgb(255, 255, 255)" stroke="#94a3b8" stroke-width="1.5" />
+<rect x="120" y="260" width="180" height="90" rx="18" fill="rgb(255, 255, 255)" stroke="#94a3b8" stroke-width="1.5" />
 <text class="label" x="138" y="288">FN</text>
 <text class="value" x="138" y="328">0</text>
-<rect x="340" y="260" width="180" height="90" rx="14" fill="rgb(192, 192, 255)" stroke="#94a3b8" stroke-width="1.5" />
+<rect x="340" y="260" width="180" height="90" rx="18" fill="rgb(156, 156, 255)" stroke="#94a3b8" stroke-width="1.5" />
 <text class="label" x="358" y="288">TN</text>
-<text class="value" x="358" y="328">16</text>
+<text class="value" x="358" y="328">36</text>
 <text class="small" x="120" y="124">Predicted positive</text>
 <text class="small" x="120" y="248">Predicted negative</text>
 <text class="small" x="120" y="374">Ground truth split: positive on left, negative on right</text>

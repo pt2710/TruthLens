@@ -260,7 +260,7 @@ def build_runtime_governance_summary() -> dict[str, Any]:
 
     shadow_eligible = not shadow_blockers
     live_eligible = not live_blockers
-    recommended_mode = "bseo-shadow" if shadow_eligible else "threshold-default"
+    recommended_mode = "bseo-live" if live_eligible else "bseo-shadow" if shadow_eligible else "threshold-default"
     max_promotable_mode = "bseo-live" if live_eligible else recommended_mode
 
     summary = {

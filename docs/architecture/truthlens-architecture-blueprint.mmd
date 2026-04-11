@@ -2,6 +2,7 @@
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "22px",
     "primaryTextColor": "#0f172a",
     "lineColor": "#334155",
     "background": "#ffffff"
@@ -9,203 +10,24 @@
   "flowchart": {
     "curve": "linear",
     "htmlLabels": true,
-    "nodeSpacing": 34,
-    "rankSpacing": 44
+    "nodeSpacing": 64,
+    "rankSpacing": 88
   }
 }}%%
-flowchart TB
+flowchart LR
 
-classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:1.5px,color:#0f172a;
-classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:1.5px,color:#0f172a;
-classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#0f172a;
-classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.3px,color:#0f172a;
-classDef future fill:#faf5ff,stroke:#7c3aed,stroke-width:1.5px,stroke-dasharray: 7 4,color:#0f172a;
+classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:2px,color:#0f172a;
+classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:2px,color:#0f172a;
+classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.8px,color:#0f172a;
 
-subgraph legend["Legend"]
-  impl_a["Implemented"] --> impl_b["Implemented flow"]
-  plan_a["Optional / offline / future"] -.-> plan_b["Non-baseline flow"]
-end
-class impl_a,impl_b implemented
-class plan_a,plan_b future
+clients["Client surfaces<br/>browser extension | FastAPI API | mobile share"]:::implemented
+runtime["Runtime core<br/>perception -> fusion/calibration -> selective verification"]:::implemented
+policy["Decision layer<br/>policy mode | explanation | review provenance"]:::policy
+bseo["BSEO interpretation / search / artifacts<br/>positive-bias preservation | negative-bias penalty<br/>control genome | lineage | mutation atlas"]:::offline
+intake["Observation / feedback intake<br/>browser observations | feedback events<br/>supplemental candidates"]:::contract
+offline["Offline governance and training<br/>dataset governance | trainer | eval | drift | benchmark renders"]:::offline
+promotion["Runtime promotion truth<br/>threshold-default | bseo-shadow | bseo-live"]:::policy
 
-subgraph surfaces["1. Client Surfaces"]
-  extension["Browser extension"]
-  mobile["Android share client"]
-  api["FastAPI scoring and review API"]
-end
-class extension,mobile,api implemented
-
-subgraph inputs["2. Input And Context"]
-  package["Title + thumbnail + description"]
-  transcript["Transcript excerpt / watch signals"]
-  browser_obs["Browser observation records<br/>DOM only, no DevTools"]
-  metadata["Metadata"]
-  channel["Channel history / priors"]
-  user_ctx["User preferences / corrections / muted channels"]
-  runtime_ctx["Runtime surface + provenance context"]
-end
-class package,transcript,browser_obs,metadata,channel,user_ctx,runtime_ctx implemented
-
-extension --> package
-extension --> transcript
-extension --> browser_obs
-extension --> runtime_ctx
-mobile --> api
-api --> package
-api --> transcript
-api --> metadata
-api --> channel
-api --> user_ctx
-api --> runtime_ctx
-
-subgraph perception["3. Core Multimodal Perception"]
-  text_path["Text path"]
-  vision_path["Vision path"]
-  metadata_path["Metadata path"]
-  mismatch_logic["Cross-signal mismatch logic"]
-  history_path["History path"]
-  anomaly_path["Anomaly path"]
-  learned_paths["Optional learned encoders"]
-end
-class text_path,vision_path,metadata_path,mismatch_logic,history_path,anomaly_path implemented
-class learned_paths future
-
-package --> text_path
-package --> vision_path
-metadata --> metadata_path
-package --> mismatch_logic
-transcript --> mismatch_logic
-channel --> history_path
-package --> anomaly_path
-metadata --> anomaly_path
-text_path -.-> learned_paths
-vision_path -.-> learned_paths
-history_path -.-> learned_paths
-
-subgraph fusion["4. Fusion And Calibration"]
-  fusion_head["Fusion layer"]
-  calibration["Calibration layer"]
-  path_scores["Path scores + contributors"]
-  risk_signal["Calibrated risk + confidence + uncertainty"]
-end
-class fusion_head,calibration,path_scores,risk_signal contract
-
-text_path --> fusion_head
-vision_path --> fusion_head
-metadata_path --> fusion_head
-mismatch_logic --> fusion_head
-history_path --> fusion_head
-anomaly_path --> fusion_head
-learned_paths -.-> fusion_head
-fusion_head --> calibration --> risk_signal
-fusion_head --> path_scores
-
-subgraph verification["5. Selective Deep Verification"]
-  verify_triggers["Triggers<br/>high-risk | high-uncertainty | high-mismatch | threshold-near | review-flow"]
-  verify_checks["Selective checks<br/>consistency | contradiction | plausibility | richer rationale"]
-  verify_failsoft["Fail-soft verification provenance"]
-end
-class verify_triggers,verify_checks,verify_failsoft contract
-
-risk_signal --> verify_triggers
-runtime_ctx --> verify_triggers
-verify_triggers --> verify_checks --> verify_failsoft
-
-subgraph policy_layer["6. Policy And Action"]
-  threshold_default["threshold-default"]
-  bseo_shadow["bseo-shadow"]
-  bseo_live["bseo-live"]
-  guardrails["Artifact + confidence + uncertainty guardrails"]
-  action_map["Action selection<br/>none | badge | blur(signal-only) | ask-report | hide"]
-end
-class threshold_default,bseo_shadow,bseo_live,guardrails,action_map policy
-
-risk_signal --> threshold_default
-risk_signal --> bseo_shadow
-risk_signal --> bseo_live
-verify_failsoft --> threshold_default
-verify_failsoft --> bseo_shadow
-verify_failsoft --> bseo_live
-channel --> threshold_default
-channel --> bseo_shadow
-channel --> bseo_live
-user_ctx --> threshold_default
-user_ctx --> bseo_shadow
-user_ctx --> bseo_live
-guardrails --> bseo_live
-threshold_default --> action_map
-bseo_shadow --> action_map
-bseo_live --> action_map
-
-subgraph explanation["7. Explanation And Review Provenance"]
-  explanation_engine["Explanation engine<br/>path | fused | verification | policy reasons"]
-  review_payloads["Stable review payloads<br/>API | extension | mobile | tags | collection provenance"]
-  manual_review["Manual report / verify flows<br/>distinct drafts + classification tags + collection preview + page-flow fallback"]
-  gemini["Optional Gemini wording assistance<br/>heuristic suggestion fallback stays fail-soft"]
-end
-class explanation_engine,review_payloads,manual_review,gemini implemented
-
-path_scores --> explanation_engine
-risk_signal --> explanation_engine
-verify_failsoft --> explanation_engine
-action_map --> explanation_engine
-explanation_engine --> review_payloads --> manual_review
-manual_review --> gemini
-
-subgraph intake["8. Observation / Feedback Intake"]
-  feedback_events["Feedback events<br/>shared contracts + provenance + collection scope"]
-  label_candidates["Supplemental label candidates"]
-  split_safety["Split-blocked adjudicated intake<br/>never direct train/validation/test append"]
-end
-class feedback_events,label_candidates,split_safety contract
-
-browser_obs --> feedback_events
-manual_review --> feedback_events
-feedback_events --> label_candidates --> split_safety
-
-subgraph bseo_layer["9. BSEO Interpretation / Search / Artifacts"]
-  bseo_frame["Bias-structured interpretation frame<br/>Thumbnail | Title | Description | Transcription | Channel | Other"]
-  bseo_search["Offline control-genome search"]
-  lineage["Mutation lineage log"]
-  atlas["Mutation-bias atlas"]
-  bseo_policy_artifact["Optional bseo-policy artifact"]
-end
-class bseo_frame,bseo_search,lineage,atlas,bseo_policy_artifact offline
-
-package --> bseo_frame
-transcript --> bseo_frame
-channel --> bseo_frame
-user_ctx --> bseo_frame
-bseo_frame --> bseo_shadow
-bseo_frame --> bseo_live
-bseo_search --> lineage
-bseo_search --> atlas
-lineage --> bseo_policy_artifact
-atlas --> bseo_policy_artifact
-bseo_policy_artifact -.-> guardrails
-
-subgraph offline_pipeline["10. Offline Pipeline And Governance"]
-  governance["Discovery -> acquisition -> normalization -> governance gate"]
-  trainer["Trainer"]
-  evals["Eval + simulation + drift"]
-  benchmark["Benchmark summary + SVG/HTML visualizations"]
-end
-class governance,trainer,evals,benchmark offline
-
-governance --> trainer --> evals --> benchmark
-split_safety -.-> governance
-trainer --> bseo_search
-evals --> bseo_search
-evals --> bseo_policy_artifact
-benchmark --> review_payloads
-
-subgraph future_stack["11. Future Extensions"]
-  richer_video["Richer transcript / video understanding"]
-  deeper_analytics["Operator analytics and broader dashboards"]
-  stronger_multimodal["Stronger end-to-end multimodal encoders"]
-end
-class richer_video,deeper_analytics,stronger_multimodal future
-
-transcript -.-> richer_video
-benchmark -.-> deeper_analytics
-learned_paths -.-> stronger_multimodal
+clients --> runtime --> policy --> intake --> offline --> promotion
+runtime --> bseo --> policy

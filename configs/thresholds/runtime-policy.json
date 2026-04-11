@@ -1,5 +1,5 @@
 {
-  "policy_mode": "bseo-shadow",
+  "policy_mode": "bseo-live",
   "bseo_min_confidence": 0.58,
   "bseo_max_uncertainty": 0.45,
   "bseo_artifact_max_age_hours": 168.0,

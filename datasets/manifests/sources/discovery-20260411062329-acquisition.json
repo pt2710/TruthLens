@@ -1,0 +1,24 @@
+{
+  "run_id": "discovery-20260411062329",
+  "generated_at": "2026-04-11T06:23:29.662581+00:00",
+  "status": "collected",
+  "success_count": 202,
+  "failure_count": 0,
+  "quarantined_count": 0,
+  "retry_count": 0,
+  "success_rate": 1.0,
+  "thumbnail_download_rate": 0.0,
+  "watch_page_enrichment_rate": 0.0,
+  "caption_enrichment_rate": 0.0,
+  "artifact_kind_counts": {
+    "signal-json": 202
+  },
+  "status_counts": {
+    "collected": 202
+  },
+  "corrupted_image_rate": 0.0,
+  "parser_failure_rate": 0.0,
+  "coverage_count": 202,
+  "metadata_path": "datasets/raw/metadata/discovery-20260411062329.jsonl",
+  "failure_log_path": "artifacts/reports/discovery-20260411062329-acquisition-failures.jsonl"
+}

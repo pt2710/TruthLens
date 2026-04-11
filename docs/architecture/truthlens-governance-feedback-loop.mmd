@@ -1,0 +1,43 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "20px",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#334155",
+    "background": "#ffffff"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "htmlLabels": true,
+    "nodeSpacing": 56,
+    "rankSpacing": 82
+  }
+}}%%
+flowchart TB
+
+classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:1.8px,color:#0f172a;
+classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:1.8px,color:#0f172a;
+classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:1.8px,color:#0f172a;
+classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
+
+runtime["Extension runtime + review flows"]:::implemented
+observations["Browser observations<br/>DOM-derived records with score linkage"]:::implemented
+feedback["Feedback + manual review events<br/>shared provenance-aware contracts"]:::contract
+candidates["Supplemental label candidates"]:::contract
+adjudication["Split-blocked adjudication intake<br/>never direct train/validation/test append"]:::contract
+governance["Governance gate<br/>source manifests, dedup, splits, dataset card, audits"]:::offline
+trainer["Trainer"]:::offline
+evals["Eval + simulation + drift"]:::offline
+bseo["BSEO search + artifacts<br/>control genome, lineage, mutation atlas, policy artifact"]:::offline
+benchmarks["Benchmark + verify docs<br/>SVG/HTML truth surface"]:::offline
+promotion["Runtime governance + policy promotion truth"]:::policy
+runtime_policy["Committed runtime policy mode<br/>threshold-default | bseo-shadow | bseo-live"]:::policy
+
+runtime --> observations --> feedback --> candidates --> adjudication -.-> governance
+governance --> trainer --> evals --> benchmarks
+trainer --> bseo
+evals --> bseo
+bseo --> promotion --> runtime_policy --> runtime
+benchmarks --> promotion
+feedback -.-> benchmarks

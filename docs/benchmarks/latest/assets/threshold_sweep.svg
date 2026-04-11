@@ -1,56 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="500" viewBox="0 0 1100 500" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="580" viewBox="0 0 1320 580" role="img">
 <style>
 text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
-.title { font-size: 24px; font-weight: 700; }
-.subtitle { font-size: 12px; fill: #475569; }
-.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
-.accent { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; rx: 14; }
-.warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.5; rx: 14; }
-.label { font-size: 13px; fill: #475569; }
-.value { font-size: 28px; font-weight: 700; }
-.small { font-size: 11px; fill: #64748b; }
-.axis { stroke: #94a3b8; stroke-width: 1; }
+.title { font-size: 34px; font-weight: 700; }
+.subtitle { font-size: 16px; fill: #475569; }
+.card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 20; }
+.accent { fill: #eff6ff; stroke: #60a5fa; stroke-width: 1.5; rx: 20; }
+.warn { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.5; rx: 20; }
+.label { font-size: 15px; font-weight: 600; fill: #475569; }
+.value { font-size: 32px; font-weight: 700; }
+.value-compact { font-size: 22px; font-weight: 700; }
+.small { font-size: 13px; fill: #64748b; }
+.axis { stroke: #94a3b8; stroke-width: 1.2; }
 .grid { stroke: #e2e8f0; stroke-width: 1; }
-.legend { font-size: 12px; fill: #334155; }
-.stub { font-size: 16px; font-weight: 600; }
+.legend { font-size: 14px; fill: #334155; }
+.stub { font-size: 20px; font-weight: 600; }
 </style>
-<rect x="0" y="0" width="1100" height="500" fill="#ffffff" />
-<text class="title" x="40" y="48">Threshold sweep</text>
-<text class="subtitle" x="40" y="72">Blue = F1. Orange = normalized intervention cost. This plot is descriptive only when based on a tiny eval set.</text>
-<line class="grid" x1="80" y1="400.0" x2="1020" y2="400.0" />
-<text class="small" x="38" y="404.0">0.00</text>
-<line class="grid" x1="80" y1="344.0" x2="1020" y2="344.0" />
-<text class="small" x="38" y="348.0">0.20</text>
-<line class="grid" x1="80" y1="288.0" x2="1020" y2="288.0" />
-<text class="small" x="38" y="292.0">0.40</text>
-<line class="grid" x1="80" y1="232.0" x2="1020" y2="232.0" />
-<text class="small" x="38" y="236.0">0.60</text>
-<line class="grid" x1="80" y1="176.0" x2="1020" y2="176.0" />
-<text class="small" x="38" y="180.0">0.80</text>
-<line class="grid" x1="80" y1="120.0" x2="1020" y2="120.0" />
-<text class="small" x="38" y="124.0">1.00</text>
-<line class="axis" x1="80" y1="120" x2="80" y2="400" />
-<line class="axis" x1="80" y1="400" x2="1020" y2="400" />
-<polyline fill="none" stroke="#2563eb" stroke-width="3" points="80.0,182.2 147.1,182.2 214.3,155.0 281.4,120.0 348.6,120.0 415.7,120.0 482.9,120.0 550.0,120.0 617.1,120.0 684.3,120.0 751.4,120.0 818.6,120.0 885.7,141.5 952.9,275.6 1020.0,400.0" />
-<polyline fill="none" stroke="#c2410c" stroke-width="3" points="80.0,273.7 147.1,271.6 214.3,334.7 281.4,400.0 348.6,400.0 415.7,400.0 482.9,400.0 550.0,400.0 617.1,400.0 684.3,400.0 751.4,400.0 818.6,400.0 885.7,360.0 952.9,200.0 1020.0,120.0" />
-<text class="small" x="80.0" y="424" text-anchor="middle">0.20</text>
-<text class="small" x="147.1" y="424" text-anchor="middle">0.25</text>
-<text class="small" x="214.3" y="424" text-anchor="middle">0.30</text>
-<text class="small" x="281.4" y="424" text-anchor="middle">0.35</text>
-<text class="small" x="348.6" y="424" text-anchor="middle">0.40</text>
-<text class="small" x="415.7" y="424" text-anchor="middle">0.45</text>
-<text class="small" x="482.9" y="424" text-anchor="middle">0.50</text>
-<text class="small" x="550.0" y="424" text-anchor="middle">0.55</text>
-<text class="small" x="617.1" y="424" text-anchor="middle">0.60</text>
-<text class="small" x="684.3" y="424" text-anchor="middle">0.65</text>
-<text class="small" x="751.4" y="424" text-anchor="middle">0.70</text>
-<text class="small" x="818.6" y="424" text-anchor="middle">0.75</text>
-<text class="small" x="885.7" y="424" text-anchor="middle">0.80</text>
-<text class="small" x="952.9" y="424" text-anchor="middle">0.85</text>
-<text class="small" x="1020.0" y="424" text-anchor="middle">0.90</text>
-<rect x="80" y="430" width="14" height="14" fill="#2563eb" rx="3" />
-<text class="legend" x="102" y="442">F1</text>
-<rect x="160" y="430" width="14" height="14" fill="#c2410c" rx="3" />
-<text class="legend" x="182" y="442">Normalized intervention cost</text>
-<text class="small" x="80" y="468">Intervention cost range in source artifact: -22.400 to 30.800</text>
+<rect x="0" y="0" width="1320" height="580" fill="#f8fafc" />
+<rect x="20" y="20" width="1280" height="540" fill="#ffffff" rx="26" />
+<text class="title" x="52" y="68">Threshold sweep</text>
+<text class="subtitle" x="52" y="98">Blue = F1. Orange = normalized intervention cost. This plot is descriptive only when based on a tiny eval set.</text>
+<line class="grid" x1="96" y1="458.0" x2="1224" y2="458.0" />
+<text class="small" x="46" y="463.0">0.00</text>
+<line class="grid" x1="96" y1="397.2" x2="1224" y2="397.2" />
+<text class="small" x="46" y="402.2">0.20</text>
+<line class="grid" x1="96" y1="336.4" x2="1224" y2="336.4" />
+<text class="small" x="46" y="341.4">0.40</text>
+<line class="grid" x1="96" y1="275.6" x2="1224" y2="275.6" />
+<text class="small" x="46" y="280.6">0.60</text>
+<line class="grid" x1="96" y1="214.8" x2="1224" y2="214.8" />
+<text class="small" x="46" y="219.8">0.80</text>
+<line class="grid" x1="96" y1="154.0" x2="1224" y2="154.0" />
+<text class="small" x="46" y="159.0">1.00</text>
+<line class="axis" x1="96" y1="154" x2="96" y2="458" />
+<line class="axis" x1="96" y1="458" x2="1224" y2="458" />
+<polyline fill="none" stroke="#2563eb" stroke-width="3" points="96.0,154.0 176.6,154.0 257.1,154.0 337.7,154.0 418.3,154.0 498.9,154.0 579.4,154.0 660.0,154.0 740.6,154.0 821.1,154.0 901.7,154.0 982.3,154.0 1062.9,154.0 1143.4,187.8 1224.0,458.0" />
+<polyline fill="none" stroke="#c2410c" stroke-width="3" points="96.0,458.0 176.6,458.0 257.1,458.0 337.7,458.0 418.3,458.0 498.9,458.0 579.4,458.0 660.0,458.0 740.6,458.0 821.1,458.0 901.7,458.0 982.3,458.0 1062.9,458.0 1143.4,397.2 1224.0,154.0" />
+<text class="small" x="96.0" y="488" text-anchor="middle">0.20</text>
+<text class="small" x="176.6" y="488" text-anchor="middle">0.25</text>
+<text class="small" x="257.1" y="488" text-anchor="middle">0.30</text>
+<text class="small" x="337.7" y="488" text-anchor="middle">0.35</text>
+<text class="small" x="418.3" y="488" text-anchor="middle">0.40</text>
+<text class="small" x="498.9" y="488" text-anchor="middle">0.45</text>
+<text class="small" x="579.4" y="488" text-anchor="middle">0.50</text>
+<text class="small" x="660.0" y="488" text-anchor="middle">0.55</text>
+<text class="small" x="740.6" y="488" text-anchor="middle">0.60</text>
+<text class="small" x="821.1" y="488" text-anchor="middle">0.65</text>
+<text class="small" x="901.7" y="488" text-anchor="middle">0.70</text>
+<text class="small" x="982.3" y="488" text-anchor="middle">0.75</text>
+<text class="small" x="1062.9" y="488" text-anchor="middle">0.80</text>
+<text class="small" x="1143.4" y="488" text-anchor="middle">0.85</text>
+<text class="small" x="1224.0" y="488" text-anchor="middle">0.90</text>
+<rect x="96" y="516" width="16" height="16" fill="#2563eb" rx="4" />
+<text class="legend" x="120" y="530">F1</text>
+<rect x="176" y="516" width="16" height="16" fill="#c2410c" rx="4" />
+<text class="legend" x="200" y="530">Normalized intervention cost</text>
+<text class="small" x="96" y="558">Intervention cost range in source artifact: -32.000 to 44.000</text>
 </svg>

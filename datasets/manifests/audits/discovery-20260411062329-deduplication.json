@@ -1,0 +1,15 @@
+{
+  "run_id": "discovery-20260411062329",
+  "raw_count": 202,
+  "deduplicated_count": 198,
+  "duplicate_count": 4,
+  "duplicate_rate": 0.0198,
+  "duplicate_items": [
+    "archive-lens-docs-1-dup-1",
+    "archive-lens-docs-10-dup-2",
+    "builder-how-to-hub-8-dup-3",
+    "calm-science-daily-6-dup-4"
+  ],
+  "deduplicated_path": "datasets/interim/deduplicated/discovery-20260411062329.jsonl",
+  "strategy": "source_url_or_combined_text_image_fingerprint"
+}
