@@ -55,13 +55,21 @@ The committed implementation starts from a bias primitive vector:
 
 $$
 b(x) = \left[
-\text{sensational\_weight}(x),
-\text{crossmodal\_rigidity}(x),
-\text{channel\_prior\_dependency}(x),
-\text{genre\_confusion}(x),
-\text{uncertainty\_calibration}(x)
+w_{\mathrm{sens}}(x),
+r_{\mathrm{cross}}(x),
+d_{\mathrm{prior}}(x),
+g_{\mathrm{conf}}(x),
+u_{\mathrm{cal}}(x)
 \right].
 $$
+
+where:
+
+- $w_{\mathrm{sens}}(x)$ corresponds to `sensational_weight`
+- $r_{\mathrm{cross}}(x)$ corresponds to `crossmodal_rigidity`
+- $d_{\mathrm{prior}}(x)$ corresponds to `channel_prior_dependency`
+- $g_{\mathrm{conf}}(x)$ corresponds to `genre_confusion`
+- $u_{\mathrm{cal}}(x)$ corresponds to `uncertainty_calibration`
 
 These primitive terms are not abstract rhetoric. They are the actual TruthLens lenses for answering questions such as:
 
@@ -75,17 +83,17 @@ Class-conditioned policy scoring then extends the calibrated base score with str
 
 $$
 s_{\mathrm{policy}}(x,\theta) =
-\operatorname{clip}\Big(
+\mathrm{clip}\!\left(
 s_{\mathrm{base}}(x)
-+ 0.14\,m(x)\,\omega_{\mathrm{mismatch}}(c)
-+ 0.10\,q(x)\,\omega_{\mathrm{sensational}}(c)
-+ 0.08\,d_{\mathrm{channel}}(x)\,\tau_{\mathrm{channel}}
-+ 0.06\,u(x)\,\beta_{\mathrm{uncertainty}}
++ 0.14\,m(x)\,\omega_{\mathrm{mis}}(c)
++ 0.10\,q(x)\,\omega_{\mathrm{sens}}(c)
++ 0.08\,d_{\mathrm{prior}}(x)\,\tau_{\mathrm{prior}}
++ 0.06\,u(x)\,\beta_{\mathrm{unc}}
 + \Delta_{\mathrm{class}}(c)
-\Big),
+\right).
 $$
 
-where `\theta` is the BSEO control genome, `c` is the inferred content class, `m(x)` is mismatch pressure, `q(x)` is sensational pressure, `d_channel(x)` is channel-prior dependency, and `u(x)` is uncertainty-sensitive escalation.
+where $\theta$ is the BSEO control genome, $c$ is the inferred content class, $m(x)$ is mismatch pressure, $q(x)$ is sensational pressure, $d_{\mathrm{prior}}(x)$ is channel-prior dependency, and $u(x)$ is uncertainty-sensitive escalation.
 
 In implementation terms, `\theta` carries the knobs that TruthLens evolves and commits as an artifact:
 
@@ -101,20 +109,24 @@ That is the core BSEO point: the same surface signal is not interpreted the same
 The class-conditioned threshold frame is:
 
 $$
-\tau_c(\theta) = \operatorname{normalize}\!\left(\tau_{\mathrm{global}}(\theta) + \delta_c(\theta)\right),
+\tau_c(\theta) = \tau_{\mathrm{global}}(\theta) + \delta_c(\theta).
 $$
 
-and the resulting runtime action is:
+In practice, the runtime clips and normalizes these class-conditioned thresholds before applying them.
+
+The resulting runtime action can be written as:
 
 $$
-a(x) =
-\operatorname{action}\!\left(
-s_{\mathrm{policy}}(x,\theta),
-\tau_c(\theta)
-\right)
-\in
-\{\texttt{none}, \texttt{badge}, \texttt{blur}, \texttt{ask-report}, \texttt{hide}\}.
+a(x) = A\!\left(s_{\mathrm{policy}}(x,\theta), \tau_c(\theta)\right),
 $$
+
+with
+
+$$
+a(x) \in \{\mathrm{none}, \mathrm{badge}, \mathrm{blur}, \mathrm{askreport}, \mathrm{hide}\}.
+$$
+
+Here `\mathrm{askreport}` is the mathematical shorthand for the runtime action exposed in configuration and UI as `ask-report`.
 
 TruthLens therefore does not ask only "is this risky." It also asks "risky relative to which content class, which guardrail, and which kind of bias." A stylized album cover can legitimately lower literal-rigidity pressure; a fake trailer or emergency-alert package should push the policy score upward toward review or suppression.
 
@@ -127,7 +139,7 @@ J(\theta) =
 + 0.15\,K(\theta)
 + 0.10\,M(\theta)
 - 0.05\,L(\theta)
-- 0.05\,G(\theta),
+- 0.05\,G(\theta).
 $$
 
 with:
@@ -150,15 +162,27 @@ $$
 Mutation acceptance is therefore not just "bigger objective wins." In committed TruthLens terms, a candidate is only a meaningful improvement when it improves or preserves detection quality without introducing harmful bias side effects against benign classes. The acceptance intuition can be written as:
 
 $$
-\operatorname{accept}(\theta_{\mathrm{child}})=1
-\;\text{only if}\;
-J(\theta_{\mathrm{child}})\uparrow,
-\;
-\Delta B_{\mathrm{neg}}\downarrow \text{ or bounded},
-\;
-\mathrm{FPR}_{\mathrm{benign}}\text{ stays controlled},
-\;
-\mathrm{ECE}\text{ stays controlled}.
+\alpha(\theta_{\mathrm{child}})=1
+$$
+
+only when
+
+$$
+J(\theta_{\mathrm{child}}) > J(\theta_{\mathrm{parent}}),
+$$
+
+$$
+\Delta B_{\mathrm{neg}} \le \varepsilon_{\mathrm{neg}},
+$$
+
+$$
+\mathrm{FPR}_{\mathrm{benign}} \le \varepsilon_{\mathrm{fpr}},
+$$
+
+and
+
+$$
+\mathrm{ECE} \le \varepsilon_{\mathrm{ece}}.
 $$
 
 That is why BSEO matters to TruthLens specifically:
