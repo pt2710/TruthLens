@@ -33,8 +33,8 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="46" y="159.0">1.00</text>
 <line class="axis" x1="96" y1="154" x2="96" y2="458" />
 <line class="axis" x1="96" y1="458" x2="1224" y2="458" />
-<polyline fill="none" stroke="#2563eb" stroke-width="3" points="96.0,221.5 176.6,221.5 257.1,192.0 337.7,154.0 418.3,154.0 498.9,154.0 579.4,154.0 660.0,154.0 740.6,154.0 821.1,154.0 901.7,154.0 982.3,154.0 1062.9,177.4 1143.4,322.9 1224.0,458.0" />
-<polyline fill="none" stroke="#c2410c" stroke-width="3" points="96.0,320.9 176.6,318.6 257.1,387.1 337.7,458.0 418.3,458.0 498.9,458.0 579.4,458.0 660.0,458.0 740.6,458.0 821.1,458.0 901.7,458.0 982.3,458.0 1062.9,414.6 1143.4,240.9 1224.0,154.0" />
+<polyline fill="none" stroke="#2563eb" stroke-width="3" points="96.0,154.0 176.6,154.0 257.1,154.0 337.7,154.0 418.3,154.0 498.9,154.0 579.4,154.0 660.0,154.0 740.6,154.0 821.1,154.0 901.7,154.0 982.3,154.0 1062.9,154.0 1143.4,187.8 1224.0,458.0" />
+<polyline fill="none" stroke="#c2410c" stroke-width="3" points="96.0,458.0 176.6,458.0 257.1,458.0 337.7,458.0 418.3,458.0 498.9,458.0 579.4,458.0 660.0,458.0 740.6,458.0 821.1,458.0 901.7,458.0 982.3,458.0 1062.9,458.0 1143.4,397.2 1224.0,154.0" />
 <text class="small" x="96.0" y="488" text-anchor="middle">0.20</text>
 <text class="small" x="176.6" y="488" text-anchor="middle">0.25</text>
 <text class="small" x="257.1" y="488" text-anchor="middle">0.30</text>
@@ -54,5 +54,5 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="legend" x="120" y="530">F1</text>
 <rect x="176" y="516" width="16" height="16" fill="#c2410c" rx="4" />
 <text class="legend" x="200" y="530">Normalized intervention cost</text>
-<text class="small" x="96" y="558">Intervention cost range in source artifact: -22.400 to 30.800</text>
+<text class="small" x="96" y="558">Intervention cost range in source artifact: -32.000 to 44.000</text>
 </svg>

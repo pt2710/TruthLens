@@ -29,5 +29,5 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="label" x="52" y="308">Label rate shift</text>
 <rect x="590.0" y="290.0" width="0.0" height="28" fill="#2563eb" rx="8" />
 <text class="small" x="600.0" y="308">0.000</text>
-<text class="small" x="52" y="414">Reference rows: 110 | Current rows: 44</text>
+<text class="small" x="52" y="414">Reference rows: 190 | Current rows: 76</text>
 </svg>

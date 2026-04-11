@@ -2,106 +2,32 @@
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Arial, Helvetica, sans-serif",
-    "fontSize": "19px",
+    "fontSize": "22px",
     "primaryTextColor": "#0f172a",
     "lineColor": "#334155",
     "background": "#ffffff"
   },
   "flowchart": {
-    "curve": "basis",
+    "curve": "linear",
     "htmlLabels": true,
-    "nodeSpacing": 52,
-    "rankSpacing": 78
+    "nodeSpacing": 64,
+    "rankSpacing": 88
   }
 }}%%
-flowchart TB
+flowchart LR
 
-classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:1.8px,color:#0f172a;
-classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:1.8px,color:#0f172a;
-classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:1.8px,color:#0f172a;
-classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
-classDef future fill:#faf5ff,stroke:#7c3aed,stroke-width:1.6px,stroke-dasharray: 8 5,color:#0f172a;
+classDef implemented fill:#f8fbff,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:2px,color:#0f172a;
+classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:2px,color:#0f172a;
+classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.8px,color:#0f172a;
 
-subgraph legend["Legend"]
-  impl_a["Implemented / committed"] --> impl_b["Baseline flow"]
-  contract_a["Shared contract / governed surface"] --> contract_b["Runtime-safe boundary"]
-  future_a["Optional or future"] -.-> future_b["Non-baseline path"]
-end
-class impl_a,impl_b implemented
-class contract_a,contract_b contract
-class future_a,future_b future
+clients["Client surfaces<br/>browser extension | FastAPI API | mobile share"]:::implemented
+runtime["Runtime core<br/>perception -> fusion/calibration -> selective verification"]:::implemented
+policy["Decision layer<br/>policy mode | explanation | review provenance"]:::policy
+bseo["BSEO interpretation / search / artifacts<br/>positive-bias preservation | negative-bias penalty<br/>control genome | lineage | mutation atlas"]:::offline
+intake["Observation / feedback intake<br/>browser observations | feedback events<br/>supplemental candidates"]:::contract
+offline["Offline governance and training<br/>dataset governance | trainer | eval | drift | benchmark renders"]:::offline
+promotion["Runtime promotion truth<br/>threshold-default | bseo-shadow | bseo-live"]:::policy
 
-subgraph surfaces["1. Client surfaces"]
-  extension["Browser extension"]
-  api["FastAPI scoring + review API"]
-  mobile["Android share client"]
-end
-class extension,api,mobile implemented
-
-subgraph runtime["2. Runtime core"]
-  inputs["Input + context<br/>title, thumbnail, description, transcript, metadata, channel priors, runtime context"]
-  perception["Core multimodal perception<br/>text | vision | metadata | mismatch | history | anomaly"]
-  fusion["Fusion + calibration<br/>risk_score | confidence | uncertainty"]
-  verification["Selective deep verification<br/>explicit and fail-soft"]
-  policy["Policy and action<br/>threshold-default | bseo-shadow | bseo-live"]
-  explanation["Explanation + review provenance<br/>reasons | policy basis | manual review tags | collection provenance"]
-end
-class inputs,perception implemented
-class fusion,verification,explanation contract
-class policy policy
-
-extension --> inputs
-api --> inputs
-mobile --> api
-inputs --> perception --> fusion --> verification --> policy --> explanation
-fusion --> explanation
-verification --> explanation
-
-subgraph bseo["3. BSEO interpretation / search / artifacts"]
-  frame["Bias Structured Evolutionary Optimization<br/>positive-bias preservation + negative-bias penalty framing"]
-  artifact["Optional BSEO policy artifact<br/>control genome | thresholds | bias signature"]
-  atlas["Mutation lineage + mutation-bias atlas"]
-end
-class frame,artifact,atlas offline
-
-inputs --> frame
-frame --> policy
-atlas --> artifact
-artifact -.-> policy
-
-subgraph intake["4. Observation / feedback intake"]
-  observations["Browser observation records<br/>DOM only, no DevTools"]
-  feedback["Feedback + manual review events<br/>shared provenance-aware contracts"]
-  supplemental["Supplemental label candidates<br/>split-blocked adjudication intake"]
-end
-class observations implemented
-class feedback,supplemental contract
-
-extension --> observations --> feedback --> supplemental
-explanation --> feedback
-
-subgraph offline_pipeline["5. Offline governance and training"]
-  governance["Discovery -> acquisition -> normalization -> governance gate"]
-  trainer["Trainer"]
-  evals["Eval + simulation + drift + runtime governance"]
-  benchmark["Benchmark summary + SVG/HTML docs"]
-end
-class governance,trainer,evals,benchmark offline
-
-supplemental -.-> governance
-governance --> trainer --> evals --> benchmark
-trainer --> atlas
-evals --> atlas
-evals --> artifact
-benchmark -.-> explanation
-
-subgraph future_stack["6. Future extensions"]
-  richer_video["Richer transcript / video understanding"]
-  stronger_multimodal["Stronger end-to-end multimodal encoders"]
-  operator_dash["Operator analytics and broader dashboards"]
-end
-class richer_video,stronger_multimodal,operator_dash future
-
-inputs -.-> richer_video
-perception -.-> stronger_multimodal
-benchmark -.-> operator_dash
+clients --> runtime --> policy --> intake --> offline --> promotion
+runtime --> bseo --> policy

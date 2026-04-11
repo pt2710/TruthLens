@@ -118,6 +118,7 @@ async function renderDiagram(diagram) {
       renderedSvg.setAttribute('height', String(targetHeight));
       renderedSvg.style.width = `${targetWidth}px`;
       renderedSvg.style.height = `${targetHeight}px`;
+      renderedSvg.style.maxWidth = 'none';
     }, { id: diagram.name, sourceText: source, targetWidth: diagram.targetWidth });
 
     const svg = await page.locator('#app svg').evaluate((node) => node.outerHTML);

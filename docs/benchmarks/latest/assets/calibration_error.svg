@@ -22,34 +22,34 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <line class="grid" x1="86" y1="494.0" x2="1326" y2="494.0" />
 <text class="small" x="38" y="499.0">0.00</text>
 <line class="grid" x1="86" y1="426.0" x2="1326" y2="426.0" />
-<text class="small" x="38" y="431.0">0.16</text>
+<text class="small" x="38" y="431.0">0.13</text>
 <line class="grid" x1="86" y1="358.0" x2="1326" y2="358.0" />
-<text class="small" x="38" y="363.0">0.32</text>
+<text class="small" x="38" y="363.0">0.26</text>
 <line class="grid" x1="86" y1="290.0" x2="1326" y2="290.0" />
-<text class="small" x="38" y="295.0">0.48</text>
+<text class="small" x="38" y="295.0">0.39</text>
 <line class="grid" x1="86" y1="222.0" x2="1326" y2="222.0" />
-<text class="small" x="38" y="227.0">0.64</text>
+<text class="small" x="38" y="227.0">0.53</text>
 <line class="grid" x1="86" y1="154.0" x2="1326" y2="154.0" />
-<text class="small" x="38" y="159.0">0.80</text>
+<text class="small" x="38" y="159.0">0.66</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="480.3" width="48.0" height="13.7" fill="#7c3aed" rx="6" />
+<rect x="112.0" y="479.0" width="48.0" height="15.0" fill="#7c3aed" rx="6" />
 <text class="small" x="146.4" y="522" text-anchor="middle">text</text>
-<rect x="249.8" y="370.3" width="48.0" height="123.7" fill="#7c3aed" rx="6" />
+<rect x="249.8" y="425.9" width="48.0" height="68.1" fill="#7c3aed" rx="6" />
 <text class="small" x="284.2" y="522" text-anchor="middle">vision</text>
-<rect x="387.6" y="413.1" width="48.0" height="80.9" fill="#7c3aed" rx="6" />
+<rect x="387.6" y="400.6" width="48.0" height="93.4" fill="#7c3aed" rx="6" />
 <text class="small" x="422.0" y="522" text-anchor="middle">metadata</text>
-<rect x="525.3" y="435.7" width="48.0" height="58.3" fill="#7c3aed" rx="6" />
+<rect x="525.3" y="480.4" width="48.0" height="13.6" fill="#7c3aed" rx="6" />
 <text class="small" x="559.8" y="522" text-anchor="middle">history</text>
 <rect x="663.1" y="222.0" width="48.0" height="272.0" fill="#7c3aed" rx="6" />
 <text class="small" x="697.6" y="522" text-anchor="middle">anomaly</text>
-<rect x="800.9" y="431.9" width="48.0" height="62.1" fill="#7c3aed" rx="6" />
+<rect x="800.9" y="444.1" width="48.0" height="49.9" fill="#7c3aed" rx="6" />
 <text class="small" x="835.3" y="522" text-anchor="middle">fusion</text>
-<rect x="938.7" y="399.9" width="48.0" height="94.1" fill="#7c3aed" rx="6" />
+<rect x="938.7" y="418.8" width="48.0" height="75.2" fill="#7c3aed" rx="6" />
 <text class="small" x="973.1" y="522" text-anchor="middle">calibrated</text>
-<rect x="1076.4" y="399.9" width="48.0" height="94.1" fill="#7c3aed" rx="6" />
+<rect x="1076.4" y="418.8" width="48.0" height="75.2" fill="#7c3aed" rx="6" />
 <text class="small" x="1110.9" y="522" text-anchor="middle">eval</text>
-<rect x="1214.2" y="399.9" width="48.0" height="94.1" fill="#7c3aed" rx="6" />
+<rect x="1214.2" y="418.8" width="48.0" height="75.2" fill="#7c3aed" rx="6" />
 <text class="small" x="1248.7" y="522" text-anchor="middle">validation</text>
 <rect x="86" y="540" width="16" height="16" fill="#7c3aed" rx="4" />
 <text class="legend" x="110" y="553">Calibration error</text>

@@ -15,8 +15,8 @@ Current committed root-repo truth:
 - baseline runtime is separated into perception -> fusion/calibration -> selective verification -> policy -> explanation
 - selective deep verification is explicit and fail-soft
 - heavy LLM assistance remains downstream in review and report drafting, not in the baseline hot path
-- a compatible `configs/thresholds/bseo-policy.json` is now committed and the root runtime is promoted to `bseo-shadow`
-- current governance artifacts now mark `bseo-live` as eligible, but the committed root runtime remains pinned to `bseo-shadow` until an explicit promotion changes `configs/thresholds/runtime-policy.json`
+- a compatible `configs/thresholds/bseo-policy.json` is now committed and the root runtime is promoted to `bseo-live`
+- current governance artifacts now mark `bseo-live` as both eligible and recommended for the committed runtime guardrails
 - committed benchmarks are larger than the earlier tiny-sample snapshot, but they are still repository artifacts rather than production performance claims
 
 ## Architecture Summary
@@ -36,16 +36,22 @@ BSEO is not the core classifier. It is placed as a bias-structured interpretatio
 
 `BSEO` stands for `Bias Structured Evolutionary Optimization`.
 
-In TruthLens, BSEO is the committed answer to a practical moderation problem: the system should not pretend that all bias must be erased. It should instead structure bias so the runtime can distinguish between bias that protects honest, benign, or stylistically intense content and bias that amplifies deceptive clickbait packaging.
+In TruthLens, BSEO is the committed answer to a practical moderation problem: the system should not pretend that all bias must be erased. It should instead structure bias so the runtime can separate legitimate expressive context from manipulative clickbait packaging.
 
-That means TruthLens treats bias in two directions at once:
+This is the central design claim:
 
-- positive bias preservation for benign contexts such as `music`, `art`, `satire`, `gaming`, and other honest non-clickbait formats where expressive thumbnails, stylized titles, or non-literal packaging can be legitimate
-- negative bias penalty for deceptive packaging where the thumbnail, title, transcript promise, channel priors, or uncertainty pattern indicate manipulative clickbait behavior that should be surfaced for review or reporting
+- TruthLens does not seek "bias-free" modeling as an absolute.
+- TruthLens seeks class-conditioned bias interpretation.
+- Bias is treated as either positive context that should be preserved or negative pressure that should be penalized.
 
-BSEO therefore acts as a structured interpretation and policy layer downstream of calibrated scoring. It does not replace the classifier. It conditions how TruthLens should interpret packaging pressure, mismatch, context, and class guardrails before selecting a runtime action.
+That means TruthLens handles two directions of bias at the same time:
 
-The committed implementation uses the following bias primitive vector:
+- positive bias preservation for `music`, `art`, `satire`, `gaming`, and similar honest formats where dramatic visuals, stylized artwork, joke framing, album covers, or non-literal thumbnails are often legitimate
+- negative bias penalty for deceptive packaging where title urgency, thumbnail shock design, transcript mismatch, channel priors, or uncertainty patterns point toward report-worthy clickbait behavior
+
+So BSEO is not the core classifier. The classifier still produces the calibrated base score, class hypothesis, confidence, uncertainty, and mismatch-related signals. BSEO sits downstream as the interpretation, policy, search, and artifact layer that decides how those signals should be weighted for the inferred content class before TruthLens selects an action.
+
+The committed implementation starts from a bias primitive vector:
 
 $$
 b(x) = \left[
@@ -56,6 +62,14 @@ b(x) = \left[
 \text{uncertainty\_calibration}(x)
 \right].
 $$
+
+These primitive terms are not abstract rhetoric. They are the actual TruthLens lenses for answering questions such as:
+
+- is the packaging aggressively sensational
+- is the system over-enforcing literal thumbnail-to-transcript alignment in a domain where non-literal packaging is normal
+- is the model leaning too much on channel prior risk
+- is the content class ambiguous in a way that should reduce certainty
+- is uncertainty itself a reason to escalate to review instead of auto-suppress
 
 Class-conditioned policy scoring then extends the calibrated base score with structured bias terms:
 
@@ -71,7 +85,18 @@ s_{\mathrm{base}}(x)
 \Big),
 $$
 
-where `\theta` is the control genome, `c` is the inferred content class, `m(x)` is mismatch pressure, `q(x)` is sensational pressure, `d_channel(x)` is channel-prior dependency, and `u(x)` is uncertainty-sensitive escalation.
+where `\theta` is the BSEO control genome, `c` is the inferred content class, `m(x)` is mismatch pressure, `q(x)` is sensational pressure, `d_channel(x)` is channel-prior dependency, and `u(x)` is uncertainty-sensitive escalation.
+
+In implementation terms, `\theta` carries the knobs that TruthLens evolves and commits as an artifact:
+
+- global thresholds for `badge`, `blur`, `ask-report`, and `hide`
+- class-conditioned threshold offsets
+- class-conditioned mismatch weights
+- class-conditioned sensational weights
+- `channel_prior_temperature`
+- `uncertainty_escalation_bias`
+
+That is the core BSEO point: the same surface signal is not interpreted the same way for every class. A loud thumbnail in `music` or `art` should not be treated like a loud thumbnail attached to a fake-official `promo` or sensational `news` claim.
 
 The class-conditioned threshold frame is:
 
@@ -90,6 +115,8 @@ s_{\mathrm{policy}}(x,\theta),
 \in
 \{\texttt{none}, \texttt{badge}, \texttt{blur}, \texttt{ask-report}, \texttt{hide}\}.
 $$
+
+TruthLens therefore does not ask only "is this risky." It also asks "risky relative to which content class, which guardrail, and which kind of bias." A stylized album cover can legitimately lower literal-rigidity pressure; a fake trailer or emergency-alert package should push the policy score upward toward review or suppression.
 
 The committed search objective follows the same weighted structure as the implementation in `libs/evaluation/src/truthlens_evaluation/bseo.py`:
 
@@ -112,7 +139,7 @@ with:
 - `L(\theta)` = channel lock-in risk
 - `G(\theta)` = genre confusion penalty
 
-Negative-bias movement is tracked explicitly rather than hidden inside one scalar:
+BSEO also tracks negative-bias movement explicitly rather than hiding everything inside one scalar:
 
 $$
 \Delta B_{\mathrm{neg}} =
@@ -120,7 +147,28 @@ B_{\mathrm{neg}}(\theta_{\mathrm{child}})
 - B_{\mathrm{neg}}(\theta_{\mathrm{parent}}).
 $$
 
-Accepted mutations are therefore expected to improve detection quality without increasing harmful negative-bias accumulation, benign false-positive regressions, calibration regressions, or unstable intervention behavior.
+Mutation acceptance is therefore not just "bigger objective wins." In committed TruthLens terms, a candidate is only a meaningful improvement when it improves or preserves detection quality without introducing harmful bias side effects against benign classes. The acceptance intuition can be written as:
+
+$$
+\operatorname{accept}(\theta_{\mathrm{child}})=1
+\;\text{only if}\;
+J(\theta_{\mathrm{child}})\uparrow,
+\;
+\Delta B_{\mathrm{neg}}\downarrow \text{ or bounded},
+\;
+\mathrm{FPR}_{\mathrm{benign}}\text{ stays controlled},
+\;
+\mathrm{ECE}\text{ stays controlled}.
+$$
+
+That is why BSEO matters to TruthLens specifically:
+
+- it protects benign expressive formats from being flattened by naive literalism
+- it increases scrutiny for deceptive factual or fake-official packaging
+- it produces a policy artifact that can be inspected, versioned, benchmarked, and promoted
+- it turns bias from a hidden nuisance into an explicit moderation-control surface
+
+In plain terms: TruthLens uses BSEO as the runtime's synthetic-subjective interpretation layer. It is the mechanism that lets the system treat "bias we want less of" and "bias we must preserve as context" as two different problems instead of one collapsed score.
 
 This is the committed TruthLens interpretation frame, not a claim that the repo has solved general bias modeling. The claim is narrower and implementation-bound: TruthLens works better when bias is classified, weighted, and guarded according to context than when it is treated as something that must be removed absolutely.
 
@@ -135,15 +183,21 @@ Authoritative architecture references:
 
 ### System Overview
 
-![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.png)
+[![TruthLens architecture blueprint](docs/architecture/truthlens-architecture-blueprint.png)](docs/architecture/truthlens-architecture-blueprint.svg)
+
+Open the vector render: [System overview SVG](docs/architecture/truthlens-architecture-blueprint.svg)
 
 ### Runtime Decision Flow
 
-![TruthLens runtime decision flow](docs/architecture/truthlens-runtime-decision-flow.png)
+[![TruthLens runtime decision flow](docs/architecture/truthlens-runtime-decision-flow.png)](docs/architecture/truthlens-runtime-decision-flow.svg)
+
+Open the vector render: [Runtime decision flow SVG](docs/architecture/truthlens-runtime-decision-flow.svg)
 
 ### Governance And Feedback Loop
 
-![TruthLens governance and feedback loop](docs/architecture/truthlens-governance-feedback-loop.png)
+[![TruthLens governance and feedback loop](docs/architecture/truthlens-governance-feedback-loop.png)](docs/architecture/truthlens-governance-feedback-loop.svg)
+
+Open the vector render: [Governance and feedback loop SVG](docs/architecture/truthlens-governance-feedback-loop.svg)
 
 - [Mermaid source](docs/architecture/truthlens-architecture-blueprint.mmd)
 - [SVG render](docs/architecture/truthlens-architecture-blueprint.svg)
@@ -189,7 +243,7 @@ Not in the baseline hot path:
 
 - Gemini wording assistance for report optimization and richer draft text
 - any always-on heavy LLM classifier
-- unguarded BSEO-live takeover
+- unguarded automatic BSEO-live takeover without governance guardrails
 
 ## Policy Modes
 
@@ -206,9 +260,9 @@ Compatibility aliases:
 
 Committed root configuration today:
 
-- `configs/thresholds/runtime-policy.json` is set to `bseo-shadow`
+- `configs/thresholds/runtime-policy.json` is set to `bseo-live`
 - `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
-- `bseo-live` is not promoted in the committed root runtime yet, even though current governance artifacts now mark it eligible for deliberate promotion
+- current governance artifacts now clear `bseo-live` for committed use, so the root runtime is promoted to live rather than held in shadow
 
 ## Observation And Feedback Intake
 
@@ -246,13 +300,13 @@ Current committed snapshot:
 
 | Field | Value |
 | --- | --- |
-| `build_id` | `build-20260411062330` |
-| `model_version` | `baseline-v1-build-20260411062330` |
-| `trained_at` | `2026-04-11T06:23:30.230173+00:00` |
-| `eval sample_count` | `44` |
-| `configured runtime mode` | `bseo-shadow` |
-| `resolved runtime mode` | `bseo-shadow` |
-| `governance recommended mode` | `bseo-shadow` |
+| `build_id` | `build-20260411064344` |
+| `model_version` | `baseline-v1-build-20260411064344` |
+| `trained_at` | `2026-04-11T06:43:44.245427+00:00` |
+| `eval sample_count` | `76` |
+| `configured runtime mode` | `bseo-live` |
+| `resolved runtime mode` | `bseo-live` |
+| `governance recommended mode` | `bseo-live` |
 | `max promotable mode` | `bseo-live` |
 
 Current eval vs validation snapshot from committed artifacts:
@@ -264,7 +318,7 @@ Current eval vs validation snapshot from committed artifacts:
 | F1 | 1.000 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.220 | 0.220 |
+| Calibration error | 0.146 | 0.146 |
 
 Current generated observation and governance snapshot from the same render-time summary:
 
@@ -281,11 +335,11 @@ These moving counts are also surfaced in `docs/benchmarks/latest/benchmark_summa
 
 These numbers are not production claims.
 
-- committed eval sample count is now `44`, which is materially better than the earlier tiny-sample snapshot but still modest
+- committed eval sample count is now `76`, which is materially better than the earlier tiny-sample snapshot but still modest
 - eval and validation are both very strong on this committed split; that symmetry should be read as a clean repository benchmark, not as broad real-world proof
-- overall calibration error remains `0.220`, so ranking confidence is still less mature than the binary F1 snapshot suggests
+- overall calibration error remains `0.146`, so ranking confidence is still less mature than the binary F1 snapshot suggests
 - per-head metrics are uneven: text/fusion are strong, while history and anomaly remain much weaker sidecars
-- current governance artifacts mark `bseo-live` as eligible, but the committed runtime remains on `bseo-shadow` until a deliberate promotion changes the root policy file
+- current governance artifacts now clear and recommend `bseo-live`, and the committed runtime has been promoted accordingly
 - collection-scope review/report support is implemented in the extension and shared schemas, but committed benchmark volume for collection-batch intake may still be zero until the flow is exercised against real browser observations
 
 ## Evaluation And Visualization
@@ -339,12 +393,12 @@ Additional committed assets:
 Current benchmark inputs:
 
 - `artifacts/trained_models/latest/model_info.json`
-- `artifacts/eval_runs/build-20260411062330.json`
-- `artifacts/eval_runs/build-20260411062330-simulation.json`
-- `artifacts/eval_runs/build-20260411062330-bseo-report.json`
-- `artifacts/eval_runs/build-20260411062330-bseo-lineage.json`
-- `artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json`
-- `artifacts/drift_reports/build-20260411062330.json`
+- `artifacts/eval_runs/build-20260411064344.json`
+- `artifacts/eval_runs/build-20260411064344-simulation.json`
+- `artifacts/eval_runs/build-20260411064344-bseo-report.json`
+- `artifacts/eval_runs/build-20260411064344-bseo-lineage.json`
+- `artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json`
+- `artifacts/drift_reports/build-20260411064344.json`
 - `configs/thresholds/default.json`
 - `configs/thresholds/bseo-policy.json`
 - `configs/thresholds/runtime-policy.json`
@@ -430,15 +484,15 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 
 ## Honest Limitations
 
-- committed benchmarks are stronger than before but still small enough that README should not read like a product benchmark sheet
+- committed benchmarks are materially broader than before, but README still should not read like a product benchmark sheet
 - calibration and per-head stability still lag behind the clean fused F1 snapshot
 - history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
-- `bseo-shadow` remains the committed runtime default even though current governance artifacts now show `bseo-live` as eligible
+- `bseo-live` is now the committed runtime mode because current governance artifacts clear the live guardrails
 - observation and supplemental intake artifacts depend on actual runtime use, so a clean repo snapshot may legitimately show zero supplemental volume
-- current repo truth is stronger on architecture separation and governance discipline than on large-sample benchmark maturity
+- current repo truth is stronger on architecture separation and governance discipline than on real-world benchmark maturity
 
 ## Next Stages
 
-1. decide whether to deliberately promote `bseo-live` now that current governance artifacts mark it eligible, or keep `bseo-shadow` as the conservative committed default
-2. grow benchmark coverage beyond the current `44` eval rows so README metrics become less brittle
+1. keep growing benchmark coverage beyond the current `76` eval rows so README metrics become less brittle
+2. keep exercising live BSEO runtime with richer browser-observation history and supplemental adjudication volume
 3. keep turning benchmark and provenance artifacts into richer operator dashboards and runtime governance views

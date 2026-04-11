@@ -21,22 +21,22 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="subtitle" x="52" y="98">Every benchmark claim in README should trace back to these committed artifacts.</text>
 <rect class="card" x="52" y="132" width="360" height="182" rx="20" />
 <text class="label" x="74" y="164">Build ID</text>
-<text class="value" x="74" y="214">build-20260411062330</text>
+<text class="value" x="74" y="214">build-20260411064344</text>
 <text class="small" x="74" y="254">Artifact lineage anchor</text>
 <rect class="card" x="436" y="132" width="360" height="182" rx="20" />
 <text class="label" x="458" y="164">Model version</text>
-<text class="value-compact" x="458" y="214">baseline-v1-build-20260411062330</text>
+<text class="value-compact" x="458" y="214">baseline-v1-build-20260411064344</text>
 <text class="small" x="458" y="254">Snapshot from trained model info</text>
 <rect class="card" x="820" y="132" width="360" height="182" rx="20" />
 <text class="label" x="842" y="164">Eval sample count</text>
-<text class="value" x="842" y="214">44</text>
+<text class="value" x="842" y="214">76</text>
 <text class="small" x="842" y="254">Committed evaluation sample size</text>
 <rect class="card" x="52" y="338" width="1128" height="176" rx="20" />
 <text class="label" x="74" y="370">Artifact timestamps</text>
 <text class="value" x="74" y="420">committed</text>
-<text class="small" x="74" y="460">model_info=2026-04-11T06:23:36.407985+00:00 | eval=2026-04-11T06:23:36.409737+00:00 | drift=2026-04-11T06:23:55.998186+00:00</text>
+<text class="small" x="74" y="460">model_info=2026-04-11T06:43:53.068747+00:00 | eval=2026-04-11T06:43:53.068747+00:00 | drift=2026-04-11T06:44:19.061795+00:00</text>
 <rect class="card" x="52" y="536" width="1128" height="170" rx="20" />
 <text class="label" x="74" y="568">Training timestamp</text>
-<text class="value-compact" x="74" y="618">2026-04-11T06:23:30.230173+00:00</text>
+<text class="value-compact" x="74" y="618">2026-04-11T06:43:44.245427+00:00</text>
 <text class="small" x="74" y="658">If this timestamp and current docs diverge, the docs are stale.</text>
 </svg>

@@ -1,20 +1,20 @@
 {
   "best_thresholds": {
-    "badge_threshold": 0.371,
-    "blur_threshold": 0.5,
-    "report_prompt_threshold": 0.697,
-    "hide_threshold": 0.864
+    "badge_threshold": 0.2,
+    "blur_threshold": 0.45,
+    "report_prompt_threshold": 0.65,
+    "hide_threshold": 0.8
   },
-  "best_fitness": 1.5571,
+  "best_fitness": 1.3364,
   "best_metrics": {
-    "average_reward": 1.6334,
-    "intervention_rate": 0.6364,
+    "average_reward": 1.3996,
+    "intervention_rate": 0.5263,
     "action_counts": {
-      "none": 16,
+      "none": 36,
       "badge": 0,
       "blur": 0,
-      "ask-report": 28,
-      "hide": 0
+      "ask-report": 0,
+      "hide": 40
     }
   },
   "population_size": 18,
@@ -22,72 +22,72 @@
   "history": [
     {
       "generation": 0,
-      "best_fitness": 1.4434,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.406,
-        "blur_threshold": 0.517,
-        "report_prompt_threshold": 0.713,
-        "hide_threshold": 0.823
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 1,
-      "best_fitness": 1.4889,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.422,
-        "blur_threshold": 0.505,
-        "report_prompt_threshold": 0.701,
-        "hide_threshold": 0.835
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 2,
-      "best_fitness": 1.5116,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.397,
-        "blur_threshold": 0.518,
-        "report_prompt_threshold": 0.705,
-        "hide_threshold": 0.844
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 3,
-      "best_fitness": 1.5571,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.371,
-        "blur_threshold": 0.5,
-        "report_prompt_threshold": 0.697,
-        "hide_threshold": 0.864
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 4,
-      "best_fitness": 1.5571,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.371,
-        "blur_threshold": 0.5,
-        "report_prompt_threshold": 0.697,
-        "hide_threshold": 0.864
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 5,
-      "best_fitness": 1.5571,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.371,
-        "blur_threshold": 0.5,
-        "report_prompt_threshold": 0.697,
-        "hide_threshold": 0.864
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     },
     {
       "generation": 6,
-      "best_fitness": 1.5571,
+      "best_fitness": 1.3364,
       "best_thresholds": {
-        "badge_threshold": 0.371,
-        "blur_threshold": 0.5,
-        "report_prompt_threshold": 0.697,
-        "hide_threshold": 0.864
+        "badge_threshold": 0.2,
+        "blur_threshold": 0.45,
+        "report_prompt_threshold": 0.65,
+        "hide_threshold": 0.8
       }
     }
   ]

@@ -33,7 +33,7 @@
           <h2>Atlas status</h2>
           <div class="metric-grid">
             <div class="metric"><strong>Status</strong><span>clustered</span></div>
-            <div class="metric"><strong>Usable mutations</strong><span>106</span></div>
+            <div class="metric"><strong>Usable mutations</strong><span>115</span></div>
             <div class="metric"><strong>Cluster count</strong><span>1</span></div>
           </div>
         </div>
@@ -48,27 +48,27 @@
       <div class="card">
         <h2>Embedded summary payload</h2>
         <pre>{
-  &quot;build_id&quot;: &quot;build-20260411062330&quot;,
-  &quot;model_version&quot;: &quot;baseline-v1-build-20260411062330&quot;,
-  &quot;sample_count&quot;: 44,
+  &quot;build_id&quot;: &quot;build-20260411064344&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260411064344&quot;,
+  &quot;sample_count&quot;: 76,
   &quot;runtime_truth&quot;: {
-    &quot;configured_policy_mode&quot;: &quot;bseo-shadow&quot;,
-    &quot;resolved_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;configured_policy_mode&quot;: &quot;bseo-live&quot;,
+    &quot;resolved_policy_mode&quot;: &quot;bseo-live&quot;,
     &quot;bseo_artifact_committed&quot;: true,
     &quot;bseo_artifact_compatible&quot;: true,
     &quot;selective_verification_contract_present&quot;: true,
     &quot;heavy_llm_hot_path&quot;: false,
-    &quot;recommended_policy_mode&quot;: &quot;bseo-shadow&quot;,
+    &quot;recommended_policy_mode&quot;: &quot;bseo-live&quot;,
     &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;,
     &quot;shadow_eligible&quot;: true,
     &quot;live_eligible&quot;: true
   },
   &quot;runtime_governance&quot;: {
-    &quot;generated_at&quot;: &quot;2026-04-11T06:25:42.222069+00:00&quot;,
-    &quot;build_id&quot;: &quot;build-20260411062330&quot;,
+    &quot;generated_at&quot;: &quot;2026-04-11T11:10:44.806503+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260411064344&quot;,
     &quot;runtime_policy&quot;: {
-      &quot;configured_mode&quot;: &quot;bseo-shadow&quot;,
-      &quot;resolved_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;configured_mode&quot;: &quot;bseo-live&quot;,
+      &quot;resolved_mode&quot;: &quot;bseo-live&quot;,
       &quot;bseo_min_confidence&quot;: 0.58,
       &quot;bseo_max_uncertainty&quot;: 0.45,
       &quot;bseo_artifact_max_age_hours&quot;: 168.0
@@ -80,26 +80,26 @@
         &quot;stale&quot;: false,
         &quot;status&quot;: &quot;compatible&quot;,
         &quot;reason&quot;: null,
-        &quot;age_hours&quot;: 0.037,
-        &quot;build_id&quot;: &quot;build-20260411062330&quot;,
+        &quot;age_hours&quot;: 4.45,
+        &quot;build_id&quot;: &quot;build-20260411064344&quot;,
         &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
       },
       &quot;lineage_count&quot;: 125,
       &quot;mutation_atlas_status&quot;: &quot;clustered&quot;,
-      &quot;usable_mutations&quot;: 106
+      &quot;usable_mutations&quot;: 115
     },
     &quot;dataset&quot;: {
-      &quot;train_count&quot;: 110,
-      &quot;validation_count&quot;: 44,
-      &quot;test_count&quot;: 44,
-      &quot;eval_sample_count&quot;: 44
+      &quot;train_count&quot;: 190,
+      &quot;validation_count&quot;: 76,
+      &quot;test_count&quot;: 76,
+      &quot;eval_sample_count&quot;: 76
     },
     &quot;performance&quot;: {
       &quot;eval_f1&quot;: 1.0,
       &quot;validation_f1&quot;: 1.0,
       &quot;validation_gap&quot;: 0.0,
-      &quot;calibration_error&quot;: 0.2201,
-      &quot;bseo_objective_score&quot;: 0.8344,
+      &quot;calibration_error&quot;: 0.1455,
+      &quot;bseo_objective_score&quot;: 0.8301,
       &quot;benign_false_positive_rate&quot;: 0.0,
       &quot;shadow_observation_count&quot;: 911
     },
@@ -108,7 +108,7 @@
       &quot;shadow_blockers&quot;: [],
       &quot;live_eligible&quot;: true,
       &quot;live_blockers&quot;: [],
-      &quot;recommended_mode&quot;: &quot;bseo-shadow&quot;,
+      &quot;recommended_mode&quot;: &quot;bseo-live&quot;,
       &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;
     }
   },
@@ -117,7 +117,7 @@
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.6364,
+      &quot;positive_rate&quot;: 0.5263,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
@@ -127,7 +127,7 @@
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.6364,
+      &quot;positive_rate&quot;: 0.5263,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
@@ -137,66 +137,66 @@
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.6364,
+      &quot;positive_rate&quot;: 0.5263,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
-    &quot;calibration_error&quot;: 0.2201,
-    &quot;validation_calibration_error&quot;: 0.2201,
+    &quot;calibration_error&quot;: 0.1455,
+    &quot;validation_calibration_error&quot;: 0.1456,
     &quot;per_head_metrics&quot;: {
       &quot;text&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
           &quot;recall&quot;: 1.0,
           &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.6364,
+          &quot;positive_rate&quot;: 0.5263,
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.0321
+        &quot;calibration_error&quot;: 0.0291
       },
       &quot;vision&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
-          &quot;recall&quot;: 0.5714,
-          &quot;f1&quot;: 0.7273,
-          &quot;positive_rate&quot;: 0.3636,
+          &quot;recall&quot;: 0.7,
+          &quot;f1&quot;: 0.8235,
+          &quot;positive_rate&quot;: 0.3684,
           &quot;false_positive_rate&quot;: 0.0,
-          &quot;false_negative_rate&quot;: 0.4286,
-          &quot;roc_auc&quot;: 0.8929,
-          &quot;pr_auc&quot;: 0.9557
+          &quot;false_negative_rate&quot;: 0.3,
+          &quot;roc_auc&quot;: 0.8868,
+          &quot;pr_auc&quot;: 0.9266
         },
-        &quot;calibration_error&quot;: 0.2895
+        &quot;calibration_error&quot;: 0.1318
       },
       &quot;metadata&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 1.0,
-          &quot;recall&quot;: 0.8571,
-          &quot;f1&quot;: 0.9231,
-          &quot;positive_rate&quot;: 0.5455,
-          &quot;false_positive_rate&quot;: 0.0,
-          &quot;false_negative_rate&quot;: 0.1429,
-          &quot;roc_auc&quot;: 1.0,
-          &quot;pr_auc&quot;: 1.0
+          &quot;precision&quot;: 0.8478,
+          &quot;recall&quot;: 0.975,
+          &quot;f1&quot;: 0.907,
+          &quot;positive_rate&quot;: 0.6053,
+          &quot;false_positive_rate&quot;: 0.1944,
+          &quot;false_negative_rate&quot;: 0.025,
+          &quot;roc_auc&quot;: 0.9861,
+          &quot;pr_auc&quot;: 0.9887
         },
-        &quot;calibration_error&quot;: 0.1893
+        &quot;calibration_error&quot;: 0.1808
       },
       &quot;history&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.6,
-          &quot;recall&quot;: 0.2143,
-          &quot;f1&quot;: 0.3158,
-          &quot;positive_rate&quot;: 0.2273,
-          &quot;false_positive_rate&quot;: 0.25,
-          &quot;false_negative_rate&quot;: 0.7857,
-          &quot;roc_auc&quot;: 0.4978,
-          &quot;pr_auc&quot;: 0.671
+          &quot;precision&quot;: 0.5405,
+          &quot;recall&quot;: 0.5,
+          &quot;f1&quot;: 0.5195,
+          &quot;positive_rate&quot;: 0.4868,
+          &quot;false_positive_rate&quot;: 0.4722,
+          &quot;false_negative_rate&quot;: 0.5,
+          &quot;roc_auc&quot;: 0.616,
+          &quot;pr_auc&quot;: 0.6751
         },
-        &quot;calibration_error&quot;: 0.1364
+        &quot;calibration_error&quot;: 0.0263
       },
       &quot;anomaly&quot;: {
         &quot;metrics&quot;: {
@@ -207,40 +207,40 @@
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 1.0,
           &quot;roc_auc&quot;: 0.5,
-          &quot;pr_auc&quot;: 0.6364
+          &quot;pr_auc&quot;: 0.5263
         },
-        &quot;calibration_error&quot;: 0.6364
+        &quot;calibration_error&quot;: 0.5263
       },
       &quot;fusion&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
           &quot;recall&quot;: 1.0,
           &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.6364,
+          &quot;positive_rate&quot;: 0.5263,
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.1454
+        &quot;calibration_error&quot;: 0.0965
       },
       &quot;calibrated&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
           &quot;recall&quot;: 1.0,
           &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.6364,
+          &quot;positive_rate&quot;: 0.5263,
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.2201
+        &quot;calibration_error&quot;: 0.1455
       }
     },
     &quot;confusion_matrix&quot;: {
-      &quot;tp&quot;: 28,
-      &quot;tn&quot;: 16,
+      &quot;tp&quot;: 40,
+      &quot;tn&quot;: 36,
       &quot;fp&quot;: 0,
       &quot;fn&quot;: 0
     }
@@ -251,12 +251,12 @@
   ],
   &quot;artifact_paths&quot;: {
     &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
-    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260411062330.json&quot;,
-    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260411062330-simulation.json&quot;,
-    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260411062330-bseo-report.json&quot;,
-    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260411062330-mutation-bias-atlas.json&quot;,
-    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260411062330-bseo-lineage.json&quot;,
-    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260411062330.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260411064344.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260411064344-simulation.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260411064344-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260411064344-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260411064344.json&quot;,
     &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
     &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
     &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,

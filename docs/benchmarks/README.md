@@ -35,5 +35,5 @@ pnpm docs:render-verify
 Current committed caveat:
 
 - The present root-artifact benchmark reflects a materially larger sample than the previous tiny-sample snapshot, but it is still a repository benchmark rather than a production claim.
-- `bseo-shadow` is committed and promoted.
-- current governance artifacts may mark `bseo-live` as eligible before the repo actually promotes it; docs must distinguish eligibility from the committed active runtime mode.
+- `bseo-live` is now committed and promoted because the live guardrails clear on the current root artifacts.
+- docs must still distinguish the committed active runtime mode from future eligibility states whenever the runtime policy changes again.

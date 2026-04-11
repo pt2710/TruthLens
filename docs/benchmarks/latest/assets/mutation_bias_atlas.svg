@@ -24,7 +24,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="value" x="74" y="214">clustered</text>
 <rect class="card" x="436" y="132" width="360" height="182" rx="20" />
 <text class="label" x="458" y="164">Usable mutations</text>
-<text class="value" x="458" y="214">106</text>
+<text class="value" x="458" y="214">115</text>
 <rect class="card" x="820" y="132" width="360" height="182" rx="20" />
 <text class="label" x="842" y="164">Cluster count</text>
 <text class="value" x="842" y="214">1</text>
