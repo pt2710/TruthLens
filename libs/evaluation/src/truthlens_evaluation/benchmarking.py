@@ -874,23 +874,76 @@ def _write_drift_svg(summary: dict[str, Any], path: Path) -> None:
     if not drift:
         _stub_svg("Drift summary", "Reference vs current dataset shifts", "No committed drift report is available.", path)
         return
-    metrics = [
-        ("Title length shift", _safe_float(drift.get("title_length_shift"))),
-        ("Sensational count shift", _safe_float(drift.get("sensational_count_shift"))),
-        ("Label rate shift", _safe_float(drift.get("label_rate_shift"))),
+    label_distribution = dict(drift.get("label_distribution_shift", {}))
+    shift_pool = [
+        ("Channel risk mean", _safe_float(drift.get("channel_risk_mean_shift"))),
+        ("Transcript mismatch", _safe_float(drift.get("transcript_mismatch_shift"))),
+        ("Thumbnail text density", _safe_float(drift.get("thumbnail_text_density_shift"))),
+        ("Title length", _safe_float(drift.get("title_length_shift"))),
+        ("Sensational count", _safe_float(drift.get("sensational_count_shift"))),
+        ("Template repeat rate", _safe_float(drift.get("repeat_template_rate_shift"))),
+        ("Label rate", _safe_float(drift.get("label_rate_shift"))),
     ]
-    width = 1120
-    height = 480
-    chart_x = 160
-    chart_y = 150
-    chart_w = 860
-    chart_h = 210
+    shift_pool.extend(
+        (f"Label mix: {_pretty_label(str(name))}", _safe_float(value))
+        for name, value in label_distribution.items()
+    )
+    metrics = sorted(shift_pool, key=lambda item: abs(item[1]), reverse=True)[:5]
+    largest_label, largest_value = metrics[0] if metrics else ("n/a", 0.0)
+    triggers = [str(value) for value in drift.get("trigger_reasons", []) if str(value).strip()]
+    width = 1240
+    height = 640
+    chart_x = 240
+    chart_y = 320
+    chart_w = 930
+    chart_h = 220
     max_abs = max(abs(value) for _, value in metrics) or 1.0
-    body: list[str] = []
+    body: list[str] = [
+        _card(
+            52,
+            132,
+            274,
+            152,
+            "Retraining recommended",
+            "yes" if bool(drift.get("retraining_recommended")) else "no",
+            "This is the drift gate verdict from the committed report.",
+            "warn" if bool(drift.get("retraining_recommended")) else "accent",
+        ),
+        _card(
+            350,
+            132,
+            274,
+            152,
+            "Trigger reasons",
+            ", ".join(triggers) if triggers else "none",
+            "No trigger means the current report did not cross a retraining threshold.",
+        ),
+        _card(
+            648,
+            132,
+            274,
+            152,
+            "Largest absolute shift",
+            f"{largest_label}: {largest_value:+.3f}",
+            "Magnitude is shown relative to the reference sample, not as a production guarantee.",
+        ),
+        _card(
+            946,
+            132,
+            242,
+            152,
+            "Compared rows",
+            f"{_safe_int(drift.get('reference_count'))} -> {_safe_int(drift.get('current_count'))}",
+            "Reference rows on the left, current rows on the right.",
+        ),
+    ]
     zero_x = chart_x + chart_w / 2
     body.append(f'<line class="axis" x1="{zero_x}" y1="{chart_y}" x2="{zero_x}" y2="{chart_y + chart_h}" />')
+    for guide in range(5):
+        y = chart_y + guide * (chart_h / 4)
+        body.append(f'<line class="grid" x1="{chart_x}" y1="{y:.1f}" x2="{chart_x + chart_w}" y2="{y:.1f}" />')
     for index, (label, value) in enumerate(metrics):
-        y = chart_y + 24 + index * 58
+        y = chart_y + 18 + index * 40
         span = (abs(value) / max_abs) * (chart_w / 2 - 40)
         if value >= 0:
             x = zero_x
@@ -902,14 +955,18 @@ def _write_drift_svg(summary: dict[str, Any], path: Path) -> None:
             color = "#c2410c"
         body.append(f'<text class="label" x="52" y="{y + 18}">{escape(label)}</text>')
         body.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{width_value:.1f}" height="28" fill="{color}" rx="8" />')
-        body.append(f'<text class="small" x="{zero_x + 10}" y="{y + 18}">{value:.3f}</text>')
+        value_x = zero_x + 10 if value >= 0 else zero_x - 82
+        body.append(f'<text class="small" x="{value_x:.1f}" y="{y + 18}">{value:+.3f}</text>')
     body.append(
-        f'<text class="small" x="52" y="414">Reference rows: {_safe_int(drift.get("reference_count"))} | Current rows: {_safe_int(drift.get("current_count"))}</text>'
+        f'<text class="small" x="52" y="584">Positive means the current sample is higher than the reference sample on that feature. Negative means lower.</text>'
+    )
+    body.append(
+        f'<text class="small" x="52" y="606">Near-zero values mean the committed report saw little measured shift on that metric at the current sample size. They do not prove universal no-drift.</text>'
     )
     path.write_text(
         _svg_document(
             "Drift summary",
-            "Signed shifts from the committed drift report. Small current samples limit interpretability.",
+            "Top signed shifts by magnitude from the committed drift report, with governance interpretation and sample context.",
             width,
             height,
             body,

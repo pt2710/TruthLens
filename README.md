@@ -249,11 +249,11 @@ Committed downstream layers:
 - feedback-linked supplemental label candidates and split-safe adjudication intake
 - human review and manual report flows
 
-Not in the baseline hot path:
+Explicitly kept out of the baseline hot path:
 
-- Gemini wording assistance for report optimization and richer draft text
-- any always-on heavy LLM classifier
-- unguarded automatic BSEO-live takeover without governance guardrails
+- Gemini is used only as downstream wording assistance for report optimization and richer draft text after scoring, policy selection, and review-state construction are already complete
+- there is no always-on heavy LLM classifier inside the default perception, fusion, calibration, or policy loop
+- `bseo-live` is not allowed to self-promote without committed policy artifacts, compatibility checks, calibration and performance guardrails, and runtime-governance approval
 
 ## Policy Modes
 
@@ -369,6 +369,8 @@ These numbers are not production claims.
 ### Drift Summary
 
 ![Drift summary](docs/benchmarks/latest/assets/drift_summary.svg)
+
+Interpretation rule: a drift value near `0.000` means the current committed sample stayed close to the reference sample on that measured feature. It does not mean TruthLens has mathematically proved "no drift"; it means the committed drift report did not detect a meaningful shift on that metric at the current sample size.
 
 ### Runtime Policy Truth
 
