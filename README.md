@@ -82,20 +82,14 @@ These primitive terms are not abstract rhetoric. They are the actual TruthLens l
 Class-conditioned policy scoring then extends the calibrated base score with structured bias terms:
 
 $$
-s_{\mathrm{policy}}(x,\theta) =
-\mathrm{clip}\!\left(
-s_{\mathrm{base}}(x)
-+ 0.14\,m(x)\,\omega_{\mathrm{mis}}(c)
-+ 0.10\,q(x)\,\omega_{\mathrm{sens}}(c)
-+ 0.08\,d_{\mathrm{prior}}(x)\,\tau_{\mathrm{prior}}
-+ 0.06\,u(x)\,\beta_{\mathrm{unc}}
-+ \Delta_{\mathrm{class}}(c)
-\right).
+s_{\mathrm{policy}}(x,\theta) = s_{\mathrm{base}}(x) + 0.14\,m(x)\,\omega_{\mathrm{mis}}(c) + 0.10\,q(x)\,\omega_{\mathrm{sens}}(c) + 0.08\,d_{\mathrm{prior}}(x)\,\tau_{\mathrm{prior}} + 0.06\,u(x)\,\beta_{\mathrm{unc}} + \Delta_{\mathrm{class}}(c).
 $$
+
+The runtime then clips this score into the committed policy range before action selection.
 
 where $\theta$ is the BSEO control genome, $c$ is the inferred content class, $m(x)$ is mismatch pressure, $q(x)$ is sensational pressure, $d_{\mathrm{prior}}(x)$ is channel-prior dependency, and $u(x)$ is uncertainty-sensitive escalation.
 
-In implementation terms, `\theta` carries the knobs that TruthLens evolves and commits as an artifact:
+In implementation terms, $\theta$ carries the knobs that TruthLens evolves and commits as an artifact:
 
 - global thresholds for `badge`, `blur`, `ask-report`, and `hide`
 - class-conditioned threshold offsets
@@ -126,37 +120,29 @@ $$
 a(x) \in \{\mathrm{none}, \mathrm{badge}, \mathrm{blur}, \mathrm{askreport}, \mathrm{hide}\}.
 $$
 
-Here `\mathrm{askreport}` is the mathematical shorthand for the runtime action exposed in configuration and UI as `ask-report`.
+Here $\mathrm{askreport}$ is the mathematical shorthand for the runtime action exposed in configuration and UI as `ask-report`.
 
 TruthLens therefore does not ask only "is this risky." It also asks "risky relative to which content class, which guardrail, and which kind of bias." A stylized album cover can legitimately lower literal-rigidity pressure; a fake trailer or emergency-alert package should push the policy score upward toward review or suppression.
 
 The committed search objective follows the same weighted structure as the implementation in `libs/evaluation/src/truthlens_evaluation/bseo.py`:
 
 $$
-J(\theta) =
-0.45\,D(\theta)
-+ 0.20\,C(\theta)
-+ 0.15\,K(\theta)
-+ 0.10\,M(\theta)
-- 0.05\,L(\theta)
-- 0.05\,G(\theta).
+J(\theta) = 0.45\,D(\theta) + 0.20\,C(\theta) + 0.15\,K(\theta) + 0.10\,M(\theta) - 0.05\,L(\theta) - 0.05\,G(\theta).
 $$
 
 with:
 
-- `D(\theta)` = detection quality
-- `C(\theta)` = context sensitivity
-- `K(\theta)` = calibration quality
-- `M(\theta)` = mutation stability
-- `L(\theta)` = channel lock-in risk
-- `G(\theta)` = genre confusion penalty
+- $D(\theta)$ = detection quality
+- $C(\theta)$ = context sensitivity
+- $K(\theta)$ = calibration quality
+- $M(\theta)$ = mutation stability
+- $L(\theta)$ = channel lock-in risk
+- $G(\theta)$ = genre confusion penalty
 
 BSEO also tracks negative-bias movement explicitly rather than hiding everything inside one scalar:
 
 $$
-\Delta B_{\mathrm{neg}} =
-B_{\mathrm{neg}}(\theta_{\mathrm{child}})
-- B_{\mathrm{neg}}(\theta_{\mathrm{parent}}).
+\Delta B_{\mathrm{neg}} = B_{\mathrm{neg}}(\theta_{\mathrm{child}}) - B_{\mathrm{neg}}(\theta_{\mathrm{parent}}).
 $$
 
 Mutation acceptance is therefore not just "bigger objective wins." In committed TruthLens terms, a candidate is only a meaningful improvement when it improves or preserves detection quality without introducing harmful bias side effects against benign classes. The acceptance intuition can be written as:
