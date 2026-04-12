@@ -3,55 +3,82 @@
 Date: 2026-04-12
 
 This note records the current proof status for the committed hosted-beta contract.
+It supersedes the earlier "not yet live" snapshot. The Render service is now live at:
+
+- `https://truthlens-beta-api.onrender.com`
 
 ## Current committed contract
 
 - deployment contract: [Render hosted beta](./render-beta.md)
 - provisioning blueprint: [`render.yaml`](../../render.yaml)
 - extension beta path: [Extension beta install](../beta-install.md)
+- hosted verification helper: [`scripts/verify_hosted_beta.py`](../../scripts/verify_hosted_beta.py)
 
-## Live verification target checked
+## Live proof now closed
 
-- `https://truthlens-beta-api.onrender.com/`
-- `https://truthlens-beta-api.onrender.com/health`
-- `https://truthlens-beta-api.onrender.com/ready`
-- `https://truthlens-beta-api.onrender.com/model-info`
-- `https://truthlens-beta-api.onrender.com/policy-info`
+The following hosted-beta closure steps are now confirmed:
 
-## Result
+- the real hosted origin exists and serves traffic at `https://truthlens-beta-api.onrender.com`
+- `TRUTHLENS_PUBLIC_API_BASE` is set to that live hosted origin in Render
+- live `/ready` health is green
+- live `GET /health`, `GET /ready`, `GET /model-info`, `GET /policy-info`, and `GET /metrics` all return `200`
+- live `POST /score-item`, `POST /batch-score`, `POST /browser-observation`, and `POST /feedback` return `200` during hosted proof execution
+- `event_store` resolves to `postgres` on the live service
+- the hosted proof run produced non-zero `truthlens_feedback_events_total` and `truthlens_browser_observations_total`, which proves the live API is reading persisted runtime events back through the Postgres-backed store
 
-As of this check, the committed hostname is **not a live hosted beta proof**.
+## Current live runtime truth
 
-Observed behavior:
+The live service is up, but hosted-beta closure is still incomplete.
 
-- all checked endpoints returned `404 Not Found`
-- response headers included `x-render-routing: no-server`
+Current observed runtime truth on the live host:
 
-## Interpretation
+- `/health` reports `env=beta`
+- `/health` reports `event_store=postgres`
+- `/ready` reports `ready=true`
+- `/ready` also reports `artifact_status=missing`
+- `/model-info` reports `mode=bootstrap`
+- `/model-info` reports `model_version=bootstrap-v0`
+- `/policy-info` reports `policy_mode=bseo-live`
+- `/policy-info` reports `resolved_policy_mode=bseo-live`
+- `/metrics` reports `truthlens_policy_bseo_artifact_available 1`
 
-The repo now contains a real hosted-beta contract and a provisionable Render blueprint, but live deployment proof is still open.
+Interpretation:
 
-That means the following are **not yet proven complete** from the public repo truth alone:
+- the live service is real and reachable
+- the policy artifact is present and active
+- hosted Postgres-backed runtime event persistence is now minimally proven
+- the promoted model bundle is **not yet** present at the mounted runtime storage path used by the live host
+- the live service is therefore still running on the bootstrap model path rather than a non-bootstrap promoted model bundle
 
-- live `/ready` health on the committed hosted origin
-- model bundle presence at the hosted runtime path
-- live extension-to-hosted scoring flow against a real API instance
-- hosted Postgres-backed feedback and browser-observation persistence
-- restart behavior on the hosted stack
+## Remaining open closure gates
 
-## What is proven already
+The following hosted-beta proof items are still open:
 
-- the hosted-beta topology is documented
-- the Render blueprint is committed
-- the API code now supports Postgres-backed runtime events
-- the extension/runtime contracts are aligned to an external hosted API model
+1. provision the promoted `model_bundle.pkl` and aligned `model_info.json` into the mounted runtime storage root used by the live service
+2. rerun hosted verification and confirm `/ready` and `/model-info` move from `artifact_status=missing` / `bootstrap-v0` to a compatible non-bootstrap runtime
+3. verify extension flow against the live hosted origin, including at least one live `batch-score`, one live `browser-observation`, and one live `feedback` request originating from the extension itself
+4. optionally prove restart behavior after hosted writes if Wave 1 closure still requires restart survivability evidence
 
-## Next closure gate
+## Recommended verification command
 
-Before treating any hosted origin as public beta truth, complete all of the following on a live deployed instance:
+Run the hosted verification helper against the live host:
 
-1. set the real `TRUTHLENS_PUBLIC_API_BASE`
-2. provision the promoted `model_bundle.pkl` into the mounted runtime storage root
-3. verify `/health`, `/ready`, `/model-info`, `/policy-info`, `/score-item`, `/batch-score`, `/feedback`, `/browser-observation`, and `/metrics`
-4. verify at least one hosted feedback event and one hosted browser observation are persisted through Postgres
-5. verify extension flow against the live hosted origin
+```powershell
+py -m uv run python scripts/verify_hosted_beta.py --write-events --report-path artifacts/reports/hosted-beta-live-proof.json
+```
+
+This script:
+
+- verifies the live GET endpoints
+- performs a minimal hosted proof run for `score-item`, `batch-score`, `browser-observation`, and `feedback`
+- records whether hosted Postgres-backed runtime persistence is proven from the API surface
+
+## Current status summary
+
+This repo should no longer describe the hosted beta as "not yet live proof."
+
+The correct statement is now:
+
+- **live service confirmed**
+- **endpoint and Postgres event-path proof substantially advanced**
+- **closure still open on runtime model bundle truth and extension-to-live-host proof**
