@@ -3,6 +3,8 @@ FROM python:3.11-slim
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH=apps/api/src:libs/shared-schemas/python:libs/feature-extractors/src:libs/data-pipeline/src:libs/dataset-governance/src:libs/policy-engine/python:libs/explanation-engine/python:libs/evaluation/src:libs/model-serving/python
 
 COPY pyproject.toml README.md /app/
@@ -19,4 +21,4 @@ RUN mkdir -p /data
 
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "truthlens_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "truthlens_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
