@@ -47,17 +47,22 @@ Interpretation:
 - the live service is real and reachable
 - the policy artifact is present and active
 - hosted Postgres-backed runtime event persistence is now minimally proven
-- the promoted model bundle is **not yet** present at the mounted runtime storage path used by the live host
-- the live service is therefore still running on the bootstrap model path rather than a non-bootstrap promoted model bundle
+- the promoted model bundle and aligned model metadata are now present at the mounted runtime storage path used by the live host
+- live `/ready` now reports `artifact_status=compatible`
+- live `/model-info` now reports `model_version=baseline-v1-build-20260412135829`
+- live proof writes now report `score_model_version=baseline-v1-build-20260412135829`
+- the live service is **still** surfacing `mode=bootstrap`, which means the promoted bundle is present and contract-compatible but the current runtime image is not yet loading it as a trained bundle
+- the current Render image installs only baseline dependencies via `uv sync --no-dev`; the promoted bundle requires the committed ML runtime extras present in `pyproject.toml`
 
 ## Remaining open closure gates
 
 The following hosted-beta proof items are still open:
 
 1. provision the promoted `model_bundle.pkl` and aligned `model_info.json` into the mounted runtime storage root used by the live service, for example with [`scripts/provision_runtime_model.py`](../../scripts/provision_runtime_model.py)
-2. rerun hosted verification and confirm `/ready` and `/model-info` move from `artifact_status=missing` / `bootstrap-v0` to a compatible non-bootstrap runtime
-3. verify extension flow against the live hosted origin, including at least one live `batch-score`, one live `browser-observation`, and one live `feedback` request originating from the extension itself
-4. optionally prove restart behavior after hosted writes if Wave 1 closure still requires restart survivability evidence
+2. redeploy the Render service with the updated runtime image so the API container installs the committed ML runtime extras and can load the promoted bundle as a trained model
+3. rerun hosted verification and confirm `/model-info` moves from `mode=bootstrap` to a trained runtime while retaining `artifact_status=compatible`
+4. verify extension flow against the live hosted origin, including at least one live `batch-score`, one live `browser-observation`, and one live `feedback` request originating from the extension itself
+5. prove restart behavior after hosted writes, since Wave 1 closure now treats restart survivability as an explicit gate
 
 ## Recommended verification command
 
@@ -81,4 +86,5 @@ The correct statement is now:
 
 - **live service confirmed**
 - **endpoint and Postgres event-path proof substantially advanced**
-- **closure still open on runtime model bundle truth and extension-to-live-host proof**
+- **promoted model bundle present and contract-compatible, but runtime image redeploy is still required to exit bootstrap mode**
+- **closure still open on trained runtime activation, extension-to-live-host proof, and restart survivability**
