@@ -3,7 +3,11 @@
 TruthLens' first hosted beta target is a single-instance stateful deployment on Render.
 
 A starter Render Blueprint is committed at [`render.yaml`](../../render.yaml) so the hosted beta contract is executable instead of doc-only.
-The committed repo does not currently publish a verified live Render hostname as default truth. The current proof status is tracked in [Hosted beta verification](./hosted-beta-verification.md).
+The currently verified live hosted beta origin is:
+
+- `https://truthlens-beta-api.onrender.com`
+
+The current proof status is tracked in [Hosted beta verification](./hosted-beta-verification.md).
 
 ## Reference topology
 
@@ -49,9 +53,24 @@ Hosted beta must supply the promoted model bundle outside the public source tree
 
 - `/var/data/truthlens/artifacts/trained_models/latest/model_bundle.pkl`
 
+and the aligned model metadata at:
+
+- `/var/data/truthlens/artifacts/trained_models/latest/model_info.json`
+
 and may also persist runtime-local files under:
 
 - `/var/data/truthlens/artifacts/reports/`
+
+To provision the promoted runtime model into the active storage root, use:
+
+```powershell
+py -m uv run python scripts/provision_runtime_model.py --bundle C:\path\to\model_bundle.pkl
+```
+
+When `TRUTHLENS_STORAGE_ROOT=/var/data/truthlens`, this copies:
+
+- the external `model_bundle.pkl` into `/var/data/truthlens/artifacts/trained_models/latest/model_bundle.pkl`
+- the aligned `artifacts/trained_models/latest/model_info.json` into `/var/data/truthlens/artifacts/trained_models/latest/model_info.json`
 
 ## Beta notes
 

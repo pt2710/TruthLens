@@ -54,7 +54,7 @@ Interpretation:
 
 The following hosted-beta proof items are still open:
 
-1. provision the promoted `model_bundle.pkl` and aligned `model_info.json` into the mounted runtime storage root used by the live service
+1. provision the promoted `model_bundle.pkl` and aligned `model_info.json` into the mounted runtime storage root used by the live service, for example with [`scripts/provision_runtime_model.py`](../../scripts/provision_runtime_model.py)
 2. rerun hosted verification and confirm `/ready` and `/model-info` move from `artifact_status=missing` / `bootstrap-v0` to a compatible non-bootstrap runtime
 3. verify extension flow against the live hosted origin, including at least one live `batch-score`, one live `browser-observation`, and one live `feedback` request originating from the extension itself
 4. optionally prove restart behavior after hosted writes if Wave 1 closure still requires restart survivability evidence
