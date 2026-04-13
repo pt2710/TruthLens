@@ -1,6 +1,6 @@
 # Hosted Beta Verification Status
 
-Date: 2026-04-12
+Date: 2026-04-13
 
 This note records the current proof status for the committed hosted-beta contract.
 It supersedes the earlier "not yet live" snapshot. The Render service is now live at:
@@ -22,9 +22,8 @@ The following hosted-beta closure steps are now confirmed:
 - `TRUTHLENS_PUBLIC_API_BASE` is set to that live hosted origin in Render
 - live `/ready` health is green
 - live `GET /health`, `GET /ready`, `GET /model-info`, `GET /policy-info`, and `GET /metrics` all return `200`
-- live `POST /score-item`, `POST /batch-score`, `POST /browser-observation`, and `POST /feedback` return `200` during hosted proof execution
 - `event_store` resolves to `postgres` on the live service
-- the hosted proof run produced non-zero `truthlens_feedback_events_total` and `truthlens_browser_observations_total`, which proves the live API is reading persisted runtime events back through the Postgres-backed store
+- an earlier hosted proof run produced non-zero `truthlens_feedback_events_total` and `truthlens_browser_observations_total`, which proves the live API has successfully read persisted runtime events back through the Postgres-backed store at least once
 
 ## Current live runtime truth
 
@@ -35,9 +34,9 @@ Current observed runtime truth on the live host:
 - `/health` reports `env=beta`
 - `/health` reports `event_store=postgres`
 - `/ready` reports `ready=true`
-- `/ready` also reports `artifact_status=missing`
-- `/model-info` reports `mode=bootstrap`
-- `/model-info` reports `model_version=bootstrap-v0`
+- `/ready` reports `artifact_status=compatible`
+- `/model-info` reports `mode=trained`
+- `/model-info` reports `model_version=baseline-v1-build-20260412135829`
 - `/policy-info` reports `policy_mode=bseo-live`
 - `/policy-info` reports `resolved_policy_mode=bseo-live`
 - `/metrics` reports `truthlens_policy_bseo_artifact_available 1`
@@ -48,19 +47,18 @@ Interpretation:
 - the policy artifact is present and active
 - hosted Postgres-backed runtime event persistence is now minimally proven
 - the promoted model bundle and aligned model metadata are now present at the mounted runtime storage path used by the live host
-- live `/ready` now reports `artifact_status=compatible`
-- live `/model-info` now reports `model_version=baseline-v1-build-20260412135829`
-- live proof writes now report `score_model_version=baseline-v1-build-20260412135829`
-- the live service is **still** surfacing `mode=bootstrap`, which means the promoted bundle is present and contract-compatible but the current runtime image is not yet loading it as a trained bundle
-- the current Render image installs only baseline dependencies via `uv sync --no-dev`; the promoted bundle requires the committed ML runtime extras present in `pyproject.toml`
+- the live runtime now surfaces a trained artifact on `/ready` and `/model-info`
+- the current deployed image now returns `502` across the hosted write path (`/score-item`, `/batch-score`, `/browser-observation`, `/feedback`, and `/feedback-summary`) even though GET endpoints remain green
+- the committed beta runtime now includes a runtime-safe fallback fix so hosted beta can keep the promoted artifact truth while avoiding unstable learned-head execution in the scoring hot path
+- the earlier minimal Postgres write proof is therefore historical evidence, not current closure proof; the write-path closure gate is open again until a rerun succeeds under the trained runtime
 
 ## Remaining open closure gates
 
 The following hosted-beta proof items are still open:
 
-1. provision the promoted `model_bundle.pkl` and aligned `model_info.json` into the mounted runtime storage root used by the live service, for example with [`scripts/provision_runtime_model.py`](../../scripts/provision_runtime_model.py)
-2. redeploy the Render service with the updated runtime image so the API container installs the committed ML runtime extras and can load the promoted bundle as a trained model
-3. rerun hosted verification and confirm `/model-info` moves from `mode=bootstrap` to a trained runtime while retaining `artifact_status=compatible`
+1. redeploy the Render service with the committed runtime-safe beta scoring fix so the hosted write path (`/score-item`, `/batch-score`, `/browser-observation`, `/feedback`, `/feedback-summary`) stops returning `502`
+2. rerun hosted verification and confirm the write checks return `200` while retaining the trained artifact truth (`artifact_status=compatible`, non-bootstrap `model_version`)
+3. re-prove Postgres-backed feedback and browser-observation persistence under the trained runtime after the current write-path regression is fixed
 4. verify extension flow against the live hosted origin, including at least one live `batch-score`, one live `browser-observation`, and one live `feedback` request originating from the extension itself
 5. prove restart behavior after hosted writes, since Wave 1 closure now treats restart survivability as an explicit gate
 
@@ -85,6 +83,6 @@ This repo should no longer describe the hosted beta as "not yet live proof."
 The correct statement is now:
 
 - **live service confirmed**
-- **endpoint and Postgres event-path proof substantially advanced**
-- **promoted model bundle present and contract-compatible, but runtime image redeploy is still required to exit bootstrap mode**
-- **closure still open on trained runtime activation, extension-to-live-host proof, and restart survivability**
+- **GET endpoint proof remains green**
+- **promoted model bundle present and loaded as a trained artifact**
+- **hosted write-path proof is currently regressed to `502` and must be re-closed before extension and restart proof can finish**

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -329,6 +330,15 @@ def _text_matrix(payload: ScoreItemRequest, bundle: dict[str, Any], model_info: 
     if text_vectorizer is None:
         raise ValueError("Sparse text vectorizer is missing from the trained model bundle.")
     return text_vectorizer.transform([payload.title])
+
+
+def _runtime_safe_head_fallbacks_enabled() -> bool:
+    override = os.getenv("TRUTHLENS_RUNTIME_SAFE_HEAD_FALLBACKS", "").strip().lower()
+    if override in {"1", "true", "yes", "on"}:
+        return True
+    if override in {"0", "false", "no", "off"}:
+        return False
+    return os.getenv("TRUTHLENS_ENV", "").strip().lower() == "beta"
 
 
 def _title_summary(payload: ScoreItemRequest) -> dict[str, Any]:
@@ -799,16 +809,39 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
     summary["history_encoder_requested"] = str(
         history_resolution.get("requested_encoder", summary["history_encoder_actual"])
     )
+    runtime_safe_fallbacks = _runtime_safe_head_fallbacks_enabled()
+    text_runtime_fallback = runtime_safe_fallbacks and summary["text_encoder_actual"] == "sentence-transformer"
+    vision_runtime_fallback = runtime_safe_fallbacks and summary["vision_encoder_actual"] in {
+        "tiny-cnn-thumbnail",
+        "vision-transformer",
+    }
+    history_runtime_fallback = runtime_safe_fallbacks and summary["history_encoder_actual"] == "lstm-sequence"
     if text_resolution.get("fallback_reason"):
         summary["text_encoder_fallback_reason"] = str(text_resolution["fallback_reason"])
     if vision_resolution.get("fallback_reason"):
         summary["vision_encoder_fallback_reason"] = str(vision_resolution["fallback_reason"])
     if history_resolution.get("fallback_reason"):
         summary["history_encoder_fallback_reason"] = str(history_resolution["fallback_reason"])
+    if text_runtime_fallback:
+        summary["text_encoder_runtime_fallback_reason"] = (
+            "Hosted beta disables sentence-transformer inference in the scoring hot path."
+        )
+    if vision_runtime_fallback:
+        summary["vision_encoder_runtime_fallback_reason"] = (
+            "Hosted beta keeps the engineered vision head in the scoring hot path."
+        )
+    if history_runtime_fallback:
+        summary["history_encoder_runtime_fallback_reason"] = (
+            "Hosted beta disables temporal sequence inference in the scoring hot path."
+        )
 
     bootstrap = _bootstrap_signals(payload)
     try:
-        text_matrix = _text_matrix(payload, bundle, model_info)
+        text_matrix = None
+        text_score = bootstrap.text_score
+        if not text_runtime_fallback:
+            text_matrix = _text_matrix(payload, bundle, model_info)
+            text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_values = _vision_vector(payload, summary)
         metadata_values = _metadata_vector(payload, summary)
         history_values = _history_vector(payload, summary)
@@ -817,10 +850,9 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         metadata_vector = np.asarray([metadata_values], dtype=float)
         history_vector = np.asarray([history_values], dtype=float)
         packaging_vector = np.asarray([packaging_values], dtype=float)
-        text_score = _safe_probability(bundle["text_model"], text_matrix)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
         vision_used_learned_encoder = False
-        if summary["vision_encoder_actual"] in {"tiny-cnn-thumbnail", "vision-transformer"}:
+        if not vision_runtime_fallback and summary["vision_encoder_actual"] in {"tiny-cnn-thumbnail", "vision-transformer"}:
             vision_payload = bundle.get("vision_encoder_artifacts")
             if isinstance(vision_payload, dict):
                 vision_artifacts = vision_artifacts_from_payload(vision_payload)
@@ -848,7 +880,13 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         metadata_score = _safe_probability(bundle["metadata_model"], metadata_vector)
         history_model = bundle.get("history_model")
         history_score = bootstrap.history_score
-        if summary["history_encoder_actual"] == "lstm-sequence":
+        if history_runtime_fallback:
+            if history_model is not None:
+                history_score = _safe_probability(history_model, history_vector)
+                summary["history_sequence_note"] = (
+                    "Hosted beta used the summary-derived history head instead of temporal sequence inference."
+                )
+        elif summary["history_encoder_actual"] == "lstm-sequence":
             sequence_payload = bundle.get("history_sequence_artifacts")
             if isinstance(sequence_payload, dict):
                 history_artifacts = temporal_artifacts_from_payload(sequence_payload)
@@ -885,7 +923,12 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         else:
             anomaly_score = bootstrap.anomaly_score
             summary["anomaly_top_contributors"] = []
-        if summary["text_encoder_actual"] == "count-vectorizer-bigrams" and "text_vectorizer" in bundle:
+        if text_runtime_fallback:
+            summary["text_top_contributors"] = []
+            summary["text_embedding_note"] = (
+                "Hosted beta used the runtime-safe text fallback instead of the sentence-transformer encoder."
+            )
+        elif summary["text_encoder_actual"] == "count-vectorizer-bigrams" and "text_vectorizer" in bundle:
             summary["text_top_contributors"] = _top_text_contributors(
                 bundle["text_model"],
                 bundle["text_vectorizer"],

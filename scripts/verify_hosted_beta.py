@@ -163,7 +163,6 @@ def _feedback_payload(
 
 def _get_json(client: httpx.Client, base_url: str, path: str) -> tuple[int, dict[str, Any] | None, str]:
     response = client.get(f"{base_url}{path}")
-    response.raise_for_status()
     content_type = response.headers.get("content-type", "")
     if content_type.startswith("application/json"):
         return response.status_code, response.json(), response.text
@@ -174,7 +173,6 @@ def _post_json(
     client: httpx.Client, base_url: str, path: str, payload: dict[str, Any]
 ) -> tuple[int, dict[str, Any] | None, str]:
     response = client.post(f"{base_url}{path}", json=payload)
-    response.raise_for_status()
     content_type = response.headers.get("content-type", "")
     if content_type.startswith("application/json"):
         return response.status_code, response.json(), response.text
@@ -241,10 +239,16 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
             [
                 "live-host-confirmed",
                 "public-api-base-confirmed-externally",
-                "live-ready-health-confirmed",
-                "hosted-get-endpoints-confirmed",
             ]
         )
+        if ready_status == 200 and bool((ready_json or {}).get("ready")):
+            report["closure_status"]["closed"].append("live-ready-health-confirmed")
+        else:
+            report["closure_status"]["open"].append("live-ready-health-confirmed")
+        if all(status == 200 for status in (health_status, ready_status, model_status, policy_status, metrics_status)):
+            report["closure_status"]["closed"].append("hosted-get-endpoints-confirmed")
+        else:
+            report["closure_status"]["open"].append("hosted-get-endpoints-confirmed")
 
         if (model_json or {}).get("artifact_status") != "compatible":
             report["closure_status"]["open"].append("runtime-model-bundle-proof")
@@ -267,8 +271,8 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
             )
             metrics_before = report["live_service"]["metrics"]
 
-            score_status, score_json, _ = _post_json(client, base_url, "/score-item", score_payload)
-            batch_status, batch_json, _ = _post_json(
+            score_status, score_json, score_text = _post_json(client, base_url, "/score-item", score_payload)
+            batch_status, batch_json, batch_text = _post_json(
                 client,
                 base_url,
                 "/batch-score",
@@ -279,7 +283,7 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
                 item_id=first_item_id,
                 title=score_payload["title"],
             )
-            observation_status, observation_json, _ = _post_json(
+            observation_status, observation_json, observation_text = _post_json(
                 client, base_url, "/browser-observation", observation_payload
             )
             feedback_payload = _feedback_payload(
@@ -288,8 +292,8 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
                 observation_id=observation_payload["observation_id"],
                 score_result=score_json or {},
             )
-            feedback_status, feedback_json, _ = _post_json(client, base_url, "/feedback", feedback_payload)
-            feedback_summary_status, feedback_summary_json, _ = _get_json(
+            feedback_status, feedback_json, feedback_text = _post_json(client, base_url, "/feedback", feedback_payload)
+            feedback_summary_status, feedback_summary_json, feedback_summary_text = _get_json(
                 client, base_url, "/feedback-summary"
             )
             _, _, metrics_after_text = _get_json(client, base_url, "/metrics")
@@ -309,6 +313,20 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
                 and (metrics_after["browser_observations_total"] or 0.0)
                 > (metrics_before.get("browser_observations_total") or 0.0)
             )
+            all_write_statuses_green = all(
+                status == 200
+                for status in (
+                    score_status,
+                    batch_status,
+                    observation_status,
+                    feedback_status,
+                    feedback_summary_status,
+                )
+            )
+            if all_write_statuses_green:
+                report["closure_status"]["closed"].append("hosted-write-endpoints-confirmed")
+            else:
+                report["closure_status"]["open"].append("hosted-write-endpoints-confirmed")
             if persistence_proven:
                 report["closure_status"]["closed"].append("postgres-feedback-observation-proof")
             else:
@@ -334,6 +352,15 @@ def build_report(base_url: str, *, write_events: bool) -> dict[str, Any]:
                     "feedback_status": (feedback_json or {}).get("status"),
                     "observation_status": (observation_json or {}).get("status"),
                     "feedback_summary_total_events": (feedback_summary_json or {}).get("total_events"),
+                },
+                "response_excerpt": {
+                    "/score-item": score_json if score_json is not None else score_text[:400],
+                    "/batch-score": batch_json if batch_json is not None else batch_text[:400],
+                    "/browser-observation": observation_json if observation_json is not None else observation_text[:400],
+                    "/feedback": feedback_json if feedback_json is not None else feedback_text[:400],
+                    "/feedback-summary": (
+                        feedback_summary_json if feedback_summary_json is not None else feedback_summary_text[:400]
+                    ),
                 },
                 "metrics_before": metrics_before,
                 "metrics_after": metrics_after,

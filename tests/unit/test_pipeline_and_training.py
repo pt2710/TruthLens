@@ -1,10 +1,12 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from truthlens_data_pipeline import PublicSourceSpec
 from truthlens_data_pipeline.paths import read_json, read_jsonl, repo_root
 from truthlens_model_serving import describe_model
+from truthlens_model_serving.scorer import predict_item_signals
 from truthlens_policy_engine import score_item
 from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, ScoreItemRequest
 from truthlens_trainer.pipeline import run_pipeline
@@ -173,6 +175,82 @@ def test_trained_scoring_surfaces_model_contributor_details(
         "unknown",
     }
     assert "metrics" in result.bias_profile.model_dump()
+
+
+def test_beta_runtime_avoids_heavy_learned_encoder_hot_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    monkeypatch.setenv("TRUTHLENS_ENV", "beta")
+    run_pipeline(run_id="discovery-test-latest", build_id="build-test-latest")
+    train_main()
+
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer._text_encoder_resolution",
+        lambda bundle, model_info: {
+            "requested_encoder": "sentence-transformer",
+            "actual_encoder": "sentence-transformer",
+        },
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer._vision_encoder_resolution",
+        lambda bundle, model_info: {
+            "requested_encoder": "vision-transformer",
+            "actual_encoder": "vision-transformer",
+        },
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer._history_encoder_resolution",
+        lambda bundle, model_info: {
+            "requested_encoder": "lstm-sequence",
+            "actual_encoder": "lstm-sequence",
+        },
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer.sentence_transformer_matrix",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("sentence-transformer hot path should be skipped")),
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer.thumbnail_scores_from_artifacts",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("vision encoder hot path should be skipped")),
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer.temporal_history_scores_from_artifacts",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("temporal sequence hot path should be skipped")),
+    )
+    monkeypatch.setattr(
+        "truthlens_model_serving.scorer._thumbnail_image_from_ref",
+        lambda *_args, **_kwargs: np.zeros((32, 32, 3), dtype=np.float32),
+    )
+
+    signals = predict_item_signals(
+        ScoreItemRequest(
+            item_id="beta-runtime-fallback",
+            title="Breaking aliens confirmed over Europe",
+            thumbnail_ref="https://example.com/thumb.png",
+            transcript_excerpt="This segment reviews telescope maintenance and launch cadence.",
+            metadata=ItemMetadata(view_count=12000, like_count=900),
+            channel=ChannelInfo(
+                channel_name="Signal Watch Europe",
+                prior_flags=3,
+                channel_history_features={
+                    "channel_risk_mean": 0.72,
+                    "repeat_template_rate": 0.61,
+                    "recent_upload_velocity": 0.58,
+                    "engagement_anomaly": 1.22,
+                },
+            ),
+        )
+    )
+
+    assert signals.mode == "trained"
+    assert signals.model_version != "bootstrap-v0"
+    assert "text_encoder_runtime_fallback_reason" in signals.feature_summary
+    assert "vision_encoder_runtime_fallback_reason" in signals.feature_summary
+    assert "history_encoder_runtime_fallback_reason" in signals.feature_summary
+    assert "runtime-safe text fallback" in signals.feature_summary["text_embedding_note"]
+    assert "summary-derived history head" in signals.feature_summary["history_sequence_note"]
 
 
 def test_pipeline_supports_public_rss_sources(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
