@@ -134,6 +134,42 @@ async function main() {
       const listeners = [];
       const sentMessages = [];
 
+      function normalizeComparableUrl(value) {
+        if (!value) {
+          return null;
+        }
+
+        try {
+          const url = new URL(value, window.location.href);
+          if (url.pathname === '/watch') {
+            const videoId = url.searchParams.get('v');
+            return videoId ? `/watch?v=${videoId}` : url.pathname;
+          }
+          return `${url.pathname}${url.search}`;
+        } catch {
+          return value;
+        }
+      }
+
+      function findFixtureCard(target) {
+        const targetUrl = normalizeComparableUrl(target?.linkUrl ?? target?.link_url ?? null);
+        return Array.from(document.querySelectorAll('[data-truthlens-card]')).find((card) => {
+          if (!(card instanceof HTMLElement)) {
+            return false;
+          }
+          const thumbnail = card.querySelector('#thumbnail');
+          const title = card.querySelector('#video-title');
+          const href =
+            thumbnail instanceof HTMLAnchorElement
+              ? normalizeComparableUrl(thumbnail.getAttribute('href'))
+              : null;
+          if (targetUrl && href === targetUrl) {
+            return true;
+          }
+          return title instanceof HTMLElement && title.textContent?.trim() === target?.title;
+        });
+      }
+
       window.chrome = {
         runtime: {
           onMessage: {
@@ -143,6 +179,22 @@ async function main() {
           },
           async sendMessage(message) {
             sentMessages.push(message);
+            if (message?.type === 'TRUTHLENS_SUBMIT_PAGE_REPORT') {
+              const card = findFixtureCard(message.target);
+              if (card instanceof HTMLElement) {
+                card.setAttribute('data-youtube-report-submitted', 'true');
+                card.setAttribute('data-youtube-report-primary', 'Spam or misleading');
+                card.setAttribute('data-youtube-report-secondary', 'Misleading metadata');
+              }
+              return {
+                ok: true,
+                data: {
+                  status: 'reported',
+                  reason_label: 'Spam or misleading',
+                  secondary_reason_label: 'Misleading metadata',
+                },
+              };
+            }
             return { ok: true };
           },
         },
@@ -530,7 +582,8 @@ async function main() {
       'true',
     );
     const sentMessages = await page.evaluate(() => window.__truthlensSentMessages);
-    assert.equal(sentMessages.length, 0);
+    assert.equal(sentMessages.length, 1);
+    assert.equal(sentMessages[0]?.type, 'TRUTHLENS_SUBMIT_PAGE_REPORT');
 
     await page.evaluate(() => {
       const firstCard = document.querySelector('[data-truthlens-card]');
