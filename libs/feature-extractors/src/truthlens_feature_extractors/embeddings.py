@@ -112,7 +112,7 @@ def text_encoder_resolution_payload(resolution: TextEncoderResolution) -> dict[s
 
 @lru_cache(maxsize=2)
 def _load_sentence_transformer(model_name: str) -> Any:
-    from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
+    from sentence_transformers import SentenceTransformer
 
     return SentenceTransformer(model_name)
 

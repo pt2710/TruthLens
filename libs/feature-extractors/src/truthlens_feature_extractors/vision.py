@@ -10,9 +10,11 @@ from typing import Any
 import numpy as np
 
 try:
-    from PIL import Image  # type: ignore[import-not-found]
+    from PIL import Image as _ImageModule
 except ImportError:  # pragma: no cover - optional dependency fallback
-    Image = None
+    Image: Any | None = None
+else:
+    Image = _ImageModule
 
 DEFAULT_VISION_ENCODER_CONFIG = {
     "requested_encoder": "tiny-cnn-thumbnail",

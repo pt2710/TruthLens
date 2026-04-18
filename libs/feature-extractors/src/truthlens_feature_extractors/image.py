@@ -3,12 +3,17 @@ from __future__ import annotations
 import base64
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 try:
-    from PIL import Image, ImageStat  # type: ignore[import-not-found]
+    from PIL import Image as _ImageModule
+    from PIL import ImageStat as _ImageStatModule
 except ImportError:  # pragma: no cover - optional dependency fallback
-    Image = None
-    ImageStat = None
+    Image: Any | None = None
+    ImageStat: Any | None = None
+else:
+    Image = _ImageModule
+    ImageStat = _ImageStatModule
 
 
 def _clamp(value: float) -> float:
