@@ -30,9 +30,13 @@ import { createBootstrapScore } from './mockScore';
 import { buildTruthLensApiUrl } from './runtimeConfig';
 
 const scoreCache = new Map<string, ScoreResult>();
-const SCORE_REQUEST_TIMEOUT_MS = 4500;
+const SCORE_REQUEST_TIMEOUT_MS = 12000;
 const STATUS_REQUEST_TIMEOUT_MS = 3500;
-const REPORTING_REQUEST_TIMEOUT_MS = 5000;
+const EVENT_POST_TIMEOUT_MS = 5000;
+const MANUAL_REPORT_SUGGEST_TIMEOUT_MS = 25000;
+const MANUAL_REPORT_OPTIMIZE_TIMEOUT_MS = 25000;
+const YOUTUBE_AUTH_STATUS_TIMEOUT_MS = 5000;
+const YOUTUBE_REPORT_TIMEOUT_MS = 5000;
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
 type BackgroundOptimizeResponse =
@@ -154,19 +158,19 @@ async function fetchWithTimeout(
   init: RequestInit | undefined,
   timeoutMs: number,
 ): Promise<Response> {
-  let timeoutId: number | null = null;
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
   try {
     return await Promise.race([
       fetch(input, init),
       new Promise<Response>((_, reject) => {
-        timeoutId = window.setTimeout(() => {
+        timeoutId = globalThis.setTimeout(() => {
           reject(new Error(`TruthLens API request timed out after ${timeoutMs}ms.`));
         }, timeoutMs);
       }),
     ]);
   } finally {
     if (timeoutId !== null) {
-      window.clearTimeout(timeoutId);
+      globalThis.clearTimeout(timeoutId);
     }
   }
 }
@@ -202,9 +206,7 @@ export async function scoreFeedItem(
       itemId: parsedItem.item_id,
       reason: describeError(error),
     });
-    const fallback = createBootstrapScore(parsedItem);
-    scoreCache.set(key, fallback);
-    return fallback;
+    return createBootstrapScore(parsedItem);
   }
 }
 
@@ -246,8 +248,11 @@ export async function batchScoreFeedItems(
     }
     const payload = batchScoreResponseSchema.parse(await response.json());
     for (const item of uncachedItems) {
-      const score = payload.results[item.item_id] ?? createBootstrapScore(item);
-      scoreCache.set(cacheKey(item), score);
+      const liveScore = payload.results[item.item_id];
+      const score = liveScore ?? createBootstrapScore(item);
+      if (liveScore) {
+        scoreCache.set(cacheKey(item), liveScore);
+      }
       results[item.item_id] = score;
     }
     return results;
@@ -257,9 +262,7 @@ export async function batchScoreFeedItems(
       reason: describeError(error),
     });
     for (const item of uncachedItems) {
-      const fallback = createBootstrapScore(item);
-      scoreCache.set(cacheKey(item), fallback);
-      results[item.item_id] = fallback;
+      results[item.item_id] = createBootstrapScore(item);
     }
     return results;
   }
@@ -275,7 +278,7 @@ export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedEvent),
       },
-      REPORTING_REQUEST_TIMEOUT_MS,
+      EVENT_POST_TIMEOUT_MS,
     );
   } catch {
     // Fail soft in the browser; feedback is advisory and should not block UI interaction.
@@ -294,7 +297,7 @@ export async function sendBrowserObservation(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedObservation),
       },
-      REPORTING_REQUEST_TIMEOUT_MS,
+      EVENT_POST_TIMEOUT_MS,
     );
   } catch {
     // Fail soft in the browser; observation intake should never block UI rendering.
@@ -313,7 +316,7 @@ export async function optimizeManualReportComments(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRequest),
       },
-      REPORTING_REQUEST_TIMEOUT_MS,
+      MANUAL_REPORT_OPTIMIZE_TIMEOUT_MS,
     );
     if (!response.ok) {
       let detail = `Manual report optimization failed: ${response.status}`;
@@ -357,7 +360,7 @@ export async function suggestManualReportComments(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedRequest),
     },
-    REPORTING_REQUEST_TIMEOUT_MS,
+    MANUAL_REPORT_SUGGEST_TIMEOUT_MS,
   );
   if (!response.ok) {
     let detail = `Manual report suggestions failed: ${response.status}`;
@@ -447,7 +450,7 @@ export async function fetchYouTubeAuthStatus(): Promise<YouTubeAuthStatus> {
   const response = await fetchWithTimeout(
     buildTruthLensApiUrl('/youtube/auth/status'),
     undefined,
-    REPORTING_REQUEST_TIMEOUT_MS,
+    YOUTUBE_AUTH_STATUS_TIMEOUT_MS,
   );
   if (!response.ok) {
     throw new Error(`YouTube auth status request failed: ${response.status}`);
@@ -466,7 +469,7 @@ export async function submitYouTubeReport(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsedRequest),
     },
-    REPORTING_REQUEST_TIMEOUT_MS,
+    YOUTUBE_REPORT_TIMEOUT_MS,
   );
   if (!response.ok) {
     let detail = `YouTube report submission failed: ${response.status}`;
@@ -481,4 +484,8 @@ export async function submitYouTubeReport(
     throw new Error(detail);
   }
   return youtubeReportResponseSchema.parse(await response.json());
+}
+
+export function __resetExtensionApiStateForTests(): void {
+  scoreCache.clear();
 }

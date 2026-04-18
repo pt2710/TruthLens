@@ -127,6 +127,7 @@ async function main() {
   const youtubeReports = [];
   let batchRequests = 0;
   let artificialBatchDelayMs = 0;
+  let artificialSuggestDelayMs = 0;
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
@@ -297,6 +298,11 @@ async function main() {
         return;
       }
       suggestionRequests.push(JSON.parse(route.request().postData() ?? '{}'));
+      if (artificialSuggestDelayMs > 0) {
+        const delay = artificialSuggestDelayMs;
+        artificialSuggestDelayMs = 0;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -463,6 +469,7 @@ async function main() {
       });
     });
 
+    artificialBatchDelayMs = 6000;
     await page.goto(`${baseUrl}/tests/fixtures/youtube-feed.html`);
     await page.addScriptTag({
       type: 'module',
@@ -502,6 +509,7 @@ async function main() {
     assert.equal(await cards.nth(2).evaluate((element) => element.style.order), '');
     assert.equal(await cards.nth(2).locator('.truthlens-review-prompt').textContent(), 'Review report');
     if ((await page.locator('.truthlens-report-card').count()) === 0) {
+      artificialSuggestDelayMs = 7000;
       await cards.nth(2).locator('.truthlens-review-prompt').click();
     }
     await expectText(
@@ -514,6 +522,12 @@ async function main() {
     await expectText(page, '.truthlens-live-status', 'Loading watch metadata and transcript context');
     await expectText(page, '.truthlens-live-status', 'Drafting initial comments with Gemini');
     await expectText(page, '.truthlens-live-status', 'Initial draft suggestions are ready for review');
+    assert.equal(
+      (await page.locator('.truthlens-live-status-item-error').allTextContents()).some((text) =>
+        text.includes('timed out after 5000ms'),
+      ),
+      false,
+    );
     await page.waitForFunction(() => {
       const titleCard = Array.from(document.querySelectorAll('.truthlens-issue-card')).find((node) =>
         node.textContent?.includes('Title'),
@@ -657,7 +671,7 @@ async function main() {
     assert.equal(await page.locator('.truthlens-action-row').count(), 4);
     assert.equal(browserObservations.length, 5);
 
-    artificialBatchDelayMs = 5000;
+    artificialBatchDelayMs = 13000;
     const batchRequestsBeforeFallbackReload = batchRequests;
     await page.goto(`${baseUrl}/tests/fixtures/youtube-feed.html?fallback=1`);
     await page.addScriptTag({
@@ -686,7 +700,7 @@ async function main() {
     await page.waitForFunction(
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 3,
       null,
-      { timeout: 7000 },
+      { timeout: 15000 },
     );
     assert.equal(batchRequests, batchRequestsBeforeFallbackReload + 1);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
