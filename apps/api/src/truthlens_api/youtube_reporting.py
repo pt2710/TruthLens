@@ -241,8 +241,8 @@ def get_youtube_auth_status() -> YouTubeAuthStatus:
     if not settings.youtube_direct_reporting_enabled:
         direct_reporting_supported = False
         direct_reporting_detail = (
-            "Direct YouTube API reporting is disabled for the hosted beta. "
-            "TruthLens currently supports manual report drafting and optimization only."
+            "Direct YouTube API reporting is turned off for this deployment. "
+            "Set TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED=true to expose hosted OAuth/report-submit."
         )
     else:
         direct_reporting_supported, direct_reporting_detail = probe_direct_reporting_capability(access_token)
@@ -416,7 +416,7 @@ def probe_direct_reporting_capability(access_token: str) -> tuple[bool, str | No
 def submit_youtube_report(payload: YouTubeReportRequest) -> YouTubeReportResponse:
     if not settings.youtube_direct_reporting_enabled:
         raise YouTubeDirectReportingUnsupportedError(
-            "Direct YouTube API reporting is disabled for the current hosted beta."
+            "Direct YouTube API reporting is turned off for this deployment."
         )
     access_token = _get_access_token()
     video_id = _extract_video_id(payload.target_url)

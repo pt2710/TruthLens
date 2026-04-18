@@ -13,7 +13,7 @@ The repository already contains a hybrid scoring stack, optional learned paths, 
 - TruthLens is currently a controlled extension-first beta project, not a broad public launch.
 - The public repo is curated for repo truth: docs, policies, manifests, benchmark surfaces, and governance stay committed; raw payloads and heavy private artifacts do not.
 - The first supported external path is an unpacked Chromium extension pointed at a real hosted API origin.
-- Direct YouTube API reporting is not the default first-beta contract; single-item reports fall back to YouTube's in-page report flow and local TruthLens feedback when the connected account does not expose a usable misleading-report category.
+- Hosted beta now supports direct YouTube OAuth/report-submit when the deployment is configured for it and the connected account exposes a usable misleading-report category; otherwise single-item reports fall back to YouTube's in-page report flow and linked local TruthLens feedback.
 - Current closure status and proof notes:
   - [Public hardening audit](docs/decision-records/wave1-public-hardening-audit.md)
   - [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
@@ -26,6 +26,8 @@ What works now:
 
 - Chromium extension flows for scoring, explanations, visible warning-state actions, manual review, transparency verification, and report drafting
 - FastAPI endpoints for scoring, feedback, browser observation intake, manual report drafting, metrics, and runtime policy/model inspection
+- hosted Gemini-assisted draft optimization when `TRUTHLENS_GEMINI_API_KEY` is set on the deployment
+- hosted YouTube OAuth status, account-connect, and direct report-submit capability probing
 - trainer, simulation, BSEO policy artifacts, benchmark renders, and governance surfaces
 - Android share-client code for config-parity and internal validation
 
@@ -33,7 +35,6 @@ What is deliberately not part of the first external beta:
 
 - browser-store distribution
 - Android as a public beta surface
-- direct YouTube OAuth/report-submit as a user-facing hosted-beta contract
 - any always-on heavy LLM classifier in the baseline runtime
 
 Support matrix for the first hosted beta:
@@ -63,7 +64,7 @@ For the first external beta path, use the hosted API plus an unpacked Chromium e
    - [Architecture docs](docs/architecture/README.md)
    - [Benchmark docs](docs/benchmarks/README.md)
 5. Check the current live-hosted proof status before treating a hostname as real beta truth: [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
-6. Keep in mind that direct YouTube API reporting is account-dependent in the first hosted beta; TruthLens supports manual report drafting, page-level fallback flows, and local transparency verification even when direct API reporting is unavailable.
+6. Keep in mind that direct YouTube API reporting is still deployment- and account-dependent; TruthLens supports hosted OAuth/report-submit when configured and falls back to page-level report flow plus local transparency verification when direct reporting is unavailable.
 
 ## Hosted Beta Live Snapshot
 
@@ -371,7 +372,7 @@ Explicitly kept out of the baseline hot path:
 - Gemini is used only as downstream wording assistance for report optimization and richer draft text after scoring, policy selection, and review-state construction are already complete
 - there is no always-on heavy LLM classifier inside the default perception, fusion, calibration, or policy loop
 - `bseo-live` is not allowed to self-promote without committed policy artifacts, compatibility checks, calibration and performance guardrails, and runtime-governance approval
-- direct YouTube OAuth/report-submit remains optional and account-dependent in the first hosted beta, while single-item reports can still fall back to YouTube's in-page report flow plus linked local TruthLens feedback
+- direct YouTube OAuth/report-submit is now part of the hosted-beta contract when the deployment is configured for it, while single-item reports still fall back to YouTube's in-page report flow plus linked local TruthLens feedback when the account cannot use the API route
 
 ## Policy Modes
 
@@ -411,7 +412,7 @@ TruthLens now treats browser observation and feedback-to-dataset as one shared i
 - when Gemini is not configured or errors during draft suggestion, TruthLens falls back to explicit local heuristics instead of blocking the normal review flow.
 - when the extension can resolve a YouTube mix or playlist from DOM and URL context, it opens a collection preview first, requires confirmation, and then applies batch review provenance across the resolved members.
 - direct external YouTube reporting for collection scope is best-effort only. TruthLens reports resolved watch URLs item-by-item and never claims that unresolved collection members were externally reported.
-- direct YouTube API reporting is account-dependent. If the authenticated account does not expose a usable misleading-report category through `videoAbuseReportReasons`, TruthLens now routes single-item reports straight to YouTube’s in-page report flow instead of first triggering a known failing API call.
+- direct YouTube API reporting is deployment- and account-dependent. If the deployment is missing OAuth settings or the authenticated account does not expose a usable misleading-report category through `videoAbuseReportReasons`, TruthLens routes single-item reports straight to YouTube’s in-page report flow instead of navigating away or claiming a direct submission.
 
 ## Benchmarking
 

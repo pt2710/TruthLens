@@ -32,13 +32,26 @@ Set these on the Render web service:
 - `TRUTHLENS_RUNTIME_EVENT_STORE=postgres`
 - `TRUTHLENS_LOCAL_EVENT_FALLBACK_ENABLED=false`
 - `TRUTHLENS_STORAGE_ROOT=/var/data/truthlens`
-- `TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED=false`
+- `TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED=true`
 
 Optional:
 
 - `TRUTHLENS_API_KEY`
 - `TRUTHLENS_GEMINI_API_KEY`
 - `TRUTHLENS_GEMINI_MODEL`
+- `TRUTHLENS_GEMINI_API_BASE`
+- `TRUTHLENS_YOUTUBE_CLIENT_ID`
+- `TRUTHLENS_YOUTUBE_CLIENT_SECRET`
+- `TRUTHLENS_YOUTUBE_REDIRECT_URI`
+
+## Render environment notes
+
+- `TRUTHLENS_GEMINI_API_KEY` is designed to be set as a normal Render secret environment variable. A free-tier Gemini key is sufficient for the current beta because Gemini is only used as occasional wording assistance and heuristic fallback repair, not as a required hot-path classifier.
+- The starter Blueprint now exposes direct YouTube OAuth/report-submit as part of the hosted-beta contract, but that path is still deployment- and account-gated:
+  - the deployment must have `TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED=true`
+  - the deployment must also provide `TRUTHLENS_YOUTUBE_CLIENT_ID`, `TRUTHLENS_YOUTUBE_CLIENT_SECRET`, and either `TRUTHLENS_PUBLIC_API_BASE` or `TRUTHLENS_YOUTUBE_REDIRECT_URI`
+  - the connected YouTube account must expose a usable misleading-report category through `videoAbuseReportReasons`
+- If any of those conditions fail, TruthLens keeps the user on the watch/feed page and falls back to YouTube's in-page report flow plus linked local TruthLens feedback.
 
 ## Runtime artifact contract
 
@@ -76,6 +89,6 @@ When `TRUTHLENS_STORAGE_ROOT=/var/data/truthlens`, this copies:
 
 - extension is the first supported external beta surface
 - Android is config-parity only and not part of the first external launch
-- direct YouTube OAuth/report-submit stays disabled in the first hosted beta
+- direct YouTube OAuth/report-submit is now part of the hosted-beta contract when the deployment is configured for it and the connected account supports it
 - Gemini remains optional and outside the baseline hot path
 - `TRUTHLENS_PUBLIC_API_BASE` should be finalized to the actual Render hostname after the service is created

@@ -311,7 +311,7 @@ export function App() {
                 : `${status.channel_name ? `Connected as ${status.channel_name}. ` : ''}${status.direct_reporting_detail ?? 'TruthLens will use YouTube’s in-page report flow for direct reports.'}`
               : status.configured
                 ? 'YouTube reporting is configured but still needs account authorization.'
-                : 'YouTube direct reporting is not configured for the current TruthLens API.',
+                : 'This TruthLens deployment is not configured for direct YouTube reporting yet.',
             status.connected && status.direct_reporting_supported ? 'success' : 'info',
           );
         })
@@ -1130,9 +1130,10 @@ export function App() {
                     Add <code>TRUTHLENS_YOUTUBE_CLIENT_ID</code>,{' '}
                     <code>TRUTHLENS_YOUTUBE_CLIENT_SECRET</code>, and either{' '}
                     <code>TRUTHLENS_PUBLIC_API_BASE</code> or{' '}
-                    <code>TRUTHLENS_YOUTUBE_REDIRECT_URI</code> to the hosted API environment if
-                    you want direct API reporting later. The first external beta keeps this path
-                    disabled and falls back to YouTube&apos;s in-page flow.
+                    <code>TRUTHLENS_YOUTUBE_REDIRECT_URI</code>, then set{' '}
+                    <code>TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED=true</code> if you want this
+                    hosted deployment to expose direct OAuth/report-submit. Until then, TruthLens
+                    falls back to YouTube&apos;s in-page flow.
                   </p>
                 )}
               </div>

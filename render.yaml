@@ -25,7 +25,7 @@ services:
       - key: TRUTHLENS_STORAGE_ROOT
         value: /var/data/truthlens
       - key: TRUTHLENS_YOUTUBE_DIRECT_REPORTING_ENABLED
-        value: "false"
+        value: "true"
       - key: TRUTHLENS_API_KEY
         sync: false
       - key: TRUTHLENS_GEMINI_API_KEY
