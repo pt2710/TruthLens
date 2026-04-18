@@ -1,5 +1,5 @@
 const LOCAL_DEV_API_BASE = 'http://127.0.0.1:8000';
-const HOSTED_BETA_API_BASE = 'https://truthlens-beta-host.invalid';
+const HOSTED_BETA_API_BASE = 'https://truthlens-beta-api.onrender.com';
 function normalizeApiBase(rawValue: string): string {
   return rawValue.replace(/\/+$/, '');
 }
