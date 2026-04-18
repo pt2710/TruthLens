@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { submitYouTubePageReport } from './youtubePageReporting';
 
@@ -204,8 +204,11 @@ describe('submitYouTubePageReport', () => {
     expect(result.status).toBe('reported');
   });
 
-  it('recovers when a misleading report target navigates to report history before the real dialog opens', async () => {
+  it('prioritizes the newly opened card menu over pre-existing visible report menus elsewhere on the page', async () => {
     document.body.innerHTML = `
+      <div role="menu">
+        <div role="menuitem" id="global-report-item">Report</div>
+      </div>
       <ytd-rich-item-renderer>
         <a id="thumbnail" href="https://www.youtube.com/watch?v=test-video">
           <img src="https://img.youtube.com/vi/test-video/default.jpg" />
@@ -218,37 +221,30 @@ describe('submitYouTubePageReport', () => {
       </ytd-rich-item-renderer>
       <ytd-menu-popup-renderer id="menu-root" hidden>
         <div role="menu">
-          <div role="menuitem" id="misleading-report-item">Report</div>
-          <div role="menuitem" id="real-report-item">Report this video</div>
+          <ytd-menu-service-item-renderer id="real-report-item">Report</ytd-menu-service-item-renderer>
         </div>
       </ytd-menu-popup-renderer>
     `;
 
-    window.history.replaceState({}, '', '/feed/subscriptions');
-
     const menuButton = document.querySelector<HTMLButtonElement>('button[aria-label="Action menu"]');
     const menuRoot = document.querySelector<HTMLElement>('#menu-root');
-    const misleadingReportItem = document.querySelector<HTMLElement>('#misleading-report-item');
+    const globalReportItem = document.querySelector<HTMLElement>('#global-report-item');
     const realReportItem = document.querySelector<HTMLElement>('#real-report-item');
-    if (!menuButton || !menuRoot || !misleadingReportItem || !realReportItem) {
-      throw new Error('Failed to build navigation recovery DOM fixture.');
+    if (!menuButton || !menuRoot || !globalReportItem || !realReportItem) {
+      throw new Error('Failed to build menu prioritization DOM fixture.');
     }
 
     menuButton.addEventListener('click', () => {
       menuRoot.hidden = false;
     });
 
-    misleadingReportItem.addEventListener('click', () => {
-      window.history.pushState({}, '', '/reporthistory');
-      menuRoot.hidden = true;
+    let globalReportClicks = 0;
+    globalReportItem.addEventListener('click', () => {
+      globalReportClicks += 1;
     });
 
     realReportItem.addEventListener('click', () => {
       installDialog();
-    });
-
-    const backSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {
-      window.history.pushState({}, '', '/feed/subscriptions');
     });
 
     const result = await submitYouTubePageReport(
@@ -268,10 +264,8 @@ describe('submitYouTubePageReport', () => {
       ['title'],
     );
 
-    expect(backSpy).toHaveBeenCalledTimes(1);
-    expect(window.location.pathname).toBe('/feed/subscriptions');
+    expect(globalReportClicks).toBe(0);
     expect(result.status).toBe('reported');
-    backSpy.mockRestore();
   });
 
   it(

@@ -243,10 +243,6 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-function currentReportFlowLocation(): string {
-  return `${window.location.pathname}${window.location.search}`;
-}
-
 async function waitFor<T>(
   factory: () => T | null,
   options: { timeoutMs?: number; intervalMs?: number; errorMessage?: string } = {},
@@ -472,52 +468,35 @@ async function waitForReportDialog(
       timeoutMs,
       errorMessage: dialogErrorMessage,
     }).catch(() => null);
-  const originalLocation = currentReportFlowLocation();
-  const navigationRejectedCandidates = new Set<HTMLElement>();
-  const initiallyVisibleRoots = new Set(findVisibleMenuRoots(menuButton));
-  let pendingCandidates: HTMLElement[] = [reportMenuItem];
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    while (pendingCandidates.length > 0) {
-      const candidate = pendingCandidates.shift();
-      if (!candidate || navigationRejectedCandidates.has(candidate)) {
-        continue;
-      }
+  clickElement(reportMenuItem);
+  let dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
+  if (dialog) {
+    return dialog;
+  }
 
-      for (let candidateAttempt = 0; candidateAttempt < 2; candidateAttempt += 1) {
-        clickElement(candidate);
-        const dialog = await tryWaitForDialog(
-          attempt === 0 ? REPORT_DIALOG_INITIAL_TIMEOUT_MS : REPORT_DIALOG_RETRY_TIMEOUT_MS,
-        );
-        if (dialog) {
-          return dialog;
-        }
-
-        if (currentReportFlowLocation() !== originalLocation) {
-          navigationRejectedCandidates.add(candidate);
-          window.history.back();
-          await waitFor(
-            () => (currentReportFlowLocation() === originalLocation ? true : null),
-            {
-              timeoutMs: 1500,
-              errorMessage: dialogErrorMessage,
-            },
-          ).catch(() => null);
-          break;
-        }
-      }
+  const repeatedMenuItem = findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton);
+  if (repeatedMenuItem) {
+    clickElement(repeatedMenuItem);
+    dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
+    if (dialog) {
+      return dialog;
     }
+  }
 
-    if (navigationRejectedCandidates.size === 0) {
-      break;
+  const visibleRootsBeforeRetry = new Set(findVisibleMenuRoots(menuButton));
+  clickElement(menuButton);
+  const retryCandidates = await waitForVisibleReportMenuCandidates(
+    menuButton,
+    new Set([reportMenuItem, repeatedMenuItem].filter((candidate): candidate is HTMLElement => Boolean(candidate))),
+    visibleRootsBeforeRetry,
+  ).catch(() => []);
+  for (const retryCandidate of retryCandidates) {
+    clickElement(retryCandidate);
+    dialog = await tryWaitForDialog(REPORT_DIALOG_RETRY_TIMEOUT_MS);
+    if (dialog) {
+      return dialog;
     }
-
-    clickElement(menuButton);
-    pendingCandidates = await waitForVisibleReportMenuCandidates(
-      menuButton,
-      navigationRejectedCandidates,
-      initiallyVisibleRoots,
-    ).catch(() => []);
   }
 
   throw new Error(dialogErrorMessage);
@@ -610,11 +589,12 @@ export async function submitYouTubePageReport(
       'TruthLens could not find YouTube’s action menu on this card. Make sure you are signed in and the card is visible.',
     );
   }
+  const visibleRootsBeforeMenuOpen = new Set(findVisibleMenuRoots(menuButton));
   clickElement(menuButton);
   const reportMenuCandidates = await waitForVisibleReportMenuCandidates(
     menuButton,
     new Set(),
-    new Set(findVisibleMenuRoots(menuButton)),
+    visibleRootsBeforeMenuOpen,
   ).catch(() => []);
   const reportMenuItem = reportMenuCandidates[0] ?? null;
   if (!reportMenuItem) {
