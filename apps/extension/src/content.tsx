@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import type {
   BrowserObservationRecord,
+  ManualReportIssueType,
   ManualReportWorkflowMode,
   ManualReviewCollectionMember,
   ManualReviewCollectionScope,
@@ -26,6 +27,10 @@ import { shouldRescoreFromMutations } from './lib/domMutationFilter';
 import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
 import { App } from './overlay/App';
 import { type ManualReportTarget, useOverlayStore } from './overlay/store';
+import {
+  submitYouTubePageReportInDocument,
+  type YouTubePageReportResult,
+} from './lib/youtubePageReporting';
 import './styles.css';
 
 const OVERLAY_ID = 'truthlens-overlay-root';
@@ -143,6 +148,14 @@ type ManualReportMessage = {
   pageUrl?: string | null;
   workflowMode?: ManualReportWorkflowMode;
 };
+
+type ExecutePageReportMessage = {
+  type: 'TRUTHLENS_EXECUTE_PAGE_REPORT';
+  target: ManualReportTarget;
+  issueTypes: ManualReportIssueType[];
+};
+
+type PageReportMessage = ManualReportMessage | ExecutePageReportMessage;
 
 function createClientId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -1095,19 +1108,35 @@ function installRuntimeListeners() {
     return;
   }
 
-  chrome.runtime.onMessage.addListener((message: ManualReportMessage, _sender, sendResponse) => {
-    if (message?.type !== 'TRUTHLENS_OPEN_MANUAL_REPORT') {
+  chrome.runtime.onMessage.addListener((message: PageReportMessage, _sender, sendResponse) => {
+    if (message?.type === 'TRUTHLENS_OPEN_MANUAL_REPORT') {
+      const target = findManualReportTarget(message);
+      if (!target) {
+        sendResponse({ ok: false });
+        return;
+      }
+
+      useOverlayStore.getState().openManualReport(target);
+      sendResponse({ ok: true });
       return;
     }
 
-    const target = findManualReportTarget(message);
-    if (!target) {
-      sendResponse({ ok: false });
-      return;
+    if (message?.type === 'TRUTHLENS_EXECUTE_PAGE_REPORT') {
+      void submitYouTubePageReportInDocument(message.target, message.issueTypes)
+        .then((result: YouTubePageReportResult) => {
+          sendResponse({ ok: true, data: result });
+        })
+        .catch((error: unknown) => {
+          sendResponse({
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'TruthLens could not finish the protected YouTube report flow on the background tab.',
+          });
+        });
+      return true;
     }
-
-    useOverlayStore.getState().openManualReport(target);
-    sendResponse({ ok: true });
   });
 }
 

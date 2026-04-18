@@ -16,6 +16,8 @@ const BUTTON_SELECTORS = ['button', '[role="button"]'];
 const MENU_ITEM_TIMEOUT_MS = 2500;
 const REPORT_DIALOG_INITIAL_TIMEOUT_MS = 1500;
 const REPORT_DIALOG_RETRY_TIMEOUT_MS = 4500;
+const BACKGROUND_REPORT_ERROR_MESSAGE =
+  'TruthLens could not complete the protected YouTube report flow without leaving the current page.';
 const REPORT_MENU_ITEM_KEYWORD_GROUPS = [['report'], ['rapport'], ['anmeld']];
 const PRIMARY_REASON_KEYWORD_GROUPS = [
   ['spam', 'misleading'],
@@ -50,6 +52,10 @@ export type YouTubePageReportResult = {
   reason_label: string;
   secondary_reason_label: string | null;
 };
+
+type RuntimePageReportResponse =
+  | { ok: true; data: YouTubePageReportResult }
+  | { ok: false; error?: string };
 
 function normalizeText(value: string | null | undefined): string {
   return (value ?? '')
@@ -297,9 +303,25 @@ function findManualReportCard(target: ManualReportTarget): HTMLElement | null {
   return null;
 }
 
-function findMenuButton(card: HTMLElement): HTMLElement | null {
+function findVisibleWatchPageRoot(): HTMLElement | null {
+  const candidates = [
+    'ytd-watch-metadata',
+    '#above-the-fold',
+    '#primary-inner',
+    'ytd-watch-flexy',
+    'ytd-reel-video-renderer',
+    'ytd-shorts',
+  ];
+  return (
+    candidates
+      .map((selector) => document.querySelector<HTMLElement>(selector))
+      .find((element) => isVisible(element ?? null)) ?? null
+  );
+}
+
+function findMenuButton(root: ParentNode): HTMLElement | null {
   const candidates = Array.from(
-    card.querySelectorAll<HTMLElement>(
+    root.querySelectorAll<HTMLElement>(
       [
         'ytd-menu-renderer button',
         '#menu button',
@@ -324,6 +346,31 @@ function findMenuButton(card: HTMLElement): HTMLElement | null {
       );
     }) ?? candidates.find((candidate) => !candidate.closest('.truthlens-action-row')) ?? null
   );
+}
+
+function findManualReportSurface(target: ManualReportTarget): {
+  surfaceLabel: string;
+  menuButton: HTMLElement;
+} | null {
+  const card = findManualReportCard(target);
+  if (card) {
+    const menuButton = findMenuButton(card);
+    if (menuButton) {
+      return { surfaceLabel: 'current page card', menuButton };
+    }
+  }
+
+  const watchRoot = findVisibleWatchPageRoot();
+  if (!watchRoot) {
+    return null;
+  }
+
+  const menuButton = findMenuButton(watchRoot);
+  if (!menuButton) {
+    return null;
+  }
+
+  return { surfaceLabel: 'watch page', menuButton };
 }
 
 function findVisibleDialog(): HTMLElement | null {
@@ -574,21 +621,18 @@ async function advanceDialog(
   );
 }
 
-export async function submitYouTubePageReport(
+export async function submitYouTubePageReportInDocument(
   target: ManualReportTarget,
   issueTypes: ManualReportIssueType[],
 ): Promise<YouTubePageReportResult> {
-  const card = findManualReportCard(target);
-  if (!card) {
-    throw new Error('TruthLens could not find the selected YouTube card on the current page.');
-  }
-
-  const menuButton = findMenuButton(card);
-  if (!menuButton) {
+  const surface = findManualReportSurface(target);
+  if (!surface) {
     throw new Error(
-      'TruthLens could not find YouTube’s action menu on this card. Make sure you are signed in and the card is visible.',
+      'TruthLens could not find a usable YouTube report surface for this video on the current document.',
     );
   }
+
+  const { menuButton, surfaceLabel } = surface;
   const visibleRootsBeforeMenuOpen = new Set(findVisibleMenuRoots(menuButton));
   clickElement(menuButton);
   const reportMenuCandidates = await waitForVisibleReportMenuCandidates(
@@ -600,7 +644,7 @@ export async function submitYouTubePageReport(
   if (!reportMenuItem) {
     const availableMenuItems = collectVisibleElements(MENU_ITEM_SELECTORS);
     throw new Error(
-      'TruthLens could not find YouTube’s in-page "Report" option on this card. Available menu items: ' +
+      `TruthLens could not find YouTube’s in-page "Report" option on the ${surfaceLabel}. Available menu items: ` +
         buildAvailableLabelSummary(availableMenuItems) +
         '.',
     );
@@ -630,4 +674,32 @@ export async function submitYouTubePageReport(
     reason_label: reasonLabel,
     secondary_reason_label: secondaryReasonLabel,
   };
+}
+
+export async function submitYouTubePageReport(
+  target: ManualReportTarget,
+  issueTypes: ManualReportIssueType[],
+): Promise<YouTubePageReportResult> {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+    return submitYouTubePageReportInDocument(target, issueTypes);
+  }
+
+  let response: RuntimePageReportResponse | undefined;
+  try {
+    response = (await chrome.runtime.sendMessage({
+      type: 'TRUTHLENS_SUBMIT_PAGE_REPORT',
+      target,
+      issueTypes,
+    })) as RuntimePageReportResponse | undefined;
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : BACKGROUND_REPORT_ERROR_MESSAGE,
+    );
+  }
+
+  if (response?.ok) {
+    return response.data;
+  }
+
+  throw new Error(response?.error || BACKGROUND_REPORT_ERROR_MESSAGE);
 }

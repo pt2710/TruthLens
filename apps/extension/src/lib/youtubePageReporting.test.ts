@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { submitYouTubePageReport } from './youtubePageReporting';
+import {
+  submitYouTubePageReport,
+  submitYouTubePageReportInDocument,
+} from './youtubePageReporting';
 
 function installCardDom(): {
   card: HTMLElement;
@@ -96,6 +99,40 @@ function installCompetingMenuDom(): {
   return { menuButton, reportMenuItem, reportHistoryMenuItem };
 }
 
+function installWatchPageDom(): {
+  menuButton: HTMLButtonElement;
+  reportMenuItem: HTMLElement;
+} {
+  document.body.innerHTML = `
+    <ytd-watch-flexy>
+      <div id="above-the-fold">
+        <ytd-watch-metadata>
+          <ytd-menu-renderer>
+            <button aria-label="More actions">More actions</button>
+          </ytd-menu-renderer>
+        </ytd-watch-metadata>
+      </div>
+    </ytd-watch-flexy>
+    <ytd-menu-popup-renderer id="menu-root">
+      <div role="menu">
+        <ytd-menu-service-item-renderer hidden id="watch-report-item">Report</ytd-menu-service-item-renderer>
+      </div>
+    </ytd-menu-popup-renderer>
+  `;
+
+  const menuButton = document.querySelector<HTMLButtonElement>('button[aria-label="More actions"]');
+  const reportMenuItem = document.querySelector<HTMLElement>('#watch-report-item');
+  if (!menuButton || !reportMenuItem) {
+    throw new Error('Failed to build watch page DOM fixture.');
+  }
+
+  menuButton.addEventListener('click', () => {
+    reportMenuItem.hidden = false;
+  });
+
+  return { menuButton, reportMenuItem };
+}
+
 describe('submitYouTubePageReport', () => {
   afterEach(() => {
     document.body.innerHTML = '';
@@ -167,6 +204,32 @@ describe('submitYouTubePageReport', () => {
     );
 
     expect(reportHistoryClicks).toBe(0);
+    expect(result.status).toBe('reported');
+  });
+
+  it('submits the report from a watch page surface when the protected flow runs in a background tab', async () => {
+    const { reportMenuItem } = installWatchPageDom();
+    reportMenuItem.addEventListener('click', () => {
+      installDialog();
+    });
+
+    const result = await submitYouTubePageReportInDocument(
+      {
+        itemId: 'item-1',
+        workflowMode: 'report',
+        title: 'Test headline',
+        channelName: 'Signal Watch',
+        channelUrl: 'https://www.youtube.com/@signalwatch',
+        linkUrl: 'https://www.youtube.com/watch?v=test-video',
+        thumbnailRef: 'https://img.youtube.com/vi/test-video/default.jpg',
+        descriptionSnapshot: null,
+        transcriptExcerpt: null,
+        collectionScope: null,
+        score: null,
+      },
+      ['title'],
+    );
+
     expect(result.status).toBe('reported');
   });
 
