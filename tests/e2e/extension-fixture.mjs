@@ -181,22 +181,6 @@ async function main() {
           },
           async sendMessage(message) {
             sentMessages.push(message);
-            if (message?.type === 'TRUTHLENS_SUBMIT_PAGE_REPORT') {
-              const card = findFixtureCard(message.target);
-              if (card instanceof HTMLElement) {
-                card.setAttribute('data-youtube-report-submitted', 'true');
-                card.setAttribute('data-youtube-report-primary', 'Spam or misleading');
-                card.setAttribute('data-youtube-report-secondary', 'Misleading metadata');
-              }
-              return {
-                ok: true,
-                data: {
-                  status: 'reported',
-                  reason_label: 'Spam or misleading',
-                  secondary_reason_label: 'Misleading metadata',
-                },
-              };
-            }
             return { ok: true };
           },
         },
@@ -602,8 +586,7 @@ async function main() {
       'true',
     );
     const sentMessages = await page.evaluate(() => window.__truthlensSentMessages);
-    assert.equal(sentMessages.length, 1);
-    assert.equal(sentMessages[0]?.type, 'TRUTHLENS_SUBMIT_PAGE_REPORT');
+    assert.equal(sentMessages.length, 0);
 
     await page.evaluate(() => {
       const firstCard = document.querySelector('[data-truthlens-card]');

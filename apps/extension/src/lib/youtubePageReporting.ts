@@ -27,8 +27,6 @@ const BUTTON_SELECTORS = ['button', '[role="button"]'];
 const MENU_ITEM_TIMEOUT_MS = 2500;
 const REPORT_DIALOG_INITIAL_TIMEOUT_MS = 1500;
 const REPORT_DIALOG_RETRY_TIMEOUT_MS = 4500;
-const BACKGROUND_REPORT_ERROR_MESSAGE =
-  'TruthLens could not complete the protected YouTube report flow without leaving the current page.';
 const REPORT_MENU_ITEM_KEYWORD_GROUPS = [['report'], ['rapport'], ['anmeld']];
 const PRIMARY_REASON_KEYWORD_GROUPS = [
   ['spam', 'misleading'],
@@ -63,10 +61,6 @@ export type YouTubePageReportResult = {
   reason_label: string;
   secondary_reason_label: string | null;
 };
-
-type RuntimePageReportResponse =
-  | { ok: true; data: YouTubePageReportResult }
-  | { ok: false; error?: string };
 
 function normalizeText(value: string | null | undefined): string {
   return (value ?? '')
@@ -770,26 +764,5 @@ export async function submitYouTubePageReport(
   target: ManualReportTarget,
   issueTypes: ManualReportIssueType[],
 ): Promise<YouTubePageReportResult> {
-  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
-    return submitYouTubePageReportInDocument(target, issueTypes);
-  }
-
-  let response: RuntimePageReportResponse | undefined;
-  try {
-    response = (await chrome.runtime.sendMessage({
-      type: 'TRUTHLENS_SUBMIT_PAGE_REPORT',
-      target,
-      issueTypes,
-    })) as RuntimePageReportResponse | undefined;
-  } catch (error) {
-    throw new Error(
-      error instanceof Error ? error.message : BACKGROUND_REPORT_ERROR_MESSAGE,
-    );
-  }
-
-  if (response?.ok) {
-    return response.data;
-  }
-
-  throw new Error(response?.error || BACKGROUND_REPORT_ERROR_MESSAGE);
+  return submitYouTubePageReportInDocument(target, issueTypes);
 }

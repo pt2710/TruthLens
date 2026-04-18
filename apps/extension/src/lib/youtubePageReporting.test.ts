@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   submitYouTubePageReport,
@@ -177,6 +177,7 @@ function installConfusingWatchPageDom(): {
 describe('submitYouTubePageReport', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    Reflect.deleteProperty(globalThis, 'chrome');
   });
 
   it('submits the report when the dialog appears after a retry click on the same menu item', async () => {
@@ -248,7 +249,7 @@ describe('submitYouTubePageReport', () => {
     expect(result.status).toBe('reported');
   });
 
-  it('submits the report from a watch page surface when the protected flow runs in a background tab', async () => {
+  it('submits the report from a watch page surface in the current document', async () => {
     const { reportMenuItem } = installWatchPageDom();
     reportMenuItem.addEventListener('click', () => {
       installDialog();
@@ -271,6 +272,42 @@ describe('submitYouTubePageReport', () => {
       ['title'],
     );
 
+    expect(result.status).toBe('reported');
+  });
+
+  it('uses the in-document flow even when chrome.runtime.sendMessage is available', async () => {
+    const { reportMenuItem } = installCardDom();
+    const sendMessage = vi.fn();
+    Object.assign(globalThis, {
+      chrome: {
+        runtime: {
+          sendMessage,
+        },
+      },
+    });
+
+    reportMenuItem.addEventListener('click', () => {
+      installDialog();
+    });
+
+    const result = await submitYouTubePageReport(
+      {
+        itemId: 'item-1',
+        workflowMode: 'report',
+        title: 'Test headline',
+        channelName: 'Signal Watch',
+        channelUrl: 'https://www.youtube.com/@signalwatch',
+        linkUrl: 'https://www.youtube.com/watch?v=test-video',
+        thumbnailRef: 'https://img.youtube.com/vi/test-video/default.jpg',
+        descriptionSnapshot: null,
+        transcriptExcerpt: null,
+        collectionScope: null,
+        score: null,
+      },
+      ['title'],
+    );
+
+    expect(sendMessage).not.toHaveBeenCalled();
     expect(result.status).toBe('reported');
   });
 

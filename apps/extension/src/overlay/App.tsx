@@ -306,9 +306,9 @@ export function App() {
           setYouTubeAuthStatus(status);
           appendStatusLine(
             status.connected
-              ? status.direct_reporting_supported
-                ? `YouTube direct reporting is connected${status.channel_name ? ` as ${status.channel_name}` : ''}.`
-                : `${status.channel_name ? `Connected as ${status.channel_name}. ` : ''}${status.direct_reporting_detail ?? 'TruthLens will use a protected YouTube report flow without leaving the current page.'}`
+                ? status.direct_reporting_supported
+                  ? `YouTube direct reporting is connected${status.channel_name ? ` as ${status.channel_name}` : ''}.`
+                : `${status.channel_name ? `Connected as ${status.channel_name}. ` : ''}${status.direct_reporting_detail ?? 'TruthLens will use YouTube’s in-page report flow on the current page.'}`
               : status.configured
                 ? 'YouTube reporting is configured but still needs account authorization.'
                 : 'This TruthLens deployment is not configured for direct YouTube reporting yet.',
@@ -699,14 +699,14 @@ export function App() {
         if (!canUseDirectYouTubeReporting) {
           appendStatusLine(
             youtubeAuthStatus?.direct_reporting_detail ??
-              'Direct YouTube API reporting is unavailable, so TruthLens is using a protected YouTube report flow without leaving the current page…',
+              'Direct YouTube API reporting is unavailable, so TruthLens is using YouTube’s in-page report flow on the current page…',
           );
           const youtubePageReport = await submitYouTubePageReport(manualReportTarget, issueTypes);
           successText = youtubePageReport.secondary_reason_label
             ? `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}" / "${youtubePageReport.secondary_reason_label}"`
             : `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}"`;
           appendStatusLine(
-            'The protected YouTube report flow completed successfully without leaving the current page.',
+            'The in-page YouTube report flow completed on the current page.',
             'success',
           );
         } else {
@@ -729,14 +729,14 @@ export function App() {
             }
 
             appendStatusLine(
-              'Direct YouTube API reporting was unavailable, so TruthLens is using a protected YouTube report flow without leaving the current page…',
+              'Direct YouTube API reporting was unavailable, so TruthLens is using YouTube’s in-page report flow on the current page…',
             );
             const youtubePageReport = await submitYouTubePageReport(manualReportTarget, issueTypes);
             successText = youtubePageReport.secondary_reason_label
               ? `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}" / "${youtubePageReport.secondary_reason_label}"`
               : `Rapporten blev sendt via YouTubes indbyggede report-flow under "${youtubePageReport.reason_label}"`;
             appendStatusLine(
-              'The protected YouTube report flow completed successfully without leaving the current page.',
+              'The in-page YouTube report flow completed on the current page.',
               'success',
             );
           }
@@ -1100,7 +1100,7 @@ export function App() {
                       TruthLens
                       {collectionBatch
                         ? ' will keep unresolved collection members as internal TruthLens review state only.'
-                        : ' will fall back to a protected YouTube report flow that keeps the current page URL stable.'}
+                        : ' will fall back to YouTube’s in-page report flow on the current page.'}
                     </p>
                   ) : (
                     <p className="truthlens-platform-message">
@@ -1111,7 +1111,7 @@ export function App() {
                         'This account cannot use direct YouTube API reporting for misleading reports right now.'}{' '}
                       {collectionBatch
                         ? 'TruthLens will store collection batch review provenance internally instead of claiming an external batch report.'
-                        : 'TruthLens will use a protected YouTube report flow that keeps this page in place instead of the direct API.'}
+                        : 'TruthLens will use YouTube’s in-page report flow on the current page instead of the direct API.'}
                     </p>
                   )
                 ) : youtubeAuthStatus?.configured ? (
@@ -1119,7 +1119,7 @@ export function App() {
                     <p className="truthlens-platform-message">
                       Connect your YouTube account once to let TruthLens use direct API reporting
                       when the account supports it. Single-item reports can still use TruthLens&apos;s
-                      protected YouTube fallback without changing the current page URL.
+                      in-page YouTube fallback on the current page.
                     </p>
                     <button
                       className="truthlens-secondary-button"

@@ -327,7 +327,7 @@ describe('manual review overlay', () => {
     );
   });
 
-  it('uses the protected YouTube report flow when direct YouTube API reporting is unavailable for the account', async () => {
+  it('uses the in-page YouTube report flow when direct YouTube API reporting is unavailable for the account', async () => {
     apiMocks.fetchYouTubeAuthStatus.mockResolvedValue({
       configured: true,
       connected: true,
@@ -360,7 +360,7 @@ describe('manual review overlay', () => {
       'Rapporten blev sendt via YouTubes indbyggede report-flow under "Spam or misleading" / "Misleading metadata", og TruthLens-feedback blev gemt lokalt.',
     );
     expect(document.body.textContent).toContain(
-      'The protected YouTube report flow completed successfully without leaving the current page.',
+      'The in-page YouTube report flow completed on the current page.',
     );
   });
 });
