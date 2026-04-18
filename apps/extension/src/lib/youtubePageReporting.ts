@@ -243,6 +243,10 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
+function currentReportFlowLocation(): string {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
 async function waitFor<T>(
   factory: () => T | null,
   options: { timeoutMs?: number; intervalMs?: number; errorMessage?: string } = {},
@@ -355,6 +359,46 @@ function findVisibleMenuItem(keywordGroups: string[][], menuButton?: HTMLElement
   );
 }
 
+function findVisibleReportMenuCandidates(
+  menuButton: HTMLElement,
+  excludedCandidates: Set<HTMLElement> = new Set(),
+  previouslyVisibleRoots: Set<HTMLElement> = new Set(),
+): HTMLElement[] {
+  const roots = findVisibleMenuRoots(menuButton);
+  const prioritizedRoots = [
+    ...roots.filter((root) => !previouslyVisibleRoots.has(root)),
+    ...roots.filter((root) => previouslyVisibleRoots.has(root)),
+  ];
+
+  for (const root of prioritizedRoots) {
+    const candidates = collectVisibleElements(MENU_ITEM_SELECTORS, root).filter(
+      (element) => isEligibleReportMenuItem(element) && !excludedCandidates.has(element),
+    );
+    if (candidates.length > 0) {
+      return candidates;
+    }
+  }
+
+  return [];
+}
+
+async function waitForVisibleReportMenuCandidates(
+  menuButton: HTMLElement,
+  excludedCandidates: Set<HTMLElement> = new Set(),
+  previouslyVisibleRoots: Set<HTMLElement> = new Set(),
+): Promise<HTMLElement[]> {
+  return waitFor(() => {
+    const candidates = findVisibleReportMenuCandidates(
+      menuButton,
+      excludedCandidates,
+      previouslyVisibleRoots,
+    );
+    return candidates.length > 0 ? candidates : null;
+  }, {
+    timeoutMs: MENU_ITEM_TIMEOUT_MS,
+  });
+}
+
 function findOption(
   root: ParentNode,
   keywordGroups: string[][],
@@ -428,33 +472,52 @@ async function waitForReportDialog(
       timeoutMs,
       errorMessage: dialogErrorMessage,
     }).catch(() => null);
+  const originalLocation = currentReportFlowLocation();
+  const navigationRejectedCandidates = new Set<HTMLElement>();
+  const initiallyVisibleRoots = new Set(findVisibleMenuRoots(menuButton));
+  let pendingCandidates: HTMLElement[] = [reportMenuItem];
 
-  clickElement(reportMenuItem);
-  let dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
-  if (dialog) {
-    return dialog;
-  }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    while (pendingCandidates.length > 0) {
+      const candidate = pendingCandidates.shift();
+      if (!candidate || navigationRejectedCandidates.has(candidate)) {
+        continue;
+      }
 
-  const repeatedMenuItem = findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton);
-  if (repeatedMenuItem) {
-    clickElement(repeatedMenuItem);
-    dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
-    if (dialog) {
-      return dialog;
+      for (let candidateAttempt = 0; candidateAttempt < 2; candidateAttempt += 1) {
+        clickElement(candidate);
+        const dialog = await tryWaitForDialog(
+          attempt === 0 ? REPORT_DIALOG_INITIAL_TIMEOUT_MS : REPORT_DIALOG_RETRY_TIMEOUT_MS,
+        );
+        if (dialog) {
+          return dialog;
+        }
+
+        if (currentReportFlowLocation() !== originalLocation) {
+          navigationRejectedCandidates.add(candidate);
+          window.history.back();
+          await waitFor(
+            () => (currentReportFlowLocation() === originalLocation ? true : null),
+            {
+              timeoutMs: 1500,
+              errorMessage: dialogErrorMessage,
+            },
+          ).catch(() => null);
+          break;
+        }
+      }
     }
-  }
 
-  clickElement(menuButton);
-  const retryMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton), {
-    timeoutMs: MENU_ITEM_TIMEOUT_MS,
-    errorMessage: dialogErrorMessage,
-  }).catch(() => null);
-  if (retryMenuItem) {
-    clickElement(retryMenuItem);
-    dialog = await tryWaitForDialog(REPORT_DIALOG_RETRY_TIMEOUT_MS);
-    if (dialog) {
-      return dialog;
+    if (navigationRejectedCandidates.size === 0) {
+      break;
     }
+
+    clickElement(menuButton);
+    pendingCandidates = await waitForVisibleReportMenuCandidates(
+      menuButton,
+      navigationRejectedCandidates,
+      initiallyVisibleRoots,
+    ).catch(() => []);
   }
 
   throw new Error(dialogErrorMessage);
@@ -548,10 +611,12 @@ export async function submitYouTubePageReport(
     );
   }
   clickElement(menuButton);
-
-  const reportMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton), {
-    timeoutMs: MENU_ITEM_TIMEOUT_MS,
-  }).catch(() => null);
+  const reportMenuCandidates = await waitForVisibleReportMenuCandidates(
+    menuButton,
+    new Set(),
+    new Set(findVisibleMenuRoots(menuButton)),
+  ).catch(() => []);
+  const reportMenuItem = reportMenuCandidates[0] ?? null;
   if (!reportMenuItem) {
     const availableMenuItems = collectVisibleElements(MENU_ITEM_SELECTORS);
     throw new Error(
