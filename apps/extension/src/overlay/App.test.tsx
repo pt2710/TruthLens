@@ -352,5 +352,11 @@ describe('manual review overlay', () => {
     expect(apiMocks.submitYouTubeReport).not.toHaveBeenCalled();
     expect(pageReportingMocks.submitYouTubePageReport).toHaveBeenCalledTimes(1);
     expect(apiMocks.sendFeedbackEvent).toHaveBeenCalledTimes(1);
+    expect(document.body.textContent).toContain(
+      'Rapporten blev sendt via YouTubes indbyggede report-flow under "Spam or misleading" / "Misleading metadata", og TruthLens-feedback blev gemt lokalt.',
+    );
+    expect(document.body.textContent).toContain(
+      'The in-page YouTube report flow completed successfully.',
+    );
   });
 });

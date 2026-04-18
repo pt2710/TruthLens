@@ -7,6 +7,9 @@ const MENU_ITEM_SELECTORS = ['ytd-menu-service-item-renderer', 'tp-yt-paper-item
 const DIALOG_SELECTORS = ['tp-yt-paper-dialog', '[role="dialog"]', 'ytd-popup-container tp-yt-paper-dialog'];
 const OPTION_SELECTORS = ['tp-yt-paper-radio-button', '[role="radio"]', 'tp-yt-paper-item', 'button'];
 const BUTTON_SELECTORS = ['button', '[role="button"]'];
+const MENU_ITEM_TIMEOUT_MS = 2500;
+const REPORT_DIALOG_INITIAL_TIMEOUT_MS = 1500;
+const REPORT_DIALOG_RETRY_TIMEOUT_MS = 4500;
 const REPORT_MENU_ITEM_KEYWORD_GROUPS = [['report'], ['rapport'], ['anmeld']];
 const PRIMARY_REASON_KEYWORD_GROUPS = [
   ['spam', 'misleading'],
@@ -144,6 +147,12 @@ function buildAvailableLabelSummary(elements: HTMLElement[]): string {
 }
 
 function clickElement(element: HTMLElement): void {
+  element.scrollIntoView?.({ block: 'center', inline: 'center' });
+  element.focus?.({ preventScroll: true });
+  if (typeof element.click === 'function') {
+    element.click();
+    return;
+  }
   element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 }
 
@@ -161,7 +170,7 @@ function sleep(milliseconds: number): Promise<void> {
 
 async function waitFor<T>(
   factory: () => T | null,
-  options: { timeoutMs?: number; intervalMs?: number } = {},
+  options: { timeoutMs?: number; intervalMs?: number; errorMessage?: string } = {},
 ): Promise<T> {
   const timeoutMs = options.timeoutMs ?? 2500;
   const intervalMs = options.intervalMs ?? 50;
@@ -173,7 +182,7 @@ async function waitFor<T>(
       return value;
     }
     if (Date.now() - startedAt >= timeoutMs) {
-      throw new Error('Timed out while waiting for YouTube to show the report UI.');
+      throw new Error(options.errorMessage ?? 'Timed out while waiting for YouTube to show the report UI.');
     }
     await sleep(intervalMs);
   }
@@ -316,6 +325,49 @@ function buildSecondaryReasonKeywordGroups(issueTypes: ManualReportIssueType[]):
   return groups;
 }
 
+async function waitForReportDialog(
+  menuButton: HTMLElement,
+  reportMenuItem: HTMLElement,
+): Promise<HTMLElement> {
+  const dialogErrorMessage =
+    'TruthLens found YouTube’s "Report" menu entry, but YouTube did not open the report dialog in time.';
+  const tryWaitForDialog = async (timeoutMs: number): Promise<HTMLElement | null> =>
+    waitFor(() => findVisibleDialog(), {
+      timeoutMs,
+      errorMessage: dialogErrorMessage,
+    }).catch(() => null);
+
+  clickElement(reportMenuItem);
+  let dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
+  if (dialog) {
+    return dialog;
+  }
+
+  const repeatedMenuItem = findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS);
+  if (repeatedMenuItem) {
+    clickElement(repeatedMenuItem);
+    dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
+    if (dialog) {
+      return dialog;
+    }
+  }
+
+  clickElement(menuButton);
+  const retryMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS), {
+    timeoutMs: MENU_ITEM_TIMEOUT_MS,
+    errorMessage: dialogErrorMessage,
+  }).catch(() => null);
+  if (retryMenuItem) {
+    clickElement(retryMenuItem);
+    dialog = await tryWaitForDialog(REPORT_DIALOG_RETRY_TIMEOUT_MS);
+    if (dialog) {
+      return dialog;
+    }
+  }
+
+  throw new Error(dialogErrorMessage);
+}
+
 async function advanceDialog(
   issueTypes: ManualReportIssueType[],
 ): Promise<{ secondaryReasonLabel: string | null }> {
@@ -406,7 +458,7 @@ export async function submitYouTubePageReport(
   clickElement(menuButton);
 
   const reportMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS), {
-    timeoutMs: 2500,
+    timeoutMs: MENU_ITEM_TIMEOUT_MS,
   }).catch(() => null);
   if (!reportMenuItem) {
     const availableMenuItems = collectVisibleElements(MENU_ITEM_SELECTORS);
@@ -416,9 +468,7 @@ export async function submitYouTubePageReport(
         '.',
     );
   }
-  clickElement(reportMenuItem);
-
-  const dialog = await waitFor(() => findVisibleDialog(), { timeoutMs: 2500 });
+  const dialog = await waitForReportDialog(menuButton, reportMenuItem);
   const primaryReason = findOption(
     dialog,
     PRIMARY_REASON_KEYWORD_GROUPS,
