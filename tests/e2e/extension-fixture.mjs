@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const repoRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const apiBase = 'https://truthlens-beta-host.invalid';
+const apiBase = 'https://truthlens-beta-api.onrender.com';
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
