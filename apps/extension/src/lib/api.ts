@@ -198,7 +198,7 @@ export async function scoreFeedItem(
     scoreCache.set(key, payload);
     return payload;
   } catch (error) {
-    console.warn(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /score-item`, {
+    console.info(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /score-item`, {
       itemId: parsedItem.item_id,
       reason: describeError(error),
     });
@@ -252,7 +252,7 @@ export async function batchScoreFeedItems(
     }
     return results;
   } catch (error) {
-    console.warn(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /batch-score`, {
+    console.info(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /batch-score`, {
       itemCount: uncachedItems.length,
       reason: describeError(error),
     });

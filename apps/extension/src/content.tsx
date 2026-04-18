@@ -28,6 +28,7 @@ import {
   shouldScheduleHomepageStartupRetry,
   type HomepageScoreTrigger,
 } from './lib/homepageScoring';
+import { createHomepageScoreScheduler } from './lib/homepageScheduler';
 import { inferReviewPromptDecision } from './lib/reviewPrompts';
 import { shouldRescoreFromMutations } from './lib/domMutationFilter';
 import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
@@ -130,7 +131,6 @@ let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let autoOpenedReviewPrompt = false;
-let scoreRunSequence = 0;
 let homepageStartupRetryCount = 0;
 let homepageStartupRetryTimer: number | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
@@ -1173,14 +1173,12 @@ function installRuntimeListeners() {
 }
 
 async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
-  const runId = ++scoreRunSequence;
   const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
   let preDispatchFailures = 0;
 
   logHomepageDebug('score pass started', {
     pathname: window.location.pathname,
-    runId,
     trigger,
   });
   logHomepageDebug('candidate cards discovered', {
@@ -1220,7 +1218,7 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
       homepageStartupRetryTimer = window.setTimeout(() => {
         homepageStartupRetryTimer = null;
         homepageStartupRetryCount += 1;
-        void scoreCards('homepage-retry');
+        requestScoreCards('homepage-retry');
       }, HOMEPAGE_STARTUP_RETRY_DELAY_MS);
     }
     if (pendingCards.length === 0) {
@@ -1234,9 +1232,6 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
 
   for (const batch of chunk(pendingCards, BATCH_SIZE)) {
     const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
-    if (runId !== scoreRunSequence) {
-      return;
-    }
     for (const entry of batch) {
       const score = scores[entry.itemId];
       if (score) {
@@ -1252,17 +1247,27 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
   await refreshTrustPromise;
-  if (runId !== scoreRunSequence) {
-    return;
-  }
   if (scoredAny) {
     applyLocalPersonalizationOrdering();
   }
 }
 
+const homepageScoreScheduler = createHomepageScoreScheduler(
+  (trigger) => scoreCards(trigger),
+  (trigger) => {
+    logHomepageDebug('queued score pass while another pass was already running', {
+      trigger,
+    });
+  },
+);
+
+function requestScoreCards(trigger: HomepageScoreTrigger): void {
+  homepageScoreScheduler.request(trigger);
+}
+
 mountOverlay();
 installRuntimeListeners();
-void scoreCards('startup');
+requestScoreCards('startup');
 
 const observer = new MutationObserver((mutations) => {
   if (!shouldRescoreFromMutations(mutations, OVERLAY_ID)) {
@@ -1273,7 +1278,7 @@ const observer = new MutationObserver((mutations) => {
   }
   rescoreTimer = window.setTimeout(() => {
     rescoreTimer = null;
-    void scoreCards('mutation');
+    requestScoreCards('mutation');
   }, 120);
 });
 observer.observe(document.body, { childList: true, subtree: true });

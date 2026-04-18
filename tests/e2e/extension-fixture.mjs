@@ -664,6 +664,25 @@ async function main() {
       type: 'module',
       path: resolve(repoRoot, 'apps/extension/dist/content.js'),
     });
+    await page.evaluate(() => {
+      const intervalId = window.setInterval(() => {
+        const card = document.querySelector('[data-truthlens-card]');
+        if (!(card instanceof HTMLElement)) {
+          return;
+        }
+        const marker = document.createElement('span');
+        marker.setAttribute('data-fixture-mutation', String(Date.now()));
+        marker.hidden = true;
+        card.appendChild(marker);
+        window.setTimeout(() => {
+          marker.remove();
+        }, 25);
+      }, 180);
+
+      window.setTimeout(() => {
+        window.clearInterval(intervalId);
+      }, 3200);
+    });
     await page.waitForFunction(
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 3,
       null,
