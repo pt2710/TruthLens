@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import json
 import os
@@ -10,11 +11,11 @@ from typing import Any
 import numpy as np
 
 try:
-    from PIL import Image as _ImageModule
-except ImportError:  # pragma: no cover - optional dependency fallback
+    _image_module = importlib.import_module("PIL.Image")
+except ModuleNotFoundError:  # pragma: no cover - optional dependency fallback
     Image: Any | None = None
 else:
-    Image = _ImageModule
+    Image = _image_module
 
 DEFAULT_VISION_ENCODER_CONFIG = {
     "requested_encoder": "tiny-cnn-thumbnail",

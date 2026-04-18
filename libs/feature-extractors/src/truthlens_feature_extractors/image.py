@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import base64
+import importlib
 from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 try:
-    from PIL import Image as _ImageModule
-    from PIL import ImageStat as _ImageStatModule
-except ImportError:  # pragma: no cover - optional dependency fallback
+    _image_module = importlib.import_module("PIL.Image")
+    _image_stat_module = importlib.import_module("PIL.ImageStat")
+except ModuleNotFoundError:  # pragma: no cover - optional dependency fallback
     Image: Any | None = None
     ImageStat: Any | None = None
 else:
-    Image = _ImageModule
-    ImageStat = _ImageStatModule
+    Image = _image_module
+    ImageStat = _image_stat_module
 
 
 def _clamp(value: float) -> float:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import json
 import os
@@ -112,9 +113,10 @@ def text_encoder_resolution_payload(resolution: TextEncoderResolution) -> dict[s
 
 @lru_cache(maxsize=2)
 def _load_sentence_transformer(model_name: str) -> Any:
-    from sentence_transformers import SentenceTransformer
+    sentence_transformers = importlib.import_module("sentence_transformers")
+    sentence_transformer_cls = sentence_transformers.SentenceTransformer
 
-    return SentenceTransformer(model_name)
+    return sentence_transformer_cls(model_name)
 
 
 def sentence_transformer_matrix(texts: Sequence[str], model_name: str) -> np.ndarray:
