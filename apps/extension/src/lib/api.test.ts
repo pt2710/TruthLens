@@ -15,6 +15,42 @@ describe('scoreFeedItem', () => {
     vi.restoreAllMocks();
   });
 
+  it('falls back to bootstrap batch scoring when the API hangs', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise(() => {})));
+
+    const promise = batchScoreFeedItems([
+      {
+        item_id: 'card-1',
+        title: 'Breaking aliens confirmed',
+        thumbnail_ref: null,
+        metadata: {},
+        channel: {
+          channel_name: 'Test channel',
+          prior_flags: 1,
+          channel_history_features: {},
+        },
+        user_context: {
+          strict_mode: false,
+          muted_channels: [],
+          prior_corrections: 0,
+        },
+        runtime_context: {
+          surface: 'unknown',
+          review_requested: false,
+          source_provenance: null,
+        },
+      },
+    ]);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    const results = await promise;
+
+    expect(Object.keys(results)).toHaveLength(1);
+    expect(results['card-1'].reasons.length).toBeGreaterThan(0);
+    vi.useRealTimers();
+  });
+
   it('falls back to bootstrap scoring when the API is unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
 
