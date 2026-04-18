@@ -168,7 +168,9 @@ def test_optimize_manual_report_falls_back_when_gemini_is_rate_limited(
 
 def test_suggest_manual_report_normalizes_missing_issue_types(
     monkeypatch,
+    tmp_path: Path,
 ) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
     captured_request: dict[str, object] = {}
 
     def fake_post(url: str, **kwargs):
@@ -261,8 +263,8 @@ def test_suggest_manual_report_normalizes_missing_issue_types(
     assert 'Description currently says "The metadata snippet promises dramatic new footage."' in result.issues[2].comment
     assert result.issues[3].suggested is True
     assert 'Transcript excerpt says "Transcript claims a secret lab leak without support."' in result.issues[3].comment
-    assert result.issues[4].suggested is False
-    assert result.issues[4].comment == ""
+    assert result.issues[4].suggested is True
+    assert "first truthlens report recorded" in result.issues[4].comment.lower()
     request_parts = captured_request["json"]["contents"][0]["parts"]
     assert request_parts[0]["inline_data"]["mime_type"] == "image/jpeg"
     assert request_parts[0]["inline_data"]["data"] == base64.b64encode(
@@ -413,6 +415,7 @@ def test_suggest_manual_report_uses_music_aware_heuristics(
     result = suggest_manual_report(
         ManualReportSuggestionRequest.model_validate(
             {
+                "workflow_mode": "verify-transparent",
                 "target_url": "https://www.youtube.com/watch?v=moonlight-echoes",
                 "thumbnail_ref": "https://img.youtube.com/vi/moonlight-echoes/default.jpg",
                 "title_snapshot": "Moonlight Echoes (Official Audio)",
@@ -429,11 +432,10 @@ def test_suggest_manual_report_uses_music_aware_heuristics(
     )
 
     assert result.suggestion_model == "truthlens-heuristic-fallback-v1"
-    assert any(tag.tag.value == "Clickbait" and tag.selected for tag in result.suggested_tags)
-    assert any(tag.tag.value == "Music" for tag in result.suggested_tags)
+    assert any(tag.tag.value == "Music" and tag.selected for tag in result.suggested_tags)
     issue_map = {issue.issue_type: issue for issue in result.issues}
-    assert "music content" in issue_map["thumbnail"].comment.lower()
-    assert "artist, track, or release" in issue_map["title"].comment.lower()
+    assert "does not currently show a strong mismatch signal" in issue_map["thumbnail"].comment.lower()
+    assert "does not currently show a clear overstatement signal" in issue_map["title"].comment.lower()
     assert issue_map["transcript"].suggested is False
     assert issue_map["transcript"].comment == ""
     assert issue_map["channel"].suggested is False
@@ -641,6 +643,7 @@ def test_suggest_manual_report_uses_satire_aware_heuristics(
     result = suggest_manual_report(
         ManualReportSuggestionRequest.model_validate(
             {
+                "workflow_mode": "verify-transparent",
                 "target_url": "https://www.youtube.com/watch?v=satire-demo",
                 "thumbnail_ref": "https://img.youtube.com/vi/satire-demo/default.jpg",
                 "title_snapshot": "Minister admits moon tax in emergency address",
@@ -664,9 +667,187 @@ def test_suggest_manual_report_uses_satire_aware_heuristics(
     )
 
     issue_map = {issue.issue_type: issue for issue in result.issues}
-    assert issue_map["title"].comment.lower().startswith("this appears to be satire content")
-    assert issue_map["other"].comment.lower().startswith("the overall packaging should be reviewed")
+    assert "does not currently show a clear overstatement signal" in issue_map["title"].comment.lower()
+    assert issue_map["other"].comment.lower().startswith("overall packaging does not currently show a strong clickbait signal")
+    assert issue_map["channel"].suggested is False
+
+
+def test_suggest_manual_report_report_mode_does_not_emit_benign_art_preface(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "report",
+                "target_url": "https://www.youtube.com/watch?v=alien-warning-demo",
+                "thumbnail_ref": "https://img.youtube.com/vi/alien-warning-demo/default.jpg",
+                "title_snapshot": "U.S issues Alien warning",
+                "channel_name": "Skizzle",
+                "channel_context": 'Recent public channel titles: "Studio update"; "Weekly recap"; "New upload tonight"',
+                "description_snapshot": "This is not a joke anymore, but the description still does not clearly verify the alien-warning premise.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "art",
+                "content_class_confidence": 0.81,
+                "bias_profile": {
+                    "metrics": {"genre_confusion": 0.52},
+                    "positive_biases": ["factual-scrutiny"],
+                    "negative_biases": ["transcript-non-delivery"],
+                    "guardrail_applied": "factual-context-amplifies-mismatch",
+                },
+                "explanation_summary": "The title and thumbnail create a stronger warning narrative than the supporting text clearly confirms.",
+                "reasons": [
+                    "Title contains warning framing.",
+                    "The available text does not clearly confirm the same high-drama premise.",
+                ],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert "art content" not in issue_map["thumbnail"].comment.lower()
+    assert "art content" not in issue_map["title"].comment.lower()
+    assert "art content" not in issue_map["description"].comment.lower()
+    assert "art content" not in issue_map["other"].comment.lower()
     assert issue_map["channel"].suggested is True
+    assert "first truthlens report recorded" in issue_map["channel"].comment.lower()
+
+
+def test_suggest_manual_report_sanitizes_benign_gemini_report_language(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    def fake_post(url: str, **kwargs):
+        return _MockResponse(
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps(
+                                        {
+                                            "issues": [
+                                                {
+                                                    "issue_type": "thumbnail",
+                                                    "suggested": True,
+                                                    "comment": "This appears to be art content. Review whether the thumbnail honestly represents the artwork, artist, or exhibition context rather than implying a literal event the supporting text does not confirm.",
+                                                },
+                                                {
+                                                    "issue_type": "title",
+                                                    "suggested": True,
+                                                    "comment": "This appears to be art content. Review whether the title honestly identifies the artwork, artist, or exhibition framing rather than implying a literal event the packaging does not support.",
+                                                },
+                                                {
+                                                    "issue_type": "description",
+                                                    "suggested": True,
+                                                    "comment": "This appears to be art content. Review whether the description honestly labels the artwork, exhibition, or studio context instead of overstating what the video contains.",
+                                                },
+                                                {
+                                                    "issue_type": "transcript",
+                                                    "suggested": False,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "channel",
+                                                    "suggested": False,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "other",
+                                                    "suggested": True,
+                                                    "comment": "This appears to be art content. Broad stylistic packaging alone should not be treated as misleading; review instead whether the overall packaging overstates the artwork or exhibition context.",
+                                                },
+                                            ],
+                                            "suggested_outcome": "moderate",
+                                            "suggested_outcome_reason": "TruthLens recommends Moderate because the packaging overpromises.",
+                                            "suggested_tags": [
+                                                {
+                                                    "tag": "Clickbait",
+                                                    "selected": True,
+                                                    "confidence": 0.85,
+                                                    "rationale": "Report mode defaults to Clickbait.",
+                                                }
+                                            ],
+                                            "suggestion_model": "LLM_Report_Generator",
+                                        }
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr("truthlens_api.manual_reports.httpx.post", fake_post)
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"fake-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_model",
+        "gemini-2.5-flash",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "report",
+                "target_url": "https://www.youtube.com/watch?v=alien-warning-demo",
+                "thumbnail_ref": "https://img.youtube.com/vi/alien-warning-demo/default.jpg",
+                "title_snapshot": "U.S issues Alien warning",
+                "channel_name": "Skizzle",
+                "channel_context": 'Recent public channel titles: "Studio update"; "Weekly recap"; "New upload tonight"',
+                "description_snapshot": "This is not a joke anymore, but the description still does not clearly verify the alien-warning premise.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "art",
+                "content_class_confidence": 0.81,
+                "bias_profile": {
+                    "metrics": {"genre_confusion": 0.52},
+                    "positive_biases": ["factual-scrutiny"],
+                    "negative_biases": ["transcript-non-delivery"],
+                    "guardrail_applied": "factual-context-amplifies-mismatch",
+                },
+                "explanation_summary": "The title and thumbnail create a stronger warning narrative than the supporting text clearly confirms.",
+                "reasons": [
+                    "Title contains warning framing.",
+                    "The available text does not clearly confirm the same high-drama premise.",
+                ],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert "art content" not in issue_map["thumbnail"].comment.lower()
+    assert "art content" not in issue_map["title"].comment.lower()
+    assert "art content" not in issue_map["description"].comment.lower()
+    assert "art content" not in issue_map["other"].comment.lower()
+    assert issue_map["channel"].suggested is True
+    assert "first truthlens report recorded" in issue_map["channel"].comment.lower()
 
 
 def test_build_suggestion_prompt_includes_taxonomy_and_bias_context() -> None:

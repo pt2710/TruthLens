@@ -119,6 +119,7 @@ let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let autoOpenedReviewPrompt = false;
+let scoreRunSequence = 0;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
 
 type PendingCard = {
@@ -1111,32 +1112,39 @@ function installRuntimeListeners() {
 }
 
 async function scoreCards() {
+  const runId = ++scoreRunSequence;
   const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
   const pendingCards = cards
     .map((card, index) => buildPendingCard(card, index))
     .filter((entry): entry is PendingCard => entry !== null);
 
-  const resolvedScores: Record<string, ScoreResult> = {};
+  const refreshTrustPromise =
+    pendingCards.length > 0 ? refreshChannelTrustProfiles() : Promise.resolve();
+  let scoredAny = false;
+
   for (const batch of chunk(pendingCards, BATCH_SIZE)) {
     const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
+    if (runId !== scoreRunSequence) {
+      return;
+    }
     for (const entry of batch) {
       const score = scores[entry.itemId];
       if (score) {
-        resolvedScores[entry.itemId] = score;
+        applyScoreToCard(entry, score);
+        scoredAny = true;
       } else {
         entry.card.removeAttribute(PROCESSING);
       }
     }
   }
-  await refreshChannelTrustProfiles();
-  for (const entry of pendingCards) {
-    const score = resolvedScores[entry.itemId];
-    if (score) {
-      applyScoreToCard(entry, score);
-    }
+  await refreshTrustPromise;
+  if (runId !== scoreRunSequence) {
+    return;
   }
-  applyLocalPersonalizationOrdering();
+  if (scoredAny) {
+    applyLocalPersonalizationOrdering();
+  }
 }
 
 mountOverlay();
