@@ -126,6 +126,7 @@ async function main() {
   const suggestionRequests = [];
   const youtubeReports = [];
   let batchRequests = 0;
+  let artificialBatchDelayMs = 0;
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
@@ -229,6 +230,11 @@ async function main() {
 
     await page.route(`${apiBase}/batch-score`, async (route) => {
       batchRequests += 1;
+      if (artificialBatchDelayMs > 0) {
+        const delay = artificialBatchDelayMs;
+        artificialBatchDelayMs = 0;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
       const body = JSON.parse(route.request().postData() ?? '{}');
       const results = Object.fromEntries(
         (body.items ?? []).map((item) => [item.item_id, mockScore(item)]),
@@ -650,6 +656,22 @@ async function main() {
     assert.equal(await cards.nth(3).evaluate((element) => element.style.order), '');
     assert.equal(await page.locator('.truthlens-action-row').count(), 4);
     assert.equal(browserObservations.length, 5);
+
+    artificialBatchDelayMs = 5000;
+    const batchRequestsBeforeFallbackReload = batchRequests;
+    await page.goto(`${baseUrl}/tests/fixtures/youtube-feed.html?fallback=1`);
+    await page.addScriptTag({
+      type: 'module',
+      path: resolve(repoRoot, 'apps/extension/dist/content.js'),
+    });
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 3,
+      null,
+      { timeout: 7000 },
+    );
+    assert.equal(batchRequests, batchRequestsBeforeFallbackReload + 1);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 3);
+    assert.equal(await page.locator('.truthlens-card-flag').count() > 0, true);
 
     console.log(
       JSON.stringify(

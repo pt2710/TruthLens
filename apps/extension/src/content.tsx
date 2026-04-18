@@ -22,6 +22,12 @@ import {
   shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
 } from './lib/personalization';
+import {
+  collectSafePendingEntries,
+  HOMEPAGE_STARTUP_RETRY_DELAY_MS,
+  shouldScheduleHomepageStartupRetry,
+  type HomepageScoreTrigger,
+} from './lib/homepageScoring';
 import { inferReviewPromptDecision } from './lib/reviewPrompts';
 import { shouldRescoreFromMutations } from './lib/domMutationFilter';
 import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
@@ -125,7 +131,10 @@ const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let autoOpenedReviewPrompt = false;
 let scoreRunSequence = 0;
+let homepageStartupRetryCount = 0;
+let homepageStartupRetryTimer: number | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
+const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
 type PendingCard = {
   card: HTMLElement;
@@ -156,6 +165,29 @@ type ExecutePageReportMessage = {
 };
 
 type PageReportMessage = ManualReportMessage | ExecutePageReportMessage;
+
+function describeRuntimeError(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function logHomepageDebug(message: string, payload?: Record<string, unknown>): void {
+  if (payload) {
+    console.debug(`${HOMEPAGE_LOG_PREFIX} ${message}`, payload);
+    return;
+  }
+  console.debug(`${HOMEPAGE_LOG_PREFIX} ${message}`);
+}
+
+function logHomepageWarn(message: string, payload?: Record<string, unknown>): void {
+  if (payload) {
+    console.warn(`${HOMEPAGE_LOG_PREFIX} ${message}`, payload);
+    return;
+  }
+  console.warn(`${HOMEPAGE_LOG_PREFIX} ${message}`);
+}
 
 function createClientId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -1140,13 +1172,61 @@ function installRuntimeListeners() {
   });
 }
 
-async function scoreCards() {
+async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
   const runId = ++scoreRunSequence;
   const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
-  const pendingCards = cards
-    .map((card, index) => buildPendingCard(card, index))
-    .filter((entry): entry is PendingCard => entry !== null);
+  let preDispatchFailures = 0;
+
+  logHomepageDebug('score pass started', {
+    pathname: window.location.pathname,
+    runId,
+    trigger,
+  });
+  logHomepageDebug('candidate cards discovered', {
+    candidateCount: cards.length,
+    trigger,
+  });
+
+  const pendingCards = collectSafePendingEntries(cards, (card, index) => buildPendingCard(card, index), (error, card, index) => {
+    preDispatchFailures += 1;
+    card.removeAttribute(PROCESSING);
+    logHomepageWarn('per-card context extraction failed', {
+      cardIndex: index,
+      reason: describeRuntimeError(error),
+      trigger,
+    });
+  });
+
+  logHomepageDebug('pending cards resolved', {
+    pendingCount: pendingCards.length,
+    preDispatchFailures,
+    trigger,
+  });
+
+  if (preDispatchFailures > 0) {
+    logHomepageWarn('scoring encountered pre-request failures', {
+      pendingCount: pendingCards.length,
+      preDispatchFailures,
+      trigger,
+    });
+  }
+
+  if (shouldScheduleHomepageStartupRetry(window.location.pathname, trigger, pendingCards.length, homepageStartupRetryCount)) {
+    if (homepageStartupRetryTimer === null) {
+      logHomepageDebug('scheduling one homepage startup retry', {
+        delayMs: HOMEPAGE_STARTUP_RETRY_DELAY_MS,
+      });
+      homepageStartupRetryTimer = window.setTimeout(() => {
+        homepageStartupRetryTimer = null;
+        homepageStartupRetryCount += 1;
+        void scoreCards('homepage-retry');
+      }, HOMEPAGE_STARTUP_RETRY_DELAY_MS);
+    }
+    if (pendingCards.length === 0) {
+      return;
+    }
+  }
 
   const refreshTrustPromise =
     pendingCards.length > 0 ? refreshChannelTrustProfiles() : Promise.resolve();
@@ -1163,6 +1243,10 @@ async function scoreCards() {
         applyScoreToCard(entry, score);
         scoredAny = true;
       } else {
+        logHomepageWarn('score payload missing for pending card', {
+          itemId: entry.itemId,
+          trigger,
+        });
         entry.card.removeAttribute(PROCESSING);
       }
     }
@@ -1178,7 +1262,7 @@ async function scoreCards() {
 
 mountOverlay();
 installRuntimeListeners();
-void scoreCards();
+void scoreCards('startup');
 
 const observer = new MutationObserver((mutations) => {
   if (!shouldRescoreFromMutations(mutations, OVERLAY_ID)) {
@@ -1189,7 +1273,7 @@ const observer = new MutationObserver((mutations) => {
   }
   rescoreTimer = window.setTimeout(() => {
     rescoreTimer = null;
-    void scoreCards();
+    void scoreCards('mutation');
   }, 120);
 });
 observer.observe(document.body, { childList: true, subtree: true });

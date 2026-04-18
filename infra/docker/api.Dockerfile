@@ -16,7 +16,7 @@ COPY datasets/manifests /app/datasets/manifests
 COPY datasets/dataset_cards /app/datasets/dataset_cards
 COPY artifacts /app/artifacts
 
-RUN python -m pip install uv && python -m uv sync --no-dev --extra ml
+RUN python -m pip install uv && python -m uv sync --no-dev --extra serving
 RUN mkdir -p /data
 
 EXPOSE 8000

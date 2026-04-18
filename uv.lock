@@ -3619,6 +3619,10 @@ ml = [
     { name = "transformers" },
     { name = "xgboost" },
 ]
+serving = [
+    { name = "pillow" },
+    { name = "torch" },
+]
 simulation = [
     { name = "deap" },
     { name = "gymnasium" },
@@ -3658,6 +3662,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.0,<3.0.0" },
     { name = "pandas", marker = "extra == 'data'", specifier = ">=2.2.0,<3.0.0" },
     { name = "pillow", marker = "extra == 'ml'", specifier = ">=11.1.0,<12.0.0" },
+    { name = "pillow", marker = "extra == 'serving'", specifier = ">=11.1.0,<12.0.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.6,<4.0.0" },
     { name = "pyarrow", marker = "extra == 'data'", specifier = ">=19.0.0,<20.0.0" },
     { name = "pydantic", specifier = ">=2.11.0,<3.0.0" },
@@ -3672,12 +3677,13 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.39,<3.0.0" },
     { name = "stable-baselines3", marker = "extra == 'simulation'", specifier = ">=2.6.0,<3.0.0" },
     { name = "tokenizers", marker = "extra == 'ml'", specifier = ">=0.21.1,<0.22.0" },
+    { name = "torch", marker = "extra == 'serving'", specifier = ">=2.6.0,<3.0.0" },
     { name = "tqdm", marker = "extra == 'data'", specifier = ">=4.67.1,<5.0.0" },
     { name = "transformers", marker = "extra == 'ml'", specifier = ">=4.50.0,<5.0.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0,<0.35.0" },
     { name = "xgboost", marker = "extra == 'ml'", specifier = ">=2.1.4,<3.0.0" },
 ]
-provides-extras = ["data", "ml", "simulation"]
+provides-extras = ["data", "serving", "ml", "simulation"]
 
 [package.metadata.requires-dev]
 dev = [

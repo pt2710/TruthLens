@@ -33,6 +33,7 @@ const scoreCache = new Map<string, ScoreResult>();
 const SCORE_REQUEST_TIMEOUT_MS = 4500;
 const STATUS_REQUEST_TIMEOUT_MS = 3500;
 const REPORTING_REQUEST_TIMEOUT_MS = 5000;
+const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
 type BackgroundOptimizeResponse =
   | { ok: true; data: ManualReportOptimizationResponse }
@@ -129,6 +130,13 @@ export type FeedbackSummary = {
 
 export type { YouTubeAuthStatus, YouTubeReportRequest, YouTubeReportResponse };
 
+function describeError(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return String(error);
+}
+
 function cacheKey(item: ScoreItemRequest): string {
   return [
     item.item_id,
@@ -189,7 +197,11 @@ export async function scoreFeedItem(
     const payload = scoreResultSchema.parse(await response.json());
     scoreCache.set(key, payload);
     return payload;
-  } catch {
+  } catch (error) {
+    console.warn(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /score-item`, {
+      itemId: parsedItem.item_id,
+      reason: describeError(error),
+    });
     const fallback = createBootstrapScore(parsedItem);
     scoreCache.set(key, fallback);
     return fallback;
@@ -239,7 +251,11 @@ export async function batchScoreFeedItems(
       results[item.item_id] = score;
     }
     return results;
-  } catch {
+  } catch (error) {
+    console.warn(`${HOMEPAGE_LOG_PREFIX} bootstrap fallback used for /batch-score`, {
+      itemCount: uncachedItems.length,
+      reason: describeError(error),
+    });
     for (const item of uncachedItems) {
       const fallback = createBootstrapScore(item);
       scoreCache.set(cacheKey(item), fallback);

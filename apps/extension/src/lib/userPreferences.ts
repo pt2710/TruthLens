@@ -2,12 +2,52 @@ import type { UserContext } from '@truthlens/shared-schemas';
 
 const MUTED_CHANNELS_KEY = 'truthlens-muted-channels';
 
+type ReadStorage = Pick<Storage, 'getItem'>;
+type WriteStorage = Pick<Storage, 'setItem'>;
+type ReadWriteStorage = ReadStorage & WriteStorage;
+
 export function normalizeChannelName(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function loadMutedChannels(storage: Pick<Storage, 'getItem'> = window.localStorage): string[] {
-  const raw = storage.getItem(MUTED_CHANNELS_KEY);
+function resolveBrowserStorage<TStorage>(storage: TStorage | undefined): TStorage | null {
+  if (storage) {
+    return storage;
+  }
+
+  try {
+    return window.localStorage as TStorage;
+  } catch {
+    return null;
+  }
+}
+
+function safeGetItem(storage: ReadStorage | null, key: string): string | null {
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(storage: WriteStorage | null, key: string, value: string): void {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, value);
+  } catch {
+    // Fail soft; muted-channel preferences should never break scoring.
+  }
+}
+
+export function loadMutedChannels(storage?: ReadStorage): string[] {
+  const raw = safeGetItem(resolveBrowserStorage(storage), MUTED_CHANNELS_KEY);
   if (!raw) {
     return [];
   }
@@ -22,15 +62,15 @@ export function loadMutedChannels(storage: Pick<Storage, 'getItem'> = window.loc
 
 export function saveMutedChannels(
   channels: string[],
-  storage: Pick<Storage, 'setItem'> = window.localStorage,
+  storage?: WriteStorage,
 ): void {
   const normalized = Array.from(new Set(channels.map(normalizeChannelName).filter(Boolean)));
-  storage.setItem(MUTED_CHANNELS_KEY, JSON.stringify(normalized));
+  safeSetItem(resolveBrowserStorage(storage), MUTED_CHANNELS_KEY, JSON.stringify(normalized));
 }
 
 export function muteChannel(
   channelName: string,
-  storage: Pick<Storage, 'getItem' | 'setItem'> = window.localStorage,
+  storage?: ReadWriteStorage,
 ): string[] {
   const current = loadMutedChannels(storage);
   const next = Array.from(new Set([...current, normalizeChannelName(channelName)]));
@@ -40,14 +80,12 @@ export function muteChannel(
 
 export function isChannelMuted(
   channelName: string,
-  storage: Pick<Storage, 'getItem'> = window.localStorage,
+  storage?: ReadStorage,
 ): boolean {
   return loadMutedChannels(storage).includes(normalizeChannelName(channelName));
 }
 
-export function buildUserContext(
-  storage: Pick<Storage, 'getItem'> = window.localStorage,
-): UserContext {
+export function buildUserContext(storage?: ReadStorage): UserContext {
   return {
     strict_mode: false,
     muted_channels: loadMutedChannels(storage),
