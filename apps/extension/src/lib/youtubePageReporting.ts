@@ -148,6 +148,41 @@ function matchesKeywordGroups(value: string, keywordGroups: string[][]): boolean
   return keywordGroups.some((keywordGroup) => keywordGroup.every((keyword) => value.includes(keyword)));
 }
 
+function resolvesToReportHistory(element: HTMLElement): boolean {
+  const href =
+    element.getAttribute('href') ??
+    element.closest<HTMLAnchorElement>('a[href]')?.getAttribute('href') ??
+    null;
+  if (!href) {
+    return false;
+  }
+
+  return normalizeComparableUrl(href)?.includes('/reporthistory') ?? false;
+}
+
+function isEligibleReportMenuItem(element: HTMLElement): boolean {
+  const text = getVisibleText(element);
+  if (!text || !matchesKeywordGroups(text, REPORT_MENU_ITEM_KEYWORD_GROUPS)) {
+    return false;
+  }
+
+  if (resolvesToReportHistory(element)) {
+    return false;
+  }
+
+  if (
+    text.includes('report history') ||
+    text.includes('reporthistory') ||
+    text.includes('rapporthistor') ||
+    text.includes('anmeld histor') ||
+    text.includes('historik')
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function buildAvailableLabelSummary(elements: HTMLElement[]): string {
   const labels = elements
     .map((element) => getVisibleText(element))
@@ -300,7 +335,9 @@ function findVisibleMenuItem(keywordGroups: string[][], menuButton?: HTMLElement
   if (menuRoots.length > 0) {
     for (const root of menuRoots) {
       const candidate = collectVisibleElements(MENU_ITEM_SELECTORS, root).find((element) =>
-        matchesKeywordGroups(getVisibleText(element), keywordGroups),
+        keywordGroups === REPORT_MENU_ITEM_KEYWORD_GROUPS
+          ? isEligibleReportMenuItem(element)
+          : matchesKeywordGroups(getVisibleText(element), keywordGroups),
       );
       if (candidate) {
         return candidate;
@@ -311,7 +348,9 @@ function findVisibleMenuItem(keywordGroups: string[][], menuButton?: HTMLElement
 
   return (
     collectVisibleElements(MENU_ITEM_SELECTORS).find((element) =>
-      matchesKeywordGroups(getVisibleText(element), keywordGroups),
+      keywordGroups === REPORT_MENU_ITEM_KEYWORD_GROUPS
+        ? isEligibleReportMenuItem(element)
+        : matchesKeywordGroups(getVisibleText(element), keywordGroups),
     ) ?? null
   );
 }

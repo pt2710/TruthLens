@@ -56,6 +56,46 @@ function installDialog(primaryReasonLabel = 'Spam or misleading'): HTMLElement {
   return dialog;
 }
 
+function installCompetingMenuDom(): {
+  menuButton: HTMLButtonElement;
+  reportMenuItem: HTMLAnchorElement;
+  reportHistoryMenuItem: HTMLAnchorElement;
+} {
+  document.body.innerHTML = `
+    <ytd-rich-item-renderer>
+      <a id="thumbnail" href="https://www.youtube.com/watch?v=test-video">
+        <img src="https://img.youtube.com/vi/test-video/default.jpg" />
+      </a>
+      <a id="video-title">Test headline</a>
+      <ytd-channel-name>Signal Watch</ytd-channel-name>
+      <ytd-menu-renderer>
+        <button aria-label="Action menu">More</button>
+      </ytd-menu-renderer>
+    </ytd-rich-item-renderer>
+    <ytd-menu-popup-renderer id="menu-root" hidden>
+      <div role="menu">
+        <a href="https://www.youtube.com/reporthistory" role="menuitem" id="report-history-item">Report history</a>
+        <a href="#report" role="menuitem" id="report-item">Report</a>
+      </div>
+    </ytd-menu-popup-renderer>
+  `;
+
+  const menuButton = document.querySelector<HTMLButtonElement>('button[aria-label="Action menu"]');
+  const menuRoot = document.querySelector<HTMLElement>('#menu-root');
+  const reportMenuItem = document.querySelector<HTMLAnchorElement>('#report-item');
+  const reportHistoryMenuItem = document.querySelector<HTMLAnchorElement>('#report-history-item');
+
+  if (!menuButton || !menuRoot || !reportMenuItem || !reportHistoryMenuItem) {
+    throw new Error('Failed to build competing report menu DOM fixture.');
+  }
+
+  menuButton.addEventListener('click', () => {
+    menuRoot.hidden = false;
+  });
+
+  return { menuButton, reportMenuItem, reportHistoryMenuItem };
+}
+
 describe('submitYouTubePageReport', () => {
   afterEach(() => {
     document.body.innerHTML = '';
@@ -106,6 +146,40 @@ describe('submitYouTubePageReport', () => {
     });
 
     reportMenuItem.addEventListener('click', () => {
+      installDialog();
+    });
+
+    const result = await submitYouTubePageReport(
+      {
+        itemId: 'item-1',
+        workflowMode: 'report',
+        title: 'Test headline',
+        channelName: 'Signal Watch',
+        channelUrl: 'https://www.youtube.com/@signalwatch',
+        linkUrl: 'https://www.youtube.com/watch?v=test-video',
+        thumbnailRef: 'https://img.youtube.com/vi/test-video/default.jpg',
+        descriptionSnapshot: null,
+        transcriptExcerpt: null,
+        collectionScope: null,
+        score: null,
+      },
+      ['title'],
+    );
+
+    expect(reportHistoryClicks).toBe(0);
+    expect(result.status).toBe('reported');
+  });
+
+  it('ignores report history menu items inside the visible popup and clicks the real report entry', async () => {
+    const { reportMenuItem, reportHistoryMenuItem } = installCompetingMenuDom();
+    let reportHistoryClicks = 0;
+    reportHistoryMenuItem.addEventListener('click', (event) => {
+      reportHistoryClicks += 1;
+      event.preventDefault();
+    });
+
+    reportMenuItem.addEventListener('click', (event) => {
+      event.preventDefault();
       installDialog();
     });
 
