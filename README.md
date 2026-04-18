@@ -13,7 +13,7 @@ The repository already contains a hybrid scoring stack, optional learned paths, 
 - TruthLens is currently a controlled extension-first beta project, not a broad public launch.
 - The public repo is curated for repo truth: docs, policies, manifests, benchmark surfaces, and governance stay committed; raw payloads and heavy private artifacts do not.
 - The first supported external path is an unpacked Chromium extension pointed at a real hosted API origin.
-- Direct YouTube OAuth/report-submit is intentionally outside the first hosted beta.
+- Direct YouTube API reporting is not the default first-beta contract; single-item reports fall back to YouTube's in-page report flow and local TruthLens feedback when the connected account does not expose a usable misleading-report category.
 - Current closure status and proof notes:
   - [Public hardening audit](docs/decision-records/wave1-public-hardening-audit.md)
   - [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
@@ -24,7 +24,7 @@ TruthLens is not being positioned as a broad public launch yet. The current targ
 
 What works now:
 
-- Chromium extension flows for scoring, explanations, visible warning-state actions, manual review, and report drafting
+- Chromium extension flows for scoring, explanations, visible warning-state actions, manual review, transparency verification, and report drafting
 - FastAPI endpoints for scoring, feedback, browser observation intake, manual report drafting, metrics, and runtime policy/model inspection
 - trainer, simulation, BSEO policy artifacts, benchmark renders, and governance surfaces
 - Android share-client code for config-parity and internal validation
@@ -63,7 +63,67 @@ For the first external beta path, use the hosted API plus an unpacked Chromium e
    - [Architecture docs](docs/architecture/README.md)
    - [Benchmark docs](docs/benchmarks/README.md)
 5. Check the current live-hosted proof status before treating a hostname as real beta truth: [Hosted beta verification status](docs/deployment/hosted-beta-verification.md)
-6. Keep in mind that direct YouTube OAuth/report-submit is intentionally disabled for the first hosted beta; TruthLens supports manual report drafting and page-level fallback flows instead.
+6. Keep in mind that direct YouTube API reporting is account-dependent in the first hosted beta; TruthLens supports manual report drafting, page-level fallback flows, and local transparency verification even when direct API reporting is unavailable.
+
+## Hosted Beta Live Snapshot
+
+The first supported external beta surface is now live and manually proven.
+
+| Field | Value |
+| --- | --- |
+| live origin | `https://truthlens-beta-api.onrender.com` |
+| hosted runtime date | `2026-04-18` |
+| `/ready` status | `200` |
+| `/ready` artifact status | `compatible` |
+| live model mode | `trained` |
+| live model version | `baseline-v1-build-20260412135829` |
+| live policy mode | `bseo-live` |
+| live event store | `postgres` |
+| latest proved counters after restart | `score_events_total=439`, `feedback_events_total=10`, `browser_observations_total=179` |
+
+Live-hosted truth for this table comes from [Hosted beta verification status](docs/deployment/hosted-beta-verification.md), not from the benchmark summary JSON.
+
+The live hosted runtime currently serves a newer promoted model bundle than the latest committed public benchmark artifact.
+That is expected in the current beta: the live table above describes the mounted hosted runtime, while the benchmark tables below describe the latest benchmark artifact that is actually committed in this repository.
+
+## Extension User Walkthrough
+
+### What the score chip and review badge mean
+
+- The floating chip on each card is the extension `displayScore` on a `0-10` scale. It is a presentation score that blends current-item risk with local channel trust and prior feedback context.
+- That chip is not the raw runtime `risk_score`.
+- `Verify transparent` is a separate review prompt. It appears only when the class-conditioned review contract thinks the item likely belongs to an honest-content lane such as `music`, `art`, or `gaming`, or when the fallback music-likelihood path is strong enough.
+- A high chip can therefore appear with `Verify transparent`, and another high chip can appear without it. The badge is not driven by the chip alone.
+- Hovering the badge shows the current TruthLens explanation, for example: `TruthLens thinks this likely looks like transparent music content.`
+
+### Manual report flow
+
+1. On a YouTube feed card, right-click the thumbnail.
+2. Open the `TruthLens` submenu.
+3. Choose `Report video with TruthLens`.
+4. TruthLens opens the manual report sheet with:
+   - a `TruthLens Context` block summarizing class, confidence, current action, and guardrail
+   - a `Live status` rail that shows whether the draft came from Gemini or from the local heuristic fallback
+   - preselected manual review tags, issue toggles, requested outcome, and a generated submission preview
+5. Report mode defaults toward a `Clickbait` review tag, but the reviewer can override both tags and issue comments before submitting.
+6. When direct YouTube API reporting is unavailable for the current account, TruthLens routes the single-item report through YouTube's in-page report flow and still stores the linked TruthLens feedback locally.
+7. A successful report should end with a green confirmation rather than a timeout banner.
+
+### Manual transparency verification flow
+
+1. On a card that TruthLens believes may be honest or broadly consistent, either click the `Verify transparent` badge or right-click the thumbnail and choose `Verify transparent with TruthLens`.
+2. TruthLens opens a dedicated transparency-verification sheet.
+3. Verify mode defaults toward a positive content tag such as `Tutorial`, `Music`, `Gaming`, or `Documentary`, while still letting the reviewer edit the packaging-note fields.
+4. The verification preview explains why the packaging looks broadly consistent and keeps the reasoning visible before submission.
+5. A successful verification ends with the green local-confirmation message: `Den positive transparens-verifikation blev gemt lokalt som TruthLens-feedback.`
+
+### Reviewer behavior in the current beta
+
+- report and verify-transparent are behaviorally distinct flows
+- report mode is for potentially misleading packaging that still needs human platform review
+- verify-transparent is for positive confirmation that the packaging looks broadly honest or non-clickbait
+- Gemini wording help is optional; the flow stays usable when TruthLens falls back to local heuristics
+- thumbnails remain visible even when the internal policy contract chooses `blur`; the extension presents that state as a warning surface rather than hiding the visual context
 
 ## Repo Status
 
@@ -311,7 +371,7 @@ Explicitly kept out of the baseline hot path:
 - Gemini is used only as downstream wording assistance for report optimization and richer draft text after scoring, policy selection, and review-state construction are already complete
 - there is no always-on heavy LLM classifier inside the default perception, fusion, calibration, or policy loop
 - `bseo-live` is not allowed to self-promote without committed policy artifacts, compatibility checks, calibration and performance guardrails, and runtime-governance approval
-- direct YouTube OAuth/report-submit is intentionally outside the first hosted beta contract even though the internal code paths exist behind configuration
+- direct YouTube OAuth/report-submit remains optional and account-dependent in the first hosted beta, while single-item reports can still fall back to YouTube's in-page report flow plus linked local TruthLens feedback
 
 ## Policy Modes
 
