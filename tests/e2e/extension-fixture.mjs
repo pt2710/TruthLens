@@ -609,6 +609,7 @@ async function main() {
         !firstCard.querySelector('.truthlens-card-flag')
       );
     });
+    await waitForNodeCondition(() => browserObservations.length >= 4);
     assert.equal(batchRequests, 2);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
     assert.equal(browserObservations.length, 4);
@@ -641,6 +642,7 @@ async function main() {
     await page.waitForFunction(
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 4,
     );
+    await waitForNodeCondition(() => browserObservations.length >= 5);
     assert.equal(batchRequests, 3);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
     assert.equal(await cards.nth(3).locator('.truthlens-card-flag').count(), 1);
@@ -678,6 +680,17 @@ async function expectText(page, selector, text) {
     },
     { selector, text },
   );
+}
+
+async function waitForNodeCondition(predicate, { timeoutMs = 5000, intervalMs = 100 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error('Timed out while waiting for node-side fixture condition.');
 }
 
 main().catch((error) => {
