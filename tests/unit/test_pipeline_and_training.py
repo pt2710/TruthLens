@@ -54,6 +54,7 @@ def test_training_and_simulation_generate_artifacts(
     model_info = describe_model()
     model_dir = repo_root() / "artifacts/trained_models/latest"
     eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
+    training_history = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-training-history.json")
     simulation_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-simulation.json")
     bseo_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-report.json")
     bseo_lineage = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-lineage.json")
@@ -101,6 +102,12 @@ def test_training_and_simulation_generate_artifacts(
     assert model_dir.joinpath("model_info.json").exists()
     assert (repo_root() / "artifacts/eval_runs").exists()
     assert (repo_root() / "artifacts/drift_reports").exists()
+    assert training_history["build_id"] == "build-test-latest"
+    assert training_history["baseline_heads"]["fit_label"] == "train"
+    assert training_history["baseline_heads"]["eval_label"] == "validation"
+    assert training_history["baseline_heads"]["aggregated"]
+    assert training_history["fusion"]["fit_label"] == "validation"
+    assert training_history["fusion"]["eval_label"] == "test"
     assert "calibration_error" in model_info
     assert "per_head_metrics" in model_info
     assert "confusion_matrix" in model_info

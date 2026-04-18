@@ -16,6 +16,8 @@ ASSET_FILENAMES = (
     "per_head_metrics.svg",
     "calibration_error.svg",
     "confusion_matrix_eval.svg",
+    "training_loss_curve.svg",
+    "training_accuracy_curve.svg",
     "threshold_sweep.svg",
     "drift_summary.svg",
     "policy_mode_comparison.svg",
@@ -77,6 +79,7 @@ def _find_latest_eval_report(directory: Path) -> Path | None:
             and not path.name.endswith("-bseo-report.json")
             and not path.name.endswith("-mutation-bias-atlas.json")
             and not path.name.endswith("-bseo-lineage.json")
+            and not path.name.endswith("-training-history.json")
         ],
         key=lambda path: path.stat().st_mtime,
         reverse=True,
@@ -115,6 +118,11 @@ def _artifact_paths() -> dict[str, Path | None]:
         if build_id and (eval_dir / f"{build_id}-simulation.json").exists()
         else _find_latest_json(eval_dir, "-simulation.json")
     )
+    training_history_path = (
+        eval_dir / f"{build_id}-training-history.json"
+        if build_id and (eval_dir / f"{build_id}-training-history.json").exists()
+        else _find_latest_json(eval_dir, "-training-history.json")
+    )
     bseo_report_path = (
         eval_dir / f"{build_id}-bseo-report.json"
         if build_id and (eval_dir / f"{build_id}-bseo-report.json").exists()
@@ -143,6 +151,7 @@ def _artifact_paths() -> dict[str, Path | None]:
         "model_info": model_info_path if model_info_path.exists() else None,
         "eval_report": eval_report_path,
         "simulation": simulation_path,
+        "training_history": training_history_path,
         "bseo_report": bseo_report_path,
         "mutation_atlas": mutation_atlas_path,
         "lineage": lineage_path,
@@ -334,12 +343,34 @@ def _summarize_supplemental_intake(
     }
 
 
+def _summarize_training_history(training_history: dict[str, Any] | None) -> dict[str, Any]:
+    payload = training_history or {}
+    baseline_heads = dict(payload.get("baseline_heads", {}))
+    aggregated = baseline_heads.get("aggregated", [])
+    fusion = dict(payload.get("fusion", {}))
+    return {
+        "available": bool(payload),
+        "baseline_heads": {
+            "fit_label": baseline_heads.get("fit_label"),
+            "eval_label": baseline_heads.get("eval_label"),
+            "head_count": len(dict(baseline_heads.get("heads", {}))),
+            "aggregated": aggregated if isinstance(aggregated, list) else [],
+        },
+        "fusion": {
+            "fit_label": fusion.get("fit_label"),
+            "eval_label": fusion.get("eval_label"),
+            "history": fusion.get("history", []) if isinstance(fusion.get("history", []), list) else [],
+        },
+    }
+
+
 def build_benchmark_summary() -> dict[str, Any]:
     runtime_governance = persist_runtime_governance_summary()
     paths = _artifact_paths()
     model_info = _read_json_if_exists(paths["model_info"])
     eval_report = _read_json_if_exists(paths["eval_report"])
     simulation = _read_json_if_exists(paths["simulation"])
+    training_history = _read_json_if_exists(paths["training_history"])
     drift_report = _read_json_if_exists(paths["drift_report"])
     runtime_policy = _read_json_if_exists(paths["runtime_policy"])
     thresholds = _read_json_if_exists(paths["thresholds"])
@@ -400,6 +431,10 @@ def build_benchmark_summary() -> dict[str, Any]:
             )
     if not threshold_sweep:
         missing.append("simulation threshold sweep artifact is missing")
+    if training_history is None:
+        caveats.append(
+            "No committed training-history artifact is present, so loss and accuracy curves fall back to explicit unavailable stubs."
+        )
     if runtime_policy is None:
         missing.append("runtime-policy.json is missing")
     if bseo_policy is None:
@@ -496,6 +531,7 @@ def build_benchmark_summary() -> dict[str, Any]:
             "policy": dict((simulation or {}).get("policy", {})),
             "q_table": dict((simulation or {}).get("q_table", {})),
         },
+        "training_history": _summarize_training_history(training_history),
         "drift": drift_report or {},
         "bseo": {
             "policy_artifact": _summarize_bseo_policy_artifact(bseo_policy),
@@ -798,6 +834,91 @@ def _write_confusion_svg(summary: dict[str, Any], path: Path) -> None:
             "Counts from the committed eval artifact. With n this small, matrix cells are descriptive, not conclusive.",
             720,
             460,
+            body,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_training_curve_svg(
+    summary: dict[str, Any],
+    path: Path,
+    *,
+    metric_name: str,
+    title: str,
+) -> None:
+    training_history = dict(summary.get("training_history", {}))
+    baseline = dict(training_history.get("baseline_heads", {}))
+    aggregated = baseline.get("aggregated", [])
+    if not isinstance(aggregated, list) or not aggregated:
+        _stub_svg(
+            title,
+            "Diagnostic baseline-head history over deterministic iteration checkpoints",
+            "No committed training-history artifact was available for this build.",
+            path,
+        )
+        return
+    fit_label = str(baseline.get("fit_label") or "train")
+    eval_label = str(baseline.get("eval_label") or "validation")
+    fit_key = f"{fit_label}_{metric_name}"
+    eval_key = f"{eval_label}_{metric_name}"
+    iterations = [int(entry.get("iteration", 0)) for entry in aggregated]
+    fit_values = [_safe_float(entry.get(fit_key)) for entry in aggregated]
+    eval_values = [_safe_float(entry.get(eval_key)) for entry in aggregated]
+    if not iterations:
+        _stub_svg(
+            title,
+            "Diagnostic baseline-head history over deterministic iteration checkpoints",
+            "The committed training-history artifact did not contain usable checkpoint rows.",
+            path,
+        )
+        return
+    width = 1320
+    height = 580
+    chart_x = 96
+    chart_y = 154
+    chart_w = 1128
+    chart_h = 304
+    y_max = max(max(fit_values, default=0.0), max(eval_values, default=0.0), 1.0 if metric_name == "accuracy" else 0.1)
+    body: list[str] = []
+    for step in range(6):
+        y = chart_y + chart_h - (chart_h * step / 5.0)
+        label_value = (y_max * step / 5.0)
+        body.append(f'<line class="grid" x1="{chart_x}" y1="{y:.1f}" x2="{chart_x + chart_w}" y2="{y:.1f}" />')
+        body.append(f'<text class="small" x="{chart_x - 52}" y="{y + 5:.1f}">{label_value:.2f}</text>')
+    body.append(f'<line class="axis" x1="{chart_x}" y1="{chart_y}" x2="{chart_x}" y2="{chart_y + chart_h}" />')
+    body.append(
+        f'<line class="axis" x1="{chart_x}" y1="{chart_y + chart_h}" x2="{chart_x + chart_w}" y2="{chart_y + chart_h}" />'
+    )
+
+    def _series_points(values: list[float]) -> str:
+        points: list[str] = []
+        for index, value in enumerate(values):
+            x = chart_x + (index / max(len(values) - 1, 1)) * chart_w
+            y = chart_y + chart_h - (max(0.0, min(value, y_max)) / max(y_max, 1e-9)) * chart_h
+            points.append(f"{x:.1f},{y:.1f}")
+        return " ".join(points)
+
+    body.append(f'<polyline fill="none" stroke="#2563eb" stroke-width="3" points="{_series_points(fit_values)}" />')
+    body.append(f'<polyline fill="none" stroke="#c2410c" stroke-width="3" points="{_series_points(eval_values)}" />')
+    for index, iteration in enumerate(iterations):
+        x = chart_x + (index / max(len(iterations) - 1, 1)) * chart_w
+        body.append(
+            f'<text class="small" x="{x:.1f}" y="{chart_y + chart_h + 30}" text-anchor="middle">{iteration}</text>'
+        )
+    body.append('<rect x="96" y="516" width="16" height="16" fill="#2563eb" rx="4" />')
+    body.append(f'<text class="legend" x="120" y="530">{escape(fit_label.title())} {metric_name}</text>')
+    body.append('<rect x="246" y="516" width="16" height="16" fill="#c2410c" rx="4" />')
+    body.append(f'<text class="legend" x="270" y="530">{escape(eval_label.title())} {metric_name}</text>')
+    body.append(
+        '<text class="small" x="96" y="558">Curves average the committed baseline heads over deterministic logistic-regression checkpoints. Fusion diagnostics remain available in the training-history artifact.</text>'
+    )
+    path.write_text(
+        _svg_document(
+            title,
+            "Derived from the committed training-history artifact. These are diagnostic optimization curves, not new production claims.",
+            width,
+            height,
             body,
         ),
         encoding="utf-8",
@@ -1664,6 +1785,18 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     _write_per_head_svg(summary, assets_dir / "per_head_metrics.svg")
     _write_calibration_svg(summary, assets_dir / "calibration_error.svg")
     _write_confusion_svg(summary, assets_dir / "confusion_matrix_eval.svg")
+    _write_training_curve_svg(
+        summary,
+        assets_dir / "training_loss_curve.svg",
+        metric_name="loss",
+        title="Training loss curve",
+    )
+    _write_training_curve_svg(
+        summary,
+        assets_dir / "training_accuracy_curve.svg",
+        metric_name="accuracy",
+        title="Training accuracy curve",
+    )
     _write_threshold_sweep_svg(summary, assets_dir / "threshold_sweep.svg")
     _write_drift_svg(summary, assets_dir / "drift_summary.svg")
     _write_policy_svg(summary, assets_dir / "policy_mode_comparison.svg")

@@ -45,13 +45,13 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="516.6" y="162.5" width="44.3" height="331.5" fill="#0f766e" rx="6" />
 <rect x="566.9" y="185.6" width="44.3" height="308.4" fill="#c2410c" rx="6" />
 <text class="small" x="510.6" y="522" text-anchor="middle">metadata</text>
-<rect x="643.4" y="310.2" width="44.3" height="183.8" fill="#2563eb" rx="6" />
-<rect x="693.7" y="324.0" width="44.3" height="170.0" fill="#0f766e" rx="6" />
-<rect x="744.0" y="317.4" width="44.3" height="176.6" fill="#c2410c" rx="6" />
+<rect x="643.4" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
+<rect x="693.7" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
+<rect x="744.0" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
 <text class="small" x="687.7" y="522" text-anchor="middle">history</text>
-<rect x="820.6" y="494.0" width="44.3" height="0.0" fill="#2563eb" rx="6" />
-<rect x="870.9" y="494.0" width="44.3" height="0.0" fill="#0f766e" rx="6" />
-<rect x="921.1" y="494.0" width="44.3" height="0.0" fill="#c2410c" rx="6" />
+<rect x="820.6" y="265.4" width="44.3" height="228.6" fill="#2563eb" rx="6" />
+<rect x="870.9" y="162.5" width="44.3" height="331.5" fill="#0f766e" rx="6" />
+<rect x="921.1" y="223.4" width="44.3" height="270.6" fill="#c2410c" rx="6" />
 <text class="small" x="864.9" y="522" text-anchor="middle">anomaly</text>
 <rect x="997.7" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
 <rect x="1048.0" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />

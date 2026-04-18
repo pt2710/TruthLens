@@ -33,18 +33,18 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="38" y="159.0">0.46</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="455.4" width="48.0" height="38.6" fill="#7c3aed" rx="6" />
+<rect x="112.0" y="456.9" width="48.0" height="37.1" fill="#7c3aed" rx="6" />
 <text class="small" x="174.0" y="522" text-anchor="middle">sensational</text>
 <text class="small" x="174.0" y="538" text-anchor="middle">weight</text>
 <rect x="360.0" y="232.5" width="48.0" height="261.5" fill="#7c3aed" rx="6" />
 <text class="small" x="422.0" y="522" text-anchor="middle">crossmodal</text>
 <text class="small" x="422.0" y="538" text-anchor="middle">rigidity</text>
-<rect x="608.0" y="322.0" width="48.0" height="172.0" fill="#7c3aed" rx="6" />
+<rect x="608.0" y="321.8" width="48.0" height="172.2" fill="#7c3aed" rx="6" />
 <text class="small" x="670.0" y="522" text-anchor="middle">channel prior</text>
 <text class="small" x="670.0" y="538" text-anchor="middle">dependency</text>
-<rect x="856.0" y="312.6" width="48.0" height="181.4" fill="#7c3aed" rx="6" />
+<rect x="856.0" y="312.4" width="48.0" height="181.6" fill="#7c3aed" rx="6" />
 <text class="small" x="918.0" y="522" text-anchor="middle">genre confusion</text>
-<rect x="1104.0" y="385.6" width="48.0" height="108.4" fill="#7c3aed" rx="6" />
+<rect x="1104.0" y="341.8" width="48.0" height="152.2" fill="#7c3aed" rx="6" />
 <text class="small" x="1166.0" y="522" text-anchor="middle">uncertainty</text>
 <text class="small" x="1166.0" y="538" text-anchor="middle">calibration</text>
 <rect x="86" y="540" width="16" height="16" fill="#7c3aed" rx="4" />

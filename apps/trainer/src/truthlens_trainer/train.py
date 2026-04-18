@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import pickle
+import warnings
 from typing import Any
 
 import numpy as np
 from sklearn import __version__ as sklearn_version
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, log_loss
 try:
     from torch import __version__ as torch_version
 except ImportError:  # pragma: no cover - optional dependency
@@ -241,6 +244,109 @@ def _score_head_metrics(labels: list[int], scores: np.ndarray) -> dict[str, Any]
     }
 
 
+def _checkpoint_iterations(max_iter: int) -> list[int]:
+    checkpoints = [1, 2, 4, 8, 16, 32, 64, 128, 256, max_iter]
+    normalized = sorted({value for value in checkpoints if 0 < value <= max_iter})
+    if not normalized or normalized[-1] != max_iter:
+        normalized.append(max_iter)
+    return normalized
+
+
+def _evaluate_checkpoint(
+    model: LogisticRegression,
+    fit_matrix: Any,
+    fit_labels: list[int],
+    eval_matrix: Any,
+    eval_labels: list[int],
+    *,
+    fit_label: str,
+    eval_label: str,
+    iteration: int,
+) -> dict[str, float | int]:
+    fit_probabilities = model.predict_proba(fit_matrix)[:, 1]
+    eval_probabilities = model.predict_proba(eval_matrix)[:, 1]
+    return {
+        "iteration": iteration,
+        f"{fit_label}_loss": round(float(log_loss(fit_labels, fit_probabilities, labels=[0, 1])), 6),
+        f"{eval_label}_loss": round(float(log_loss(eval_labels, eval_probabilities, labels=[0, 1])), 6),
+        f"{fit_label}_accuracy": round(float(accuracy_score(fit_labels, fit_probabilities >= 0.5)), 6),
+        f"{eval_label}_accuracy": round(float(accuracy_score(eval_labels, eval_probabilities >= 0.5)), 6),
+    }
+
+
+def _logistic_checkpoint_history(
+    fit_matrix: Any,
+    fit_labels: list[int],
+    eval_matrix: Any,
+    eval_labels: list[int],
+    *,
+    fit_label: str,
+    eval_label: str,
+    max_iter: int = 500,
+) -> list[dict[str, float | int]]:
+    history: list[dict[str, float | int]] = []
+    for iteration in _checkpoint_iterations(max_iter):
+        checkpoint_model = LogisticRegression(
+            max_iter=iteration,
+            random_state=42,
+            class_weight="balanced",
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            checkpoint_model.fit(fit_matrix, fit_labels)
+        history.append(
+            _evaluate_checkpoint(
+                checkpoint_model,
+                fit_matrix,
+                fit_labels,
+                eval_matrix,
+                eval_labels,
+                fit_label=fit_label,
+                eval_label=eval_label,
+                iteration=iteration,
+            )
+        )
+    return history
+
+
+def _aggregate_histories(
+    histories: dict[str, list[dict[str, float | int]]],
+    *,
+    fit_label: str,
+    eval_label: str,
+) -> list[dict[str, float | int]]:
+    if not histories:
+        return []
+    ordered_names = sorted(histories)
+    checkpoint_count = len(next(iter(histories.values())))
+    aggregated: list[dict[str, float | int]] = []
+    for index in range(checkpoint_count):
+        checkpoints = [histories[name][index] for name in ordered_names]
+        iteration = int(checkpoints[0]["iteration"])
+        aggregated.append(
+            {
+                "iteration": iteration,
+                f"{fit_label}_loss": round(
+                    float(np.mean([float(checkpoint[f"{fit_label}_loss"]) for checkpoint in checkpoints])),
+                    6,
+                ),
+                f"{eval_label}_loss": round(
+                    float(np.mean([float(checkpoint[f"{eval_label}_loss"]) for checkpoint in checkpoints])),
+                    6,
+                ),
+                f"{fit_label}_accuracy": round(
+                    float(np.mean([float(checkpoint[f"{fit_label}_accuracy"]) for checkpoint in checkpoints])),
+                    6,
+                ),
+                f"{eval_label}_accuracy": round(
+                    float(np.mean([float(checkpoint[f"{eval_label}_accuracy"]) for checkpoint in checkpoints])),
+                    6,
+                ),
+            }
+        )
+    return aggregated
+
+
 def main() -> None:
     manifest = load_latest_build_manifest()
     train_records = _load_split_records(manifest, "train")
@@ -279,13 +385,34 @@ def main() -> None:
 
     text_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     text_model.fit(train_text, train_labels)
+    text_history = _logistic_checkpoint_history(
+        train_text,
+        train_labels,
+        validation_text,
+        validation_labels,
+        fit_label="train",
+        eval_label="validation",
+        max_iter=500,
+    )
 
     vision_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
     vision_model.fit(_vision_matrix(train_records), train_labels)
+    train_vision_matrix = _vision_matrix(train_records)
+    validation_vision_matrix = _vision_matrix(validation_records)
+    test_vision_matrix = _vision_matrix(test_records)
+    vision_history = _logistic_checkpoint_history(
+        train_vision_matrix,
+        train_labels,
+        validation_vision_matrix,
+        validation_labels,
+        fit_label="train",
+        eval_label="validation",
+        max_iter=500,
+    )
     vision_encoder_resolution = resolve_vision_encoder()
     vision_encoder_artifacts = None
-    validation_vision_scores = vision_model.predict_proba(_vision_matrix(validation_records))[:, 1]
-    test_vision_scores = vision_model.predict_proba(_vision_matrix(test_records))[:, 1]
+    validation_vision_scores = vision_model.predict_proba(validation_vision_matrix)[:, 1]
+    test_vision_scores = vision_model.predict_proba(test_vision_matrix)[:, 1]
     if (
         vision_encoder_resolution.actual_encoder in {"tiny-cnn-thumbnail", "vision-transformer"}
         and vision_available()
@@ -407,10 +534,34 @@ def main() -> None:
                     )
 
     metadata_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
-    metadata_model.fit(_metadata_matrix(train_records), train_labels)
+    train_metadata_matrix = _metadata_matrix(train_records)
+    validation_metadata_matrix = _metadata_matrix(validation_records)
+    test_metadata_matrix = _metadata_matrix(test_records)
+    metadata_model.fit(train_metadata_matrix, train_labels)
+    metadata_history = _logistic_checkpoint_history(
+        train_metadata_matrix,
+        train_labels,
+        validation_metadata_matrix,
+        validation_labels,
+        fit_label="train",
+        eval_label="validation",
+        max_iter=500,
+    )
 
     history_model = LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")
-    history_model.fit(_history_matrix(train_records), train_labels)
+    train_history_matrix = _history_matrix(train_records)
+    validation_history_matrix = _history_matrix(validation_records)
+    test_history_matrix = _history_matrix(test_records)
+    history_model.fit(train_history_matrix, train_labels)
+    baseline_history_head_history = _logistic_checkpoint_history(
+        train_history_matrix,
+        train_labels,
+        validation_history_matrix,
+        validation_labels,
+        fit_label="train",
+        eval_label="validation",
+        max_iter=500,
+    )
     history_encoder_resolution = resolve_history_encoder()
     history_sequence_artifacts = None
     train_history_sequences = _history_sequence_tensor(
@@ -425,8 +576,8 @@ def main() -> None:
         test_records,
         sequence_length=history_encoder_resolution.sequence_length,
     )
-    validation_history_scores = history_model.predict_proba(_history_matrix(validation_records))[:, 1]
-    test_history_scores = history_model.predict_proba(_history_matrix(test_records))[:, 1]
+    validation_history_scores = history_model.predict_proba(validation_history_matrix)[:, 1]
+    test_history_scores = history_model.predict_proba(test_history_matrix)[:, 1]
     if history_encoder_resolution.actual_encoder == "lstm-sequence" and temporal_available():
         try:
             temporal_history = train_temporal_history_encoder(
@@ -475,7 +626,7 @@ def main() -> None:
         [
             text_model.predict_proba(validation_text)[:, 1],
             validation_vision_scores,
-            metadata_model.predict_proba(_metadata_matrix(validation_records))[:, 1],
+            metadata_model.predict_proba(validation_metadata_matrix)[:, 1],
             validation_history_scores,
             validation_anomaly_scores,
         ]
@@ -501,7 +652,7 @@ def main() -> None:
     decision_threshold = _best_threshold(validation_labels, calibrated_validation_scores)
 
     test_text_scores = text_model.predict_proba(test_text)[:, 1]
-    test_metadata_scores = metadata_model.predict_proba(_metadata_matrix(test_records))[:, 1]
+    test_metadata_scores = metadata_model.predict_proba(test_metadata_matrix)[:, 1]
     test_base_scores = np.column_stack(
         [
             test_text_scores,
@@ -512,6 +663,15 @@ def main() -> None:
         ]
     )
     test_fusion_scores = fusion_model.predict_proba(test_base_scores)[:, 1]
+    fusion_history = _logistic_checkpoint_history(
+        validation_base_scores,
+        validation_labels,
+        test_base_scores,
+        test_labels,
+        fit_label="validation",
+        eval_label="test",
+        max_iter=500,
+    )
     calibrated_test_scores = (
         calibration_model.predict_proba(test_fusion_scores.reshape(-1, 1))[:, 1]
         if calibration_model is not None
@@ -617,6 +777,39 @@ def main() -> None:
     }
     (eval_dir / f"{manifest['build_id']}.json").write_text(
         json.dumps(evaluation_payload, indent=2, ensure_ascii=True),
+        encoding="utf-8",
+    )
+    training_history_payload = {
+        "build_id": manifest["build_id"],
+        "generated_at": manifest["generated_at"],
+        "baseline_heads": {
+            "fit_label": "train",
+            "eval_label": "validation",
+            "heads": {
+                "text": text_history,
+                "vision": vision_history,
+                "metadata": metadata_history,
+                "history": baseline_history_head_history,
+            },
+            "aggregated": _aggregate_histories(
+                {
+                    "text": text_history,
+                    "vision": vision_history,
+                    "metadata": metadata_history,
+                    "history": baseline_history_head_history,
+                },
+                fit_label="train",
+                eval_label="validation",
+            ),
+        },
+        "fusion": {
+            "fit_label": "validation",
+            "eval_label": "test",
+            "history": fusion_history,
+        },
+    }
+    (eval_dir / f"{manifest['build_id']}-training-history.json").write_text(
+        json.dumps(training_history_payload, indent=2, ensure_ascii=True),
         encoding="utf-8",
     )
     reports_dir = repo_root() / "artifacts" / "reports"

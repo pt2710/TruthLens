@@ -133,8 +133,8 @@ Current committed root-repo truth:
 - baseline runtime is separated into perception -> fusion/calibration -> selective verification -> policy -> explanation
 - selective deep verification is explicit and fail-soft
 - heavy LLM assistance remains downstream in review and report drafting, not in the baseline hot path
-- a compatible `configs/thresholds/bseo-policy.json` is now committed and the root runtime is promoted to `bseo-live`
-- current governance artifacts now mark `bseo-live` as both eligible and recommended for the committed runtime guardrails
+- a compatible `configs/thresholds/bseo-policy.json` is committed, but the current governed runtime remains pinned to `threshold-default`
+- current governance artifacts mark `bseo-live` as not currently promotable because the committed BSEO artifact is stale and still exceeds benign-FPR guardrails
 - committed benchmarks are larger than the earlier tiny-sample snapshot, but they are still repository artifacts rather than production performance claims
 
 ## Architecture Summary
@@ -389,9 +389,9 @@ Compatibility aliases:
 
 Committed root configuration today:
 
-- `configs/thresholds/runtime-policy.json` is set to `bseo-live`
+- `configs/thresholds/runtime-policy.json` is set to `threshold-default`
 - `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
-- current governance artifacts now clear `bseo-live` for committed use, so the root runtime is promoted to live rather than held in shadow
+- current governance artifacts do not clear `bseo-live` for committed use, so the governed runtime remains on `threshold-default` until the stale-artifact and benign-FPR blockers are resolved
 
 ## Observation And Feedback Intake
 
@@ -433,10 +433,18 @@ Current committed snapshot:
 | `model_version` | `baseline-v1-build-20260411064344` |
 | `trained_at` | `2026-04-11T06:43:44.245427+00:00` |
 | `eval sample_count` | `76` |
-| `configured runtime mode` | `bseo-live` |
-| `resolved runtime mode` | `bseo-live` |
-| `governance recommended mode` | `bseo-live` |
-| `max promotable mode` | `bseo-live` |
+| `configured runtime mode` | `threshold-default` |
+| `resolved runtime mode` | `threshold-default` |
+| `governance recommended mode` | `threshold-default` |
+| `max promotable mode` | `threshold-default` |
+
+Current governed dataset base for this benchmark round:
+
+| Field | Value |
+| --- | --- |
+| dataset access method | `synthetic-bootstrap` |
+| train / validation / test | `190 / 76 / 76` |
+| latest governed manifest | `datasets/manifests/builds/latest.json` |
 
 Current eval vs validation snapshot from committed artifacts:
 
@@ -447,7 +455,7 @@ Current eval vs validation snapshot from committed artifacts:
 | F1 | 1.000 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.146 | 0.146 |
+| Calibration error | 0.142 | 0.147 |
 
 Current generated observation and governance snapshot from the same render-time summary:
 
@@ -465,10 +473,11 @@ These moving counts are also surfaced in `docs/benchmarks/latest/benchmark_summa
 These numbers are not production claims.
 
 - committed eval sample count is now `76`, which is materially better than the earlier tiny-sample snapshot but still modest
+- the current benchmark round still uses the latest governed `synthetic-bootstrap` dataset manifest; these numbers should therefore be read as controlled repo truth rather than field performance
 - eval and validation are both very strong on this committed split; that symmetry should be read as a clean repository benchmark, not as broad real-world proof
-- overall calibration error remains `0.146`, so ranking confidence is still less mature than the binary F1 snapshot suggests
+- overall calibration error remains materially non-zero (`0.142` eval, `0.147` validation), so ranking confidence is still less mature than the binary F1 snapshot suggests
 - per-head metrics are uneven: text/fusion are strong, while history and anomaly remain much weaker sidecars
-- current governance artifacts now clear and recommend `bseo-live`, and the committed runtime has been promoted accordingly
+- current governance artifacts do not clear `bseo-live`; the committed runtime remains on `threshold-default` and the live blockers are `stale-bseo-artifact`, `low-bseo-objective`, and `benign-fpr-too-high`
 - collection-scope review/report support is implemented in the extension and shared schemas, but committed benchmark volume for collection-batch intake may still be zero until the flow is exercised against real browser observations
 
 ## Evaluation And Visualization
@@ -508,6 +517,8 @@ Additional committed assets:
 - [Overall metrics table](docs/benchmarks/latest/assets/overall_metrics_table.md)
 - [Calibration error chart](docs/benchmarks/latest/assets/calibration_error.svg)
 - [Confusion matrix](docs/benchmarks/latest/assets/confusion_matrix_eval.svg)
+- [Training loss curve](docs/benchmarks/latest/assets/training_loss_curve.svg)
+- [Training accuracy curve](docs/benchmarks/latest/assets/training_accuracy_curve.svg)
 - [Benchmark provenance card](docs/benchmarks/latest/assets/benchmark_provenance.svg)
 - [BSEO bias profile](docs/benchmarks/latest/assets/bseo_bias_profile.svg)
 - [Mutation bias atlas](docs/benchmarks/latest/assets/mutation_bias_atlas.svg)
@@ -622,7 +633,8 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - committed benchmarks are materially broader than before, but README still should not read like a product benchmark sheet
 - calibration and per-head stability still lag behind the clean fused F1 snapshot
 - history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
-- `bseo-live` is now the committed runtime mode because current governance artifacts clear the live guardrails
+- the latest committed benchmark round still rests on a governed `synthetic-bootstrap` dataset rather than a broader real-world collection
+- `bseo-live` is not the current committed runtime mode; governance presently keeps the repo on `threshold-default` because the current BSEO artifact is stale and still trips benign-FPR guardrails
 - observation and supplemental intake artifacts depend on actual runtime use, so a clean repo snapshot may legitimately show zero supplemental volume
 - current repo truth is stronger on architecture separation and governance discipline than on real-world benchmark maturity
 

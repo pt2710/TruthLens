@@ -432,14 +432,21 @@ def test_suggest_manual_report_uses_music_aware_heuristics(
     )
 
     assert result.suggestion_model == "truthlens-heuristic-fallback-v1"
-    assert any(tag.tag.value == "Music" and tag.selected for tag in result.suggested_tags)
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    assert tag_map["Music"].selected is True
+    assert tag_map["Music"].confidence > tag_map["Art"].confidence > tag_map["News"].confidence
+    assert tag_map["Promo"].confidence > tag_map["Tutorial"].confidence
+    assert tag_map["Clickbait"].confidence < 0.08
     issue_map = {issue.issue_type: issue for issue in result.issues}
-    assert "does not currently show a strong mismatch signal" in issue_map["thumbnail"].comment.lower()
-    assert "does not currently show a clear overstatement signal" in issue_map["title"].comment.lower()
+    assert "release artwork" in issue_map["thumbnail"].comment.lower()
+    assert "music packaging" in issue_map["thumbnail"].comment.lower()
+    assert "audio or track release" in issue_map["title"].comment.lower()
+    assert "artist, track, or release framing" in issue_map["description"].comment.lower()
     assert issue_map["transcript"].suggested is False
     assert issue_map["transcript"].comment == ""
-    assert issue_map["channel"].suggested is False
-    assert issue_map["channel"].comment == ""
+    assert issue_map["channel"].suggested is True
+    assert "release-style framing" in issue_map["channel"].comment.lower()
+    assert "ordinary music packaging" in issue_map["other"].comment.lower()
     assert result.suggested_outcome.value == "moderate"
 
 
@@ -667,9 +674,129 @@ def test_suggest_manual_report_uses_satire_aware_heuristics(
     )
 
     issue_map = {issue.issue_type: issue for issue in result.issues}
-    assert "does not currently show a clear overstatement signal" in issue_map["title"].comment.lower()
-    assert issue_map["other"].comment.lower().startswith("overall packaging does not currently show a strong clickbait signal")
-    assert issue_map["channel"].suggested is False
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    assert tag_map["Satire"].selected is True
+    assert tag_map["Satire"].confidence > tag_map["News"].confidence > tag_map["Documentary"].confidence
+    assert tag_map["Clickbait"].confidence < 0.18
+    assert "satirical fake-news setup" in issue_map["title"].comment.lower()
+    assert "satire or parody" in issue_map["other"].comment.lower()
+    assert issue_map["channel"].suggested is True
+    assert "parody or sketch framing" in issue_map["channel"].comment.lower()
+
+
+def test_suggest_manual_report_uses_art_aware_heuristics(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=art-demo",
+                "thumbnail_ref": "https://img.youtube.com/vi/art-demo/default.jpg",
+                "title_snapshot": "Fragments of Blue — Gallery Edit",
+                "channel_name": "North Gallery Studio",
+                "channel_context": 'Recent public channel titles: "Fragments of Blue — Gallery Edit"; "Sketchbook session"; "Exhibition trailer"',
+                "description_snapshot": "Studio release showing the exhibition cut for Fragments of Blue.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "art",
+                "content_class_confidence": 0.81,
+                "bias_profile": {
+                    "metrics": {"crossmodal_rigidity": 0.21},
+                    "positive_biases": ["stylistic-divergence-tolerance"],
+                    "negative_biases": [],
+                    "guardrail_applied": "art-context-dampens-rigidity",
+                },
+                "explanation_summary": "Creative styling appears more relevant than literal scene alignment.",
+                "reasons": ["Creative packaging should be checked for honest exhibition framing rather than literal factual matching."],
+            }
+        )
+    )
+
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert tag_map["Art"].selected is True
+    assert tag_map["Art"].confidence > tag_map["Documentary"].confidence > tag_map["Gaming"].confidence
+    assert tag_map["Clickbait"].confidence < 0.08
+    assert "artwork or poster-style creative framing" in issue_map["thumbnail"].comment.lower()
+    assert "artwork, exhibition, or creator naming" in issue_map["title"].comment.lower()
+    assert "supports the same artwork or exhibition framing" in issue_map["description"].comment.lower()
+    assert issue_map["channel"].suggested is True
+    assert "creative or exhibition-style framing" in issue_map["channel"].comment.lower()
+    assert "legitimate creative packaging" in issue_map["other"].comment.lower()
+
+
+def test_suggest_manual_report_uses_gaming_aware_heuristics(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=gaming-demo",
+                "thumbnail_ref": "https://img.youtube.com/vi/gaming-demo/default.jpg",
+                "title_snapshot": "Night Raid Boss Fight | Full Gameplay",
+                "channel_name": "Checkpoint Runs",
+                "channel_context": 'Recent public channel titles: "Night Raid Boss Fight | Full Gameplay"; "Speedrun practice"; "Build guide for patch 1.2"',
+                "description_snapshot": "Gameplay upload covering the full boss fight and route planning for Night Raid.",
+                "transcript_excerpt": "We finally clear the boss phase and talk through the route timing.",
+                "transcript_available": True,
+                "content_class": "gaming",
+                "content_class_confidence": 0.78,
+                "bias_profile": {
+                    "metrics": {"genre_confusion": 0.14},
+                    "positive_biases": ["format-aware-tolerance"],
+                    "negative_biases": [],
+                    "guardrail_applied": "gaming-context-dampens-rigidity",
+                },
+                "explanation_summary": "Selective scene choice alone should not be treated as deceptive in ordinary gameplay uploads.",
+                "reasons": ["Gameplay framing is consistent across the visible cues."],
+            }
+        )
+    )
+
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert tag_map["Gaming"].selected is True
+    assert tag_map["Gaming"].confidence > tag_map["Walkthrough"].confidence > tag_map["Tutorial"].confidence
+    assert tag_map["Clickbait"].confidence < 0.08
+    assert "ordinary gaming packaging" in issue_map["thumbnail"].comment.lower()
+    assert "gameplay, challenge, or release framing" in issue_map["title"].comment.lower()
+    assert "supports the same gameplay or release framing" in issue_map["description"].comment.lower()
+    assert "fits the same gameplay or release context" in issue_map["transcript"].comment.lower()
+    assert issue_map["channel"].suggested is True
+    assert "gameplay or run-style framing" in issue_map["channel"].comment.lower()
+    assert "ordinary gaming packaging" in issue_map["other"].comment.lower()
 
 
 def test_suggest_manual_report_report_mode_does_not_emit_benign_art_preface(

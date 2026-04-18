@@ -169,6 +169,34 @@ NON_MUSIC_CONTEXT_MARKERS = (
     "gameplay",
     "reaction",
 )
+ART_MARKERS = (
+    "artwork",
+    "painting",
+    "illustration",
+    "gallery",
+    "exhibition",
+    "studio",
+    "visual art",
+    "sketch",
+)
+GAMING_MARKERS = (
+    "gameplay",
+    "walkthrough",
+    "playthrough",
+    "let's play",
+    "lets play",
+    "boss fight",
+    "build guide",
+    "speedrun",
+)
+SATIRE_MARKERS = (
+    "satire",
+    "parody",
+    "spoof",
+    "sketch",
+    "joke",
+    "comedy",
+)
 TUTORIAL_MARKERS = (
     "tutorial",
     "how to",
@@ -252,20 +280,18 @@ def _preferred_positive_tag(
     payload: ManualReportSuggestionRequest,
     resolved_class: str,
 ) -> ManualReviewTag:
-    combined = " ".join(
+    primary_surface = " ".join(
         _normalize_text(part).lower()
         for part in (
             payload.title_snapshot,
             payload.description_snapshot,
             payload.transcript_excerpt,
-            payload.channel_name,
-            payload.channel_context,
         )
         if part
     )
-    if _contains_any(combined, WALKTHROUGH_MARKERS):
+    if _contains_any(primary_surface, WALKTHROUGH_MARKERS):
         return ManualReviewTag.WALKTHROUGH
-    if _contains_any(combined, TUTORIAL_MARKERS):
+    if _contains_any(primary_surface, TUTORIAL_MARKERS):
         return ManualReviewTag.TUTORIAL
     return {
         "music": ManualReviewTag.MUSIC,
@@ -283,23 +309,162 @@ def _build_tag_suggestions(
     *,
     resolved_class: str,
     base_confidence: float,
+    music_likelihood: float = 0.0,
+    transparent_signal: bool = False,
+    has_clickbait_title: bool = False,
+    has_alignment_warning: bool = False,
+    positive_biases: set[str] | None = None,
+    negative_biases: set[str] | None = None,
+    channel_support: bool = False,
 ) -> list[ManualReviewTagSelection]:
     selected_tag = (
         ManualReviewTag.CLICKBAIT
         if payload.workflow_mode == ManualReportWorkflowMode.REPORT
         else _preferred_positive_tag(payload, resolved_class)
     )
+    positive_biases = positive_biases or set()
+    negative_biases = negative_biases or set()
     selected_confidence = 0.85 if selected_tag == ManualReviewTag.CLICKBAIT else max(
         0.45,
         min(0.95, base_confidence or 0.55),
     )
+    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
+        positive_bias_bonus = min(0.12, 0.04 * len(positive_biases))
+        negative_bias_penalty = min(0.18, 0.05 * len(negative_biases))
+        clickbait_pressure = 0.12 if has_clickbait_title or has_alignment_warning else 0.0
+        contextual_bonus = 0.08 if resolved_class in TRANSPARENT_CONTEXT_CLASSES else 0.04
+        if resolved_class == "satire":
+            contextual_bonus = 0.02
+        selected_confidence = max(
+            0.42,
+            min(
+                0.94,
+                0.38
+                + base_confidence * 0.34
+                + music_likelihood * 0.18
+                + positive_bias_bonus
+                + contextual_bonus
+                + (0.08 if transparent_signal else 0.0)
+                + (0.05 if channel_support else 0.0)
+                - negative_bias_penalty * 0.45
+                - clickbait_pressure * 0.35,
+            ),
+        )
+        verify_confidences = {
+            tag: 0.04
+            for tag in MANUAL_REVIEW_TAG_ORDER
+        }
+        if selected_tag == ManualReviewTag.MUSIC:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.ART: 0.19,
+                    ManualReviewTag.PROMO: 0.17 if _contains_any(_normalize_text(payload.title_snapshot).lower(), MUSIC_TITLE_MARKERS) else 0.11,
+                    ManualReviewTag.UNKNOWN: 0.08,
+                }
+            )
+        elif selected_tag == ManualReviewTag.ART:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.MUSIC: 0.16,
+                    ManualReviewTag.DOCUMENTARY: 0.11,
+                    ManualReviewTag.PROMO: 0.09,
+                    ManualReviewTag.UNKNOWN: 0.1,
+                }
+            )
+        elif selected_tag == ManualReviewTag.GAMING:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.WALKTHROUGH: 0.24,
+                    ManualReviewTag.TUTORIAL: 0.14 if _contains_any(_normalize_text(payload.title_snapshot).lower(), TUTORIAL_MARKERS) else 0.08,
+                    ManualReviewTag.PROMO: 0.1,
+                    ManualReviewTag.UNKNOWN: 0.08,
+                }
+            )
+        elif selected_tag == ManualReviewTag.SATIRE:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.NEWS: 0.18,
+                    ManualReviewTag.UNKNOWN: 0.13,
+                    ManualReviewTag.DOCUMENTARY: 0.08,
+                }
+            )
+        elif selected_tag == ManualReviewTag.NEWS:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.DOCUMENTARY: 0.16,
+                    ManualReviewTag.UNKNOWN: 0.09,
+                }
+            )
+        elif selected_tag == ManualReviewTag.DOCUMENTARY:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.NEWS: 0.16,
+                    ManualReviewTag.UNKNOWN: 0.09,
+                }
+            )
+        elif selected_tag == ManualReviewTag.WALKTHROUGH:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.GAMING: 0.18,
+                    ManualReviewTag.TUTORIAL: 0.12,
+                    ManualReviewTag.UNKNOWN: 0.08,
+                }
+            )
+        elif selected_tag == ManualReviewTag.TUTORIAL:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.WALKTHROUGH: 0.13,
+                    ManualReviewTag.DOCUMENTARY: 0.11,
+                    ManualReviewTag.UNKNOWN: 0.08,
+                }
+            )
+        elif selected_tag == ManualReviewTag.PROMO:
+            verify_confidences.update(
+                {
+                    ManualReviewTag.MUSIC: 0.15,
+                    ManualReviewTag.ART: 0.12,
+                    ManualReviewTag.UNKNOWN: 0.09,
+                }
+            )
+        else:
+            verify_confidences.update({ManualReviewTag.UNKNOWN: 0.16})
+        verify_confidences[ManualReviewTag.CLICKBAIT] = max(
+            0.02,
+            min(
+                0.18,
+                0.03
+                + clickbait_pressure * 0.45
+                + len(negative_biases) * 0.02
+                - len(positive_biases) * 0.015
+                - (0.05 if resolved_class in TRANSPARENT_CONTEXT_CLASSES else 0.0),
+            ),
+        )
+        if channel_support and selected_tag != ManualReviewTag.CLICKBAIT:
+            verify_confidences[selected_tag] = min(
+                0.92,
+                verify_confidences.get(selected_tag, selected_confidence) + 0.04,
+            )
     selections: list[ManualReviewTagSelection] = []
     for tag in MANUAL_REVIEW_TAG_ORDER:
         if tag == selected_tag:
             rationale = (
                 "Report mode assumes suspected deceptive packaging, so TruthLens preselects Clickbait unless you override it."
                 if tag == ManualReviewTag.CLICKBAIT
-                else _default_tag_rationale(tag)
+                else (
+                    "TruthLens found the strongest transparent-context evidence for honest music release framing."
+                    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
+                    and tag == ManualReviewTag.MUSIC
+                    else "TruthLens found the strongest transparent-context evidence for honest creative or exhibition framing."
+                    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
+                    and tag == ManualReviewTag.ART
+                    else "TruthLens found the strongest transparent-context evidence for ordinary gameplay or release framing."
+                    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
+                    and tag == ManualReviewTag.GAMING
+                    else "TruthLens found the strongest transparent-context evidence for parody or satire framing instead of literal reporting."
+                    if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
+                    and tag == ManualReviewTag.SATIRE
+                    else _default_tag_rationale(tag)
+                )
             )
             selections.append(
                 _selected_tag(
@@ -313,7 +478,7 @@ def _build_tag_suggestions(
         if payload.workflow_mode == ManualReportWorkflowMode.REPORT and tag != ManualReviewTag.CLICKBAIT:
             confidence = 0.18 if tag == _preferred_positive_tag(payload, resolved_class) else 0.05
         elif payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
-            confidence = 0.24 if tag == ManualReviewTag.CLICKBAIT else 0.08
+            confidence = float(verify_confidences.get(tag, 0.05))
         else:
             confidence = 0.05
         selections.append(_selected_tag(tag, selected=False, confidence=confidence))
@@ -328,11 +493,38 @@ def _build_outcome_reason(
     has_channel_pattern: bool,
     weak_text_alignment: bool,
     title_clickbait: bool,
+    transparent_signal: bool = False,
+    channel_support: bool = False,
 ) -> str:
     if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
         selected_tag = _preferred_positive_tag(payload, resolved_class).value
+        title_excerpt = _excerpt_text(payload.title_snapshot, limit=72)
+        if resolved_class == "music":
+            return (
+                f'TruthLens recommends a transparency verification under {selected_tag} because "{title_excerpt}" reads like track or release framing, '
+                "and the visible cues fit music packaging rather than a factual overclaim."
+            )
+        if resolved_class == "art":
+            return (
+                f'TruthLens recommends a transparency verification under {selected_tag} because "{title_excerpt}" reads like artwork or exhibition framing, '
+                "and the visible packaging does not present that creative styling as a literal factual claim."
+            )
+        if resolved_class == "gaming":
+            return (
+                f'TruthLens recommends a transparency verification under {selected_tag} because "{title_excerpt}" reads like gameplay or release framing, '
+                "and the visible cues fit ordinary gaming packaging rather than deceptive overstatement."
+            )
+        if resolved_class == "satire":
+            return (
+                f'TruthLens recommends a transparency verification under {selected_tag} because "{title_excerpt}" reads like parody framing, '
+                "and the supplied context points toward satire rather than a literal news claim."
+            )
+        if channel_support or transparent_signal:
+            return (
+                f"TruthLens recommends a transparency verification under {selected_tag} because the title, visible packaging, and supporting context stay broadly aligned without a strong clickbait signal."
+            )
         return (
-            f"TruthLens found the packaging broadly consistent and therefore recommends a transparency verification under {selected_tag}."
+            f"TruthLens recommends a transparency verification under {selected_tag} because the available cues are more consistent with honest packaging than with deceptive overstatement."
         )
     if suggested_outcome == ManualReportRequestedOutcome.REMOVE:
         return (
@@ -920,6 +1112,7 @@ def _build_heuristic_suggestion_response(
     transparent_context_class = bool(review_context["transparent_context_class"])
     factual_context_class = bool(review_context["factual_context_class"])
     ambiguous_context_class = bool(review_context["ambiguous_context_class"])
+    positive_biases = set(review_context["positive_biases"])
     negative_biases = set(review_context["negative_biases"])
     lower_context = " ".join(
         part.lower()
@@ -970,93 +1163,201 @@ def _build_heuristic_suggestion_response(
             and text_alignment_ratio >= (0.12 if transparent_context_class else 0.18)
             and not {"sensational-overweighting", "channel-lock-in-risk"}.intersection(negative_biases)
         )
-        transparent_other_comment = (
-            "This appears to be music content, so non-literal artwork alone should not be treated as misleading; the overall packaging should instead be reviewed for honest artist, track, or release framing."
-            if likely_music_content
-            else "This appears to be art content, so non-literal artwork alone should not be treated as misleading; the overall packaging should instead be reviewed for honest artwork or exhibition framing."
-            if resolved_class == "art"
-            else "This appears to be gaming content, so non-literal scene selection alone should not be treated as misleading; the overall packaging should instead be reviewed for honest gameplay or release framing."
-            if resolved_class == "gaming"
-            else "Overall packaging does not currently show a strong clickbait signal from the available surface context, but the evidence should still be reviewed holistically."
+        if (
+            resolved_class in TRANSPARENT_CONTEXT_CLASSES
+            and payload.content_class_confidence >= 0.48
+            and not has_alignment_warning
+        ):
+            transparent_signal = True
+        lower_channel_surface = " ".join(title.lower() for title in sampled_titles)
+        music_channel_support = (
+            _count_phrase_hits(lower_channel_surface, MUSIC_TITLE_MARKERS) >= 2
+            or _count_phrase_hits(f"{channel_name.lower()} {channel_context.lower()}", MUSIC_CHANNEL_MARKERS) >= 1
         )
+        art_channel_support = _count_phrase_hits(
+            f"{lower_channel_surface} {channel_name.lower()} {channel_context.lower()}",
+            ART_MARKERS,
+        ) >= 2
+        gaming_channel_support = _count_phrase_hits(
+            f"{lower_channel_surface} {channel_name.lower()} {channel_context.lower()}",
+            GAMING_MARKERS,
+        ) >= 2
+        satire_channel_support = _count_phrase_hits(
+            f"{lower_channel_surface} {channel_name.lower()} {channel_context.lower()}",
+            SATIRE_MARKERS,
+        ) >= 2
+        channel_support = (
+            (likely_music_content and music_channel_support)
+            or (resolved_class == "art" and art_channel_support)
+            or (resolved_class == "gaming" and gaming_channel_support)
+            or (resolved_class == "satire" and satire_channel_support)
+        ) and prior_report_count == 0
+        title_excerpt = _excerpt_text(title, limit=80)
+        quoted_title_excerpt = f'"{title_excerpt}"' if title_excerpt else "the current title"
+        description_suggested = bool(description)
+        description_comment = ""
+        thumbnail_comment = ""
+        title_comment = ""
+        transcript_comment = ""
+        channel_comment = ""
+        other_comment = ""
+        if likely_music_content:
+            thumbnail_comment = (
+                f"Thumbnail reads like release artwork for {quoted_title_excerpt} rather than a literal factual scene, which is consistent with transparent music packaging."
+            )
+            title_comment = (
+                f"Title {quoted_title_excerpt} labels the upload as an audio or track release instead of promising a factual event beyond the music itself."
+            )
+            description_comment = (
+                f'Description says "{description_excerpt}", which supports the same artist, track, or release framing as the title instead of introducing a conflicting promise.'
+                if description_suggested and description_excerpt
+                else ""
+            )
+            transcript_comment = (
+                f'Transcript excerpt says "{transcript_excerpt}", which reads like lyrics or performance context rather than evidence against the packaging.'
+                if transcript and transcript_excerpt
+                else ""
+            )
+            channel_comment = (
+                "Recent public titles sampled from this channel show the same release-style framing, which supports a transparent music context for this upload."
+                if channel_support
+                else ""
+            )
+            other_comment = (
+                "Taken together, the artwork-style thumbnail, track-labelled title, and release-focused context look like ordinary music packaging rather than clickbait."
+            )
+        elif resolved_class == "art":
+            thumbnail_comment = (
+                f"Thumbnail reads like artwork or poster-style creative framing for {quoted_title_excerpt}, not like fabricated evidence for a literal event."
+            )
+            title_comment = (
+                f"Title {quoted_title_excerpt} reads like artwork, exhibition, or creator naming rather than a sensational factual promise."
+            )
+            description_comment = (
+                f'Description says "{description_excerpt}", which supports the same artwork or exhibition framing as the title.'
+                if description_suggested and description_excerpt
+                else ""
+            )
+            transcript_comment = (
+                f'Transcript excerpt says "{transcript_excerpt}", which is consistent with creative or artistic framing rather than contradicting it.'
+                if transcript and transcript_excerpt
+                else ""
+            )
+            channel_comment = (
+                "Recent public titles sampled from this channel point toward the same creative or exhibition-style framing, which supports a transparent art context."
+                if channel_support
+                else ""
+            )
+            other_comment = (
+                "Taken together, the artwork-style thumbnail, naming, and supporting context read like legitimate creative packaging rather than deceptive clickbait."
+            )
+        elif resolved_class == "gaming":
+            thumbnail_comment = (
+                f"Thumbnail reads like gameplay or release-style capture for {quoted_title_excerpt}, which is ordinary gaming packaging rather than a misleading bait image."
+            )
+            title_comment = (
+                f"Title {quoted_title_excerpt} reads like gameplay, challenge, or release framing rather than an overclaim about something outside the game context."
+            )
+            description_comment = (
+                f'Description says "{description_excerpt}", which supports the same gameplay or release framing as the title.'
+                if description_suggested and description_excerpt
+                else ""
+            )
+            transcript_comment = (
+                f'Transcript excerpt says "{transcript_excerpt}", which still fits the same gameplay or release context created by the visible packaging.'
+                if transcript and transcript_excerpt
+                else ""
+            )
+            channel_comment = (
+                "Recent public titles sampled from this channel show similar gameplay or run-style framing, which supports a transparent gaming context."
+                if channel_support
+                else ""
+            )
+            other_comment = (
+                "Taken together, the scene selection, title framing, and supporting context look like ordinary gaming packaging rather than deceptive overstatement."
+            )
+        elif resolved_class == "satire":
+            thumbnail_comment = (
+                f"Thumbnail reads like part of a parody or sketch setup for {quoted_title_excerpt} rather than standalone factual evidence."
+            )
+            title_comment = (
+                f"Title {quoted_title_excerpt} reads like a satirical fake-news setup, while the supplied context points toward parody rather than a literal claim."
+            )
+            description_comment = (
+                f'Description says "{description_excerpt}", which signals satirical commentary rather than a literal emergency report.'
+                if description_suggested and description_excerpt
+                else ""
+            )
+            transcript_comment = (
+                f'Transcript excerpt says "{transcript_excerpt}", which frames the premise as parody rather than a literal news claim.'
+                if transcript and transcript_excerpt
+                else ""
+            )
+            channel_comment = (
+                "Recent public titles sampled from this channel also read like parody or sketch framing, which supports a satire context for this upload."
+                if channel_support
+                else ""
+            )
+            other_comment = (
+                "Taken together, the packaging reads like satire or parody; the transparency check is whether that joke framing stays legible enough not to be confused with real reporting."
+            )
+        else:
+            thumbnail_comment = (
+                f"Thumbnail currently matches the same general subject or framing implied by {quoted_title_excerpt}, without a strong visual bait-and-switch signal."
+            )
+            title_comment = (
+                f"Title {quoted_title_excerpt} is not strongly contradicted by the visible thumbnail or the available supporting context."
+            )
+            description_comment = (
+                f'Description says "{description_excerpt}", which stays broadly aligned with the title instead of escalating it into a stronger promise.'
+                if description_suggested and description_excerpt
+                else ""
+            )
+            transcript_comment = (
+                f'Transcript excerpt says "{transcript_excerpt}", which does not materially contradict the visible packaging.'
+                if transcript and transcript_excerpt
+                else ""
+            )
+            channel_comment = (
+                "Recent public titles sampled from this channel stay broadly aligned with the same packaging style, which supports a tentative transparency assessment."
+                if channel_support
+                else ""
+            )
+            other_comment = (
+                "Taken together, the visible packaging is more consistent with transparent presentation than with aggressive clickbait."
+                if transparent_signal
+                else "Taken together, the available cues are more aligned than misleading, but the verification should remain cautious until stronger context is exposed."
+            )
         issues = [
             _fallback_suggestion_issue(
                 "thumbnail",
                 suggested=True,
-                comment=(
-                    "This appears to be music content, and the thumbnail currently looks broadly consistent as artist, track, or release packaging rather than deceptive clickbait."
-                    if transparent_signal and likely_music_content
-                    else "This appears to be art content, and the thumbnail currently looks broadly consistent as artwork or exhibition packaging rather than deceptive clickbait."
-                    if transparent_signal and resolved_class == "art"
-                    else "This appears to be gaming content, and the thumbnail currently looks broadly consistent as gameplay or release framing rather than deceptive clickbait."
-                    if transparent_signal and resolved_class == "gaming"
-                    else (
-                        "Thumbnail appears broadly consistent with the title and visible context."
-                        if transparent_signal
-                        else "Thumbnail does not currently show a strong mismatch signal relative to the title, but the visual packaging should still be reviewed alongside the rest of the context."
-                    )
-                ),
+                comment=thumbnail_comment,
             ),
             _fallback_suggestion_issue(
                 "title",
                 suggested=True,
-                comment=(
-                    "This appears to be music content, and the title currently reads like normal artist or track labeling rather than deceptive overstatement."
-                    if transparent_signal and likely_music_content
-                    else "This appears to be art content, and the title currently reads like normal artwork or exhibition labeling rather than deceptive overstatement."
-                    if transparent_signal and resolved_class == "art"
-                    else "This appears to be gaming content, and the title currently reads like ordinary gameplay or release framing rather than deceptive overstatement."
-                    if transparent_signal and resolved_class == "gaming"
-                    else (
-                        "Title appears consistent with the visible packaging and does not appear to overstate the likely content."
-                        if transparent_signal
-                        else "Title does not currently show a clear overstatement signal relative to the visible packaging, but it should still be reviewed against the full watch-page context."
-                    )
-                ),
+                comment=title_comment,
             ),
             _fallback_suggestion_issue(
                 "description",
-                suggested=True,
-                comment=(
-                    "Description appears to support the same understanding created by the title and thumbnail."
-                    if description and transparent_signal
-                    else "Description evidence is limited on the current surface, so this field should be reviewed cautiously against the watch page before making a stronger transparency claim."
-                ),
+                suggested=description_suggested,
+                comment=description_comment,
             ),
             _fallback_suggestion_issue(
                 "transcript",
                 suggested=bool(transcript),
-                comment=(
-                    "Transcript excerpt appears to support the same understanding created by the visible packaging."
-                    if transcript and transparent_signal
-                    else ""
-                ),
+                comment=transcript_comment,
             ),
             _fallback_suggestion_issue(
                 "channel",
-                suggested=bool(channel_pattern_comment or (transparent_signal and has_recent_channel_context)),
-                comment=(
-                    channel_pattern_comment
-                    if channel_pattern_comment
-                    else (
-                    "Recent public titles sampled from this channel appear broadly consistent rather than clickbait-driven, which supports a tentative transparency assessment."
-                    if transparent_signal and has_recent_channel_context and not has_channel_pattern
-                    else (
-                        "Recent public titles sampled from this channel do not by themselves prove a misleading pattern, so the channel can only be treated as tentatively transparent from the available evidence."
-                        if has_recent_channel_context
-                        else "Channel-wide context is still limited for this video, so any transparency conclusion about the channel should remain cautious rather than definitive."
-                    )
-                    )
-                ),
+                suggested=bool(channel_comment),
+                comment=channel_comment,
             ),
             _fallback_suggestion_issue(
                 "other",
                 suggested=True,
-                comment=(
-                    "Overall packaging appears transparent rather than clickbait-driven."
-                    if transparent_signal
-                    else transparent_other_comment
-                ),
+                comment=other_comment,
             ),
         ]
         return ManualReportSuggestionResponse(
@@ -1069,11 +1370,20 @@ def _build_heuristic_suggestion_response(
                 has_channel_pattern=has_channel_pattern,
                 weak_text_alignment=weak_text_alignment,
                 title_clickbait=has_clickbait_title,
+                transparent_signal=transparent_signal,
+                channel_support=channel_support,
             ),
             suggested_tags=_build_tag_suggestions(
                 payload,
                 resolved_class=resolved_class,
                 base_confidence=payload.content_class_confidence,
+                music_likelihood=float(review_context["music_likelihood"]),
+                transparent_signal=transparent_signal,
+                has_clickbait_title=has_clickbait_title,
+                has_alignment_warning=has_alignment_warning,
+                positive_biases=positive_biases,
+                negative_biases=negative_biases,
+                channel_support=channel_support,
             ),
             suggestion_model=HEURISTIC_SUGGESTION_MODEL,
         )
@@ -1392,6 +1702,8 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- If it appears to be art content, do not treat stylized or non-literal artwork as automatic mismatch.\n"
             "- If it appears to be gaming content, do not treat selective scene choice or hype framing as automatic mismatch unless it overstates the actual gameplay or release context.\n"
             "- For music content, focus on whether the artist, track, or release framing appears honest rather than literal scene-to-title alignment.\n"
+            "- For art content, focus on whether the packaging honestly frames artwork, exhibition, or creator context rather than forcing literal factual consistency.\n"
+            "- For satire content, explain whether the parody setup remains legible enough not to be confused with literal news or documentary framing.\n"
             "- Prefer reasoning about alignment and transparency across thumbnail, title, description, and transcript.\n"
             "- For Thumbnail, mention at least one concrete visible cue from the image itself before judging alignment.\n"
             "- For Title, quote or paraphrase the exact claim, warning cue, or overstatement that matters.\n"
@@ -1401,13 +1713,14 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- For Other, use it for the overall combined packaging assessment.\n"
             f"- suggested_tags must cover this UI tag set: {', '.join(tag.value for tag in MANUAL_REVIEW_TAG_ORDER)}.\n"
             "- Select exactly one positive tag as selected=true for this verification workflow, and leave Clickbait unselected unless the visible evidence strongly contradicts the workflow.\n"
+            "- Tag confidences must vary by class and evidence; do not flatten all unselected positive tags to the same low value.\n"
             "- suggested_outcome_reason must explain why this should be treated as transparent and which positive tag fits best.\n"
             "- Avoid vague visual comments such as 'text-heavy'.\n"
             "- Never use generic boilerplate like 'may not accurately represent', 'available text context', 'should still be reviewed', or 'could not be sampled deeply enough'.\n"
             "- Prefer comments like:\n"
-            "  * Thumbnail appears broadly consistent with the title and visible context.\n"
-            "  * Title appears consistent with the thumbnail and does not overstate the apparent content.\n"
-            "  * Packaging appears transparent rather than clickbait-driven.\n"
+            "  * Thumbnail reads like release artwork for the track rather than a literal factual scene, which is consistent with transparent music packaging.\n"
+            "  * Title 'Moonlight Echoes (Official Audio)' labels the upload as a track release instead of promising a factual event.\n"
+            "  * Taken together, the artwork-style thumbnail, track-labelled title, and release-focused description look like ordinary music packaging rather than clickbait.\n"
             "- suggested_outcome must be 'moderate' for this workflow.\n"
         )
     return (
