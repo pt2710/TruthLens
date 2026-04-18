@@ -55,12 +55,20 @@ function decodeEscapedYoutubeString(value: string | null | undefined): string | 
     .trim();
 }
 
+function isYouTubeOwnedUrl(url: URL): boolean {
+  return /(^|\.)youtube\.com$/i.test(url.hostname) || url.hostname.toLowerCase() === 'youtu.be';
+}
+
 function normalizeAbsoluteUrl(value: string | null, baseUrl: string): string | null {
   if (!value) {
     return null;
   }
   try {
-    return new URL(value, baseUrl).toString();
+    const url = new URL(value, baseUrl);
+    if (isYouTubeOwnedUrl(url)) {
+      url.protocol = 'https:';
+    }
+    return url.toString();
   } catch {
     return value;
   }
@@ -223,6 +231,9 @@ function buildChannelVideosUrl(channelUrl: string | null): string | null {
 
   try {
     const url = new URL(channelUrl);
+    if (isYouTubeOwnedUrl(url)) {
+      url.protocol = 'https:';
+    }
     const normalizedPath = url.pathname.replace(/\/+$/, '');
     if (!normalizedPath || normalizedPath === '/') {
       return null;

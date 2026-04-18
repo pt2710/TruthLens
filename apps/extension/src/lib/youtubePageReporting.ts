@@ -3,6 +3,17 @@ import type { ManualReportIssueType } from '@truthlens/shared-schemas';
 import type { ManualReportTarget } from '../overlay/store';
 
 const CARD_SELECTORS = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
+const WATCH_PAGE_ACTION_ROOT_SELECTORS = [
+  'ytd-watch-metadata #actions',
+  'ytd-watch-metadata #actions-inner',
+  'ytd-watch-metadata #top-level-buttons-computed',
+  'ytd-watch-metadata #menu',
+  'ytd-watch-metadata ytd-menu-renderer',
+  '#above-the-fold ytd-watch-metadata',
+  'ytd-watch-flexy ytd-watch-metadata',
+  'ytd-reel-player-overlay-renderer #actions',
+  'ytd-reel-player-overlay-renderer ytd-menu-renderer',
+];
 const MENU_SURFACE_SELECTORS = [
   'tp-yt-iron-dropdown',
   'ytd-menu-popup-renderer',
@@ -319,7 +330,7 @@ function findVisibleWatchPageRoot(): HTMLElement | null {
   );
 }
 
-function findMenuButton(root: ParentNode): HTMLElement | null {
+function findMenuButtons(root: ParentNode): HTMLElement[] {
   const candidates = Array.from(
     root.querySelectorAll<HTMLElement>(
       [
@@ -332,45 +343,91 @@ function findMenuButton(root: ParentNode): HTMLElement | null {
     ),
   );
 
-  return (
-    candidates.find((candidate) => {
-      if (candidate.closest('.truthlens-action-row')) {
-        return false;
-      }
-      const label = getVisibleText(candidate);
-      return (
-        label.includes('action menu') ||
-        label.includes('more') ||
-        label.includes('handlingsmenu') ||
-        label.includes('menu')
-      );
-    }) ?? candidates.find((candidate) => !candidate.closest('.truthlens-action-row')) ?? null
-  );
+  const preferredButtons = candidates.filter((candidate) => {
+    if (candidate.closest('.truthlens-action-row')) {
+      return false;
+    }
+    const label = getVisibleText(candidate);
+    return (
+      label.includes('action menu') ||
+      label.includes('more') ||
+      label.includes('handlingsmenu') ||
+      label.includes('menu')
+    );
+  });
+
+  if (preferredButtons.length > 0) {
+    return dedupeElements(preferredButtons);
+  }
+
+  return dedupeElements(candidates.filter((candidate) => !candidate.closest('.truthlens-action-row')));
 }
 
-function findManualReportSurface(target: ManualReportTarget): {
-  surfaceLabel: string;
-  menuButton: HTMLElement;
-} | null {
-  const card = findManualReportCard(target);
-  if (card) {
-    const menuButton = findMenuButton(card);
-    if (menuButton) {
-      return { surfaceLabel: 'current page card', menuButton };
-    }
+function findMenuButton(root: ParentNode): HTMLElement | null {
+  return findMenuButtons(root)[0] ?? null;
+}
+
+function findWatchPageMenuButtons(): HTMLElement[] {
+  const actionRoots = dedupeElements(
+    WATCH_PAGE_ACTION_ROOT_SELECTORS.map((selector) =>
+      document.querySelector<HTMLElement>(selector),
+    ).filter((element): element is HTMLElement => isVisible(element)),
+  );
+  const actionButtons = dedupeElements(actionRoots.flatMap((root) => findMenuButtons(root)));
+  if (actionButtons.length > 0) {
+    return actionButtons;
   }
 
   const watchRoot = findVisibleWatchPageRoot();
   if (!watchRoot) {
+    return [];
+  }
+
+  return findMenuButtons(watchRoot);
+}
+
+type ManualReportSurface =
+  | {
+      surfaceLabel: 'current page card';
+      menuButtons: [HTMLElement];
+    }
+  | {
+      surfaceLabel: 'watch page';
+      menuButtons: HTMLElement[];
+    };
+
+function collectVisibleMenuItemsFromRoots(roots: HTMLElement[]): HTMLElement[] {
+  return dedupeElements(roots.flatMap((root) => collectVisibleElements(MENU_ITEM_SELECTORS, root)));
+}
+
+async function waitForOpenedMenuRoots(
+  menuButton: HTMLElement,
+  previouslyVisibleRoots: Set<HTMLElement>,
+): Promise<HTMLElement[] | null> {
+  return waitFor(() => {
+    const visibleRoots = findVisibleMenuRoots(menuButton);
+    const newlyVisibleRoots = visibleRoots.filter((root) => !previouslyVisibleRoots.has(root));
+    return newlyVisibleRoots.length > 0 ? newlyVisibleRoots : null;
+  }, {
+    timeoutMs: MENU_ITEM_TIMEOUT_MS,
+  }).catch(() => null);
+}
+
+function findManualReportSurface(target: ManualReportTarget): ManualReportSurface | null {
+  const card = findManualReportCard(target);
+  if (card) {
+    const menuButton = findMenuButton(card);
+    if (menuButton) {
+      return { surfaceLabel: 'current page card', menuButtons: [menuButton] };
+    }
+  }
+
+  const menuButtons = findWatchPageMenuButtons();
+  if (menuButtons.length === 0) {
     return null;
   }
 
-  const menuButton = findMenuButton(watchRoot);
-  if (!menuButton) {
-    return null;
-  }
-
-  return { surfaceLabel: 'watch page', menuButton };
+  return { surfaceLabel: 'watch page', menuButtons };
 }
 
 function findVisibleDialog(): HTMLElement | null {
@@ -632,24 +689,57 @@ export async function submitYouTubePageReportInDocument(
     );
   }
 
-  const { menuButton, surfaceLabel } = surface;
-  const visibleRootsBeforeMenuOpen = new Set(findVisibleMenuRoots(menuButton));
-  clickElement(menuButton);
-  const reportMenuCandidates = await waitForVisibleReportMenuCandidates(
-    menuButton,
-    new Set(),
-    visibleRootsBeforeMenuOpen,
-  ).catch(() => []);
-  const reportMenuItem = reportMenuCandidates[0] ?? null;
+  let reportMenuItem: HTMLElement | null = null;
+  let menuButton: HTMLElement | null = null;
+  let availableMenuItems: HTMLElement[] = [];
+
+  if (surface.surfaceLabel === 'current page card') {
+    menuButton = surface.menuButtons[0];
+    const visibleRootsBeforeMenuOpen = new Set(findVisibleMenuRoots(menuButton));
+    clickElement(menuButton);
+    const reportMenuCandidates = await waitForVisibleReportMenuCandidates(
+      menuButton,
+      new Set(),
+      visibleRootsBeforeMenuOpen,
+    ).catch(() => []);
+    reportMenuItem = reportMenuCandidates[0] ?? null;
+    if (!reportMenuItem) {
+      availableMenuItems = collectVisibleElements(MENU_ITEM_SELECTORS);
+    }
+  } else {
+    for (const candidateMenuButton of surface.menuButtons) {
+      const visibleRootsBeforeMenuOpen = new Set(findVisibleMenuRoots(candidateMenuButton));
+      clickElement(candidateMenuButton);
+      const openedMenuRoots = await waitForOpenedMenuRoots(
+        candidateMenuButton,
+        visibleRootsBeforeMenuOpen,
+      );
+      if (!openedMenuRoots) {
+        continue;
+      }
+
+      availableMenuItems = collectVisibleMenuItemsFromRoots(openedMenuRoots);
+      reportMenuItem =
+        findVisibleReportMenuCandidates(
+          candidateMenuButton,
+          new Set(),
+          visibleRootsBeforeMenuOpen,
+        )[0] ?? null;
+      if (reportMenuItem) {
+        menuButton = candidateMenuButton;
+        break;
+      }
+    }
+  }
+
   if (!reportMenuItem) {
-    const availableMenuItems = collectVisibleElements(MENU_ITEM_SELECTORS);
     throw new Error(
-      `TruthLens could not find YouTube’s in-page "Report" option on the ${surfaceLabel}. Available menu items: ` +
+      `TruthLens could not find YouTube’s in-page "Report" option on the ${surface.surfaceLabel}. Available menu items: ` +
         buildAvailableLabelSummary(availableMenuItems) +
         '.',
     );
   }
-  const dialog = await waitForReportDialog(menuButton, reportMenuItem);
+  const dialog = await waitForReportDialog(menuButton ?? surface.menuButtons[0], reportMenuItem);
   const primaryReason = findOption(
     dialog,
     PRIMARY_REASON_KEYWORD_GROUPS,

@@ -113,24 +113,65 @@ function installWatchPageDom(): {
         </ytd-watch-metadata>
       </div>
     </ytd-watch-flexy>
-    <ytd-menu-popup-renderer id="menu-root">
+    <ytd-menu-popup-renderer id="menu-root" hidden>
       <div role="menu">
-        <ytd-menu-service-item-renderer hidden id="watch-report-item">Report</ytd-menu-service-item-renderer>
+        <ytd-menu-service-item-renderer id="watch-report-item">Report</ytd-menu-service-item-renderer>
       </div>
     </ytd-menu-popup-renderer>
   `;
 
   const menuButton = document.querySelector<HTMLButtonElement>('button[aria-label="More actions"]');
+  const menuRoot = document.querySelector<HTMLElement>('#menu-root');
   const reportMenuItem = document.querySelector<HTMLElement>('#watch-report-item');
-  if (!menuButton || !reportMenuItem) {
+  if (!menuButton || !menuRoot || !reportMenuItem) {
     throw new Error('Failed to build watch page DOM fixture.');
   }
 
   menuButton.addEventListener('click', () => {
-    reportMenuItem.hidden = false;
+    menuRoot.hidden = false;
   });
 
   return { menuButton, reportMenuItem };
+}
+
+function installConfusingWatchPageDom(): {
+  unrelatedButton: HTMLButtonElement;
+  menuButton: HTMLButtonElement;
+  reportMenuItem: HTMLElement;
+} {
+  document.body.innerHTML = `
+    <ytd-watch-flexy>
+      <div id="above-the-fold">
+        <button aria-label="More">Unrelated action</button>
+        <ytd-watch-metadata>
+          <div id="actions">
+            <ytd-menu-renderer>
+              <button aria-label="More actions">More actions</button>
+            </ytd-menu-renderer>
+          </div>
+        </ytd-watch-metadata>
+      </div>
+    </ytd-watch-flexy>
+    <ytd-menu-popup-renderer id="menu-root" hidden>
+      <div role="menu">
+        <ytd-menu-service-item-renderer id="watch-report-item">Report</ytd-menu-service-item-renderer>
+      </div>
+    </ytd-menu-popup-renderer>
+  `;
+
+  const unrelatedButton = document.querySelector<HTMLButtonElement>('button[aria-label="More"]');
+  const menuButton = document.querySelector<HTMLButtonElement>('button[aria-label="More actions"]');
+  const menuRoot = document.querySelector<HTMLElement>('#menu-root');
+  const reportMenuItem = document.querySelector<HTMLElement>('#watch-report-item');
+  if (!unrelatedButton || !menuButton || !menuRoot || !reportMenuItem) {
+    throw new Error('Failed to build confusing watch page DOM fixture.');
+  }
+
+  menuButton.addEventListener('click', () => {
+    menuRoot.hidden = false;
+  });
+
+  return { unrelatedButton, menuButton, reportMenuItem };
 }
 
 describe('submitYouTubePageReport', () => {
@@ -230,6 +271,37 @@ describe('submitYouTubePageReport', () => {
       ['title'],
     );
 
+    expect(result.status).toBe('reported');
+  });
+
+  it('prefers the watch action-bar menu button over broader watch-page buttons when opening the report menu', async () => {
+    const { unrelatedButton, reportMenuItem } = installConfusingWatchPageDom();
+    let unrelatedClicks = 0;
+    unrelatedButton.addEventListener('click', () => {
+      unrelatedClicks += 1;
+    });
+    reportMenuItem.addEventListener('click', () => {
+      installDialog();
+    });
+
+    const result = await submitYouTubePageReportInDocument(
+      {
+        itemId: 'item-1',
+        workflowMode: 'report',
+        title: 'Test headline',
+        channelName: 'Signal Watch',
+        channelUrl: 'https://www.youtube.com/@signalwatch',
+        linkUrl: 'https://www.youtube.com/watch?v=test-video',
+        thumbnailRef: 'https://img.youtube.com/vi/test-video/default.jpg',
+        descriptionSnapshot: null,
+        transcriptExcerpt: null,
+        collectionScope: null,
+        score: null,
+      },
+      ['title'],
+    );
+
+    expect(unrelatedClicks).toBe(0);
     expect(result.status).toBe('reported');
   });
 
