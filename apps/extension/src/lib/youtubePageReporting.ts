@@ -3,6 +3,12 @@ import type { ManualReportIssueType } from '@truthlens/shared-schemas';
 import type { ManualReportTarget } from '../overlay/store';
 
 const CARD_SELECTORS = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
+const MENU_SURFACE_SELECTORS = [
+  'tp-yt-iron-dropdown',
+  'ytd-menu-popup-renderer',
+  'tp-yt-paper-listbox[role="menu"]',
+  '[role="menu"]',
+];
 const MENU_ITEM_SELECTORS = ['ytd-menu-service-item-renderer', 'tp-yt-paper-item', '[role="menuitem"]'];
 const DIALOG_SELECTORS = ['tp-yt-paper-dialog', '[role="dialog"]', 'ytd-popup-container tp-yt-paper-dialog'];
 const OPTION_SELECTORS = ['tp-yt-paper-radio-button', '[role="radio"]', 'tp-yt-paper-item', 'button'];
@@ -134,6 +140,10 @@ function collectVisibleElements(selectors: string[], root: ParentNode = document
   );
 }
 
+function dedupeElements(elements: HTMLElement[]): HTMLElement[] {
+  return Array.from(new Set(elements));
+}
+
 function matchesKeywordGroups(value: string, keywordGroups: string[][]): boolean {
   return keywordGroups.some((keywordGroup) => keywordGroup.every((keyword) => value.includes(keyword)));
 }
@@ -154,6 +164,36 @@ function clickElement(element: HTMLElement): void {
     return;
   }
   element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+}
+
+function elementCenterDistance(from: HTMLElement, to: HTMLElement): number {
+  const fromRect = from.getBoundingClientRect();
+  const toRect = to.getBoundingClientRect();
+  const fromX = fromRect.left + fromRect.width / 2;
+  const fromY = fromRect.top + fromRect.height / 2;
+  const toX = toRect.left + toRect.width / 2;
+  const toY = toRect.top + toRect.height / 2;
+  return Math.hypot(fromX - toX, fromY - toY);
+}
+
+function findVisibleMenuRoots(menuButton?: HTMLElement): HTMLElement[] {
+  const roots = dedupeElements(
+    collectVisibleElements(MENU_SURFACE_SELECTORS).filter((root) =>
+      root.querySelector(MENU_ITEM_SELECTORS.join(',')),
+    ),
+  );
+
+  if (!menuButton) {
+    return roots.reverse();
+  }
+
+  return roots.sort((left, right) => {
+    const distanceDelta = elementCenterDistance(menuButton, left) - elementCenterDistance(menuButton, right);
+    if (distanceDelta !== 0) {
+      return distanceDelta;
+    }
+    return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
+  });
 }
 
 function isDisabled(element: HTMLElement): boolean {
@@ -255,7 +295,20 @@ function findVisibleDialog(): HTMLElement | null {
   return collectVisibleElements(DIALOG_SELECTORS)[0] ?? null;
 }
 
-function findVisibleMenuItem(keywordGroups: string[][]): HTMLElement | null {
+function findVisibleMenuItem(keywordGroups: string[][], menuButton?: HTMLElement): HTMLElement | null {
+  const menuRoots = findVisibleMenuRoots(menuButton);
+  if (menuRoots.length > 0) {
+    for (const root of menuRoots) {
+      const candidate = collectVisibleElements(MENU_ITEM_SELECTORS, root).find((element) =>
+        matchesKeywordGroups(getVisibleText(element), keywordGroups),
+      );
+      if (candidate) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   return (
     collectVisibleElements(MENU_ITEM_SELECTORS).find((element) =>
       matchesKeywordGroups(getVisibleText(element), keywordGroups),
@@ -343,7 +396,7 @@ async function waitForReportDialog(
     return dialog;
   }
 
-  const repeatedMenuItem = findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS);
+  const repeatedMenuItem = findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton);
   if (repeatedMenuItem) {
     clickElement(repeatedMenuItem);
     dialog = await tryWaitForDialog(REPORT_DIALOG_INITIAL_TIMEOUT_MS);
@@ -353,7 +406,7 @@ async function waitForReportDialog(
   }
 
   clickElement(menuButton);
-  const retryMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS), {
+  const retryMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton), {
     timeoutMs: MENU_ITEM_TIMEOUT_MS,
     errorMessage: dialogErrorMessage,
   }).catch(() => null);
@@ -457,7 +510,7 @@ export async function submitYouTubePageReport(
   }
   clickElement(menuButton);
 
-  const reportMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS), {
+  const reportMenuItem = await waitFor(() => findVisibleMenuItem(REPORT_MENU_ITEM_KEYWORD_GROUPS, menuButton), {
     timeoutMs: MENU_ITEM_TIMEOUT_MS,
   }).catch(() => null);
   if (!reportMenuItem) {

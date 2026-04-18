@@ -9,6 +9,9 @@ function installCardDom(): {
   reportMenuItem: HTMLElement;
 } {
   document.body.innerHTML = `
+    <div role="menu">
+      <a href="https://www.youtube.com/reporthistory" role="menuitem">Report history</a>
+    </div>
     <ytd-rich-item-renderer>
       <a id="thumbnail" href="https://www.youtube.com/watch?v=test-video">
         <img src="https://img.youtube.com/vi/test-video/default.jpg" />
@@ -19,9 +22,9 @@ function installCardDom(): {
         <button aria-label="Action menu">More</button>
       </ytd-menu-renderer>
     </ytd-rich-item-renderer>
-    <div id="menu-root">
+    <ytd-menu-popup-renderer id="menu-root">
       <ytd-menu-service-item-renderer hidden>Report</ytd-menu-service-item-renderer>
-    </div>
+    </ytd-menu-popup-renderer>
   `;
 
   const card = document.querySelector<HTMLElement>('ytd-rich-item-renderer');
@@ -91,6 +94,40 @@ describe('submitYouTubePageReport', () => {
       reason_label: 'Spam or misleading',
       secondary_reason_label: null,
     });
+  });
+
+  it('ignores unrelated visible report links outside the active YouTube card menu', async () => {
+    const { reportMenuItem } = installCardDom();
+    const reportHistoryLink = document.querySelector<HTMLAnchorElement>('a[href*="reporthistory"]');
+    let reportHistoryClicks = 0;
+    reportHistoryLink?.addEventListener('click', (event) => {
+      reportHistoryClicks += 1;
+      event.preventDefault();
+    });
+
+    reportMenuItem.addEventListener('click', () => {
+      installDialog();
+    });
+
+    const result = await submitYouTubePageReport(
+      {
+        itemId: 'item-1',
+        workflowMode: 'report',
+        title: 'Test headline',
+        channelName: 'Signal Watch',
+        channelUrl: 'https://www.youtube.com/@signalwatch',
+        linkUrl: 'https://www.youtube.com/watch?v=test-video',
+        thumbnailRef: 'https://img.youtube.com/vi/test-video/default.jpg',
+        descriptionSnapshot: null,
+        transcriptExcerpt: null,
+        collectionScope: null,
+        score: null,
+      },
+      ['title'],
+    );
+
+    expect(reportHistoryClicks).toBe(0);
+    expect(result.status).toBe('reported');
   });
 
   it(

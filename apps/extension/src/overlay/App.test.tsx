@@ -249,6 +249,7 @@ describe('manual review overlay', () => {
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
     root.unmount();
     container.remove();
     resetStore();
@@ -346,8 +347,11 @@ describe('manual review overlay', () => {
     }
 
     expect(submitButton.disabled).toBe(false);
+    vi.useFakeTimers();
     submitButton.click();
-    await flushUi();
+    await Promise.resolve();
+    await vi.runAllTimersAsync();
+    await Promise.resolve();
 
     expect(apiMocks.submitYouTubeReport).not.toHaveBeenCalled();
     expect(pageReportingMocks.submitYouTubePageReport).toHaveBeenCalledTimes(1);
