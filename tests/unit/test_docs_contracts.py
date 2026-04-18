@@ -71,8 +71,10 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "there is no committed live default hostname" in beta_install.lower()
     assert "render web service" in deployment_guide.lower()
     assert "postgres" in deployment_guide.lower()
-    assert "not a live hosted beta proof" in hosted_verification.lower()
-    assert "x-render-routing: no-server" in hosted_verification.lower()
+    assert "live service confirmed" in hosted_verification.lower()
+    assert "hosted write-path proof green" in hosted_verification.lower()
+    assert "extension-to-live-host proof closed" in hosted_verification.lower()
+    assert "restart-survivability after hosted writes closed" in hosted_verification.lower()
     assert "release_hygiene_audit.py" in hardening_audit
     assert "returned no commits" in hardening_audit.lower()
     assert "truthlens-beta-api" in render_blueprint
