@@ -138,6 +138,60 @@ describe('scoreFeedItem', () => {
     expect(liveResults['card-timeout'].recommended_action).toBe('blur');
   });
 
+  it('invalidates the score cache when channel history features change', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: {
+            'card-history': {
+              risk_score: 0.31,
+              fused_score: 0.31,
+              calibrated_score: 0.31,
+              confidence: 0.74,
+              uncertainty: 0.18,
+              uncertainty_bucket: 'low',
+              path_scores: {},
+              path_contributors: {},
+              content_class: 'news',
+              content_class_confidence: 0.72,
+              bias_profile: {
+                metrics: {},
+                positive_biases: [],
+                negative_biases: [],
+                guardrail_applied: null,
+              },
+              recommended_action: 'badge',
+              reasons: ['History-aware request returned a live score.'],
+              explanation_id: 'exp-history',
+              explanation_summary: 'History-aware request returned a live score.',
+              evidence: [],
+              artifact_provenance: {},
+            },
+          },
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const baseItem = makeScoreItem('card-history', 'Breaking aliens confirmed');
+    await batchScoreFeedItems([baseItem]);
+    await batchScoreFeedItems([
+      {
+        ...baseItem,
+        channel: {
+          ...baseItem.channel,
+          channel_history_features: {
+            channel_risk_mean: 0.71,
+            repeat_template_rate: 0.5,
+          },
+        },
+      },
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('surfaces manual report optimization failures with the API detail message', async () => {
     vi.stubGlobal(
       'fetch',

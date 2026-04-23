@@ -489,7 +489,8 @@ async function main() {
     assert.equal(await cards.nth(0).evaluate((element) => element.style.order), '');
     assert.equal(await cards.nth(1).getAttribute('data-truthlens-personalization'), 'boosted');
     assert.equal(await cards.nth(1).evaluate((element) => element.style.order), '');
-    assert.equal(await cards.nth(1).locator('.truthlens-card-flag').textContent(), '10.0');
+    assert.equal(await cards.nth(1).locator('.truthlens-card-flag').textContent(), '1.8');
+    assert.equal(await cards.nth(1).getAttribute('data-truthlens-runtime-score'), '1.8');
     assert.equal(await cards.nth(2).evaluate((element) => element.style.order), '');
     assert.equal(await cards.nth(2).locator('.truthlens-review-prompt').textContent(), 'Review report');
     if ((await page.locator('.truthlens-report-card').count()) === 0) {

@@ -130,6 +130,16 @@ export type FeedbackSummary = {
   correction_rate: number;
   channel_profiles?: Record<string, FeedbackChannelProfile>;
   top_channels: FeedbackChannelProfile[];
+  local_user_feedback?: {
+    total_events: number;
+    action_counts: Record<string, number>;
+  };
+  creator_operator_feedback?: {
+    total_events: number;
+    candidate_events: number;
+    action_counts: Record<string, number>;
+    operator_ids: string[];
+  };
 };
 
 export type { YouTubeAuthStatus, YouTubeReportRequest, YouTubeReportResponse };
@@ -141,6 +151,17 @@ function describeError(error: unknown): string {
   return String(error);
 }
 
+function stableObjectString(value: Record<string, number>): string {
+  return JSON.stringify(
+    Object.keys(value)
+      .sort()
+      .reduce<Record<string, number>>((accumulator, key) => {
+        accumulator[key] = value[key];
+        return accumulator;
+      }, {}),
+  );
+}
+
 function cacheKey(item: ScoreItemRequest): string {
   return [
     item.item_id,
@@ -148,6 +169,7 @@ function cacheKey(item: ScoreItemRequest): string {
     item.transcript_excerpt ?? '',
     item.channel.channel_name,
     String(item.channel.prior_flags),
+    stableObjectString(item.channel.channel_history_features),
     item.user_context.strict_mode ? 'strict' : 'default',
     item.user_context.muted_channels.join('|'),
   ].join(':');

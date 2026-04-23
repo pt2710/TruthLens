@@ -1,89 +1,98 @@
 {
   "policy_version": "rl-action-policy-v1",
-  "generated_at": "2026-04-11T06:43:44.245427+00:00",
-  "build_id": "build-20260411064344",
+  "generated_at": "2026-04-23T15:47:58.395383+00:00",
+  "build_id": "build-20260423154757",
   "head_spec_version": "2026-04-02",
   "architecture_plan_version": "2026-04-02",
   "policy": {
     "s3:u0": "ask-report",
-    "s2:u0": "none",
-    "s1:u1": "none",
-    "s1:u0": "none"
+    "s2:u0": "ask-report",
+    "s0:u1": "none",
+    "s1:u1": "ask-report",
+    "s1:u0": "ask-report"
   },
   "q_table": {
     "s3:u0": {
-      "none": 2.1295,
-      "badge": 4.2959,
-      "blur": 4.9847,
-      "ask-report": 5.4809,
-      "hide": 5.1585
+      "none": 1.2564,
+      "badge": 3.3076,
+      "blur": 3.9723,
+      "ask-report": 4.4508,
+      "hide": 4.1425
     },
     "s2:u0": {
-      "none": 3.4257,
-      "badge": 2.8614,
-      "blur": 2.1909,
-      "ask-report": 1.7118,
-      "hide": 1.3287
+      "none": 1.3212,
+      "badge": 3.3249,
+      "blur": 3.9881,
+      "ask-report": 4.4617,
+      "hide": 4.1316
+    },
+    "s0:u1": {
+      "none": 3.4213,
+      "badge": 2.8549,
+      "blur": 2.167,
+      "ask-report": 1.6757,
+      "hide": 1.2824
     },
     "s1:u1": {
-      "none": 3.1451,
-      "badge": 2.6922,
-      "blur": 2.1322,
-      "ask-report": 1.7322,
-      "hide": 1.4122
+      "none": 1.3998,
+      "badge": 2.9501,
+      "blur": 3.4356,
+      "ask-report": 3.7823,
+      "hide": 3.425
     },
     "s1:u0": {
-      "none": 2.3263,
-      "badge": 1.9235,
-      "blur": 1.3634,
-      "ask-report": 0.9633,
-      "hide": 0.6434
+      "none": 1.5048,
+      "badge": 2.742,
+      "blur": 3.0842,
+      "ask-report": 3.3287,
+      "hide": 3.0086
     }
   },
   "bellman_state_values": {
-    "s3:u0": 5.4809,
-    "s2:u0": 3.4257,
-    "s1:u1": 3.1451,
-    "s1:u0": 2.3263
+    "s3:u0": 4.4508,
+    "s2:u0": 4.4617,
+    "s0:u1": 3.4213,
+    "s1:u1": 3.7823,
+    "s1:u0": 3.3287
   },
   "replay_summary": {
-    "steps": 76,
-    "average_reward": 1.692,
-    "discounted_return": 18.2544,
+    "steps": 101,
+    "average_reward": 1.5811,
+    "discounted_return": 17.7486,
     "action_counts": {
-      "none": 36,
+      "none": 48,
       "badge": 0,
       "blur": 0,
-      "ask-report": 40,
+      "ask-report": 53,
       "hide": 0
     },
-    "correct_interventions": 40,
-    "unnecessary_interventions": 0,
-    "intervention_rate": 0.5263
+    "correct_interventions": 51,
+    "unnecessary_interventions": 2,
+    "intervention_rate": 0.5248
   },
   "recommended_thresholds": {
-    "badge_threshold": 0.55,
-    "blur_threshold": 0.776,
-    "report_prompt_threshold": 0.856,
-    "hide_threshold": 0.936
+    "badge_threshold": 0.316,
+    "blur_threshold": 0.469,
+    "report_prompt_threshold": 0.61,
+    "hide_threshold": 0.81
   },
   "evolutionary_search": {
     "best_thresholds": {
-      "badge_threshold": 0.55,
-      "blur_threshold": 0.776,
-      "report_prompt_threshold": 0.856,
-      "hide_threshold": 0.936
+      "badge_threshold": 0.316,
+      "blur_threshold": 0.469,
+      "report_prompt_threshold": 0.61,
+      "hide_threshold": 0.81
     },
-    "best_fitness": 1.248,
+    "best_fitness": 1.199,
     "best_metrics": {
-      "average_reward": 1.3459,
-      "intervention_rate": 0.8158,
+      "average_reward": 1.2608,
+      "intervention_rate": 0.5149,
       "action_counts": {
-        "none": 14,
-        "badge": 22,
-        "blur": 0,
-        "ask-report": 40,
-        "hide": 0
+        "none": 49,
+        "badge": 11,
+        "blur": 10,
+        "ask-report": 15,
+        "hide": 16
       }
     },
     "population_size": 18,
@@ -91,78 +100,78 @@
     "history": [
       {
         "generation": 0,
-        "best_fitness": 1.2191,
+        "best_fitness": 1.1864,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.774,
-          "report_prompt_threshold": 0.863,
-          "hide_threshold": 0.93
+          "badge_threshold": 0.283,
+          "blur_threshold": 0.457,
+          "report_prompt_threshold": 0.614,
+          "hide_threshold": 0.778
         }
       },
       {
         "generation": 1,
-        "best_fitness": 1.248,
+        "best_fitness": 1.1886,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.342,
+          "blur_threshold": 0.442,
+          "report_prompt_threshold": 0.623,
+          "hide_threshold": 0.79
         }
       },
       {
         "generation": 2,
-        "best_fitness": 1.248,
+        "best_fitness": 1.194,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.313,
+          "blur_threshold": 0.445,
+          "report_prompt_threshold": 0.608,
+          "hide_threshold": 0.808
         }
       },
       {
         "generation": 3,
-        "best_fitness": 1.248,
+        "best_fitness": 1.194,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.313,
+          "blur_threshold": 0.445,
+          "report_prompt_threshold": 0.608,
+          "hide_threshold": 0.808
         }
       },
       {
         "generation": 4,
-        "best_fitness": 1.248,
+        "best_fitness": 1.194,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.313,
+          "blur_threshold": 0.445,
+          "report_prompt_threshold": 0.608,
+          "hide_threshold": 0.808
         }
       },
       {
         "generation": 5,
-        "best_fitness": 1.248,
+        "best_fitness": 1.199,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.316,
+          "blur_threshold": 0.469,
+          "report_prompt_threshold": 0.61,
+          "hide_threshold": 0.81
         }
       },
       {
         "generation": 6,
-        "best_fitness": 1.248,
+        "best_fitness": 1.199,
         "best_thresholds": {
-          "badge_threshold": 0.55,
-          "blur_threshold": 0.776,
-          "report_prompt_threshold": 0.856,
-          "hide_threshold": 0.936
+          "badge_threshold": 0.316,
+          "blur_threshold": 0.469,
+          "report_prompt_threshold": 0.61,
+          "hide_threshold": 0.81
         }
       }
     ]
   },
   "contextual_bandit": {
-    "steps": 76,
+    "steps": 101,
     "alpha": 0.65,
     "feature_order": [
       "bias",
@@ -172,133 +181,133 @@
       "repeat_template_rate",
       "transcript_mismatch_score"
     ],
-    "average_reward": 0.7009,
+    "average_reward": 0.6572,
     "action_counts": {
       "none": 1,
-      "badge": 72,
+      "badge": 97,
       "blur": 1,
       "ask-report": 1,
       "hide": 1
     },
     "policy_weights": {
       "none": [
-        -0.2858,
-        -0.2555,
-        -0.023,
-        -0.0572,
-        -0.0143,
-        -0.2858
+        -0.2932,
+        -0.2522,
+        -0.0273,
+        0.0,
+        -0.0154,
+        -0.2932
       ],
       "badge": [
-        0.0003,
-        0.7651,
-        -0.2905,
-        0.0001,
-        -0.0179,
-        0.5296
+        0.2841,
+        0.7594,
+        -0.1693,
+        0.0368,
+        0.0328,
+        0.3022
       ],
       "blur": [
-        -0.128,
-        -0.0571,
-        -0.0321,
-        -0.0256,
-        -0.0064,
-        -0.0254
+        -0.1366,
+        -0.0215,
+        -0.0492,
+        0.0,
+        -0.0072,
+        -0.0271
       ],
       "ask-report": [
-        -0.3307,
-        -0.1813,
-        -0.07,
-        -0.0661,
-        -0.0174,
-        -0.0578
+        -0.359,
+        -0.0593,
+        -0.1283,
+        -0.0718,
+        -0.0189,
+        -0.0628
       ],
       "hide": [
-        -0.524,
-        -0.2168,
-        -0.1377,
-        -0.1048,
-        -0.0276,
-        -0.0434
+        -0.5444,
+        -0.0874,
+        -0.1954,
+        -0.1089,
+        -0.0286,
+        -0.0451
       ]
     },
     "trace_sample": [
       {
-        "score": 0.894,
-        "uncertainty": 0.0803,
+        "score": 0.8602,
+        "uncertainty": 0.0931,
         "label": 1,
         "action": "none",
         "reward": -1.1
       },
       {
-        "score": 0.8926,
-        "uncertainty": 0.0808,
+        "score": 0.8578,
+        "uncertainty": 0.094,
         "label": 1,
         "action": "badge",
-        "reward": 1.1192
+        "reward": 1.106
       },
       {
-        "score": 0.8908,
-        "uncertainty": 0.0815,
+        "score": 0.6796,
+        "uncertainty": 0.1618,
         "label": 1,
         "action": "badge",
-        "reward": 1.1185
+        "reward": 1.0382
       },
       {
-        "score": 0.7075,
-        "uncertainty": 0.1511,
+        "score": 0.1933,
+        "uncertainty": 0.3465,
         "label": 0,
         "action": "badge",
         "reward": 0.4
       },
       {
-        "score": 0.862,
-        "uncertainty": 0.0924,
+        "score": 0.3679,
+        "uncertainty": 0.2802,
         "label": 1,
         "action": "badge",
-        "reward": 1.1076
+        "reward": 0.9198
       },
       {
-        "score": 0.5228,
-        "uncertainty": 0.2213,
+        "score": 0.1634,
+        "uncertainty": 0.3579,
         "label": 0,
         "action": "badge",
         "reward": 0.4
       },
       {
-        "score": 0.3266,
-        "uncertainty": 0.2959,
+        "score": 0.1597,
+        "uncertainty": 0.3593,
         "label": 0,
         "action": "badge",
         "reward": 0.4
       },
       {
-        "score": 0.8748,
-        "uncertainty": 0.0876,
+        "score": 0.8335,
+        "uncertainty": 0.1033,
         "label": 1,
         "action": "badge",
-        "reward": 1.1124
+        "reward": 1.0967
       },
       {
-        "score": 0.712,
-        "uncertainty": 0.1494,
+        "score": 0.1899,
+        "uncertainty": 0.3479,
         "label": 0,
         "action": "badge",
         "reward": 0.4
       },
       {
-        "score": 0.8646,
-        "uncertainty": 0.0915,
+        "score": 0.3734,
+        "uncertainty": 0.2781,
         "label": 1,
         "action": "badge",
-        "reward": 1.1085
+        "reward": 0.9219
       }
     ]
   },
   "bandit_threshold_adjustments": {
-    "badge_threshold_offset": 0.037,
+    "badge_threshold_offset": 0.038,
     "blur_threshold_offset": -0.0,
-    "report_prompt_threshold_offset": 0.047,
-    "hide_threshold_offset": 0.047
+    "report_prompt_threshold_offset": 0.048,
+    "hide_threshold_offset": 0.048
   }
 }

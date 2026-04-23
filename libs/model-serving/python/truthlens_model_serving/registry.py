@@ -41,6 +41,11 @@ HEAD_SPEC_VERSION = "2026-04-02"
 ARCHITECTURE_PLAN_VERSION = "2026-04-02"
 EVENT_STORE_LOCAL = "local"
 EVENT_STORE_POSTGRES = "postgres"
+DEFAULT_FEEDBACK_ACTOR = {
+    "role": "end-user",
+    "operator_id": None,
+    "capture_scope": "local-only",
+}
 
 
 def _repo_root() -> Path:
@@ -417,7 +422,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     timestamp,
                     runtime_context_json,
                     artifact_provenance_json,
-                    manual_report_json
+                    manual_report_json,
+                    feedback_actor_json
                 FROM feedback_events
                 ORDER BY rowid ASC
                 """
@@ -446,6 +452,9 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     "manual_report": json.loads(manual_report_json)
                     if manual_report_json
                     else None,
+                    "feedback_actor": _normalize_feedback_actor(
+                        json.loads(feedback_actor_json) if feedback_actor_json else None
+                    ),
                 }
                 for (
                     feedback_id,
@@ -464,6 +473,7 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     runtime_context_json,
                     artifact_provenance_json,
                     manual_report_json,
+                    feedback_actor_json,
                 ) in cursor.fetchall()
             ]
         return db_rows
@@ -475,7 +485,10 @@ def load_feedback_events() -> list[dict[str, Any]]:
         for line in handle:
             line = line.strip()
             if line:
-                rows.append(json.loads(line))
+                payload = json.loads(line)
+                if isinstance(payload, dict):
+                    payload["feedback_actor"] = _normalize_feedback_actor(payload.get("feedback_actor"))
+                rows.append(payload)
     return rows
 
 
@@ -639,7 +652,8 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
             timestamp TEXT NOT NULL,
             runtime_context_json TEXT,
             artifact_provenance_json TEXT,
-            manual_report_json TEXT
+            manual_report_json TEXT,
+            feedback_actor_json TEXT
         )
         """
     )
@@ -657,6 +671,8 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
         connection.execute("ALTER TABLE feedback_events ADD COLUMN runtime_context_json TEXT")
     if "artifact_provenance_json" not in columns:
         connection.execute("ALTER TABLE feedback_events ADD COLUMN artifact_provenance_json TEXT")
+    if "feedback_actor_json" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN feedback_actor_json TEXT")
     connection.commit()
 
 
@@ -731,10 +747,12 @@ def _ensure_postgres_feedback_table(connection: Any) -> None:
             timestamp TEXT NOT NULL,
             runtime_context_json TEXT,
             artifact_provenance_json TEXT,
-            manual_report_json TEXT
+            manual_report_json TEXT,
+            feedback_actor_json TEXT
         )
         """
     )
+    connection.execute("ALTER TABLE feedback_events ADD COLUMN IF NOT EXISTS feedback_actor_json TEXT")
 
 
 def _ensure_postgres_score_table(connection: Any) -> None:
@@ -811,7 +829,8 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 timestamp,
                 runtime_context_json,
                 artifact_provenance_json,
-                manual_report_json
+                manual_report_json,
+                feedback_actor_json
             FROM feedback_events
             ORDER BY timestamp ASC, item_id ASC
             """
@@ -836,6 +855,9 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 if artifact_provenance_json
                 else None,
                 "manual_report": json.loads(manual_report_json) if manual_report_json else None,
+                "feedback_actor": _normalize_feedback_actor(
+                    json.loads(feedback_actor_json) if feedback_actor_json else None
+                ),
             }
             for (
                 feedback_id,
@@ -854,6 +876,7 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 runtime_context_json,
                 artifact_provenance_json,
                 manual_report_json,
+                feedback_actor_json,
             ) in cursor.fetchall()
         ]
 
@@ -971,11 +994,16 @@ def _load_browser_observations_postgres() -> list[dict[str, Any]]:
         ]
 
 def append_feedback_event(payload: dict[str, Any]) -> Path:
+    feedback_actor = _normalize_feedback_actor(payload.get("feedback_actor"))
     path = _feedback_log_path()
     if _should_write_local_fallback():
+        payload_to_store = {
+            **payload,
+            "feedback_actor": feedback_actor,
+        }
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload, ensure_ascii=True))
+            handle.write(json.dumps(payload_to_store, ensure_ascii=True))
             handle.write("\n")
         db_path = _feedback_db_path()
         with sqlite3.connect(db_path) as connection:
@@ -998,36 +1026,42 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     timestamp,
                     runtime_context_json,
                     artifact_provenance_json,
-                    manual_report_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    manual_report_json,
+                    feedback_actor_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    payload.get("feedback_id"),
-                    payload.get("item_id"),
-                    payload.get("item_hash"),
-                    payload.get("observation_id"),
-                    payload.get("channel_name"),
-                    payload.get("model_version"),
-                    payload.get("policy_version"),
-                    payload.get("action_shown"),
-                    payload.get("user_action"),
-                    payload.get("explanation_id"),
-                    payload.get("before_score"),
-                    payload.get("after_score"),
-                    payload.get("timestamp"),
-                    json.dumps(payload.get("runtime_context"), ensure_ascii=True)
-                    if payload.get("runtime_context") is not None
+                    payload_to_store.get("feedback_id"),
+                    payload_to_store.get("item_id"),
+                    payload_to_store.get("item_hash"),
+                    payload_to_store.get("observation_id"),
+                    payload_to_store.get("channel_name"),
+                    payload_to_store.get("model_version"),
+                    payload_to_store.get("policy_version"),
+                    payload_to_store.get("action_shown"),
+                    payload_to_store.get("user_action"),
+                    payload_to_store.get("explanation_id"),
+                    payload_to_store.get("before_score"),
+                    payload_to_store.get("after_score"),
+                    payload_to_store.get("timestamp"),
+                    json.dumps(payload_to_store.get("runtime_context"), ensure_ascii=True)
+                    if payload_to_store.get("runtime_context") is not None
                     else None,
-                    json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
-                    if payload.get("artifact_provenance") is not None
+                    json.dumps(payload_to_store.get("artifact_provenance"), ensure_ascii=True)
+                    if payload_to_store.get("artifact_provenance") is not None
                     else None,
-                    json.dumps(payload.get("manual_report"), ensure_ascii=True)
-                    if payload.get("manual_report") is not None
+                    json.dumps(payload_to_store.get("manual_report"), ensure_ascii=True)
+                    if payload_to_store.get("manual_report") is not None
                     else None,
+                    json.dumps(feedback_actor, ensure_ascii=True),
                 ),
             )
             connection.commit()
     if _postgres_available():
+        payload_to_store = {
+            **payload,
+            "feedback_actor": feedback_actor,
+        }
         with _postgres_connect() as connection:
             _ensure_postgres_feedback_table(connection)
             connection.execute(
@@ -1048,32 +1082,34 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     timestamp,
                     runtime_context_json,
                     artifact_provenance_json,
-                    manual_report_json
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    manual_report_json,
+                    feedback_actor_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
-                    payload.get("feedback_id"),
-                    payload.get("item_id"),
-                    payload.get("item_hash"),
-                    payload.get("observation_id"),
-                    payload.get("channel_name"),
-                    payload.get("model_version"),
-                    payload.get("policy_version"),
-                    payload.get("action_shown"),
-                    payload.get("user_action"),
-                    payload.get("explanation_id"),
-                    payload.get("before_score"),
-                    payload.get("after_score"),
-                    payload.get("timestamp"),
-                    json.dumps(payload.get("runtime_context"), ensure_ascii=True)
-                    if payload.get("runtime_context") is not None
+                    payload_to_store.get("feedback_id"),
+                    payload_to_store.get("item_id"),
+                    payload_to_store.get("item_hash"),
+                    payload_to_store.get("observation_id"),
+                    payload_to_store.get("channel_name"),
+                    payload_to_store.get("model_version"),
+                    payload_to_store.get("policy_version"),
+                    payload_to_store.get("action_shown"),
+                    payload_to_store.get("user_action"),
+                    payload_to_store.get("explanation_id"),
+                    payload_to_store.get("before_score"),
+                    payload_to_store.get("after_score"),
+                    payload_to_store.get("timestamp"),
+                    json.dumps(payload_to_store.get("runtime_context"), ensure_ascii=True)
+                    if payload_to_store.get("runtime_context") is not None
                     else None,
-                    json.dumps(payload.get("artifact_provenance"), ensure_ascii=True)
-                    if payload.get("artifact_provenance") is not None
+                    json.dumps(payload_to_store.get("artifact_provenance"), ensure_ascii=True)
+                    if payload_to_store.get("artifact_provenance") is not None
                     else None,
-                    json.dumps(payload.get("manual_report"), ensure_ascii=True)
-                    if payload.get("manual_report") is not None
+                    json.dumps(payload_to_store.get("manual_report"), ensure_ascii=True)
+                    if payload_to_store.get("manual_report") is not None
                     else None,
+                    json.dumps(feedback_actor, ensure_ascii=True),
                 ),
             )
             connection.commit()
@@ -1259,11 +1295,53 @@ def _normalize_channel(event: dict[str, Any]) -> tuple[str, str] | None:
     return channel_name.lower(), channel_name
 
 
+def _normalize_feedback_actor(actor: Any) -> dict[str, Any]:
+    payload = dict(DEFAULT_FEEDBACK_ACTOR)
+    if not isinstance(actor, dict):
+        return payload
+    role = str(actor.get("role", payload["role"])).strip().lower()
+    capture_scope = str(actor.get("capture_scope", payload["capture_scope"])).strip().lower()
+    operator_id = str(actor.get("operator_id", "")).strip() or None
+    if role not in {"end-user", "creator-operator"}:
+        role = str(payload["role"])
+    if capture_scope not in {"local-only", "creator-candidate"}:
+        capture_scope = str(payload["capture_scope"])
+    if role != "creator-operator":
+        operator_id = None
+        capture_scope = "local-only"
+    elif operator_id is None:
+        capture_scope = "local-only"
+        role = "end-user"
+    payload.update(
+        {
+            "role": role,
+            "operator_id": operator_id,
+            "capture_scope": capture_scope,
+        }
+    )
+    return payload
+
+
 def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     rows = events if events is not None else load_feedback_events()
     score_rows = load_score_events()
     action_counts = Counter(_normalize_action(row) for row in rows)
     correction_actions = action_counts["not-misleading"] + action_counts["undo-hide"]
+    local_user_rows = [
+        row
+        for row in rows
+        if _normalize_feedback_actor(row.get("feedback_actor")).get("role") != "creator-operator"
+    ]
+    creator_operator_rows = [
+        row
+        for row in rows
+        if _normalize_feedback_actor(row.get("feedback_actor")).get("role") == "creator-operator"
+    ]
+    creator_candidate_rows = [
+        row
+        for row in creator_operator_rows
+        if _normalize_feedback_actor(row.get("feedback_actor")).get("capture_scope") == "creator-candidate"
+    ]
     channel_profiles: dict[str, dict[str, Any]] = {}
     scored_items_by_channel: dict[str, set[str]] = {}
     for row in score_rows:
@@ -1386,6 +1464,27 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
         "correction_rate": round(correction_actions / max(len(rows), 1), 4),
         "channel_profiles": channel_profiles,
         "top_channels": top_channels,
+        "local_user_feedback": {
+            "total_events": len(local_user_rows),
+            "action_counts": dict(sorted(Counter(_normalize_action(row) for row in local_user_rows).items())),
+        },
+        "creator_operator_feedback": {
+            "total_events": len(creator_operator_rows),
+            "candidate_events": len(creator_candidate_rows),
+            "action_counts": dict(
+                sorted(Counter(_normalize_action(row) for row in creator_operator_rows).items())
+            ),
+            "operator_ids": sorted(
+                {
+                    str(actor["operator_id"])
+                    for actor in (
+                        _normalize_feedback_actor(row.get("feedback_actor"))
+                        for row in creator_operator_rows
+                    )
+                    if actor.get("operator_id")
+                }
+            ),
+        },
     }
 
 

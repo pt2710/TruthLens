@@ -19,36 +19,35 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="20" y="20" width="1200" height="542" fill="#ffffff" rx="26" />
 <text class="title" x="52" y="68">Runtime governance summary</text>
 <text class="subtitle" x="52" y="98">Promotion truth from committed BSEO artifacts, performance guardrails, and observed shadow history.</text>
-<rect class="warn" x="52" y="132" width="360" height="188" rx="20" />
+<rect class="accent" x="52" y="132" width="360" height="188" rx="20" />
 <text class="label" x="74" y="164">Recommended mode</text>
-<text class="value" x="74" y="214">threshold-default</text>
+<text class="value" x="74" y="214">bseo-live</text>
 <text class="small" x="74" y="254">The highest runtime mode currently</text>
 <text class="small" x="74" y="272">justified by committed artifacts and</text>
 <text class="small" x="74" y="290">guardrails.</text>
 <rect class="card" x="436" y="132" width="360" height="188" rx="20" />
 <text class="label" x="458" y="164">Max promotable mode</text>
-<text class="value" x="458" y="214">threshold-default</text>
+<text class="value" x="458" y="214">bseo-live</text>
 <text class="small" x="458" y="254">Live is only eligible after</text>
 <text class="small" x="458" y="272">calibration, lineage, atlas, and</text>
 <text class="small" x="458" y="290">shadow-soak checks pass.</text>
 <rect class="card" x="820" y="132" width="360" height="188" rx="20" />
 <text class="label" x="842" y="164">Current eval footprint</text>
-<text class="value" x="842" y="214">test=76 | eval=76</text>
+<text class="value" x="842" y="214">test=101 | eval=101</text>
 <text class="small" x="842" y="254">Governance summaries are only credible</text>
 <text class="small" x="842" y="272">when dataset counts are large enough to</text>
 <text class="small" x="842" y="290">matter.</text>
 <rect class="card" x="52" y="346" width="360" height="188" rx="20" />
 <text class="label" x="74" y="378">Objective + calibration</text>
-<text class="value" x="74" y="428">obj=0.613 | ece=0.142</text>
+<text class="value" x="74" y="428">obj=0.838 | ece=0.176</text>
 <text class="small" x="74" y="468">BSEO promotion stays downstream of</text>
 <text class="small" x="74" y="486">fused/calibrated scoring quality.</text>
 <rect class="card" x="436" y="346" width="360" height="188" rx="20" />
 <text class="label" x="458" y="378">Atlas + lineage</text>
 <text class="value-compact" x="458" y="428">clustered | lineage=125</text>
 <text class="small" x="458" y="468">usable_mutations=124</text>
-<rect class="warn" x="820" y="346" width="360" height="188" rx="20" />
+<rect class="accent" x="820" y="346" width="360" height="188" rx="20" />
 <text class="label" x="842" y="378">Live blockers</text>
-<text class="value-compact" x="842" y="428">stale-bseo-artifact,</text>
-<text class="value-compact" x="842" y="454">low-bseo-objective,</text>
-<text class="small" x="842" y="500">shadow_observations=911</text>
+<text class="value" x="842" y="428">none</text>
+<text class="small" x="842" y="468">shadow_observations=911</text>
 </svg>

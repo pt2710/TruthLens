@@ -1,0 +1,26 @@
+{
+  "build_id": "build-20260423154757",
+  "generated_at": "2026-04-23T15:47:58.419810+00:00",
+  "schema_validation_pass_rate": 1.0,
+  "duplicate_rate": 0.01,
+  "channel_leakage_rate": 0.0,
+  "missing_field_rate": 0.0,
+  "split_balance": {
+    "train": 236,
+    "validation": 58,
+    "test": 101
+  },
+  "label_distribution": {
+    "train": 0.5297,
+    "validation": 0.5,
+    "test": 0.505
+  },
+  "corrupted_image_rate": 0.0,
+  "parser_failure_rate": 0.0,
+  "provenance_completeness": 1.0,
+  "reproducibility_check": true,
+  "training_gate_passed": true,
+  "missing_artifacts": [],
+  "dataset_card": "datasets/dataset_cards/build-20260423154757.md",
+  "dataset_build_manifest": "datasets/manifests/builds/build-20260423154757.json"
+}

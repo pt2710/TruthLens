@@ -75,6 +75,8 @@ def build_processed_dataset(
     annotation_manifest: dict[str, Any],
     deduplication_report: dict[str, Any],
     split_manifest: dict[str, Any],
+    operator_feedback_manifest: dict[str, Any] | None = None,
+    operator_ingestion_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     root = repo_root()
     split_paths: dict[str, str] = {}
@@ -142,6 +144,8 @@ def build_processed_dataset(
             "annotation_manifest": annotation_manifest,
             "deduplication_report": deduplication_report,
             "split_manifest": split_manifest,
+            "operator_feedback_manifest": operator_feedback_manifest or {},
+            "operator_ingestion_manifest": operator_ingestion_manifest or {},
         },
         "artifacts": {
             "train": split_paths["train"],
@@ -166,6 +170,14 @@ def build_processed_dataset(
                     for record in rows
                 }
             )
+        },
+        "operator_feedback": {
+            "candidate_count": int((operator_feedback_manifest or {}).get("summary", {}).get("candidate_count", 0)),
+            "confirmed_count": int((operator_feedback_manifest or {}).get("summary", {}).get("confirmed_count", 0)),
+            "ingested_count": int((operator_ingestion_manifest or {}).get("ingested_count", 0)),
+            "source_manifest_path": (operator_ingestion_manifest or {}).get("source_manifest_path")
+            or (operator_feedback_manifest or {}).get("source_manifest_path"),
+            "source_gold_path": (operator_ingestion_manifest or {}).get("source_gold_path"),
         },
     }
     build_manifest_path = root / "datasets" / "manifests" / "builds" / f"{build_id}.json"

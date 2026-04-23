@@ -30,3 +30,7 @@ datasets/processed/**
 !datasets/processed/**/.gitkeep
 datasets/labels/**
 !datasets/labels/**/.gitkeep
+!datasets/labels/operator_adjudication/
+!datasets/labels/operator_adjudication/**
+!datasets/labels/operator_supplemental_gold/
+!datasets/labels/operator_supplemental_gold/**

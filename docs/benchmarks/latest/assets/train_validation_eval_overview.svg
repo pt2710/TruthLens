@@ -21,7 +21,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="subtitle" x="52" y="98">Current committed evaluation and validation snapshot. Training metrics are not published in the current root artifacts.</text>
 <rect class="card" x="52" y="132" width="360" height="182" rx="20" />
 <text class="label" x="74" y="164">Eval F1</text>
-<text class="value" x="74" y="214">1.000</text>
+<text class="value" x="74" y="214">0.981</text>
 <text class="small" x="74" y="254">Committed eval snapshot</text>
 <rect class="card" x="436" y="132" width="360" height="182" rx="20" />
 <text class="label" x="458" y="164">Validation F1</text>
@@ -29,18 +29,18 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="458" y="254">Cross-check against validation split</text>
 <rect class="accent" x="820" y="132" width="360" height="182" rx="20" />
 <text class="label" x="842" y="164">Eval sample count</text>
-<text class="value" x="842" y="214">76</text>
+<text class="value" x="842" y="214">101</text>
 <text class="small" x="842" y="254">Very small n must be treated as</text>
 <text class="small" x="842" y="272">unstable</text>
 <rect class="card" x="52" y="338" width="360" height="182" rx="20" />
 <text class="label" x="74" y="370">Eval precision</text>
-<text class="value" x="74" y="420">1.000</text>
+<text class="value" x="74" y="420">0.962</text>
 <rect class="card" x="436" y="338" width="360" height="182" rx="20" />
 <text class="label" x="458" y="370">Eval recall</text>
 <text class="value" x="458" y="420">1.000</text>
 <rect class="card" x="820" y="338" width="360" height="182" rx="20" />
 <text class="label" x="842" y="370">Validation calibration</text>
-<text class="value" x="842" y="420">0.147</text>
+<text class="value" x="842" y="420">0.187</text>
 <text class="small" x="842" y="460">Calibration remains more informative</text>
 <text class="small" x="842" y="478">than the perfect binary snapshot alone.</text>
 </svg>

@@ -18,32 +18,32 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="0" y="0" width="1240" height="582" fill="#f8fafc" />
 <rect x="20" y="20" width="1200" height="542" fill="#ffffff" rx="26" />
 <text class="title" x="52" y="68">Observation and feedback intake</text>
-<text class="subtitle" x="52" y="98">Supplemental browser/feedback intake truth. These artifacts are intentionally separate from committed train, validation, and test splits.</text>
+<text class="subtitle" x="52" y="98">Local feedback, creator/operator curation, and global benchmark truth are rendered as separate operational layers.</text>
 <rect class="card" x="52" y="132" width="360" height="188" rx="20" />
 <text class="label" x="74" y="164">Browser observations</text>
 <text class="value" x="74" y="214">1459</text>
 <text class="small" x="74" y="254">unique_items=671, score_links=1459</text>
 <rect class="card" x="436" y="132" width="360" height="188" rx="20" />
-<text class="label" x="458" y="164">Supplemental candidates</text>
-<text class="value" x="458" y="214">0</text>
-<text class="small" x="458" y="254">split_blocked=0</text>
+<text class="label" x="458" y="164">Local user feedback</text>
+<text class="value" x="458" y="214">59</text>
+<text class="small" x="458" y="254">Ordinary local-user feedback stays in</text>
+<text class="small" x="458" y="272">the runtime/local optimization layer</text>
+<text class="small" x="458" y="290">unless it is explicitly curated</text>
+<text class="small" x="458" y="308">elsewhere.</text>
 <rect class="card" x="820" y="132" width="360" height="188" rx="20" />
-<text class="label" x="842" y="164">Supplemental adjudication</text>
-<text class="value" x="842" y="214">0</text>
-<text class="small" x="842" y="254">confirmed=0, escalations=0</text>
+<text class="label" x="842" y="164">Creator/operator candidates</text>
+<text class="value" x="842" y="214">53</text>
+<text class="small" x="842" y="254">gold=53, ingested=53</text>
 <rect class="card" x="52" y="346" width="360" height="188" rx="20" />
-<text class="label" x="74" y="378">Feedback-linked candidates</text>
+<text class="label" x="74" y="378">Legacy supplemental intake</text>
 <text class="value" x="74" y="428">0</text>
-<text class="small" x="74" y="468">manual_reports=0, collection_scoped=0</text>
+<text class="small" x="74" y="468">split_blocked=0, adjudicated=0</text>
 <rect class="card" x="436" y="346" width="360" height="188" rx="20" />
-<text class="label" x="458" y="378">Observation-linked candidates</text>
-<text class="value" x="458" y="428">0</text>
-<text class="small" x="458" y="468">review=0, hard_negative=0</text>
-<rect class="warn" x="820" y="346" width="360" height="188" rx="20" />
-<text class="label" x="842" y="378">Leakage guard</text>
-<text class="value" x="842" y="428">blocked</text>
-<text class="small" x="842" y="468">Supplemental intake remains excluded</text>
-<text class="small" x="842" y="486">from direct train/validation/test</text>
-<text class="small" x="842" y="504">writes until future deterministic</text>
-<text class="small" x="842" y="522">ingestion.</text>
+<text class="label" x="458" y="378">Creator/operator adjudication</text>
+<text class="value" x="458" y="428">53</text>
+<text class="small" x="458" y="468">confirmed_risk=25, confirmed_benign=28</text>
+<rect class="accent" x="820" y="346" width="360" height="188" rx="20" />
+<text class="label" x="842" y="378">Global benchmark truth</text>
+<text class="value" x="842" y="428">395</text>
+<text class="small" x="842" y="468">train=236, validation=58, test=101</text>
 </svg>

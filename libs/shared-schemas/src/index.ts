@@ -619,6 +619,14 @@ export const feedbackEventSchema = z.object({
   runtime_context: runtimeContextSchema.optional().nullable(),
   artifact_provenance: artifactProvenanceSchema.optional().nullable(),
   manual_report: manualReportSchema.optional().nullable(),
+  feedback_actor: z
+    .object({
+      role: z.enum(['end-user', 'creator-operator']),
+      operator_id: z.string().optional().nullable(),
+      capture_scope: z.enum(['local-only', 'creator-candidate']),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const datasetRecordSchema = z.object({

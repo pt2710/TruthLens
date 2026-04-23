@@ -634,6 +634,7 @@ class FeedbackEvent(BaseModel):
     runtime_context: RuntimeContext | None = None
     artifact_provenance: ArtifactProvenance | None = None
     manual_report: ManualReport | None = None
+    feedback_actor: dict[str, Any] | None = None
 
 
 class DatasetRecord(BaseModel):

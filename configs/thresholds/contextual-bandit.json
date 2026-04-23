@@ -1,6 +1,6 @@
 {
-  "badge_threshold_offset": 0.037,
+  "badge_threshold_offset": 0.038,
   "blur_threshold_offset": -0.0,
-  "report_prompt_threshold_offset": 0.047,
-  "hide_threshold_offset": 0.047
+  "report_prompt_threshold_offset": 0.048,
+  "hide_threshold_offset": 0.048
 }

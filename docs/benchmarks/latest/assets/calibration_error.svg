@@ -33,23 +33,23 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="38" y="159.0">0.35</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="340.3" width="48.0" height="153.7" fill="#7c3aed" rx="6" />
+<rect x="112.0" y="347.8" width="48.0" height="146.2" fill="#7c3aed" rx="6" />
 <text class="small" x="146.4" y="522" text-anchor="middle">text</text>
-<rect x="249.8" y="366.0" width="48.0" height="128.0" fill="#7c3aed" rx="6" />
+<rect x="249.8" y="398.0" width="48.0" height="96.0" fill="#7c3aed" rx="6" />
 <text class="small" x="284.2" y="522" text-anchor="middle">vision</text>
-<rect x="387.6" y="318.4" width="48.0" height="175.6" fill="#7c3aed" rx="6" />
+<rect x="387.6" y="334.8" width="48.0" height="159.2" fill="#7c3aed" rx="6" />
 <text class="small" x="422.0" y="522" text-anchor="middle">metadata</text>
-<rect x="525.3" y="447.1" width="48.0" height="46.9" fill="#7c3aed" rx="6" />
+<rect x="525.3" y="431.7" width="48.0" height="62.3" fill="#7c3aed" rx="6" />
 <text class="small" x="559.8" y="522" text-anchor="middle">history</text>
-<rect x="663.1" y="255.0" width="48.0" height="239.0" fill="#7c3aed" rx="6" />
+<rect x="663.1" y="308.0" width="48.0" height="186.0" fill="#7c3aed" rx="6" />
 <text class="small" x="697.6" y="522" text-anchor="middle">anomaly</text>
-<rect x="800.9" y="414.5" width="48.0" height="79.5" fill="#7c3aed" rx="6" />
+<rect x="800.9" y="395.3" width="48.0" height="98.7" fill="#7c3aed" rx="6" />
 <text class="small" x="835.3" y="522" text-anchor="middle">fusion</text>
-<rect x="938.7" y="356.4" width="48.0" height="137.6" fill="#7c3aed" rx="6" />
+<rect x="938.7" y="322.8" width="48.0" height="171.2" fill="#7c3aed" rx="6" />
 <text class="small" x="973.1" y="522" text-anchor="middle">calibrated</text>
-<rect x="1076.4" y="356.4" width="48.0" height="137.6" fill="#7c3aed" rx="6" />
+<rect x="1076.4" y="322.8" width="48.0" height="171.2" fill="#7c3aed" rx="6" />
 <text class="small" x="1110.9" y="522" text-anchor="middle">eval</text>
-<rect x="1214.2" y="351.3" width="48.0" height="142.7" fill="#7c3aed" rx="6" />
+<rect x="1214.2" y="312.6" width="48.0" height="181.4" fill="#7c3aed" rx="6" />
 <text class="small" x="1248.7" y="522" text-anchor="middle">validation</text>
 <rect x="86" y="540" width="16" height="16" fill="#7c3aed" rx="4" />
 <text class="legend" x="110" y="553">Calibration error</text>

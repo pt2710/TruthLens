@@ -32,54 +32,54 @@
         <div class="card">
           <h2>Promotion truth</h2>
           <div class="metric-grid">
-            <div class="metric"><strong>Configured mode</strong><span>threshold-default</span></div>
-            <div class="metric"><strong>Recommended mode</strong><span>threshold-default</span></div>
-            <div class="metric"><strong>Max promotable mode</strong><span>threshold-default</span></div>
-            <div class="metric"><strong>Shadow eligible</strong><span>False</span></div>
-            <div class="metric"><strong>Live eligible</strong><span>False</span></div>
+            <div class="metric"><strong>Configured mode</strong><span>bseo-live</span></div>
+            <div class="metric"><strong>Recommended mode</strong><span>bseo-live</span></div>
+            <div class="metric"><strong>Max promotable mode</strong><span>bseo-live</span></div>
+            <div class="metric"><strong>Shadow eligible</strong><span>True</span></div>
+            <div class="metric"><strong>Live eligible</strong><span>True</span></div>
           </div>
         </div>
         <div class="card">
           <h2>Observed runtime evidence</h2>
           <div class="metric-grid">
             <div class="metric"><strong>Shadow observations</strong><span>911</span></div>
-            <div class="metric"><strong>Eval sample count</strong><span>76</span></div>
+            <div class="metric"><strong>Eval sample count</strong><span>101</span></div>
             <div class="metric"><strong>Mutation atlas status</strong><span>clustered</span></div>
           </div>
         </div>
         <div class="card warn">
           <h2>Shadow blockers</h2>
-          <ul><li>stale-bseo-artifact</li><li>low-bseo-objective</li></ul>
+          <ul><li>No shadow blockers.</li></ul>
         </div>
         <div class="card warn">
           <h2>Live blockers</h2>
-          <ul><li>stale-bseo-artifact</li><li>low-bseo-objective</li><li>benign-fpr-too-high</li></ul>
+          <ul><li>No live blockers.</li></ul>
         </div>
         
       <div class="card">
         <h2>Embedded summary payload</h2>
         <pre>{
-  &quot;build_id&quot;: &quot;build-20260411064344&quot;,
-  &quot;model_version&quot;: &quot;baseline-v1-build-20260411064344&quot;,
-  &quot;sample_count&quot;: 76,
+  &quot;build_id&quot;: &quot;build-20260423154757&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260423154757&quot;,
+  &quot;sample_count&quot;: 101,
   &quot;runtime_truth&quot;: {
-    &quot;configured_policy_mode&quot;: &quot;threshold-default&quot;,
-    &quot;resolved_policy_mode&quot;: &quot;threshold-default&quot;,
+    &quot;configured_policy_mode&quot;: &quot;bseo-live&quot;,
+    &quot;resolved_policy_mode&quot;: &quot;bseo-live&quot;,
     &quot;bseo_artifact_committed&quot;: true,
     &quot;bseo_artifact_compatible&quot;: true,
     &quot;selective_verification_contract_present&quot;: true,
     &quot;heavy_llm_hot_path&quot;: false,
-    &quot;recommended_policy_mode&quot;: &quot;threshold-default&quot;,
-    &quot;max_promotable_mode&quot;: &quot;threshold-default&quot;,
-    &quot;shadow_eligible&quot;: false,
-    &quot;live_eligible&quot;: false
+    &quot;recommended_policy_mode&quot;: &quot;bseo-live&quot;,
+    &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;,
+    &quot;shadow_eligible&quot;: true,
+    &quot;live_eligible&quot;: true
   },
   &quot;runtime_governance&quot;: {
-    &quot;generated_at&quot;: &quot;2026-04-18T21:18:11.168154+00:00&quot;,
-    &quot;build_id&quot;: &quot;build-20260411064344&quot;,
+    &quot;generated_at&quot;: &quot;2026-04-23T16:17:08.955900+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260423154757&quot;,
     &quot;runtime_policy&quot;: {
-      &quot;configured_mode&quot;: &quot;threshold-default&quot;,
-      &quot;resolved_mode&quot;: &quot;threshold-default&quot;,
+      &quot;configured_mode&quot;: &quot;bseo-live&quot;,
+      &quot;resolved_mode&quot;: &quot;bseo-live&quot;,
       &quot;bseo_min_confidence&quot;: 0.58,
       &quot;bseo_max_uncertainty&quot;: 0.45,
       &quot;bseo_artifact_max_age_hours&quot;: 168.0
@@ -88,11 +88,11 @@
       &quot;bseo_policy&quot;: {
         &quot;available&quot;: true,
         &quot;compatible&quot;: true,
-        &quot;stale&quot;: true,
-        &quot;status&quot;: &quot;stale&quot;,
-        &quot;reason&quot;: &quot;bseo policy artifact is older than the allowed runtime age&quot;,
-        &quot;age_hours&quot;: 182.574,
-        &quot;build_id&quot;: &quot;build-20260411064344&quot;,
+        &quot;stale&quot;: false,
+        &quot;status&quot;: &quot;compatible&quot;,
+        &quot;reason&quot;: null,
+        &quot;age_hours&quot;: 0.486,
+        &quot;build_id&quot;: &quot;build-20260423154757&quot;,
         &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
       },
       &quot;lineage_count&quot;: 125,
@@ -100,43 +100,36 @@
       &quot;usable_mutations&quot;: 124
     },
     &quot;dataset&quot;: {
-      &quot;train_count&quot;: 190,
-      &quot;validation_count&quot;: 76,
-      &quot;test_count&quot;: 76,
-      &quot;eval_sample_count&quot;: 76
+      &quot;train_count&quot;: 236,
+      &quot;validation_count&quot;: 58,
+      &quot;test_count&quot;: 101,
+      &quot;eval_sample_count&quot;: 101
     },
     &quot;performance&quot;: {
-      &quot;eval_f1&quot;: 1.0,
+      &quot;eval_f1&quot;: 0.9808,
       &quot;validation_f1&quot;: 1.0,
-      &quot;validation_gap&quot;: 0.0,
-      &quot;calibration_error&quot;: 0.1416,
-      &quot;bseo_objective_score&quot;: 0.6129,
-      &quot;benign_false_positive_rate&quot;: 0.8438,
+      &quot;validation_gap&quot;: 0.0192,
+      &quot;calibration_error&quot;: 0.1762,
+      &quot;bseo_objective_score&quot;: 0.8375,
+      &quot;benign_false_positive_rate&quot;: 0.0,
       &quot;shadow_observation_count&quot;: 911
     },
     &quot;promotion&quot;: {
-      &quot;shadow_eligible&quot;: false,
-      &quot;shadow_blockers&quot;: [
-        &quot;stale-bseo-artifact&quot;,
-        &quot;low-bseo-objective&quot;
-      ],
-      &quot;live_eligible&quot;: false,
-      &quot;live_blockers&quot;: [
-        &quot;stale-bseo-artifact&quot;,
-        &quot;low-bseo-objective&quot;,
-        &quot;benign-fpr-too-high&quot;
-      ],
-      &quot;recommended_mode&quot;: &quot;threshold-default&quot;,
-      &quot;max_promotable_mode&quot;: &quot;threshold-default&quot;
+      &quot;shadow_eligible&quot;: true,
+      &quot;shadow_blockers&quot;: [],
+      &quot;live_eligible&quot;: true,
+      &quot;live_blockers&quot;: [],
+      &quot;recommended_mode&quot;: &quot;bseo-live&quot;,
+      &quot;max_promotable_mode&quot;: &quot;bseo-live&quot;
     }
   },
   &quot;metrics&quot;: {
     &quot;eval&quot;: {
-      &quot;precision&quot;: 1.0,
+      &quot;precision&quot;: 0.9623,
       &quot;recall&quot;: 1.0,
-      &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.5263,
-      &quot;false_positive_rate&quot;: 0.0,
+      &quot;f1&quot;: 0.9808,
+      &quot;positive_rate&quot;: 0.5248,
+      &quot;false_positive_rate&quot;: 0.04,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
@@ -145,145 +138,148 @@
       &quot;precision&quot;: 1.0,
       &quot;recall&quot;: 1.0,
       &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.5263,
+      &quot;positive_rate&quot;: 0.5,
       &quot;false_positive_rate&quot;: 0.0,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
     &quot;model_snapshot&quot;: {
-      &quot;precision&quot;: 1.0,
+      &quot;precision&quot;: 0.9623,
       &quot;recall&quot;: 1.0,
-      &quot;f1&quot;: 1.0,
-      &quot;positive_rate&quot;: 0.5263,
-      &quot;false_positive_rate&quot;: 0.0,
+      &quot;f1&quot;: 0.9808,
+      &quot;positive_rate&quot;: 0.5248,
+      &quot;false_positive_rate&quot;: 0.04,
       &quot;false_negative_rate&quot;: 0.0,
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
-    &quot;calibration_error&quot;: 0.1416,
-    &quot;validation_calibration_error&quot;: 0.1469,
+    &quot;calibration_error&quot;: 0.1762,
+    &quot;validation_calibration_error&quot;: 0.1867,
     &quot;per_head_metrics&quot;: {
       &quot;text&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 1.0,
+          &quot;precision&quot;: 0.9444,
           &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.5263,
-          &quot;false_positive_rate&quot;: 0.0,
+          &quot;f1&quot;: 0.9714,
+          &quot;positive_rate&quot;: 0.5347,
+          &quot;false_positive_rate&quot;: 0.06,
           &quot;false_negative_rate&quot;: 0.0,
-          &quot;roc_auc&quot;: 1.0,
-          &quot;pr_auc&quot;: 1.0
+          &quot;roc_auc&quot;: 0.9961,
+          &quot;pr_auc&quot;: 0.996
         },
-        &quot;calibration_error&quot;: 0.1582
+        &quot;calibration_error&quot;: 0.1505
       },
       &quot;vision&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 1.0,
-          &quot;recall&quot;: 0.7,
-          &quot;f1&quot;: 0.8235,
-          &quot;positive_rate&quot;: 0.3684,
-          &quot;false_positive_rate&quot;: 0.0,
-          &quot;false_negative_rate&quot;: 0.3,
-          &quot;roc_auc&quot;: 0.8868,
-          &quot;pr_auc&quot;: 0.9266
+          &quot;precision&quot;: 0.825,
+          &quot;recall&quot;: 0.6471,
+          &quot;f1&quot;: 0.7253,
+          &quot;positive_rate&quot;: 0.396,
+          &quot;false_positive_rate&quot;: 0.14,
+          &quot;false_negative_rate&quot;: 0.3529,
+          &quot;roc_auc&quot;: 0.8498,
+          &quot;pr_auc&quot;: 0.8895
         },
-        &quot;calibration_error&quot;: 0.1318
+        &quot;calibration_error&quot;: 0.0988
       },
       &quot;metadata&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.8478,
-          &quot;recall&quot;: 0.975,
-          &quot;f1&quot;: 0.907,
-          &quot;positive_rate&quot;: 0.6053,
-          &quot;false_positive_rate&quot;: 0.1944,
-          &quot;false_negative_rate&quot;: 0.025,
-          &quot;roc_auc&quot;: 0.9861,
-          &quot;pr_auc&quot;: 0.9887
+          &quot;precision&quot;: 0.8448,
+          &quot;recall&quot;: 0.9608,
+          &quot;f1&quot;: 0.8991,
+          &quot;positive_rate&quot;: 0.5743,
+          &quot;false_positive_rate&quot;: 0.18,
+          &quot;false_negative_rate&quot;: 0.0392,
+          &quot;roc_auc&quot;: 0.9718,
+          &quot;pr_auc&quot;: 0.9623
         },
-        &quot;calibration_error&quot;: 0.1808
+        &quot;calibration_error&quot;: 0.1639
       },
       &quot;history&quot;: {
         &quot;metrics&quot;: {
           &quot;precision&quot;: 1.0,
           &quot;recall&quot;: 1.0,
           &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.5263,
+          &quot;positive_rate&quot;: 0.505,
           &quot;false_positive_rate&quot;: 0.0,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.0483
+        &quot;calibration_error&quot;: 0.0641
       },
       &quot;anomaly&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.6724,
-          &quot;recall&quot;: 0.975,
-          &quot;f1&quot;: 0.7959,
-          &quot;positive_rate&quot;: 0.7632,
-          &quot;false_positive_rate&quot;: 0.5278,
-          &quot;false_negative_rate&quot;: 0.025,
-          &quot;roc_auc&quot;: 0.9632,
-          &quot;pr_auc&quot;: 0.976
+          &quot;precision&quot;: 0.75,
+          &quot;recall&quot;: 1.0,
+          &quot;f1&quot;: 0.8571,
+          &quot;positive_rate&quot;: 0.6733,
+          &quot;false_positive_rate&quot;: 0.34,
+          &quot;false_negative_rate&quot;: 0.0,
+          &quot;roc_auc&quot;: 0.9565,
+          &quot;pr_auc&quot;: 0.9604
         },
-        &quot;calibration_error&quot;: 0.246
+        &quot;calibration_error&quot;: 0.1915
       },
       &quot;fusion&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 1.0,
+          &quot;precision&quot;: 0.9808,
           &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.5263,
-          &quot;false_positive_rate&quot;: 0.0,
+          &quot;f1&quot;: 0.9903,
+          &quot;positive_rate&quot;: 0.5149,
+          &quot;false_positive_rate&quot;: 0.02,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.0818
+        &quot;calibration_error&quot;: 0.1016
       },
       &quot;calibrated&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 1.0,
+          &quot;precision&quot;: 0.9808,
           &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 1.0,
-          &quot;positive_rate&quot;: 0.5263,
-          &quot;false_positive_rate&quot;: 0.0,
+          &quot;f1&quot;: 0.9903,
+          &quot;positive_rate&quot;: 0.5149,
+          &quot;false_positive_rate&quot;: 0.02,
           &quot;false_negative_rate&quot;: 0.0,
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.1416
+        &quot;calibration_error&quot;: 0.1762
       }
     },
     &quot;confusion_matrix&quot;: {
-      &quot;tp&quot;: 40,
-      &quot;tn&quot;: 36,
-      &quot;fp&quot;: 0,
+      &quot;tp&quot;: 51,
+      &quot;tn&quot;: 48,
+      &quot;fp&quot;: 2,
       &quot;fn&quot;: 0
     }
   },
   &quot;caveats&quot;: [
-    &quot;No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.&quot;,
-    &quot;No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.&quot;,
-    &quot;BSEO live is not currently eligible. Max promotable committed mode is `threshold-default`. Live blockers: stale-bseo-artifact, low-bseo-objective, benign-fpr-too-high.&quot;
+    &quot;No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.&quot;
   ],
   &quot;artifact_paths&quot;: {
     &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
-    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260411064344.json&quot;,
-    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260411064344-simulation.json&quot;,
-    &quot;training_history&quot;: &quot;artifacts/eval_runs/build-20260411064344-training-history.json&quot;,
-    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260411064344-bseo-report.json&quot;,
-    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json&quot;,
-    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260411064344-bseo-lineage.json&quot;,
-    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260411064344.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260423154757.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260423154757-simulation.json&quot;,
+    &quot;training_history&quot;: &quot;artifacts/eval_runs/build-20260423154757-training-history.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260423154757-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260423154757-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260423154757-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260423154757.json&quot;,
     &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
     &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
     &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,
     &quot;runtime_governance&quot;: &quot;artifacts/reports/runtime-governance-latest.json&quot;,
     &quot;supplemental_candidates&quot;: null,
     &quot;supplemental_adjudication&quot;: null,
-    &quot;supplemental_gold&quot;: null
+    &quot;supplemental_gold&quot;: null,
+    &quot;operator_feedback_manifest&quot;: &quot;datasets/manifests/operator_feedback/latest.json&quot;,
+    &quot;operator_ingestion_manifest&quot;: &quot;datasets/manifests/operator_feedback/build-20260423154757-ingestion.json&quot;,
+    &quot;operator_adjudication&quot;: &quot;datasets/labels/operator_adjudication/latest.json&quot;,
+    &quot;operator_gold&quot;: &quot;datasets/labels/operator_supplemental_gold/discovery-20260423154755-operator-feedback.jsonl&quot;,
+    &quot;build_manifest&quot;: &quot;datasets/manifests/builds/latest.json&quot;
   }
 }</pre>
       </div>

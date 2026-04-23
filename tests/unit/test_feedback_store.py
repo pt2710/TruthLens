@@ -304,6 +304,8 @@ class _FakeConnection:
         normalized = " ".join(sql.split()).lower()
         if normalized.startswith("create table"):
             return _FakeCursor([])
+        if normalized.startswith("alter table feedback_events add column"):
+            return _FakeCursor([])
         if "insert into feedback_events" in normalized:
             self._store.feedback_events.append(params or ())
             return _FakeCursor([])

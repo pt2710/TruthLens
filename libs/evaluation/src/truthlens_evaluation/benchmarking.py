@@ -8,7 +8,7 @@ from typing import Any
 
 from truthlens_data_pipeline.paths import ensure_dir, read_json, read_jsonl, repo_root, write_json
 from truthlens_evaluation.runtime_governance import persist_runtime_governance_summary
-from truthlens_model_serving import summarize_browser_observations
+from truthlens_model_serving import summarize_browser_observations, summarize_feedback_events
 
 
 ASSET_FILENAMES = (
@@ -107,6 +107,10 @@ def _artifact_paths() -> dict[str, Path | None]:
     supplemental_candidate_dir = root / "datasets" / "labels" / "supplemental_candidates"
     supplemental_adjudication_dir = root / "datasets" / "labels" / "supplemental_adjudication"
     supplemental_gold_dir = root / "datasets" / "labels" / "supplemental_gold"
+    operator_feedback_dir = root / "datasets" / "manifests" / "operator_feedback"
+    operator_adjudication_dir = root / "datasets" / "labels" / "operator_adjudication"
+    operator_gold_dir = root / "datasets" / "labels" / "operator_supplemental_gold"
+    build_manifest_path = root / "datasets" / "manifests" / "builds" / "latest.json"
 
     eval_report_path = (
         eval_dir / f"{build_id}.json"
@@ -147,6 +151,10 @@ def _artifact_paths() -> dict[str, Path | None]:
     threshold_path = thresholds_dir / "default.json"
     bseo_policy_path = thresholds_dir / "bseo-policy.json"
     runtime_governance_path = root / "artifacts" / "reports" / "runtime-governance-latest.json"
+    operator_feedback_manifest_path = operator_feedback_dir / "latest.json"
+    operator_ingestion_manifest_path = (
+        operator_feedback_dir / f"{build_id}-ingestion.json" if build_id else None
+    )
     return {
         "model_info": model_info_path if model_info_path.exists() else None,
         "eval_report": eval_report_path,
@@ -163,6 +171,17 @@ def _artifact_paths() -> dict[str, Path | None]:
         "supplemental_candidates": _find_latest_json(supplemental_candidate_dir, ".json"),
         "supplemental_adjudication": _find_latest_json(supplemental_adjudication_dir, ".json"),
         "supplemental_gold": _find_latest_json(supplemental_gold_dir, ".jsonl"),
+        "operator_feedback_manifest": (
+            operator_feedback_manifest_path if operator_feedback_manifest_path.exists() else None
+        ),
+        "operator_ingestion_manifest": (
+            operator_ingestion_manifest_path
+            if operator_ingestion_manifest_path is not None and operator_ingestion_manifest_path.exists()
+            else _find_latest_json(operator_feedback_dir, "-ingestion.json")
+        ),
+        "operator_adjudication": _find_latest_json(operator_adjudication_dir, ".json"),
+        "operator_gold": _find_latest_json(operator_gold_dir, ".jsonl"),
+        "build_manifest": build_manifest_path if build_manifest_path.exists() else None,
     }
 
 
@@ -343,6 +362,58 @@ def _summarize_supplemental_intake(
     }
 
 
+def _summarize_operator_feedback(
+    operator_manifest: dict[str, Any] | None,
+    operator_adjudication: dict[str, Any] | None,
+    operator_gold: list[dict[str, Any]] | None,
+    build_manifest: dict[str, Any] | None,
+) -> dict[str, Any]:
+    manifest_payload = operator_manifest or {}
+    adjudication_payload = operator_adjudication or {}
+    adjudication_summary = dict(adjudication_payload.get("summary", {}))
+    build_operator = dict((build_manifest or {}).get("operator_feedback", {}))
+    return {
+        "candidate_count": _safe_int(manifest_payload.get("selected_count")),
+        "adjudicated_count": _safe_int(adjudication_summary.get("saved_count")),
+        "confirmed_count": _safe_int(adjudication_summary.get("confirmed_count")),
+        "confirmed_risk_count": _safe_int(adjudication_summary.get("confirmed_risk_count")),
+        "confirmed_benign_count": _safe_int(adjudication_summary.get("confirmed_benign_count")),
+        "gold_count": len(operator_gold or []),
+        "ingested_count": _safe_int(build_operator.get("ingested_count")),
+        "operator_id": manifest_payload.get("operator_id"),
+        "action_counts": dict(manifest_payload.get("selected_action_counts", {})),
+        "selected_channels": dict(manifest_payload.get("selected_channels", {})),
+    }
+
+
+def _summarize_global_benchmark_truth(
+    build_manifest: dict[str, Any] | None,
+    eval_report: dict[str, Any] | None,
+) -> dict[str, Any]:
+    payload = build_manifest or {}
+    counts = dict(payload.get("counts", {}))
+    return {
+        "build_id": payload.get("build_id"),
+        "train_count": _safe_int(counts.get("train")),
+        "validation_count": _safe_int(counts.get("validation")),
+        "test_count": _safe_int(counts.get("test")),
+        "total_records": sum(_safe_int(value) for value in counts.values()),
+        "eval_sample_count": _sample_count(eval_report) or 0,
+    }
+
+
+def _subtract_action_counts(
+    total_action_counts: dict[str, Any],
+    creator_action_counts: dict[str, Any],
+) -> dict[str, int]:
+    remaining: dict[str, int] = {}
+    for key in sorted(set(total_action_counts) | set(creator_action_counts)):
+        value = _safe_int(total_action_counts.get(key)) - _safe_int(creator_action_counts.get(key))
+        if value > 0:
+            remaining[key] = value
+    return remaining
+
+
 def _summarize_training_history(training_history: dict[str, Any] | None) -> dict[str, Any]:
     payload = training_history or {}
     baseline_heads = dict(payload.get("baseline_heads", {}))
@@ -381,7 +452,13 @@ def build_benchmark_summary() -> dict[str, Any]:
     supplemental_candidates = _read_json_if_exists(paths["supplemental_candidates"])
     supplemental_adjudication = _read_json_if_exists(paths["supplemental_adjudication"])
     supplemental_gold = _read_jsonl_if_exists(paths["supplemental_gold"])
+    operator_feedback_manifest = _read_json_if_exists(paths["operator_feedback_manifest"])
+    operator_ingestion_manifest = _read_json_if_exists(paths["operator_ingestion_manifest"])
+    operator_adjudication = _read_json_if_exists(paths["operator_adjudication"])
+    operator_gold = _read_jsonl_if_exists(paths["operator_gold"])
+    build_manifest = _read_json_if_exists(paths["build_manifest"])
     browser_observations = summarize_browser_observations()
+    feedback_summary = summarize_feedback_events()
 
     build_id = str(
         (model_info or {}).get("build_id")
@@ -412,6 +489,31 @@ def build_benchmark_summary() -> dict[str, Any]:
         supplemental_adjudication,
         supplemental_gold,
     )
+    operator_feedback = _summarize_operator_feedback(
+        operator_feedback_manifest,
+        operator_adjudication,
+        operator_gold,
+        build_manifest,
+    )
+    global_benchmark_truth = _summarize_global_benchmark_truth(build_manifest, eval_report)
+    creator_feedback_summary = dict(feedback_summary.get("creator_operator_feedback", {}))
+    creator_total_events = (
+        operator_feedback["candidate_count"]
+        if operator_feedback["candidate_count"] > 0
+        else _safe_int(creator_feedback_summary.get("total_events"))
+    )
+    creator_action_counts = (
+        dict(operator_feedback.get("action_counts", {}))
+        if operator_feedback.get("action_counts")
+        else dict(creator_feedback_summary.get("action_counts", {}))
+    )
+    local_user_feedback = {
+        "total_events": max(_safe_int(feedback_summary.get("total_events")) - creator_total_events, 0),
+        "action_counts": _subtract_action_counts(
+            dict(feedback_summary.get("action_counts", {})),
+            creator_action_counts,
+        ),
+    }
 
     caveats: list[str] = []
     missing: list[str] = []
@@ -457,7 +559,7 @@ def build_benchmark_summary() -> dict[str, Any]:
         caveats.append(
             "No browser observation records are currently committed in the repo root, so supplemental intake provenance is structurally supported but not yet benchmark-rich."
         )
-    if supplemental_intake["candidate_count"] == 0:
+    if supplemental_intake["candidate_count"] == 0 and operator_feedback["candidate_count"] == 0:
         caveats.append(
             "No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume."
         )
@@ -547,6 +649,21 @@ def build_benchmark_summary() -> dict[str, Any]:
             "candidate_batch_path": _relative(paths["supplemental_candidates"]),
             "supplemental_adjudication_path": _relative(paths["supplemental_adjudication"]),
             "supplemental_gold_path": _relative(paths["supplemental_gold"]),
+        },
+        "feedback_layers": {
+            "local_user_feedback": local_user_feedback,
+            "creator_operator_feedback": {
+                **creator_feedback_summary,
+                **operator_feedback,
+                "total_events": creator_total_events,
+                "candidate_events": creator_total_events,
+                "manifest_path": _relative(paths["operator_feedback_manifest"]),
+                "ingestion_manifest_path": _relative(paths["operator_ingestion_manifest"]),
+                "adjudication_path": _relative(paths["operator_adjudication"]),
+                "gold_path": _relative(paths["operator_gold"]),
+                "ingestion_path": (operator_ingestion_manifest or {}).get("record_path"),
+            },
+            "global_benchmark_truth": global_benchmark_truth,
         },
         "caveats": caveats,
         "missing_data": missing,
@@ -1251,6 +1368,10 @@ def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) 
     intake = dict(summary["supplemental_intake"])
     observation_summary = dict(intake.get("browser_observations", {}))
     candidate_summary = dict(intake.get("candidate_batch", {}))
+    feedback_layers = dict(summary.get("feedback_layers", {}))
+    local_user_feedback = dict(feedback_layers.get("local_user_feedback", {}))
+    creator_feedback = dict(feedback_layers.get("creator_operator_feedback", {}))
+    global_truth = dict(feedback_layers.get("global_benchmark_truth", {}))
     body = [
         _card(
             52,
@@ -1266,52 +1387,52 @@ def _write_observation_feedback_intake_svg(summary: dict[str, Any], path: Path) 
             132,
             360,
             188,
-            "Supplemental candidates",
-            str(_safe_int(candidate_summary.get("candidate_count"))),
-            f"split_blocked={_safe_int(candidate_summary.get('split_blocked_count'))}",
+            "Local user feedback",
+            str(_safe_int(local_user_feedback.get("total_events"))),
+            "Ordinary local-user feedback stays in the runtime/local optimization layer unless it is explicitly curated elsewhere.",
         ),
         _card(
             820,
             132,
             360,
             188,
-            "Supplemental adjudication",
-            str(_safe_int(candidate_summary.get("adjudicated_count"))),
-            f"confirmed={_safe_int(candidate_summary.get('confirmed_count'))}, escalations={_safe_int(candidate_summary.get('escalation_count'))}",
+            "Creator/operator candidates",
+            str(_safe_int(creator_feedback.get("candidate_count"))),
+            f"gold={_safe_int(creator_feedback.get('gold_count'))}, ingested={_safe_int(creator_feedback.get('ingested_count'))}",
         ),
         _card(
             52,
             346,
             360,
             188,
-            "Feedback-linked candidates",
-            str(_safe_int(candidate_summary.get("feedback_linked_count"))),
-            f"manual_reports={_safe_int(candidate_summary.get('manual_report_linked_count'))}, collection_scoped={_safe_int(candidate_summary.get('collection_scoped_count'))}",
+            "Legacy supplemental intake",
+            str(_safe_int(candidate_summary.get("candidate_count"))),
+            f"split_blocked={_safe_int(candidate_summary.get('split_blocked_count'))}, adjudicated={_safe_int(candidate_summary.get('adjudicated_count'))}",
         ),
         _card(
             436,
             346,
             360,
             188,
-            "Observation-linked candidates",
-            str(_safe_int(candidate_summary.get("observation_linked_count"))),
-            f"review={_safe_int(candidate_summary.get('review_queue_count'))}, hard_negative={_safe_int(candidate_summary.get('hard_negative_queue_count'))}",
+            "Creator/operator adjudication",
+            str(_safe_int(creator_feedback.get("adjudicated_count"))),
+            f"confirmed_risk={_safe_int(creator_feedback.get('confirmed_risk_count'))}, confirmed_benign={_safe_int(creator_feedback.get('confirmed_benign_count'))}",
         ),
         _card(
             820,
             346,
             360,
             188,
-            "Leakage guard",
-            "blocked",
-            "Supplemental intake remains excluded from direct train/validation/test writes until future deterministic ingestion.",
-            "warn",
+            "Global benchmark truth",
+            f"{_safe_int(global_truth.get('total_records'))}",
+            f"train={_safe_int(global_truth.get('train_count'))}, validation={_safe_int(global_truth.get('validation_count'))}, test={_safe_int(global_truth.get('test_count'))}",
+            "accent",
         ),
     ]
     path.write_text(
         _svg_document(
             "Observation and feedback intake",
-            "Supplemental browser/feedback intake truth. These artifacts are intentionally separate from committed train, validation, and test splits.",
+            "Local feedback, creator/operator curation, and global benchmark truth are rendered as separate operational layers.",
             1240,
             582,
             body,
@@ -1486,6 +1607,10 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
     intake = dict(summary["supplemental_intake"])
     browser_observations = dict(intake.get("browser_observations", {}))
     candidate_batch = dict(intake.get("candidate_batch", {}))
+    feedback_layers = dict(summary.get("feedback_layers", {}))
+    local_user_feedback = dict(feedback_layers.get("local_user_feedback", {}))
+    creator_feedback = dict(feedback_layers.get("creator_operator_feedback", {}))
+    global_truth = dict(feedback_layers.get("global_benchmark_truth", {}))
     lines = [
         "# Benchmark Summary",
         "",
@@ -1507,9 +1632,13 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         f"- Browser observations: `{browser_observations.get('total_observations', 0)}`",
         f"- Unique observed items: `{browser_observations.get('unique_items', 0)}`",
         f"- Observation rows linked back to scored items: `{browser_observations.get('with_score_link', 0)}`",
-        f"- Supplemental candidates: `{candidate_batch.get('candidate_count', 0)}`",
-        f"- Split-blocked candidates: `{candidate_batch.get('split_blocked_count', 0)}`",
-        f"- Supplemental adjudicated: `{candidate_batch.get('adjudicated_count', 0)}`",
+        f"- Legacy supplemental candidates: `{candidate_batch.get('candidate_count', 0)}`",
+        f"- Legacy split-blocked candidates: `{candidate_batch.get('split_blocked_count', 0)}`",
+        f"- Local-user feedback events: `{local_user_feedback.get('total_events', 0)}`",
+        f"- Creator/operator candidates: `{creator_feedback.get('candidate_count', 0)}`",
+        f"- Creator/operator gold rows: `{creator_feedback.get('gold_count', 0)}`",
+        f"- Creator/operator ingested rows: `{creator_feedback.get('ingested_count', 0)}`",
+        f"- Global benchmark truth rows: `{global_truth.get('total_records', 0)}`",
         "",
         "## Runtime Governance",
         "",

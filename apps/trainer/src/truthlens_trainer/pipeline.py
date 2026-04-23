@@ -15,6 +15,8 @@ from truthlens_dataset_governance import (
     build_processed_dataset,
     create_split_manifest,
     deduplicate_records,
+    ingest_operator_feedback_records,
+    materialize_operator_feedback_artifacts,
 )
 
 
@@ -40,8 +42,18 @@ def run_pipeline(
     )
     normalized_records, transform_manifest = normalize_acquired_items(run_id, acquired_items)
     labeled_records, annotation_manifest = prepare_label_batches(run_id, normalized_records)
-    deduplicated_records, deduplication_report = deduplicate_records(run_id, labeled_records)
     build_id = build_id or make_run_id("build")
+    operator_feedback = materialize_operator_feedback_artifacts(
+        run_id=f"{run_id}-operator-feedback"
+    )
+    operator_records, operator_ingestion_manifest = ingest_operator_feedback_records(
+        build_id=build_id,
+        run_id=run_id,
+    )
+    deduplicated_records, deduplication_report = deduplicate_records(
+        run_id,
+        labeled_records + operator_records,
+    )
     split_rows, split_manifest = create_split_manifest(build_id, deduplicated_records)
     build_manifest = build_processed_dataset(
         build_id=build_id,
@@ -53,6 +65,8 @@ def run_pipeline(
         annotation_manifest=annotation_manifest,
         deduplication_report=deduplication_report,
         split_manifest=split_manifest,
+        operator_feedback_manifest=operator_feedback,
+        operator_ingestion_manifest=operator_ingestion_manifest,
     )
     audit_report = build_audit_report(build_id, split_rows, build_manifest, deduplication_report)
     return {

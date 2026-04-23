@@ -26,15 +26,15 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <line class="grid" x1="96" y1="336.4" x2="1224" y2="336.4" />
 <text class="small" x="44" y="341.4">0.26</text>
 <line class="grid" x1="96" y1="275.6" x2="1224" y2="275.6" />
-<text class="small" x="44" y="280.6">0.38</text>
+<text class="small" x="44" y="280.6">0.39</text>
 <line class="grid" x1="96" y1="214.8" x2="1224" y2="214.8" />
-<text class="small" x="44" y="219.8">0.51</text>
+<text class="small" x="44" y="219.8">0.53</text>
 <line class="grid" x1="96" y1="154.0" x2="1224" y2="154.0" />
-<text class="small" x="44" y="159.0">0.64</text>
+<text class="small" x="44" y="159.0">0.66</text>
 <line class="axis" x1="96" y1="154" x2="96" y2="458" />
 <line class="axis" x1="96" y1="458" x2="1224" y2="458" />
-<polyline fill="none" stroke="#2563eb" stroke-width="3" points="96.0,154.0 221.3,182.4 346.7,219.8 472.0,232.1 597.3,237.4 722.7,260.7 848.0,269.0 973.3,272.4 1098.7,272.7 1224.0,272.5" />
-<polyline fill="none" stroke="#c2410c" stroke-width="3" points="96.0,154.0 221.3,181.9 346.7,219.3 472.0,232.0 597.3,237.3 722.7,259.6 848.0,269.0 973.3,272.2 1098.7,272.6 1224.0,272.4" />
+<polyline fill="none" stroke="#2563eb" stroke-width="3" points="96.0,157.8 221.3,181.0 346.7,222.3 472.0,236.5 597.3,238.4 722.7,242.6 848.0,266.9 973.3,276.2 1098.7,276.9 1224.0,277.1" />
+<polyline fill="none" stroke="#c2410c" stroke-width="3" points="96.0,154.0 221.3,169.1 346.7,207.3 472.0,216.2 597.3,227.3 722.7,231.4 848.0,252.6 973.3,266.4 1098.7,264.4 1224.0,264.8" />
 <text class="small" x="96.0" y="488" text-anchor="middle">1</text>
 <text class="small" x="221.3" y="488" text-anchor="middle">2</text>
 <text class="small" x="346.7" y="488" text-anchor="middle">4</text>

@@ -258,7 +258,9 @@ def batch_score(payload: BatchScoreRequest) -> BatchScoreResponse:
 
 @app.post("/feedback")
 def feedback(payload: FeedbackEvent) -> dict[str, str]:
-    append_feedback_event(payload.model_dump())
+    event_payload = payload.model_dump()
+    event_payload["feedback_actor"] = settings.feedback_actor_payload
+    append_feedback_event(event_payload)
     return {
         "status": "accepted",
         "feedback_log_path": settings.feedback_log_path,

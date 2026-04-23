@@ -1,5 +1,6 @@
 from pathlib import Path
 from collections import Counter
+from datetime import datetime, timezone
 import json
 
 import pytest
@@ -113,7 +114,7 @@ def _write_bseo_policy(thresholds_dir: Path, *, build_id: str) -> None:
         json.dumps(
             {
                 "policy_version": "bseo-control-policy-v1",
-                "generated_at": "2026-04-02T09:00:00+00:00",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "build_id": build_id,
                 "head_spec_version": HEAD_SPEC_VERSION,
                 "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,

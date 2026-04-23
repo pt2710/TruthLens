@@ -18,6 +18,12 @@ import {
   type FeedbackChannelProfile,
 } from './lib/api';
 import {
+  buildChannelHistoryFeatures,
+  getRuntimeRiskTone,
+  priorFlagsFromProfile,
+  rawRuntimeRiskScore,
+} from './lib/feedScoreTruth';
+import {
   buildPersonalizationSnapshot,
   shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
@@ -47,6 +53,7 @@ const ITEM_ID = 'data-truthlens-item-id';
 const SIGNATURE = 'data-truthlens-signature';
 const PERSONALIZATION = 'data-truthlens-personalization';
 const PERSONALIZATION_SCORE = 'data-truthlens-personalization-score';
+const RUNTIME_SCORE = 'data-truthlens-runtime-score';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
 const OBSERVATION_ID = 'data-truthlens-observation-id';
 const UNKNOWN_CHANNEL_NAME = 'Unknown channel';
@@ -337,6 +344,13 @@ function estimateTaxonomyHints(
   };
 }
 
+function getChannelProfile(channelName: string): FeedbackChannelProfile | undefined {
+  if (isUnknownChannelName(channelName)) {
+    return undefined;
+  }
+  return channelTrustProfiles[normalizeChannelKey(channelName)];
+}
+
 function deriveChannelNameFromUrl(channelUrl: string | null): string | null {
   if (!channelUrl) {
     return null;
@@ -424,16 +438,6 @@ async function refreshChannelTrustProfiles(): Promise<void> {
   } catch {
     // Fail soft and keep the previous trust snapshot.
   }
-}
-
-function getScoreTone(score: number): 'high' | 'medium' | 'low' {
-  if (score >= 7.5) {
-    return 'high';
-  }
-  if (score >= 4.5) {
-    return 'medium';
-  }
-  return 'low';
 }
 
 function ensureOriginalIndex(card: HTMLElement, index: number): number {
@@ -573,6 +577,8 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   const itemId = buildItemId(card, index);
   const signature = buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt);
   const taxonomyHints = estimateTaxonomyHints(title, channelName, descriptionSnapshot);
+  const historyFeatures = buildChannelHistoryFeatures(getChannelProfile(channelName), taxonomyHints);
+  const profile = getChannelProfile(channelName);
   return {
     card,
     itemId,
@@ -592,8 +598,8 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
       channel: {
         channel_name: channelName,
         channel_url: channelUrl,
-        prior_flags: 0,
-        channel_history_features: taxonomyHints,
+        prior_flags: priorFlagsFromProfile(profile),
+        channel_history_features: historyFeatures,
       },
       metadata: {
         duration_seconds: durationSeconds,
@@ -719,22 +725,23 @@ function syncPersonalizationPresentation(
   score: ScoreResult,
   channelName: string,
 ): PersonalizationSnapshot {
-  const profile = isUnknownChannelName(channelName)
-    ? undefined
-    : channelTrustProfiles[normalizeChannelKey(channelName)];
+  const profile = getChannelProfile(channelName);
   const personalization = buildPersonalizationSnapshot(score, profile);
-  const trustTone = getScoreTone(personalization.rankingScore);
+  const trustTone = getRuntimeRiskTone(score);
   const shouldShowFlag = shouldShowPersonalizationBadge(personalization, score);
+  const runtimeRisk = rawRuntimeRiskScore(score);
+  const runtimeLabel = runtimeRisk.toFixed(1);
 
   card.classList.remove('truthlens-card-boosted');
   card.classList.remove('truthlens-card-steady');
   card.classList.remove('truthlens-card-downranked');
   card.classList.add(`truthlens-card-${personalization.bucket}`);
   card.setAttribute(PERSONALIZATION, personalization.bucket);
-  card.setAttribute(PERSONALIZATION_SCORE, personalization.displayScore.toFixed(2));
+  card.setAttribute(PERSONALIZATION_SCORE, personalization.rankingScore.toFixed(2));
+  card.setAttribute(RUNTIME_SCORE, runtimeLabel);
   card.setAttribute(
     'data-truthlens-personalization-reasons',
-    `TruthLens score ${personalization.displayScore.toFixed(1)}/10 with local personalization ${personalization.rankingScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
+    `Runtime risk ${runtimeLabel}/10. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
   );
 
   const existingFlag = card.querySelector<HTMLElement>('.truthlens-card-flag');
@@ -745,8 +752,8 @@ function syncPersonalizationPresentation(
 
   const flag = existingFlag ?? document.createElement('span');
   flag.className = `truthlens-card-flag truthlens-card-flag-${trustTone} truthlens-card-flag-${personalization.bucket}`;
-  flag.textContent = personalization.displayScore.toFixed(1);
-  flag.title = `TruthLens score ${personalization.displayScore.toFixed(1)}/10. Local personalization ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
+  flag.textContent = runtimeLabel;
+  flag.title = `TruthLens runtime risk ${runtimeLabel}/10. Recommended action ${score.recommended_action}. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
   if (!existingFlag) {
     card.appendChild(flag);
   }
@@ -1186,6 +1193,10 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     trigger,
   });
 
+  if (cards.length > 0) {
+    await refreshChannelTrustProfiles();
+  }
+
   const pendingCards = collectSafePendingEntries(cards, (card, index) => buildPendingCard(card, index), (error, card, index) => {
     preDispatchFailures += 1;
     card.removeAttribute(PROCESSING);
@@ -1226,8 +1237,6 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
 
-  const refreshTrustPromise =
-    pendingCards.length > 0 ? refreshChannelTrustProfiles() : Promise.resolve();
   let scoredAny = false;
 
   for (const batch of chunk(pendingCards, BATCH_SIZE)) {
@@ -1246,7 +1255,6 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
       }
     }
   }
-  await refreshTrustPromise;
   if (scoredAny) {
     applyLocalPersonalizationOrdering();
   }

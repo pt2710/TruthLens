@@ -21,12 +21,12 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="subtitle" x="52" y="98">This panel is derived from committed runtime config and artifact presence, not from aspirational docs.</text>
 <rect class="accent" x="52" y="132" width="360" height="182" rx="20" />
 <text class="label" x="74" y="164">Configured runtime mode</text>
-<text class="value" x="74" y="214">threshold-default</text>
+<text class="value" x="74" y="214">bseo-live</text>
 <text class="small" x="74" y="254">Directly from</text>
 <text class="small" x="74" y="272">configs/thresholds/runtime-policy.json</text>
 <rect class="card" x="436" y="132" width="360" height="182" rx="20" />
 <text class="label" x="458" y="164">Resolved runtime mode</text>
-<text class="value" x="458" y="214">threshold-default</text>
+<text class="value" x="458" y="214">bseo-live</text>
 <text class="small" x="458" y="254">Aliases normalized for architectural</text>
 <text class="small" x="458" y="272">truth</text>
 <rect class="accent" x="820" y="132" width="360" height="182" rx="20" />
@@ -48,6 +48,6 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="458" y="478">downstream of baseline scoring.</text>
 <rect class="accent" x="820" y="338" width="360" height="176" rx="20" />
 <text class="label" x="842" y="370">Governance recommendation</text>
-<text class="value" x="842" y="420">threshold-default</text>
-<text class="small" x="842" y="460">Max promotable mode = threshold-default</text>
+<text class="value" x="842" y="420">bseo-live</text>
+<text class="small" x="842" y="460">Max promotable mode = bseo-live</text>
 </svg>

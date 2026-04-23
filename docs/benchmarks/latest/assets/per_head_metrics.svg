@@ -33,33 +33,33 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="38" y="159.0">1.00</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
+<rect x="112.0" y="172.9" width="44.3" height="321.1" fill="#2563eb" rx="6" />
 <rect x="162.3" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
-<rect x="212.6" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
+<rect x="212.6" y="163.7" width="44.3" height="330.3" fill="#c2410c" rx="6" />
 <text class="small" x="156.3" y="522" text-anchor="middle">text</text>
-<rect x="289.1" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
-<rect x="339.4" y="256.0" width="44.3" height="238.0" fill="#0f766e" rx="6" />
-<rect x="389.7" y="214.0" width="44.3" height="280.0" fill="#c2410c" rx="6" />
+<rect x="289.1" y="213.5" width="44.3" height="280.5" fill="#2563eb" rx="6" />
+<rect x="339.4" y="274.0" width="44.3" height="220.0" fill="#0f766e" rx="6" />
+<rect x="389.7" y="247.4" width="44.3" height="246.6" fill="#c2410c" rx="6" />
 <text class="small" x="333.4" y="522" text-anchor="middle">vision</text>
-<rect x="466.3" y="205.7" width="44.3" height="288.3" fill="#2563eb" rx="6" />
-<rect x="516.6" y="162.5" width="44.3" height="331.5" fill="#0f766e" rx="6" />
-<rect x="566.9" y="185.6" width="44.3" height="308.4" fill="#c2410c" rx="6" />
+<rect x="466.3" y="206.8" width="44.3" height="287.2" fill="#2563eb" rx="6" />
+<rect x="516.6" y="167.3" width="44.3" height="326.7" fill="#0f766e" rx="6" />
+<rect x="566.9" y="188.3" width="44.3" height="305.7" fill="#c2410c" rx="6" />
 <text class="small" x="510.6" y="522" text-anchor="middle">metadata</text>
 <rect x="643.4" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
 <rect x="693.7" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
 <rect x="744.0" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
 <text class="small" x="687.7" y="522" text-anchor="middle">history</text>
-<rect x="820.6" y="265.4" width="44.3" height="228.6" fill="#2563eb" rx="6" />
-<rect x="870.9" y="162.5" width="44.3" height="331.5" fill="#0f766e" rx="6" />
-<rect x="921.1" y="223.4" width="44.3" height="270.6" fill="#c2410c" rx="6" />
+<rect x="820.6" y="239.0" width="44.3" height="255.0" fill="#2563eb" rx="6" />
+<rect x="870.9" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
+<rect x="921.1" y="202.6" width="44.3" height="291.4" fill="#c2410c" rx="6" />
 <text class="small" x="864.9" y="522" text-anchor="middle">anomaly</text>
-<rect x="997.7" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
+<rect x="997.7" y="160.5" width="44.3" height="333.5" fill="#2563eb" rx="6" />
 <rect x="1048.0" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
-<rect x="1098.3" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
+<rect x="1098.3" y="157.3" width="44.3" height="336.7" fill="#c2410c" rx="6" />
 <text class="small" x="1042.0" y="522" text-anchor="middle">fusion</text>
-<rect x="1174.9" y="154.0" width="44.3" height="340.0" fill="#2563eb" rx="6" />
+<rect x="1174.9" y="160.5" width="44.3" height="333.5" fill="#2563eb" rx="6" />
 <rect x="1225.1" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
-<rect x="1275.4" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
+<rect x="1275.4" y="157.3" width="44.3" height="336.7" fill="#c2410c" rx="6" />
 <text class="small" x="1219.1" y="522" text-anchor="middle">calibrated</text>
 <rect x="86" y="540" width="16" height="16" fill="#2563eb" rx="4" />
 <text class="legend" x="110" y="553">Precision</text>

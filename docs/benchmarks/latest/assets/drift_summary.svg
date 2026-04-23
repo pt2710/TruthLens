@@ -33,14 +33,14 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="372" y="290">retraining threshold.</text>
 <rect class="card" x="648" y="132" width="274" height="152" rx="20" />
 <text class="label" x="670" y="164">Largest absolute shift</text>
-<text class="value-compact" x="670" y="214">Label mix: ai</text>
-<text class="value-compact" x="670" y="240">mass spam: -0.047</text>
+<text class="value-compact" x="670" y="214">Template repeat</text>
+<text class="value-compact" x="670" y="240">rate: -0.052</text>
 <text class="small" x="670" y="270">Magnitude is shown relative</text>
 <text class="small" x="670" y="288">to the reference sample, not</text>
 <text class="small" x="670" y="306">as a production guarantee.</text>
 <rect class="card" x="946" y="132" width="242" height="152" rx="20" />
 <text class="label" x="968" y="164">Compared rows</text>
-<text class="value" x="968" y="214">190 -&gt; 76</text>
+<text class="value" x="968" y="214">236 -&gt; 101</text>
 <text class="small" x="968" y="254">Reference rows on the</text>
 <text class="small" x="968" y="272">left, current rows on the</text>
 <text class="small" x="968" y="290">right.</text>
@@ -50,21 +50,21 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <line class="grid" x1="240" y1="430.0" x2="1170" y2="430.0" />
 <line class="grid" x1="240" y1="485.0" x2="1170" y2="485.0" />
 <line class="grid" x1="240" y1="540.0" x2="1170" y2="540.0" />
-<text class="label" x="52" y="356">Label mix: ai mass spam</text>
+<text class="label" x="52" y="356">Template repeat rate</text>
 <rect x="280.0" y="338.0" width="425.0" height="28" fill="#c2410c" rx="8" />
-<text class="small" x="623.0" y="356">-0.047</text>
-<text class="label" x="52" y="396">Label mix: fearbait</text>
-<rect x="705.0" y="378.0" width="377.5" height="28" fill="#2563eb" rx="8" />
-<text class="small" x="715.0" y="396">+0.042</text>
-<text class="label" x="52" y="436">Channel risk mean</text>
-<rect x="493.4" y="418.0" width="211.6" height="28" fill="#c2410c" rx="8" />
-<text class="small" x="623.0" y="436">-0.024</text>
-<text class="label" x="52" y="476">Transcript mismatch</text>
-<rect x="705.0" y="458.0" width="9.0" height="28" fill="#2563eb" rx="8" />
-<text class="small" x="715.0" y="476">+0.001</text>
-<text class="label" x="52" y="516">Thumbnail text density</text>
-<rect x="705.0" y="498.0" width="0.0" height="28" fill="#2563eb" rx="8" />
-<text class="small" x="715.0" y="516">+0.000</text>
+<text class="small" x="623.0" y="356">-0.052</text>
+<text class="label" x="52" y="396">Title length</text>
+<rect x="705.0" y="378.0" width="408.0" height="28" fill="#2563eb" rx="8" />
+<text class="small" x="715.0" y="396">+0.050</text>
+<text class="label" x="52" y="436">Label mix: clickbait</text>
+<rect x="340.0" y="418.0" width="365.0" height="28" fill="#c2410c" rx="8" />
+<text class="small" x="623.0" y="436">-0.045</text>
+<text class="label" x="52" y="476">Label mix: misleading thumbnail</text>
+<rect x="410.6" y="458.0" width="294.4" height="28" fill="#c2410c" rx="8" />
+<text class="small" x="623.0" y="476">-0.036</text>
+<text class="label" x="52" y="516">Label mix: misleading title</text>
+<rect x="480.3" y="498.0" width="224.7" height="28" fill="#c2410c" rx="8" />
+<text class="small" x="623.0" y="516">-0.028</text>
 <text class="small" x="52" y="584">Positive means the current sample is higher than the reference sample on that feature. Negative means lower.</text>
 <text class="small" x="52" y="606">Near-zero values mean the committed report saw little measured shift on that metric at the current sample size. They do not prove universal no-drift.</text>
 </svg>

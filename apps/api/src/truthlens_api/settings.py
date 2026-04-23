@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     youtube_token_path: str = "artifacts/reports/youtube_oauth_token.json"
     youtube_oauth_state_path: str = "artifacts/reports/youtube_oauth_state.json"
     youtube_language: str = "en-US"
+    operator_mode: str = "end-user"
+    operator_id: str | None = None
 
     @property
     def resolved_youtube_redirect_uri(self) -> str:
@@ -38,6 +40,22 @@ class Settings(BaseSettings):
         if configured:
             return configured
         return f"{self.public_api_base.rstrip('/')}/youtube/auth/callback"
+
+    @property
+    def feedback_actor_payload(self) -> dict[str, str | None]:
+        mode = (self.operator_mode or "").strip().lower()
+        operator_id = (self.operator_id or "").strip() or None
+        if mode == "creator-operator" and operator_id:
+            return {
+                "role": "creator-operator",
+                "operator_id": operator_id,
+                "capture_scope": "creator-candidate",
+            }
+        return {
+            "role": "end-user",
+            "operator_id": None,
+            "capture_scope": "local-only",
+        }
 
 
 settings = Settings()

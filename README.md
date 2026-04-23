@@ -91,8 +91,9 @@ That is expected in the current beta: the live table above describes the mounted
 
 ### What the score chip and review badge mean
 
-- The floating chip on each card is the extension `displayScore` on a `0-10` scale. It is a presentation score that blends current-item risk with local channel trust and prior feedback context.
-- That chip is not the raw runtime `risk_score`.
+- The floating chip on each card is the raw runtime risk on a `0-10` scale, derived from the current runtime `risk_score`.
+- Feed scoring now merges channel history into the request path through `prior_flags`, `channel_risk_mean`, and `repeat_template_rate`, so repeat-negative channel context is part of the runtime score shown on feed thumbnails.
+- Local personalization still exists, but it is now secondary: it affects local ordering and appears in the hover text rather than replacing the primary truth score on the chip.
 - `Verify transparent` is a separate review prompt. It appears only when the class-conditioned review contract thinks the item likely belongs to an honest-content lane such as `music`, `art`, or `gaming`, or when the fallback music-likelihood path is strong enough.
 - A high chip can therefore appear with `Verify transparent`, and another high chip can appear without it. The badge is not driven by the chip alone.
 - Hovering the badge shows the current TruthLens explanation, for example: `TruthLens thinks this likely looks like transparent music content.`
@@ -133,8 +134,8 @@ Current committed root-repo truth:
 - baseline runtime is separated into perception -> fusion/calibration -> selective verification -> policy -> explanation
 - selective deep verification is explicit and fail-soft
 - heavy LLM assistance remains downstream in review and report drafting, not in the baseline hot path
-- a compatible `configs/thresholds/bseo-policy.json` is committed, but the current governed runtime remains pinned to `threshold-default`
-- current governance artifacts mark `bseo-live` as not currently promotable because the committed BSEO artifact is stale and still exceeds benign-FPR guardrails
+- a compatible `configs/thresholds/bseo-policy.json` is committed and the current governed runtime is `bseo-live`
+- current governance artifacts clear `bseo-live` for committed use in the latest benchmark round
 - committed benchmarks are larger than the earlier tiny-sample snapshot, but they are still repository artifacts rather than production performance claims
 
 ## Architecture Summary
@@ -364,7 +365,7 @@ Committed downstream layers:
 - user-facing manual review tags that stay separate from core `content_class` and separate from packaging issue types
 - collection-scope review and reporting previews for resolvable YouTube mixes and playlists
 - browser observation records with shared provenance and distilled DOM features
-- feedback-linked supplemental label candidates and split-safe adjudication intake
+- feedback-linked supplemental label candidates, split-safe adjudication intake, and deterministic creator/operator ingestion for benchmark truth
 - human review and manual report flows
 
 Explicitly kept out of the baseline hot path:
@@ -389,9 +390,9 @@ Compatibility aliases:
 
 Committed root configuration today:
 
-- `configs/thresholds/runtime-policy.json` is set to `threshold-default`
+- `configs/thresholds/runtime-policy.json` is set to `bseo-live`
 - `configs/thresholds/bseo-policy.json` is committed and contract-compatible with the current runtime
-- current governance artifacts do not clear `bseo-live` for committed use, so the governed runtime remains on `threshold-default` until the stale-artifact and benign-FPR blockers are resolved
+- current governance artifacts clear `bseo-live` for committed use and the governed runtime remains on `bseo-live`
 
 ## Observation And Feedback Intake
 
@@ -399,10 +400,11 @@ TruthLens now treats browser observation and feedback-to-dataset as one shared i
 
 - the extension can persist DOM-based browser observation records without any DevTools dependency
 - observation records, feedback events, and supplemental label candidates share provenance-aware contracts
-- linked feedback and manual reports can create supplemental adjudication candidates in the labeling UI
+- local end-user feedback remains a local optimization layer and is not automatically promoted into global benchmark truth
+- creator/operator feedback can be materialized into explicit operator manifest, adjudication, and supplemental-gold artifacts through a controlled env-gated pipeline
 - manual review submissions can carry selected review tags and collection-scope provenance without writing directly into baseline train/validation/eval splits
-- those supplemental candidates are explicitly split-blocked and do not append directly to `train`, `validation`, or `test`
-- adjudicated supplemental rows land in separate intake artifacts and require future deterministic ingestion before any training use
+- legacy supplemental candidates remain split-blocked and do not append directly to `train`, `validation`, or `test`
+- adjudicated creator/operator rows are deterministically ingested into the governed dataset build with provenance back to feedback events and browser observations
 
 ## Review And Collection Workflow
 
@@ -429,33 +431,33 @@ Current committed snapshot:
 
 | Field | Value |
 | --- | --- |
-| `build_id` | `build-20260411064344` |
-| `model_version` | `baseline-v1-build-20260411064344` |
-| `trained_at` | `2026-04-11T06:43:44.245427+00:00` |
-| `eval sample_count` | `76` |
-| `configured runtime mode` | `threshold-default` |
-| `resolved runtime mode` | `threshold-default` |
-| `governance recommended mode` | `threshold-default` |
-| `max promotable mode` | `threshold-default` |
+| `build_id` | `build-20260423154757` |
+| `model_version` | `baseline-v1-build-20260423154757` |
+| `trained_at` | `2026-04-23T15:47:58.395383+00:00` |
+| `eval sample_count` | `101` |
+| `configured runtime mode` | `bseo-live` |
+| `resolved runtime mode` | `bseo-live` |
+| `governance recommended mode` | `bseo-live` |
+| `max promotable mode` | `bseo-live` |
 
 Current governed dataset base for this benchmark round:
 
 | Field | Value |
 | --- | --- |
-| dataset access method | `synthetic-bootstrap` |
-| train / validation / test | `190 / 76 / 76` |
+| dataset access method | `synthetic-bootstrap + creator/operator supplemental adjudication ingestion` |
+| train / validation / test | `236 / 58 / 101` |
 | latest governed manifest | `datasets/manifests/builds/latest.json` |
 
 Current eval vs validation snapshot from committed artifacts:
 
 | Metric | Eval | Validation |
 | --- | ---: | ---: |
-| Precision | 1.000 | 1.000 |
+| Precision | 0.962 | 1.000 |
 | Recall | 1.000 | 1.000 |
-| F1 | 1.000 | 1.000 |
+| F1 | 0.981 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.142 | 0.147 |
+| Calibration error | 0.176 | 0.187 |
 
 Current generated observation and governance snapshot from the same render-time summary:
 
@@ -464,6 +466,10 @@ Current generated observation and governance snapshot from the same render-time 
 | `browser observations` | `1459` |
 | `unique observed items` | `671` |
 | `score-linked observation rows` | `1459` |
+| `local-user feedback events` | `55` |
+| `creator/operator candidate rows` | `53` |
+| `creator/operator ingested rows` | `53` |
+| `global benchmark truth rows` | `395` |
 | `shadow observation count` | `911` |
 
 These moving counts are also surfaced in `docs/benchmarks/latest/benchmark_summary.md` and the regenerated intake/governance visuals, which remain the authoritative generated truth surface.
@@ -472,12 +478,12 @@ These moving counts are also surfaced in `docs/benchmarks/latest/benchmark_summa
 
 These numbers are not production claims.
 
-- committed eval sample count is now `76`, which is materially better than the earlier tiny-sample snapshot but still modest
-- the current benchmark round still uses the latest governed `synthetic-bootstrap` dataset manifest; these numbers should therefore be read as controlled repo truth rather than field performance
+- committed eval sample count is now `101`, which is better than the earlier tiny-sample snapshot but still modest relative to a production benchmark program
+- the current benchmark round uses a governed `synthetic-bootstrap` base plus deterministically ingested creator/operator adjudication rows; these numbers should therefore be read as controlled repo truth rather than field performance
 - eval and validation are both very strong on this committed split; that symmetry should be read as a clean repository benchmark, not as broad real-world proof
-- overall calibration error remains materially non-zero (`0.142` eval, `0.147` validation), so ranking confidence is still less mature than the binary F1 snapshot suggests
+- overall calibration error remains materially non-zero (`0.176` eval, `0.187` validation), so ranking confidence is still less mature than the binary F1 snapshot suggests
 - per-head metrics are uneven: text/fusion are strong, while history and anomaly remain much weaker sidecars
-- current governance artifacts do not clear `bseo-live`; the committed runtime remains on `threshold-default` and the live blockers are `stale-bseo-artifact`, `low-bseo-objective`, and `benign-fpr-too-high`
+- current governance artifacts do clear `bseo-live`; the committed runtime and the recommended mode are both `bseo-live` in the latest generated summary
 - collection-scope review/report support is implemented in the extension and shared schemas, but committed benchmark volume for collection-batch intake may still be zero until the flow is exercised against real browser observations
 
 ## Evaluation And Visualization
@@ -541,15 +547,20 @@ Public curated source control keeps:
 - `configs/thresholds/runtime-policy.json`
 - `datasets/dataset_cards/latest.md`
 - `datasets/manifests/builds/latest.json`
+- `datasets/manifests/operator_feedback/latest.json`
+- `datasets/labels/operator_adjudication/latest.json`
+- `datasets/labels/operator_supplemental_gold/*.jsonl`
 - `docs/benchmarks/latest/*`
 
-Generated or private operator artifacts are intentionally not part of the public source tree:
+Generated or private runtime artifacts that remain outside the public source tree include:
 
 - raw eval and simulation payloads
 - drift payload history
 - raw/interim/processed/label dataset payloads
 - binary model bundles
 - runtime-local JSONL event stores
+
+Curated operator manifests, adjudication records, and committed supplemental-gold rows are now part of the public benchmark truth surface. Ordinary local-user feedback event stores remain local/runtime artifacts and are not automatically promoted into those committed benchmark assets.
 
 Hosted beta is expected to use external artifact storage or a mounted runtime storage root for promoted model bundles and runtime-local state. See [Render hosted beta guide](docs/deployment/render-beta.md).
 
@@ -588,6 +599,8 @@ pnpm docs:render-verify
 ### Training / Simulation Reproduction
 
 ```powershell
+$env:TRUTHLENS_OPERATOR_MODE = "creator-operator"
+$env:TRUTHLENS_OPERATOR_ID = "pt2710"
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.pipeline
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.train
 py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
@@ -598,7 +611,7 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - `apps/` runnable surfaces: API, extension, Android client, trainer, labeling UI
 - `libs/` shared schemas, feature extraction, model serving, policy, explanation, evaluation, governance, data pipeline
 - `configs/` thresholds and runtime/training configuration
-- `artifacts/` curated public runtime metadata plus local/private operator artifacts outside the public source contract
+- `artifacts/` curated public runtime metadata plus local/private runtime payloads outside the public source contract
 - `docs/` architecture, benchmarks, and supporting documentation
 - `tests/` unit, integration, and end-to-end verification
 
@@ -633,9 +646,9 @@ py -m uv run python scripts/run_truthlens_module.py truthlens_trainer.simulate
 - committed benchmarks are materially broader than before, but README still should not read like a product benchmark sheet
 - calibration and per-head stability still lag behind the clean fused F1 snapshot
 - history and anomaly paths remain useful sidecars, not equally mature peers to text and fusion
-- the latest committed benchmark round still rests on a governed `synthetic-bootstrap` dataset rather than a broader real-world collection
-- `bseo-live` is not the current committed runtime mode; governance presently keeps the repo on `threshold-default` because the current BSEO artifact is stale and still trips benign-FPR guardrails
-- observation and supplemental intake artifacts depend on actual runtime use, so a clean repo snapshot may legitimately show zero supplemental volume
+- the latest committed benchmark round still rests on a governed `synthetic-bootstrap` base augmented by curated creator/operator adjudication rather than a broader real-world collection
+- creator/operator supplemental ingestion is now benchmark-real, but broader public-user feedback still remains intentionally outside global truth unless it is explicitly curated through a controlled pipeline
+- collection-batch review artifacts are still sparse in the committed snapshot even though the flow exists in code
 - current repo truth is stronger on architecture separation and governance discipline than on real-world benchmark maturity
 
 ## Next Stages

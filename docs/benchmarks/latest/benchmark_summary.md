@@ -1,48 +1,48 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-18T21:18:11.264435+00:00`
-- Build ID: `build-20260411064344`
-- Model version: `baseline-v1-build-20260411064344`
-- Eval sample count: `76`
-- Configured runtime policy mode: `threshold-default`
-- Resolved runtime policy mode: `threshold-default`
-- Governance recommended mode: `threshold-default`
-- Max promotable mode: `threshold-default`
+- Generated at: `2026-04-23T16:17:09.036839+00:00`
+- Build ID: `build-20260423154757`
+- Model version: `baseline-v1-build-20260423154757`
+- Eval sample count: `101`
+- Configured runtime policy mode: `bseo-live`
+- Resolved runtime policy mode: `bseo-live`
+- Governance recommended mode: `bseo-live`
+- Max promotable mode: `bseo-live`
 
 ## Metrics
 
 | Metric | Eval | Validation |
 | --- | ---: | ---: |
-| Precision | 1.000 | 1.000 |
+| Precision | 0.962 | 1.000 |
 | Recall | 1.000 | 1.000 |
-| F1 | 1.000 | 1.000 |
+| F1 | 0.981 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.142 | 0.147 |
+| Calibration error | 0.176 | 0.187 |
 
 ## Observation And Feedback Intake
 
 - Browser observations: `1459`
 - Unique observed items: `671`
 - Observation rows linked back to scored items: `1459`
-- Supplemental candidates: `0`
-- Split-blocked candidates: `0`
-- Supplemental adjudicated: `0`
+- Legacy supplemental candidates: `0`
+- Legacy split-blocked candidates: `0`
+- Local-user feedback events: `59`
+- Creator/operator candidates: `53`
+- Creator/operator gold rows: `53`
+- Creator/operator ingested rows: `53`
+- Global benchmark truth rows: `395`
 
 ## Runtime Governance
 
-- Shadow eligible: `False`
-- Live eligible: `False`
+- Shadow eligible: `True`
+- Live eligible: `True`
 - Shadow observation count: `911`
-- BSEO objective score: `0.6129`
-- Shadow blockers: `stale-bseo-artifact, low-bseo-objective`
-- Live blockers: `stale-bseo-artifact, low-bseo-objective, benign-fpr-too-high`
+- BSEO objective score: `0.8375`
 
 ## Caveats
 
-- No supplemental browser/feedback candidates are currently committed, so intake charts should be read as capability hooks rather than mature operational volume.
 - No committed collection-scoped review artifacts are present yet, so mix/playlist batch handling is implemented but not benchmark-rich in the repo snapshot.
-- BSEO live is not currently eligible. Max promotable committed mode is `threshold-default`. Live blockers: stale-bseo-artifact, low-bseo-objective, benign-fpr-too-high.
 
 ## Missing Data
 
@@ -51,13 +51,13 @@
 ## Artifact Provenance
 
 - `model_info`: `artifacts/trained_models/latest/model_info.json`
-- `eval_report`: `artifacts/eval_runs/build-20260411064344.json`
-- `simulation`: `artifacts/eval_runs/build-20260411064344-simulation.json`
-- `training_history`: `artifacts/eval_runs/build-20260411064344-training-history.json`
-- `bseo_report`: `artifacts/eval_runs/build-20260411064344-bseo-report.json`
-- `mutation_atlas`: `artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json`
-- `lineage`: `artifacts/eval_runs/build-20260411064344-bseo-lineage.json`
-- `drift_report`: `artifacts/drift_reports/build-20260411064344.json`
+- `eval_report`: `artifacts/eval_runs/build-20260423154757.json`
+- `simulation`: `artifacts/eval_runs/build-20260423154757-simulation.json`
+- `training_history`: `artifacts/eval_runs/build-20260423154757-training-history.json`
+- `bseo_report`: `artifacts/eval_runs/build-20260423154757-bseo-report.json`
+- `mutation_atlas`: `artifacts/eval_runs/build-20260423154757-mutation-bias-atlas.json`
+- `lineage`: `artifacts/eval_runs/build-20260423154757-bseo-lineage.json`
+- `drift_report`: `artifacts/drift_reports/build-20260423154757.json`
 - `runtime_policy`: `configs/thresholds/runtime-policy.json`
 - `thresholds`: `configs/thresholds/default.json`
 - `bseo_policy`: `configs/thresholds/bseo-policy.json`
@@ -65,3 +65,8 @@
 - `supplemental_candidates`: `missing`
 - `supplemental_adjudication`: `missing`
 - `supplemental_gold`: `missing`
+- `operator_feedback_manifest`: `datasets/manifests/operator_feedback/latest.json`
+- `operator_ingestion_manifest`: `datasets/manifests/operator_feedback/build-20260423154757-ingestion.json`
+- `operator_adjudication`: `datasets/labels/operator_adjudication/latest.json`
+- `operator_gold`: `datasets/labels/operator_supplemental_gold/discovery-20260423154755-operator-feedback.jsonl`
+- `build_manifest`: `datasets/manifests/builds/latest.json`

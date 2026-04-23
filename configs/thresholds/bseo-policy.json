@@ -1,141 +1,141 @@
 {
   "policy_version": "bseo-control-policy-v1",
-  "generated_at": "2026-04-11T06:43:44.245427+00:00",
-  "build_id": "build-20260411064344",
+  "generated_at": "2026-04-23T15:47:58.395383+00:00",
+  "build_id": "build-20260423154757",
   "head_spec_version": "2026-04-02",
   "architecture_plan_version": "2026-04-02",
   "recommended_thresholds": {
-    "badge_threshold": 0.5186,
-    "blur_threshold": 0.7662,
-    "report_prompt_threshold": 0.8482,
-    "hide_threshold": 0.9314
+    "badge_threshold": 0.3642,
+    "blur_threshold": 0.4541,
+    "report_prompt_threshold": 0.6153,
+    "hide_threshold": 0.7834
   },
   "control_genome": {
     "global_thresholds": {
-      "badge_threshold": 0.5186,
-      "blur_threshold": 0.7662,
-      "report_prompt_threshold": 0.8482,
-      "hide_threshold": 0.9314
+      "badge_threshold": 0.3642,
+      "blur_threshold": 0.4541,
+      "report_prompt_threshold": 0.6153,
+      "hide_threshold": 0.7834
     },
     "content_threshold_offsets": {
-      "news": -0.0298,
-      "commentary": 0.024,
-      "documentary": -0.0176,
-      "music": 0.0928,
-      "art": -0.0083,
-      "satire": 0.0608,
-      "gaming": 0.0533,
-      "promo": 0.0055,
-      "unknown": 0.0708
+      "news": -0.0138,
+      "commentary": -0.0009,
+      "documentary": 0.0227,
+      "music": 0.0925,
+      "art": 0.12,
+      "satire": 0.0637,
+      "gaming": 0.0497,
+      "promo": -0.0015,
+      "unknown": 0.009
     },
     "mismatch_weight_by_class": {
-      "news": 1.1642,
-      "commentary": 1.054,
-      "documentary": 1.1411,
-      "music": 0.6603,
-      "art": 0.7664,
-      "satire": 0.8908,
-      "gaming": 0.866,
-      "promo": 1.0336,
-      "unknown": 1.0086
+      "news": 1.1684,
+      "commentary": 1.0716,
+      "documentary": 1.0662,
+      "music": 0.76,
+      "art": 0.8019,
+      "satire": 0.9632,
+      "gaming": 0.9044,
+      "promo": 1.0333,
+      "unknown": 1.0011
     },
     "sensational_weight_by_class": {
-      "news": 1.0496,
-      "commentary": 1.0042,
-      "documentary": 1.073,
-      "music": 0.8332,
-      "art": 0.8145,
-      "satire": 0.9284,
-      "gaming": 0.9683,
-      "promo": 1.0809,
-      "unknown": 1.0783
+      "news": 1.0598,
+      "commentary": 1.0543,
+      "documentary": 1.0163,
+      "music": 0.8541,
+      "art": 0.8358,
+      "satire": 0.9326,
+      "gaming": 0.9587,
+      "promo": 1.0116,
+      "unknown": 0.9624
     },
-    "channel_prior_temperature": 0.8676,
-    "uncertainty_escalation_bias": 0.8266
+    "channel_prior_temperature": 0.9384,
+    "uncertainty_escalation_bias": 0.9291
   },
   "bias_signature": {
     "per_class": {
       "news": {
-        "sensational_weight": 0.2957,
-        "crossmodal_rigidity": 0.9095,
-        "channel_prior_dependency": 0.2343,
-        "genre_confusion": 0.1208,
-        "uncertainty_calibration": 0.1753
+        "sensational_weight": 0.3251,
+        "crossmodal_rigidity": 0.9363,
+        "channel_prior_dependency": 0.2897,
+        "genre_confusion": 0.0778,
+        "uncertainty_calibration": 0.1003
       },
       "commentary": {
-        "sensational_weight": 0.0015,
-        "crossmodal_rigidity": 0.5442,
-        "channel_prior_dependency": 0.2344,
-        "genre_confusion": 0.3233,
-        "uncertainty_calibration": 0.2132
+        "sensational_weight": 0.0001,
+        "crossmodal_rigidity": 0.6218,
+        "channel_prior_dependency": 0.2873,
+        "genre_confusion": 0.2282,
+        "uncertainty_calibration": 0.1019
       },
       "documentary": {
         "sensational_weight": 0.0,
-        "crossmodal_rigidity": 0.4816,
-        "channel_prior_dependency": 0.2342,
-        "genre_confusion": 0.2001,
-        "uncertainty_calibration": 0.1468
+        "crossmodal_rigidity": 0.4892,
+        "channel_prior_dependency": 0.2873,
+        "genre_confusion": 0.2513,
+        "uncertainty_calibration": 0.1082
       },
       "music": {
-        "sensational_weight": 0.0,
-        "crossmodal_rigidity": 0.0,
-        "channel_prior_dependency": 0.2343,
-        "genre_confusion": 0.0,
-        "uncertainty_calibration": 0.1229
+        "sensational_weight": 0.0031,
+        "crossmodal_rigidity": 0.0107,
+        "channel_prior_dependency": 0.255,
+        "genre_confusion": 0.0129,
+        "uncertainty_calibration": 0.0337
       },
       "art": {
-        "sensational_weight": 0.0,
-        "crossmodal_rigidity": 0.0,
-        "channel_prior_dependency": 0.2343,
-        "genre_confusion": 0.2119,
-        "uncertainty_calibration": 0.1432
+        "sensational_weight": 0.0021,
+        "crossmodal_rigidity": 0.0154,
+        "channel_prior_dependency": 0.2665,
+        "genre_confusion": 0.1995,
+        "uncertainty_calibration": 0.103
       },
       "satire": {
-        "sensational_weight": 0.0676,
-        "crossmodal_rigidity": 0.1419,
-        "channel_prior_dependency": 0.2343,
-        "genre_confusion": 0.17,
-        "uncertainty_calibration": 0.2571
+        "sensational_weight": 0.0759,
+        "crossmodal_rigidity": 0.1847,
+        "channel_prior_dependency": 0.2873,
+        "genre_confusion": 0.1595,
+        "uncertainty_calibration": 0.1991
       },
       "gaming": {
-        "sensational_weight": 0.0009,
-        "crossmodal_rigidity": 0.2078,
-        "channel_prior_dependency": 0.2347,
-        "genre_confusion": 0.2694,
-        "uncertainty_calibration": 0.2761
+        "sensational_weight": 0.0,
+        "crossmodal_rigidity": 0.1649,
+        "channel_prior_dependency": 0.2873,
+        "genre_confusion": 0.2076,
+        "uncertainty_calibration": 0.0327
       },
       "promo": {
-        "sensational_weight": 0.0874,
-        "crossmodal_rigidity": 0.5668,
-        "channel_prior_dependency": 0.2343,
-        "genre_confusion": 0.1469,
-        "uncertainty_calibration": 0.182
+        "sensational_weight": 0.0903,
+        "crossmodal_rigidity": 0.6002,
+        "channel_prior_dependency": 0.2873,
+        "genre_confusion": 0.0474,
+        "uncertainty_calibration": 0.07
       },
       "unknown": {
-        "sensational_weight": 0.0018,
-        "crossmodal_rigidity": 0.3523,
-        "channel_prior_dependency": 0.2352,
-        "genre_confusion": 0.7827,
-        "uncertainty_calibration": 0.348
+        "sensational_weight": 0.0097,
+        "crossmodal_rigidity": 0.5344,
+        "channel_prior_dependency": 0.2426,
+        "genre_confusion": 0.7789,
+        "uncertainty_calibration": 0.2609
       }
     },
     "macro": {
-      "sensational_weight": 0.0505,
-      "crossmodal_rigidity": 0.356,
-      "channel_prior_dependency": 0.2344,
-      "genre_confusion": 0.2472,
-      "uncertainty_calibration": 0.2072
+      "sensational_weight": 0.0563,
+      "crossmodal_rigidity": 0.3953,
+      "channel_prior_dependency": 0.2767,
+      "genre_confusion": 0.2181,
+      "uncertainty_calibration": 0.1122
     },
-    "negative_bias_score": 0.1378
+    "negative_bias_score": 0.1214
   },
   "objective": {
-    "score": 0.6129,
-    "detection_quality": 0.879,
-    "context_sensitivity": 0.1562,
-    "calibration": 0.6642,
+    "score": 0.8375,
+    "detection_quality": 0.9667,
+    "context_sensitivity": 1.0,
+    "calibration": 0.7762,
     "mutation_stability": 1.0,
-    "channel_lock_in": 0.0332,
-    "genre_confusion": 0.2369
+    "channel_lock_in": 0.0339,
+    "genre_confusion": 0.2445
   },
   "mutation_bias_atlas": {
     "status": "clustered",
@@ -176,7 +176,7 @@
       }
     ]
   },
-  "lineage_log_path": "artifacts/eval_runs/build-20260411064344-bseo-lineage.json",
-  "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260411064344-mutation-bias-atlas.json",
-  "report_path": "artifacts/eval_runs/build-20260411064344-bseo-report.json"
+  "lineage_log_path": "artifacts/eval_runs/build-20260423154757-bseo-lineage.json",
+  "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260423154757-mutation-bias-atlas.json",
+  "report_path": "artifacts/eval_runs/build-20260423154757-bseo-report.json"
 }
