@@ -3,7 +3,9 @@ import type { ScoreResult } from '@truthlens/shared-schemas';
 
 import {
   buildChannelHistoryFeatures,
-  getRuntimeRiskTone,
+  feedDisplayRiskScore,
+  feedHistoryAdjustmentScore,
+  getFeedRiskTone,
   priorFlagsFromProfile,
   rawRuntimeRiskScore,
 } from './feedScoreTruth';
@@ -78,9 +80,38 @@ describe('feedScoreTruth', () => {
     expect(history.taxonomy_hint_news).toBe(0.82);
   });
 
-  it('derives chip tone from raw runtime risk and action severity', () => {
+  it('keeps neutral-history cards anchored to the raw runtime risk', () => {
+    const score = makeScoreResult({
+      risk_score: 0.18,
+      recommended_action: 'none',
+      path_scores: {
+        history: 0.1772,
+      },
+    });
+
+    expect(feedHistoryAdjustmentScore(score)).toBe(0);
+    expect(feedDisplayRiskScore(score)).toBe(1.8);
+    expect(getFeedRiskTone(score)).toBe('high');
+  });
+
+  it('lifts feed skepticism when negative channel history exceeds the neutral baseline', () => {
+    const score = makeScoreResult({
+      risk_score: 0.22,
+      recommended_action: 'none',
+      path_scores: {
+        history: 0.5306,
+      },
+    });
+
+    expect(rawRuntimeRiskScore(score)).toBe(2.2);
+    expect(feedHistoryAdjustmentScore(score)).toBe(3.5);
+    expect(feedDisplayRiskScore(score)).toBe(5.7);
+    expect(getFeedRiskTone(score)).toBe('medium');
+  });
+
+  it('derives chip tone from feed risk and action severity', () => {
     expect(
-      getRuntimeRiskTone(
+      getFeedRiskTone(
         makeScoreResult({
           risk_score: 0.84,
           recommended_action: 'ask-report',
@@ -88,7 +119,7 @@ describe('feedScoreTruth', () => {
       ),
     ).toBe('low');
     expect(
-      getRuntimeRiskTone(
+      getFeedRiskTone(
         makeScoreResult({
           risk_score: 0.56,
           recommended_action: 'badge',
@@ -96,7 +127,7 @@ describe('feedScoreTruth', () => {
       ),
     ).toBe('medium');
     expect(
-      getRuntimeRiskTone(
+      getFeedRiskTone(
         makeScoreResult({
           risk_score: 0.18,
           recommended_action: 'none',

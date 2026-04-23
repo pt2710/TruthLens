@@ -19,7 +19,9 @@ import {
 } from './lib/api';
 import {
   buildChannelHistoryFeatures,
-  getRuntimeRiskTone,
+  feedDisplayRiskScore,
+  feedHistoryAdjustmentScore,
+  getFeedRiskTone,
   priorFlagsFromProfile,
   rawRuntimeRiskScore,
 } from './lib/feedScoreTruth';
@@ -53,6 +55,7 @@ const ITEM_ID = 'data-truthlens-item-id';
 const SIGNATURE = 'data-truthlens-signature';
 const PERSONALIZATION = 'data-truthlens-personalization';
 const PERSONALIZATION_SCORE = 'data-truthlens-personalization-score';
+const FEED_SCORE = 'data-truthlens-feed-score';
 const RUNTIME_SCORE = 'data-truthlens-runtime-score';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
 const OBSERVATION_ID = 'data-truthlens-observation-id';
@@ -727,10 +730,14 @@ function syncPersonalizationPresentation(
 ): PersonalizationSnapshot {
   const profile = getChannelProfile(channelName);
   const personalization = buildPersonalizationSnapshot(score, profile);
-  const trustTone = getRuntimeRiskTone(score);
+  const trustTone = getFeedRiskTone(score);
   const shouldShowFlag = shouldShowPersonalizationBadge(personalization, score);
+  const feedRisk = feedDisplayRiskScore(score);
+  const feedRiskLabel = feedRisk.toFixed(1);
   const runtimeRisk = rawRuntimeRiskScore(score);
   const runtimeLabel = runtimeRisk.toFixed(1);
+  const historyAdjustment = feedHistoryAdjustmentScore(score);
+  const historyAdjustmentLabel = historyAdjustment.toFixed(1);
 
   card.classList.remove('truthlens-card-boosted');
   card.classList.remove('truthlens-card-steady');
@@ -738,10 +745,11 @@ function syncPersonalizationPresentation(
   card.classList.add(`truthlens-card-${personalization.bucket}`);
   card.setAttribute(PERSONALIZATION, personalization.bucket);
   card.setAttribute(PERSONALIZATION_SCORE, personalization.rankingScore.toFixed(2));
+  card.setAttribute(FEED_SCORE, feedRiskLabel);
   card.setAttribute(RUNTIME_SCORE, runtimeLabel);
   card.setAttribute(
     'data-truthlens-personalization-reasons',
-    `Runtime risk ${runtimeLabel}/10. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
+    `Feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
   );
 
   const existingFlag = card.querySelector<HTMLElement>('.truthlens-card-flag');
@@ -752,8 +760,8 @@ function syncPersonalizationPresentation(
 
   const flag = existingFlag ?? document.createElement('span');
   flag.className = `truthlens-card-flag truthlens-card-flag-${trustTone} truthlens-card-flag-${personalization.bucket}`;
-  flag.textContent = runtimeLabel;
-  flag.title = `TruthLens runtime risk ${runtimeLabel}/10. Recommended action ${score.recommended_action}. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
+  flag.textContent = feedRiskLabel;
+  flag.title = `TruthLens feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Recommended action ${score.recommended_action}. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
   if (!existingFlag) {
     card.appendChild(flag);
   }

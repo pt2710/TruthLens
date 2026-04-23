@@ -2,8 +2,18 @@ import type { ScoreResult } from '@truthlens/shared-schemas';
 
 import type { FeedbackChannelProfile } from './api';
 
+const NEUTRAL_HISTORY_PATH_SCORE = 0.08 + 0.18 * 0.38 + 0.12 * 0.24;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function historyPathScore(score: ScoreResult): number | null {
+  const value = Number(score.path_scores?.history);
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  return clamp(value, 0, 1);
 }
 
 export function priorFlagsFromProfile(profile: FeedbackChannelProfile | undefined): number {
@@ -34,6 +44,26 @@ export function rawRuntimeRiskScore(score: ScoreResult): number {
   return Number(clamp(score.risk_score * 10, 0, 10).toFixed(1));
 }
 
+export function feedHistoryAdjustmentScore(score: ScoreResult): number {
+  const historyScore = historyPathScore(score);
+  if (historyScore === null) {
+    return 0;
+  }
+  return Number(
+    clamp((historyScore - NEUTRAL_HISTORY_PATH_SCORE) * 10, 0, 10).toFixed(1),
+  );
+}
+
+export function feedDisplayRiskScore(score: ScoreResult): number {
+  return Number(
+    clamp(
+      rawRuntimeRiskScore(score) + feedHistoryAdjustmentScore(score),
+      0,
+      10,
+    ).toFixed(1),
+  );
+}
+
 export function getRuntimeRiskTone(score: ScoreResult): 'high' | 'medium' | 'low' {
   const runtimeRisk = rawRuntimeRiskScore(score);
   if (score.recommended_action === 'hide' || runtimeRisk >= 7.5) {
@@ -43,6 +73,21 @@ export function getRuntimeRiskTone(score: ScoreResult): 'high' | 'medium' | 'low
     score.recommended_action === 'blur' ||
     score.recommended_action === 'ask-report' ||
     runtimeRisk >= 4.5
+  ) {
+    return 'medium';
+  }
+  return 'high';
+}
+
+export function getFeedRiskTone(score: ScoreResult): 'high' | 'medium' | 'low' {
+  const feedRisk = feedDisplayRiskScore(score);
+  if (score.recommended_action === 'hide' || feedRisk >= 7.5) {
+    return 'low';
+  }
+  if (
+    score.recommended_action === 'blur' ||
+    score.recommended_action === 'ask-report' ||
+    feedRisk >= 4.5
   ) {
     return 'medium';
   }
