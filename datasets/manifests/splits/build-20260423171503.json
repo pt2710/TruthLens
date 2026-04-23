@@ -1,0 +1,3234 @@
+{
+  "build_id": "build-20260423171503",
+  "strategy": "channel-first deterministic partitioning with explicit lineage keys",
+  "partition_dimensions": [
+    "channel_partition_key",
+    "upload_window_key",
+    "template_cluster_key",
+    "discovery_batch_key"
+  ],
+  "channel_assignments": {
+    "AI Revolution": "validation",
+    "Absolute Sleep": "test",
+    "Archive Lens Docs": "train",
+    "Blue Side": "train",
+    "Builder How-To Hub": "train",
+    "C4 Beattz": "validation",
+    "Calm Science Daily": "test",
+    "Caspersight": "train",
+    "Chen7500": "train",
+    "Context First Media": "train",
+    "Corridor Crew": "validation",
+    "Device Verdict Lab": "test",
+    "Dylan Curious": "train",
+    "ET Now": "train",
+    "Easez Beats": "train",
+    "FEROX": "validation",
+    "ImTheImposter": "test",
+    "KingFrostmare": "train",
+    "Lasse Rimmer": "train",
+    "Launch Trailer Vault": "train",
+    "Lawful Force \u2013 COPSCAM": "validation",
+    "MIRROR NOW": "test",
+    "Mack": "train",
+    "Matchday Tactics Desk": "train",
+    "Mind Zone": "train",
+    "MostAmazingTop10": "validation",
+    "MrjustEdwin": "test",
+    "Mystery Footage Camera": "train",
+    "Nick's Doom": "train",
+    "Night Scope": "train",
+    "Northern Echo Records": "validation",
+    "Now Stream Briefing": "test",
+    "OpenSky Alerts": "train",
+    "Orbital Satire Circuit": "train",
+    "PROTO Beats": "train",
+    "Patch Notes Arena": "validation",
+    "PoliticsJOE": "test",
+    "Release - Topic": "train",
+    "Rick and Morty": "train",
+    "SKizzle": "train",
+    "STORROR": "validation",
+    "Signal Watch Europe": "test",
+    "Sindhu World": "train",
+    "Sivas": "train",
+    "Split Prophets": "train",
+    "Star Reveal": "validation",
+    "StarTalk": "test",
+    "Studio Canvas Atlas": "train",
+    "The Military Show": "train",
+    "The Ultimate Discovery": "train",
+    "Unknown channel": "validation",
+    "Verified Space Desk": "test",
+    "Viral Evidence Desk": "train",
+    "Weekly Orbit Ledger": "train",
+    "Zero Chill Bulletins": "train"
+  },
+  "split_counts": {
+    "train": 236,
+    "validation": 58,
+    "test": 101
+  },
+  "lineage_rows": [
+    {
+      "item_id": "archive-lens-docs-1",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-2",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-3",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-4",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-5",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-6",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-7",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-8",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-9",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-10",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-11",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-12",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-13",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-14",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-15",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-16",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-17",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-18",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "archive-lens-docs-19",
+      "channel_partition_key": "Archive Lens Docs",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-1",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-2",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-3",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-4",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-5",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-6",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-7",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-8",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-9",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-03",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-10",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-11",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-12",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-13",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-14",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-15",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-16",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-17",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-18",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "builder-how-to-hub-19",
+      "channel_partition_key": "Builder How-To Hub",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "calm-science-daily-1",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-2",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-3",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-4",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-5",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-6",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-7",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-8",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-9",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-10",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-11",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-12",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-13",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-14",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-15",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-16",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-17",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-18",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-04",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "calm-science-daily-19",
+      "channel_partition_key": "Calm Science Daily",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "context-first-media-1",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-2",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-3",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-4",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-5",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-6",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-7",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-8",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-9",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-10",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-11",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-12",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-13",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-14",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-15",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-16",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-17",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-18",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "context-first-media-19",
+      "channel_partition_key": "Context First Media",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "device-verdict-lab-1",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-2",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-3",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-4",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-5",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-6",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-7",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-8",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-05",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-9",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-10",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-11",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-12",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-13",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-14",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-15",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-16",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-17",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-18",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "device-verdict-lab-19",
+      "channel_partition_key": "Device Verdict Lab",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "launch-trailer-vault-1",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-2",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-3",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-4",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-5",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-6",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-7",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-8",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-9",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-10",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-11",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-12",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-13",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-14",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-15",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-16",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-17",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-06",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-18",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "launch-trailer-vault-19",
+      "channel_partition_key": "Launch Trailer Vault",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-1",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-2",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-3",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-4",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-5",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-6",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-7",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-8",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-9",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-10",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-11",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-12",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-13",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-14",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-15",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-16",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-17",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-18",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "matchday-tactics-desk-19",
+      "channel_partition_key": "Matchday Tactics Desk",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "northern-echo-records-1",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-2",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-3",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-4",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-5",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-6",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-7",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-07",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-8",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-9",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-10",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-11",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-12",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-13",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-14",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-15",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-16",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-17",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-18",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "northern-echo-records-19",
+      "channel_partition_key": "Northern Echo Records",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "now-stream-briefing-1",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-2",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-3",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-4",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-5",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-6",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-7",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-8",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-9",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-10",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-11",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-12",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-13",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-14",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-15",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-16",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-08",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-17",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-18",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "now-stream-briefing-19",
+      "channel_partition_key": "Now Stream Briefing",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "opensky-alerts-1",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-2",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-3",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-4",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-5",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-6",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-7",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-8",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-9",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-10",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-11",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-12",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-13",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-14",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-15",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-16",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-17",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-18",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "opensky-alerts-19",
+      "channel_partition_key": "OpenSky Alerts",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-1",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-2",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-3",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-4",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-5",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-6",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-09",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-7",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-8",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-9",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-10",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-11",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-12",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-13",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-14",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-15",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-16",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-17",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-18",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "orbital-satire-circuit-19",
+      "channel_partition_key": "Orbital Satire Circuit",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "patch-notes-arena-1",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-2",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-3",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-4",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-5",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-6",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-7",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-8",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-9",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-10",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-11",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-12",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-13",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-14",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-15",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-10",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-16",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-17",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-18",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "patch-notes-arena-19",
+      "channel_partition_key": "Patch Notes Arena",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "signal-watch-europe-1",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-2",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-3",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-4",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-5",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-6",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-7",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-8",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-9",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-10",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-11",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-12",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-13",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-14",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-15",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-16",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-17",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-18",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "signal-watch-europe-19",
+      "channel_partition_key": "Signal Watch Europe",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "studio-canvas-atlas-1",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-2",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-3",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-4",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-5",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-11",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-6",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-7",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-8",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-9",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-10",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-11",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-12",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-13",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-14",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-15",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-16",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-17",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-18",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "studio-canvas-atlas-19",
+      "channel_partition_key": "Studio Canvas Atlas",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "verified-space-desk-1",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-2",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-3",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-4",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-5",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-6",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-7",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-8",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-9",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-10",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-11",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-12",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-13",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-14",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-12",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-15",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-16",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-17",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-18",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "verified-space-desk-19",
+      "channel_partition_key": "Verified Space Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "viral-evidence-desk-1",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-2",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-3",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-4",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-5",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-6",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-7",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-8",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-9",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-10",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-11",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-12",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-13",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-14",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-15",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-16",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-17",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-18",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "viral-evidence-desk-19",
+      "channel_partition_key": "Viral Evidence Desk",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-1",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-2",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-3",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-4",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-13",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-5",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-6",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-7",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-8",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-9",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-10",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-11",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-12",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-13",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-14",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-15",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-16",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-17",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-18",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "weekly-orbit-ledger-19",
+      "channel_partition_key": "Weekly Orbit Ledger",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-1",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "aliens-confirmed",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-2",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "fake-official-trailer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-3",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "miracle-guide",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-4",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "mission-recap",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-5",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "calibration-workshop",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-6",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "official-audio-remix",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-7",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "gallery-exhibition",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-8",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "satire-sketch",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-9",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "gameplay-patch-highlights",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-10",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "sports-tactics-breakdown",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-11",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "device-review-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-12",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "emergency-alert-panic",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-13",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-14",
+      "template_cluster_key": "teaser-ending-leak",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-14",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "miracle-rescue-trick",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-15",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "committee-document-explainer",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-16",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "acoustic-live-mastering",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-17",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "museum-installation-walkthrough",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-18",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "spoof-press-briefing",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "zero-chill-bulletins-19",
+      "channel_partition_key": "Zero Chill Bulletins",
+      "upload_window_key": "2026-15",
+      "template_cluster_key": "patch-route-comparison",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=m00FOvG-2O0&list=RDMMm00FOvG-2O0&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=XjsSQjZVP5k&list=RDXjsSQjZVP5k&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=2gakKbTYo3Y&list=RD2gakKbTYo3Y&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Chen7500",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=U_Zlgaz36uo&list=RDU_Zlgaz36uo&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=BU5HWUo53qI",
+      "channel_partition_key": "Absolute Sleep",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=a-0-INkEu-8&list=RDa-0-INkEu-8&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=nkFPiu400bk&list=RDnkFPiu400bk&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=M__l4j6LtBQ&pp=ugUHEgVlbi1HQg%3D%3D",
+      "channel_partition_key": "PoliticsJOE",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=cSl_y1-t4ek&list=RDcSl_y1-t4ek&start_radio=1&pp=oAcB0gcJCdoKAYcqIYzv",
+      "channel_partition_key": "Split Prophets",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=Tl4__4LA310",
+      "channel_partition_key": "ET Now",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=nPgUcJAxGg4&pp=ugUEEgJlbtIHCQnaCgGHKiGM7w%3D%3D",
+      "channel_partition_key": "SKizzle",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=BMhHIZThq0c&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "Mystery Footage Camera",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=-o6AZlfpkqM&list=RD-o6AZlfpkqM&start_radio=1&pp=oAcB",
+      "channel_partition_key": "PROTO Beats",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=efB_sOdjK9Q&list=RDefB_sOdjK9Q&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Easez Beats",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=8d3E-XZX3u4&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "AI Revolution",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=hh3JCjOHG_E&pp=ugUEEgJlbtIHCQnaCgGHKiGM7w%3D%3D",
+      "channel_partition_key": "Mack",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=5EdNbHYTmik",
+      "channel_partition_key": "Nick's Doom",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=aT249pRV0Lg",
+      "channel_partition_key": "Lasse Rimmer",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=iiRNq1sxr0U",
+      "channel_partition_key": "Rick and Morty",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=K2k-0aXG-qI&list=RDK2k-0aXG-qI&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Sivas",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=kPeG-ILJNtM&list=RDkPeG-ILJNtM&start_radio=1&pp=oAcB",
+      "channel_partition_key": "ImTheImposter",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=3_IV1JiJHM0",
+      "channel_partition_key": "Dylan Curious",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=ro2ErNoIw5M&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "Blue Side",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=gQuAaHQrl8U&list=RDgQuAaHQrl8U&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Sindhu World",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=yO2pzh2jBmQ",
+      "channel_partition_key": "ET Now",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=hZ2McC5E1uU&list=RDhZ2McC5E1uU&start_radio=1&pp=oAcB",
+      "channel_partition_key": "MrjustEdwin",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=u9Azd3weYCY&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "AI Revolution",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=Y59uWH9dJeg",
+      "channel_partition_key": "MIRROR NOW",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=kvPTq30Nsvo",
+      "channel_partition_key": "PROTO Beats",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=4mtqXsQrueo",
+      "channel_partition_key": "PROTO Beats",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=L1-iWwHYeCo",
+      "channel_partition_key": "MostAmazingTop10",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=2gakKbTYo3Y&list=RDGMEMHDXYb1_DDSgDsobPsOFxpAVM2gakKbTYo3Y&start_radio=1&pp=0gcJCbcEOCosWNin",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=DsOMtkZ66P0&list=RDDsOMtkZ66P0&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Release - Topic",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=x9VDFHRb_14",
+      "channel_partition_key": "The Ultimate Discovery",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=sNJiD2SsMnc",
+      "channel_partition_key": "STORROR",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=lcFpadYFOVs&list=RDlcFpadYFOVs&start_radio=1&pp=oAcB",
+      "channel_partition_key": "C4 Beattz",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=gVKYYp7-o7U&pp=0gcJCdoKAYcqIYzv",
+      "channel_partition_key": "Night Scope",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=XcWFDn5gngY",
+      "channel_partition_key": "Caspersight",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=ORqTK0A5Kys",
+      "channel_partition_key": "Mind Zone",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=2gakKbTYo3Y&list=RD2gakKbTYo3Y&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=rZ-qPJYRsBM",
+      "channel_partition_key": "The Military Show",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=h4YvkZeLrjs&list=RDGMEMZvyg3BqjumPjl6eYhMqMBgVMh4YvkZeLrjs&start_radio=1&pp=0gcJCbcEOCosWNin",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=I9bbOmsHJPc",
+      "channel_partition_key": "Star Reveal",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=NxMMd5kMu7o&pp=0gcJCdoKAYcqIYzv",
+      "channel_partition_key": "StarTalk",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "test"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=4i8pou362Vg&list=RD4i8pou362Vg&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=xJdfIWWXejs&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "FEROX",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=U18dAMscro4",
+      "channel_partition_key": "KingFrostmare",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=DfCRrrrzscQ&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "AI Revolution",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=pJaXDGn1xd8&list=RDpJaXDGn1xd8&start_radio=1&pp=oAcB",
+      "channel_partition_key": "Release - Topic",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=ITeHBbfqYwk&list=RDITeHBbfqYwk&start_radio=1",
+      "channel_partition_key": "Unknown channel",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=X8yRlA7jqEQ&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "Corridor Crew",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=24OvxKP158k&pp=ugUEEgJlbg%3D%3D",
+      "channel_partition_key": "SKizzle",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "train"
+    },
+    {
+      "item_id": "https://www.youtube.com/watch?v=RKnLAJulmJ8",
+      "channel_partition_key": "Lawful Force \u2013 COPSCAM",
+      "upload_window_key": "None",
+      "template_cluster_key": "operator-feedback",
+      "discovery_batch_key": "discovery-20260423171502",
+      "assigned_split": "validation"
+    }
+  ]
+}

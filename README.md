@@ -431,9 +431,9 @@ Current committed snapshot:
 
 | Field | Value |
 | --- | --- |
-| `build_id` | `build-20260423154757` |
-| `model_version` | `baseline-v1-build-20260423154757` |
-| `trained_at` | `2026-04-23T15:47:58.395383+00:00` |
+| `build_id` | `build-20260423171503` |
+| `model_version` | `baseline-v1-build-20260423171503` |
+| `trained_at` | `2026-04-23T17:15:04.403861+00:00` |
 | `eval sample_count` | `101` |
 | `configured runtime mode` | `bseo-live` |
 | `resolved runtime mode` | `bseo-live` |
@@ -466,7 +466,7 @@ Current generated observation and governance snapshot from the same render-time 
 | `browser observations` | `1459` |
 | `unique observed items` | `671` |
 | `score-linked observation rows` | `1459` |
-| `local-user feedback events` | `55` |
+| `local-user feedback events` | `60` |
 | `creator/operator candidate rows` | `53` |
 | `creator/operator ingested rows` | `53` |
 | `global benchmark truth rows` | `395` |
@@ -548,8 +548,8 @@ Public curated source control keeps:
 - `datasets/dataset_cards/latest.md`
 - `datasets/manifests/builds/latest.json`
 - `datasets/manifests/operator_feedback/latest.json`
-- `datasets/labels/operator_adjudication/latest.json`
-- `datasets/labels/operator_supplemental_gold/*.jsonl`
+- `datasets/manifests/operator_feedback/adjudication/latest.json`
+- `datasets/manifests/operator_feedback/gold/*.jsonl`
 - `docs/benchmarks/latest/*`
 
 Generated or private runtime artifacts that remain outside the public source tree include:

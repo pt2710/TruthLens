@@ -25,7 +25,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="74" y="254">unique_items=671, score_links=1459</text>
 <rect class="card" x="436" y="132" width="360" height="188" rx="20" />
 <text class="label" x="458" y="164">Local user feedback</text>
-<text class="value" x="458" y="214">59</text>
+<text class="value" x="458" y="214">60</text>
 <text class="small" x="458" y="254">Ordinary local-user feedback stays in</text>
 <text class="small" x="458" y="272">the runtime/local optimization layer</text>
 <text class="small" x="458" y="290">unless it is explicitly curated</text>

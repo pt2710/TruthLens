@@ -108,8 +108,8 @@ def _artifact_paths() -> dict[str, Path | None]:
     supplemental_adjudication_dir = root / "datasets" / "labels" / "supplemental_adjudication"
     supplemental_gold_dir = root / "datasets" / "labels" / "supplemental_gold"
     operator_feedback_dir = root / "datasets" / "manifests" / "operator_feedback"
-    operator_adjudication_dir = root / "datasets" / "labels" / "operator_adjudication"
-    operator_gold_dir = root / "datasets" / "labels" / "operator_supplemental_gold"
+    operator_adjudication_dir = operator_feedback_dir / "adjudication"
+    operator_gold_dir = operator_feedback_dir / "gold"
     build_manifest_path = root / "datasets" / "manifests" / "builds" / "latest.json"
 
     eval_report_path = (

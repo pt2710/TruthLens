@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-23T16:17:08.955900+00:00",
-  "build_id": "build-20260423154757",
+  "generated_at": "2026-04-23T17:19:57.707478+00:00",
+  "build_id": "build-20260423171503",
   "runtime_policy": {
     "configured_mode": "bseo-live",
     "resolved_mode": "bseo-live",
@@ -15,8 +15,8 @@
       "stale": false,
       "status": "compatible",
       "reason": null,
-      "age_hours": 0.486,
-      "build_id": "build-20260423154757",
+      "age_hours": 0.081,
+      "build_id": "build-20260423171503",
       "policy_version": "bseo-control-policy-v1"
     },
     "lineage_count": 125,

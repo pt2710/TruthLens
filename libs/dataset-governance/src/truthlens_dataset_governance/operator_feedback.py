@@ -135,19 +135,47 @@ def _latest_operator_feedback_manifest_path() -> Path:
 
 
 def operator_adjudication_path(run_id: str) -> Path:
-    return repo_root() / "datasets" / "labels" / "operator_adjudication" / f"{run_id}.json"
+    return (
+        repo_root()
+        / "datasets"
+        / "manifests"
+        / "operator_feedback"
+        / "adjudication"
+        / f"{run_id}.json"
+    )
 
 
 def operator_gold_path(run_id: str) -> Path:
-    return repo_root() / "datasets" / "labels" / "operator_supplemental_gold" / f"{run_id}.jsonl"
+    return (
+        repo_root()
+        / "datasets"
+        / "manifests"
+        / "operator_feedback"
+        / "gold"
+        / f"{run_id}.jsonl"
+    )
 
 
 def _latest_operator_adjudication_path() -> Path:
-    return repo_root() / "datasets" / "labels" / "operator_adjudication" / "latest.json"
+    return (
+        repo_root()
+        / "datasets"
+        / "manifests"
+        / "operator_feedback"
+        / "adjudication"
+        / "latest.json"
+    )
 
 
 def _latest_operator_gold_path() -> Path:
-    return repo_root() / "datasets" / "labels" / "operator_supplemental_gold" / "latest.jsonl"
+    return (
+        repo_root()
+        / "datasets"
+        / "manifests"
+        / "operator_feedback"
+        / "gold"
+        / "latest.jsonl"
+    )
 
 
 def _observation_lookup() -> tuple[dict[str, dict[str, Any]], dict[str, list[dict[str, Any]]]]:

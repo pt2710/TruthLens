@@ -136,7 +136,9 @@ def test_operator_feedback_pipeline_backfills_legacy_creator_feedback(
     assert records[0]["labels"]["clickbait"] is True
     assert records[0]["labels"]["misleading_thumbnail"] is True
     assert records[0]["labels"]["misleading_title"] is True
-    assert read_jsonl(tmp_path / "datasets/labels/operator_supplemental_gold/latest.jsonl")
+    assert read_jsonl(
+        tmp_path / "datasets/manifests/operator_feedback/gold/latest.jsonl"
+    )
     assert read_json(tmp_path / "datasets/manifests/operator_feedback/latest.json")["selected_count"] == 1
 
 

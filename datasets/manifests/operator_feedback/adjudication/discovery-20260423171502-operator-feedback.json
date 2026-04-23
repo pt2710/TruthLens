@@ -1,9 +1,9 @@
 {
-  "run_id": "discovery-20260423154755-operator-feedback",
-  "generated_at": "2026-04-23T15:47:58.035036+00:00",
-  "source_manifest_path": "datasets/manifests/operator_feedback/discovery-20260423154755-operator-feedback.json",
-  "adjudication_path": "datasets/labels/operator_adjudication/discovery-20260423154755-operator-feedback.json",
-  "gold_path": "datasets/labels/operator_supplemental_gold/discovery-20260423154755-operator-feedback.jsonl",
+  "run_id": "discovery-20260423171502-operator-feedback",
+  "generated_at": "2026-04-23T17:15:04.069794+00:00",
+  "source_manifest_path": "datasets/manifests/operator_feedback/discovery-20260423171502-operator-feedback.json",
+  "adjudication_path": "datasets/manifests/operator_feedback/adjudication/discovery-20260423171502-operator-feedback.json",
+  "gold_path": "datasets/manifests/operator_feedback/gold/discovery-20260423171502-operator-feedback.jsonl",
   "summary": {
     "candidate_count": 53,
     "saved_count": 53,
