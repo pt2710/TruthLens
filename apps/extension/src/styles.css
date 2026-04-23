@@ -37,19 +37,24 @@
   color: #f4fff6;
 }
 
-.truthlens-card-flag-high {
-  background: #b7f0c5;
-  color: #0d4b26;
+.truthlens-card-flag-red {
+  background: #ffb0a8;
+  color: #7a1208;
 }
 
-.truthlens-card-flag-medium {
+.truthlens-card-flag-orange {
+  background: #ffc58f;
+  color: #7a3200;
+}
+
+.truthlens-card-flag-yellow {
   background: #ffdd57;
   color: #352600;
 }
 
-.truthlens-card-flag-low {
-  background: #ffb0a8;
-  color: #7a1208;
+.truthlens-card-flag-green {
+  background: #b7f0c5;
+  color: #0d4b26;
 }
 
 .truthlens-card-flag-boosted {

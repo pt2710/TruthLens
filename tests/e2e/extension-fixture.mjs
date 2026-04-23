@@ -30,7 +30,24 @@ function resolveRequestPath(pathname) {
   return candidate;
 }
 
+function mockHistoryPath(item) {
+  const historyFeatures = item.channel?.channel_history_features ?? {};
+  const channelRiskMean = Number(historyFeatures.channel_risk_mean ?? 0);
+  const repeatTemplateRate = Number(historyFeatures.repeat_template_rate ?? 0);
+  const priorFlags = Math.max(Number(item.channel?.prior_flags ?? 0), 0);
+  return Number(
+    Math.min(
+      1,
+      Math.max(
+        0,
+        0.04 + channelRiskMean * 0.19 + repeatTemplateRate * 0.14 + priorFlags * 0.025,
+      ),
+    ).toFixed(3),
+  );
+}
+
 function mockScore(item) {
+  const historyPath = mockHistoryPath(item);
   if (item.title.includes('Breaking aliens')) {
     return {
       risk_score: 0.74,
@@ -48,6 +65,9 @@ function mockScore(item) {
           details: 'Multiple high-intensity claim tokens were detected in the title.',
         },
       ],
+      path_scores: {
+        history: historyPath,
+      },
     };
   }
   if (item.title.includes('Weekly launch schedule')) {
@@ -60,6 +80,9 @@ function mockScore(item) {
       explanation_id: null,
       explanation_summary: null,
       evidence: [],
+      path_scores: {
+        history: historyPath,
+      },
     };
   }
   if (item.title.includes('Secret lab leak')) {
@@ -79,6 +102,9 @@ function mockScore(item) {
           details: 'Risk score crossed the report-prompt threshold.',
         },
       ],
+      path_scores: {
+        history: historyPath,
+      },
     };
   }
   return {
@@ -97,6 +123,9 @@ function mockScore(item) {
         details: 'Dynamic card entered the moderate-risk review band.',
       },
     ],
+    path_scores: {
+      history: historyPath,
+    },
   };
 }
 
@@ -135,6 +164,55 @@ async function main() {
     await page.addInitScript(() => {
       const listeners = [];
       const sentMessages = [];
+      const storageListeners = [];
+      const storageState = new Map();
+
+      function normalizeStorageKeys(keys) {
+        if (keys == null) {
+          return Array.from(storageState.keys());
+        }
+        if (typeof keys === 'string') {
+          return [keys];
+        }
+        if (Array.isArray(keys)) {
+          return keys;
+        }
+        return Object.keys(keys);
+      }
+
+      async function getStorageValue(keys) {
+        const normalizedKeys = normalizeStorageKeys(keys);
+        return normalizedKeys.reduce((result, key) => {
+          if (storageState.has(key)) {
+            result[key] = storageState.get(key);
+            return result;
+          }
+          if (keys && typeof keys === 'object' && !Array.isArray(keys) && key in keys) {
+            result[key] = keys[key];
+          }
+          return result;
+        }, {});
+      }
+
+      async function setStorageValue(items) {
+        const changes = {};
+        Object.entries(items ?? {}).forEach(([key, value]) => {
+          const oldValue = storageState.has(key) ? storageState.get(key) : undefined;
+          storageState.set(key, value);
+          changes[key] = {
+            oldValue,
+            newValue: value,
+          };
+        });
+
+        if (Object.keys(changes).length === 0) {
+          return;
+        }
+
+        storageListeners.forEach((listener) => {
+          listener(changes, 'local');
+        });
+      }
 
       function normalizeComparableUrl(value) {
         if (!value) {
@@ -182,6 +260,17 @@ async function main() {
           async sendMessage(message) {
             sentMessages.push(message);
             return { ok: true };
+          },
+        },
+        storage: {
+          local: {
+            get: async (keys) => getStorageValue(keys),
+            set: async (items) => setStorageValue(items),
+          },
+          onChanged: {
+            addListener(listener) {
+              storageListeners.push(listener);
+            },
           },
         },
       };
@@ -464,38 +553,102 @@ async function main() {
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 3,
     );
 
+    await page.waitForFunction(() => {
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
+        (node) => node.textContent?.trim(),
+      );
+      return (
+        titles[0] === 'Weekly launch schedule and mission recap' &&
+        titles[1] === 'Breaking aliens confirmed over Europe' &&
+        titles[2] === 'Secret lab leak exposed in new footage'
+      );
+    });
+
     assert.equal(batchRequests, 1);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
     assert.equal(browserObservations.length, 3);
 
     const cards = page.locator('[data-truthlens-card]');
+    const weeklyCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Weekly launch schedule and mission recap',
+    });
+    const breakingCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Breaking aliens confirmed over Europe',
+    });
+    const secretCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Secret lab leak exposed in new footage',
+    });
     await page.waitForFunction(
-      () => document.querySelector('[data-truthlens-card]')?.classList.contains('truthlens-card-blur') ?? false,
+      () =>
+        Array.from(document.querySelectorAll('[data-truthlens-card]')).some((card) =>
+          card.classList.contains('truthlens-card-blur'),
+        ),
     );
     assert.equal(
-      await cards.nth(0).evaluate((element) => element.classList.contains('truthlens-card-blur')),
+      await breakingCard.evaluate((element) => element.classList.contains('truthlens-card-blur')),
       true,
     );
     assert.equal(
-      await cards.nth(1).evaluate((element) => element.classList.contains('truthlens-card-hidden')),
+      await secretCard.evaluate((element) => element.classList.contains('truthlens-card-hidden')),
       false,
     );
     assert.match(
-      (await cards.nth(2).locator('.truthlens-card-flag').textContent()) ?? '',
+      (await secretCard.locator('.truthlens-card-flag').textContent()) ?? '',
       /^\d{1,2}\.\d$/,
     );
-    assert.equal(await cards.nth(0).getAttribute('data-truthlens-personalization'), 'downranked');
-    assert.equal(await cards.nth(0).evaluate((element) => element.style.order), '');
-    assert.equal(await cards.nth(1).getAttribute('data-truthlens-personalization'), 'boosted');
-    assert.equal(await cards.nth(1).evaluate((element) => element.style.order), '');
-    assert.equal(await cards.nth(1).locator('.truthlens-card-flag').textContent(), '1.8');
-    assert.equal(await cards.nth(1).getAttribute('data-truthlens-runtime-score'), '1.8');
-    assert.equal(await cards.nth(2).evaluate((element) => element.style.order), '');
-    assert.equal(await cards.nth(2).locator('.truthlens-review-prompt').textContent(), 'Review report');
+    assert.equal(await breakingCard.getAttribute('data-truthlens-personalization'), 'downranked');
+    assert.equal(await breakingCard.evaluate((element) => element.style.order), '');
+    assert.equal(await weeklyCard.getAttribute('data-truthlens-personalization'), 'boosted');
+    assert.equal(await weeklyCard.evaluate((element) => element.style.order), '');
+    assert.equal(await weeklyCard.locator('.truthlens-card-flag').textContent(), '8.2');
+    assert.equal(await weeklyCard.getAttribute('data-truthlens-truth-score'), '8.2');
+    assert.equal(await weeklyCard.getAttribute('data-truthlens-runtime-score'), '1.8');
+    assert.equal(await weeklyCard.getAttribute('data-truthlens-truth-band'), 'green');
+    assert.equal(await secretCard.evaluate((element) => element.style.order), '');
+    assert.equal(await secretCard.locator('.truthlens-review-prompt').textContent(), 'Review report');
+    assert.ok(
+      Number(await breakingCard.getAttribute('data-truthlens-feed-risk-score')) >
+        Number(await breakingCard.getAttribute('data-truthlens-runtime-score')),
+    );
+    assert.equal(await breakingCard.getAttribute('data-truthlens-runtime-score'), '7.4');
+    assert.ok(Number(await breakingCard.getAttribute('data-truthlens-truth-score')) < 2.6);
+    assert.equal(await breakingCard.getAttribute('data-truthlens-truth-band'), 'red');
+
+    await page.evaluate(async () => {
+      await chrome.storage.local.set({
+        'truthlens-feed-rerank-enabled': false,
+      });
+    });
+    await page.waitForFunction(() => {
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
+        (node) => node.textContent?.trim(),
+      );
+      return (
+        titles[0] === 'Breaking aliens confirmed over Europe' &&
+        titles[1] === 'Weekly launch schedule and mission recap' &&
+        titles[2] === 'Secret lab leak exposed in new footage'
+      );
+    });
+    await page.evaluate(async () => {
+      await chrome.storage.local.set({
+        'truthlens-feed-rerank-enabled': true,
+      });
+    });
+    await page.waitForFunction(() => {
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
+        (node) => node.textContent?.trim(),
+      );
+      return (
+        titles[0] === 'Weekly launch schedule and mission recap' &&
+        titles[1] === 'Breaking aliens confirmed over Europe' &&
+        titles[2] === 'Secret lab leak exposed in new footage'
+      );
+    });
+
     if ((await page.locator('.truthlens-report-card').count()) === 0) {
       artificialSuggestDelayMs = 7000;
-      await cards.nth(2).locator('.truthlens-review-prompt').click();
+      await secretCard.locator('.truthlens-review-prompt').click();
     }
     await expectText(
       page,
@@ -583,47 +736,55 @@ async function main() {
       /unverified allegation as established fact/i,
     );
     assert.equal(
-      await cards.nth(2).getAttribute('data-youtube-report-submitted'),
+      await secretCard.getAttribute('data-youtube-report-submitted'),
       'true',
     );
     const sentMessages = await page.evaluate(() => window.__truthlensSentMessages);
     assert.equal(sentMessages.length, 0);
 
     await page.evaluate(() => {
-      const firstCard = document.querySelector('[data-truthlens-card]');
-      if (!(firstCard instanceof HTMLElement)) {
-        throw new Error('fixture first card missing');
+      const targetCard = Array.from(document.querySelectorAll('[data-truthlens-card]')).find((card) =>
+        card.textContent?.includes('Breaking aliens confirmed over Europe'),
+      );
+      if (!(targetCard instanceof HTMLElement)) {
+        throw new Error('fixture breaking card missing');
       }
-      const title = firstCard.querySelector('#video-title');
-      const snippet = firstCard.querySelector('.metadata-snippet');
+      const title = targetCard.querySelector('#video-title');
+      const snippet = targetCard.querySelector('.metadata-snippet');
       if (!(title instanceof HTMLElement) || !(snippet instanceof HTMLElement)) {
-        throw new Error('fixture first card content missing');
+        throw new Error('fixture breaking card content missing');
       }
       title.textContent = 'Weekly launch schedule and mission update';
       snippet.textContent = 'Routine mission planning and launch cadence update.';
     });
 
     await page.waitForFunction(() => {
-      const firstCard = document.querySelector('[data-truthlens-card]');
+      const updatedCard = Array.from(document.querySelectorAll('[data-truthlens-card]')).find((card) =>
+        card.textContent?.includes('Weekly launch schedule and mission update'),
+      );
       return (
-        firstCard instanceof HTMLElement &&
-        firstCard.getAttribute('data-truthlens-signature')?.includes('Weekly launch schedule') &&
-        !firstCard.classList.contains('truthlens-card-blur') &&
-        firstCard.getAttribute('data-truthlens-personalization') === 'steady' &&
-        !firstCard.querySelector('.truthlens-card-flag')
+        updatedCard instanceof HTMLElement &&
+        updatedCard.getAttribute('data-truthlens-signature')?.includes('Weekly launch schedule') &&
+        !updatedCard.classList.contains('truthlens-card-blur') &&
+        updatedCard.getAttribute('data-truthlens-personalization') === 'steady' &&
+        !updatedCard.querySelector('.truthlens-card-flag')
       );
     });
     await waitForNodeCondition(() => browserObservations.length >= 4);
     assert.equal(batchRequests, 2);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
     assert.equal(browserObservations.length, 4);
+
+    const updatedCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Weekly launch schedule and mission update',
+    });
     assert.equal(
-      await cards.nth(0).evaluate((element) => element.classList.contains('truthlens-card-blur')),
+      await updatedCard.evaluate((element) => element.classList.contains('truthlens-card-blur')),
       false,
     );
-    assert.equal(await cards.nth(0).getAttribute('data-truthlens-personalization'), 'steady');
-    assert.equal(await cards.nth(0).evaluate((element) => element.style.order), '');
-    assert.equal(await cards.nth(0).locator('.truthlens-card-flag').count(), 0);
+    assert.equal(await updatedCard.getAttribute('data-truthlens-personalization'), 'steady');
+    assert.equal(await updatedCard.evaluate((element) => element.style.order), '');
+    assert.equal(await updatedCard.locator('.truthlens-card-flag').count(), 0);
 
     await page.evaluate(() => {
       const feed = document.querySelector('.feed');
@@ -649,9 +810,12 @@ async function main() {
     await waitForNodeCondition(() => browserObservations.length >= 5);
     assert.equal(batchRequests, 3);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
-    assert.equal(await cards.nth(3).locator('.truthlens-card-flag').count(), 1);
-    assert.equal(await cards.nth(3).getAttribute('data-truthlens-personalization'), 'steady');
-    assert.equal(await cards.nth(3).evaluate((element) => element.style.order), '');
+    const dynamicCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Dynamic emergency update from orbit',
+    });
+    assert.equal(await dynamicCard.locator('.truthlens-card-flag').count(), 1);
+    assert.equal(await dynamicCard.getAttribute('data-truthlens-personalization'), 'steady');
+    assert.equal(await dynamicCard.evaluate((element) => element.style.order), '');
     assert.equal(await page.locator('.truthlens-action-row').count(), 4);
     assert.equal(browserObservations.length, 5);
 

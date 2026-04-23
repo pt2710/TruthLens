@@ -4,6 +4,8 @@ import type { FeedbackChannelProfile } from './api';
 
 const NEUTRAL_HISTORY_PATH_SCORE = 0.08 + 0.18 * 0.38 + 0.12 * 0.24;
 
+export type TruthBand = 'red' | 'orange' | 'yellow' | 'green';
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -69,7 +71,7 @@ export function feedHistoryAdjustmentScore(score: ScoreResult): number {
   );
 }
 
-export function feedDisplayRiskScore(score: ScoreResult): number {
+export function feedRiskScore(score: ScoreResult): number {
   return Number(
     clamp(
       rawRuntimeRiskScore(score) + feedHistoryAdjustmentScore(score),
@@ -79,32 +81,24 @@ export function feedDisplayRiskScore(score: ScoreResult): number {
   );
 }
 
-export function getRuntimeRiskTone(score: ScoreResult): 'high' | 'medium' | 'low' {
-  const runtimeRisk = rawRuntimeRiskScore(score);
-  if (score.recommended_action === 'hide' || runtimeRisk >= 7.5) {
-    return 'low';
-  }
-  if (
-    score.recommended_action === 'blur' ||
-    score.recommended_action === 'ask-report' ||
-    runtimeRisk >= 4.5
-  ) {
-    return 'medium';
-  }
-  return 'high';
+export function truthScore(score: ScoreResult): number {
+  return Number(clamp(10 - feedRiskScore(score), 0, 10).toFixed(1));
 }
 
-export function getFeedRiskTone(score: ScoreResult): 'high' | 'medium' | 'low' {
-  const feedRisk = feedDisplayRiskScore(score);
-  if (score.recommended_action === 'hide' || feedRisk >= 7.5) {
-    return 'low';
+export function truthBandFromScore(scoreValue: number): TruthBand {
+  const boundedScore = clamp(scoreValue, 0, 10);
+  if (boundedScore <= 3.3) {
+    return 'red';
   }
-  if (
-    score.recommended_action === 'blur' ||
-    score.recommended_action === 'ask-report' ||
-    feedRisk >= 4.5
-  ) {
-    return 'medium';
+  if (boundedScore <= 4.9) {
+    return 'orange';
   }
-  return 'high';
+  if (boundedScore <= 6.6) {
+    return 'yellow';
+  }
+  return 'green';
+}
+
+export function getTruthBand(score: ScoreResult): TruthBand {
+  return truthBandFromScore(truthScore(score));
 }

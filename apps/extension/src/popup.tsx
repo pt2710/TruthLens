@@ -13,6 +13,11 @@ import {
   loadExtensionSessionStats,
   type ExtensionSessionStats,
 } from './lib/sessionStats';
+import {
+  loadFeedRerankEnabled,
+  persistFeedRerankEnabled,
+} from './lib/feedRerankSettings';
+import { truthScore } from './lib/feedScoreTruth';
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -30,6 +35,7 @@ function Popup() {
     useState<FeedbackSummary | null>(null);
   const [sessionStats, setSessionStats] =
     useState<ExtensionSessionStats | null>(null);
+  const [feedRerankEnabled, setFeedRerankEnabled] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -37,17 +43,20 @@ function Popup() {
       fetchPolicyInfo(),
       fetchFeedbackSummary(),
       loadExtensionSessionStats(),
+      loadFeedRerankEnabled(),
     ]).then(
       ([
         nextModelInfo,
         nextPolicyInfo,
         nextFeedbackSummary,
         nextSessionStats,
+        nextFeedRerankEnabled,
       ]) => {
         setModelInfo(nextModelInfo);
         setPolicyInfo(nextPolicyInfo);
         setFeedbackSummary(nextFeedbackSummary);
         setSessionStats(nextSessionStats);
+        setFeedRerankEnabled(nextFeedRerankEnabled);
       },
     );
   }, []);
@@ -110,7 +119,8 @@ function Popup() {
           >
             <strong>Latest decision</strong>
             <span style={{ color: '#555', fontSize: 12 }}>
-              risk {sessionStats.lastScore.risk_score.toFixed(2)} | action{' '}
+              truth {truthScore(sessionStats.lastScore).toFixed(1)}/10 | risk{' '}
+              {sessionStats.lastScore.risk_score.toFixed(2)} | action{' '}
               {sessionStats.lastScore.recommended_action}
             </span>
             <span style={{ color: '#555', fontSize: 12 }}>
@@ -145,6 +155,39 @@ function Popup() {
             No active YouTube session statistics recorded yet.
           </p>
         )}
+      </section>
+
+      <section style={{ display: 'grid', gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>Local Feed Reranking</h2>
+        <label
+          style={{
+            display: 'grid',
+            gap: 8,
+            padding: 10,
+            borderRadius: 8,
+            background: '#f4f5f7',
+            color: '#223247',
+            fontSize: 13,
+          }}
+        >
+          <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+            <input
+              checked={feedRerankEnabled}
+              type="checkbox"
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                setFeedRerankEnabled(enabled);
+                void persistFeedRerankEnabled(enabled);
+              }}
+            />
+            Enable local feed reranking
+          </span>
+          <span style={{ color: '#555', fontSize: 12 }}>
+            TruthLens can locally promote higher-scoring transparent content and
+            demote lower-scoring misleading or AI-noise content. This changes
+            only your extension view, not YouTube&apos;s backend ranking.
+          </span>
+        </label>
       </section>
 
       <section style={{ display: 'grid', gap: 8 }}>

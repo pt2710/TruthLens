@@ -19,12 +19,19 @@ import {
 } from './lib/api';
 import {
   buildChannelHistoryFeatures,
-  feedDisplayRiskScore,
-  feedHistoryAdjustmentScore,
-  getFeedRiskTone,
   priorFlagsFromProfile,
-  rawRuntimeRiskScore,
 } from './lib/feedScoreTruth';
+import type { TruthBand } from './lib/feedScoreTruth';
+import {
+  buildFeedPresentationSnapshot,
+  planStableRerankOrder,
+  type FeedPresentationSnapshot,
+} from './lib/feedReranking';
+import {
+  DEFAULT_FEED_RERANK_ENABLED,
+  FEED_RERANK_ENABLED_KEY,
+  loadFeedRerankEnabled,
+} from './lib/feedRerankSettings';
 import {
   buildPersonalizationSnapshot,
   shouldShowPersonalizationBadge,
@@ -55,11 +62,16 @@ const ITEM_ID = 'data-truthlens-item-id';
 const SIGNATURE = 'data-truthlens-signature';
 const PERSONALIZATION = 'data-truthlens-personalization';
 const PERSONALIZATION_SCORE = 'data-truthlens-personalization-score';
-const FEED_SCORE = 'data-truthlens-feed-score';
+const TRUTH_SCORE = 'data-truthlens-truth-score';
+const FEED_RISK_SCORE = 'data-truthlens-feed-risk-score';
 const RUNTIME_SCORE = 'data-truthlens-runtime-score';
+const TRUTH_BAND = 'data-truthlens-truth-band';
+const RERANK_PRIORITY = 'data-truthlens-rerank-priority';
+const RERANK_LOCKED = 'data-truthlens-rerank-locked';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
 const OBSERVATION_ID = 'data-truthlens-observation-id';
 const UNKNOWN_CHANNEL_NAME = 'Unknown channel';
+const CARD_SELECTOR = 'ytd-rich-item-renderer, ytd-video-renderer, [data-truthlens-card]';
 const MUSIC_TITLE_MARKERS = [
   'official audio',
   'official video',
@@ -143,6 +155,9 @@ let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let autoOpenedReviewPrompt = false;
 let homepageStartupRetryCount = 0;
 let homepageStartupRetryTimer: number | null = null;
+let feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
+let isApplyingFeedRerank = false;
+let rerankMutationWindowTimer: number | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
@@ -157,6 +172,7 @@ type PendingCard = {
   descriptionSnapshot: string | null;
   transcriptExcerpt: string | null;
   signature: string;
+  rerankLocked: boolean;
   request: ScoreItemRequest;
 };
 
@@ -230,6 +246,10 @@ function buildItemId(card: HTMLElement, index: number): string {
     return href;
   }
   return `card-${index + 1}`;
+}
+
+function matchesFeedCardSelector(element: Element): element is HTMLElement {
+  return element instanceof HTMLElement && element.matches(CARD_SELECTOR);
 }
 
 function buildCardSignature(
@@ -566,6 +586,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
       'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
     )
       ?.href || null;
+  const linkKind = inferLinkKind(linkUrl);
   const durationSeconds = parseDurationSeconds(
     extractText(
       card,
@@ -593,6 +614,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
     descriptionSnapshot,
     transcriptExcerpt,
     signature,
+    rerankLocked: isSponsoredCard(card, linkKind),
     request: {
       item_id: itemId,
       title,
@@ -726,78 +748,160 @@ function clearCardAugmentations(card: HTMLElement) {
 function syncPersonalizationPresentation(
   card: HTMLElement,
   score: ScoreResult,
-  channelName: string,
-): PersonalizationSnapshot {
-  const profile = getChannelProfile(channelName);
-  const personalization = buildPersonalizationSnapshot(score, profile);
-  const trustTone = getFeedRiskTone(score);
+  personalization: PersonalizationSnapshot,
+  presentation: FeedPresentationSnapshot,
+): void {
   const shouldShowFlag = shouldShowPersonalizationBadge(personalization, score);
-  const feedRisk = feedDisplayRiskScore(score);
-  const feedRiskLabel = feedRisk.toFixed(1);
-  const runtimeRisk = rawRuntimeRiskScore(score);
-  const runtimeLabel = runtimeRisk.toFixed(1);
-  const historyAdjustment = feedHistoryAdjustmentScore(score);
-  const historyAdjustmentLabel = historyAdjustment.toFixed(1);
-
+  const truthScoreLabel = presentation.truthScore.toFixed(1);
+  const feedRiskLabel = presentation.feedRiskScore.toFixed(1);
+  const runtimeLabel = presentation.runtimeRiskScore.toFixed(1);
+  const historyAdjustmentLabel = presentation.historyAdjustmentScore.toFixed(1);
+  const rerankPriorityLabel = presentation.rerankPriority.toFixed(1);
   card.classList.remove('truthlens-card-boosted');
   card.classList.remove('truthlens-card-steady');
   card.classList.remove('truthlens-card-downranked');
   card.classList.add(`truthlens-card-${personalization.bucket}`);
   card.setAttribute(PERSONALIZATION, personalization.bucket);
   card.setAttribute(PERSONALIZATION_SCORE, personalization.rankingScore.toFixed(2));
-  card.setAttribute(FEED_SCORE, feedRiskLabel);
+  card.setAttribute(TRUTH_SCORE, truthScoreLabel);
+  card.setAttribute(FEED_RISK_SCORE, feedRiskLabel);
   card.setAttribute(RUNTIME_SCORE, runtimeLabel);
+  card.setAttribute(TRUTH_BAND, presentation.truthBand);
+  card.setAttribute(RERANK_PRIORITY, rerankPriorityLabel);
+  card.setAttribute(RERANK_LOCKED, presentation.rerankLocked ? 'true' : 'false');
   card.setAttribute(
     'data-truthlens-personalization-reasons',
-    `Feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
+    `Truth score ${truthScoreLabel}/10. Internal feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Local rerank priority ${rerankPriorityLabel}/10. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10: ${personalization.reasons.join('; ')}`,
   );
 
   const existingFlag = card.querySelector<HTMLElement>('.truthlens-card-flag');
   if (!shouldShowFlag) {
     existingFlag?.remove();
-    return personalization;
+    return;
   }
 
   const flag = existingFlag ?? document.createElement('span');
-  flag.className = `truthlens-card-flag truthlens-card-flag-${trustTone} truthlens-card-flag-${personalization.bucket}`;
-  flag.textContent = feedRiskLabel;
-  flag.title = `TruthLens feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Recommended action ${score.recommended_action}. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
+  flag.className = `truthlens-card-flag truthlens-card-flag-${presentation.truthBand} truthlens-card-flag-${personalization.bucket}`;
+  flag.textContent = truthScoreLabel;
+  flag.title = `TruthLens truth score ${truthScoreLabel}/10. Internal feed risk ${feedRiskLabel}/10. Raw runtime risk ${runtimeLabel}/10. Channel-history adjustment ${historyAdjustmentLabel}/10. Local rerank priority ${rerankPriorityLabel}/10. Recommended action ${score.recommended_action}. Local personalization rank ${personalization.rankingScore.toFixed(1)}/10. Channel trust ${personalization.trustScore.toFixed(1)}/10. ${personalization.reasons.join('; ')}.`;
   if (!existingFlag) {
     card.appendChild(flag);
   }
+}
 
-  return personalization;
+function beginFeedRerankMutationWindow(): void {
+  isApplyingFeedRerank = true;
+  if (rerankMutationWindowTimer !== null) {
+    window.clearTimeout(rerankMutationWindowTimer);
+  }
+  rerankMutationWindowTimer = window.setTimeout(() => {
+    rerankMutationWindowTimer = null;
+    isApplyingFeedRerank = false;
+  }, 0);
+}
+
+function directCardChildren(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.children).filter(matchesFeedCardSelector);
+}
+
+function resolveRerankContainer(card: HTMLElement): HTMLElement | null {
+  let current = card.parentElement;
+  while (current) {
+    const directCards = directCardChildren(current);
+    if (directCards.length >= 2 && directCards.includes(card)) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return card.parentElement;
+}
+
+function reorderCardsWithinContainer(
+  container: HTMLElement,
+  orderedCards: HTMLElement[],
+): void {
+  const currentCards = directCardChildren(container);
+  if (
+    currentCards.length !== orderedCards.length ||
+    currentCards.every((card, index) => card === orderedCards[index])
+  ) {
+    return;
+  }
+
+  beginFeedRerankMutationWindow();
+  const anchors = currentCards.map((card) => {
+    const anchor = document.createComment('truthlens-rerank-slot');
+    container.insertBefore(anchor, card);
+    return anchor;
+  });
+
+  orderedCards.forEach((card, index) => {
+    const anchor = anchors[index];
+    container.insertBefore(card, anchor.nextSibling);
+  });
+
+  anchors.forEach((anchor) => anchor.remove());
+}
+
+function restoreOriginalFeedOrdering(): void {
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  const containers = new Map<HTMLElement, HTMLElement[]>();
+
+  cards.forEach((card) => {
+    const container = resolveRerankContainer(card);
+    if (!container) {
+      return;
+    }
+    const group = containers.get(container) ?? [];
+    group.push(card);
+    containers.set(container, group);
+  });
+
+  containers.forEach((cardsInContainer, container) => {
+    const orderedCards = [...cardsInContainer].sort((left, right) => {
+      return ensureOriginalIndex(left, 0) - ensureOriginalIndex(right, 0);
+    });
+    reorderCardsWithinContainer(container, orderedCards);
+  });
 }
 
 function applyLocalPersonalizationOrdering() {
-  const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
-  const scoresByItemId = useOverlayStore.getState().scoresByItemId;
+  if (!feedRerankEnabled) {
+    restoreOriginalFeedOrdering();
+    return;
+  }
 
-  Array.from(document.querySelectorAll<HTMLElement>(selectors.join(','))).forEach((card, index) => {
-    const itemId = card.getAttribute(ITEM_ID);
-    if (!itemId) {
-      ensureOriginalIndex(card, index);
-      if (card.style.order) {
-        card.style.order = '';
-      }
-      return;
-    }
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  const containers = new Map<HTMLElement, HTMLElement[]>();
 
-    const score = scoresByItemId[itemId];
-    if (!score) {
-      ensureOriginalIndex(card, index);
-      if (card.style.order) {
-        card.style.order = '';
-      }
-      return;
-    }
-
-    const { channelName } = extractChannelIdentity(card);
+  cards.forEach((card, index) => {
     ensureOriginalIndex(card, index);
-    syncPersonalizationPresentation(card, score, channelName);
-    if (card.style.order) {
-      card.style.order = '';
+    const container = resolveRerankContainer(card);
+    if (!container) {
+      return;
     }
+    const group = containers.get(container) ?? [];
+    group.push(card);
+    containers.set(container, group);
+  });
+
+  containers.forEach((cardsInContainer, container) => {
+    const orderedCards = planStableRerankOrder(
+      cardsInContainer.map((card) => {
+        const originalIndex = ensureOriginalIndex(card, 0);
+        const rerankPriority = Number(card.getAttribute(RERANK_PRIORITY) ?? Number.NaN);
+        const rerankLocked = card.getAttribute(RERANK_LOCKED) === 'true' || !Number.isFinite(rerankPriority);
+        const truthBand = (card.getAttribute(TRUTH_BAND) as TruthBand | null) ?? 'yellow';
+        return {
+          card,
+          originalIndex,
+          rerankPriority: Number.isFinite(rerankPriority) ? rerankPriority : 0,
+          rerankLocked,
+          truthBand,
+        };
+      }),
+    );
+    reorderCardsWithinContainer(container, orderedCards);
   });
 }
 
@@ -1069,8 +1173,23 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
   const { card, itemId, signature } = pendingCard;
   useOverlayStore.getState().recordScore(itemId, score);
   clearCardAugmentations(card);
+  const profile = getChannelProfile(pendingCard.channelName);
+  const personalization = buildPersonalizationSnapshot(score, profile);
+  const musicLikelihood = Number(
+    pendingCard.request.channel.channel_history_features.music_likelihood ?? 0,
+  );
+  const reviewPrompt = inferReviewPromptDecision(score, musicLikelihood);
+  const presentation = buildFeedPresentationSnapshot(
+    score,
+    personalization,
+    profile,
+    reviewPrompt,
+    pendingCard.rerankLocked ||
+      isUnknownChannelName(pendingCard.channelName) ||
+      score.recommended_action === 'hide',
+  );
 
-  syncPersonalizationPresentation(card, score, pendingCard.channelName);
+  syncPersonalizationPresentation(card, score, personalization, presentation);
 
   if (score.recommended_action === 'hide') {
     card.classList.add('truthlens-card-hidden');
@@ -1078,10 +1197,6 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
   if (score.recommended_action === 'blur') {
     card.classList.add('truthlens-card-blur');
   }
-  const musicLikelihood = Number(
-    pendingCard.request.channel.channel_history_features.music_likelihood ?? 0,
-  );
-  const reviewPrompt = inferReviewPromptDecision(score, musicLikelihood);
   if (reviewPrompt !== null) {
     card.setAttribute('data-truthlens-review-mode', reviewPrompt.workflowMode);
     if (score.recommended_action !== 'hide') {
@@ -1187,6 +1302,22 @@ function installRuntimeListeners() {
   });
 }
 
+function installFeedRerankSettingListener() {
+  if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) {
+    return;
+  }
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !(FEED_RERANK_ENABLED_KEY in changes)) {
+      return;
+    }
+    const nextValue = changes[FEED_RERANK_ENABLED_KEY]?.newValue;
+    feedRerankEnabled =
+      typeof nextValue === 'boolean' ? nextValue : DEFAULT_FEED_RERANK_ENABLED;
+    applyLocalPersonalizationOrdering();
+  });
+}
+
 async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
   const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', '[data-truthlens-card]'];
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
@@ -1268,6 +1399,42 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
   }
 }
 
+function cardContainsSponsoredMarker(card: HTMLElement): boolean {
+  const text = card.textContent?.toLowerCase() ?? '';
+  return (
+    text.includes('sponsored') ||
+    text.includes('sponsoreret') ||
+    text.includes('promoted')
+  );
+}
+
+function cardContainsExternalCallToAction(card: HTMLElement): boolean {
+  const text = card.textContent?.toLowerCase() ?? '';
+  return (
+    text.includes('visit site') ||
+    text.includes('besøg website') ||
+    text.includes('learn more') ||
+    text.includes('shop now')
+  );
+}
+
+function isSponsoredCard(
+  card: HTMLElement,
+  linkKind: 'watch' | 'shorts' | 'other' | 'unknown',
+): boolean {
+  if (
+    card.closest('ytd-ad-slot-renderer, ytd-display-ad-renderer, ytd-promoted-video-renderer')
+  ) {
+    return true;
+  }
+
+  if (cardContainsSponsoredMarker(card)) {
+    return true;
+  }
+
+  return linkKind === 'other' && cardContainsExternalCallToAction(card);
+}
+
 const homepageScoreScheduler = createHomepageScoreScheduler(
   (trigger) => scoreCards(trigger),
   (trigger) => {
@@ -1283,9 +1450,22 @@ function requestScoreCards(trigger: HomepageScoreTrigger): void {
 
 mountOverlay();
 installRuntimeListeners();
-requestScoreCards('startup');
+installFeedRerankSettingListener();
+void loadFeedRerankEnabled()
+  .then((enabled) => {
+    feedRerankEnabled = enabled;
+  })
+  .catch(() => {
+    feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
+  })
+  .finally(() => {
+    requestScoreCards('startup');
+  });
 
 const observer = new MutationObserver((mutations) => {
+  if (isApplyingFeedRerank) {
+    return;
+  }
   if (!shouldRescoreFromMutations(mutations, OVERLAY_ID)) {
     return;
   }

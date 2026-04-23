@@ -91,9 +91,12 @@ That is expected in the current beta: the live table above describes the mounted
 
 ### What the score chip and review badge mean
 
-- The floating chip on each card is the raw runtime risk on a `0-10` scale, derived from the current runtime `risk_score`.
-- Feed scoring now merges channel history into the request path through `prior_flags`, `channel_risk_mean`, and `repeat_template_rate`, so repeat-negative channel context is part of the runtime score shown on feed thumbnails.
-- Local personalization still exists, but it is now secondary: it affects local ordering and appears in the hover text rather than replacing the primary truth score on the chip.
+- The floating chip on each card is the user-facing TruthLens truth score on a `0-10` scale where `10.0` is best and `0.0` is worst.
+- Truth score is a user-facing inversion of internal badness: higher means more likely honest and transparent, while lower means more likely clickbait, misleading, or AI-generated noise.
+- Feed scoring still merges channel history into the request path through `prior_flags`, `channel_risk_mean`, and `repeat_template_rate`, so repeat-negative channel context lowers the visible truth score.
+- Badge colors follow the product contract exactly: `0.0-3.3` red, `3.4-4.9` orange, `5.0-6.6` yellow, `6.7-10.0` green.
+- Local personalization and reranking still exist, but they are secondary layers: the hover text separates user-facing truth score, internal feed risk, raw runtime risk, channel-history adjustment, and local rerank priority.
+- TruthLens can now locally rerank the feed in the browser extension. This is a user-side ordering layer on top of whatever YouTube already showed the current user; it does not change YouTube's backend recommendation system.
 - `Verify transparent` is a separate review prompt. It appears only when the class-conditioned review contract thinks the item likely belongs to an honest-content lane such as `music`, `art`, or `gaming`, or when the fallback music-likelihood path is strong enough.
 - A high chip can therefore appear with `Verify transparent`, and another high chip can appear without it. The badge is not driven by the chip alone.
 - Hovering the badge shows the current TruthLens explanation, for example: `TruthLens thinks this likely looks like transparent music content.`

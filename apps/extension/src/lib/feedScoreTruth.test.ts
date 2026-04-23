@@ -3,11 +3,13 @@ import type { ScoreResult } from '@truthlens/shared-schemas';
 
 import {
   buildChannelHistoryFeatures,
-  feedDisplayRiskScore,
+  feedRiskScore,
   feedHistoryAdjustmentScore,
-  getFeedRiskTone,
+  getTruthBand,
   priorFlagsFromProfile,
   rawRuntimeRiskScore,
+  truthBandFromScore,
+  truthScore,
 } from './feedScoreTruth';
 
 function makeScoreResult(
@@ -94,8 +96,9 @@ describe('feedScoreTruth', () => {
     });
 
     expect(feedHistoryAdjustmentScore(score)).toBe(0);
-    expect(feedDisplayRiskScore(score)).toBe(1.8);
-    expect(getFeedRiskTone(score)).toBe('high');
+    expect(feedRiskScore(score)).toBe(1.8);
+    expect(truthScore(score)).toBe(8.2);
+    expect(getTruthBand(score)).toBe('green');
   });
 
   it('lifts feed skepticism when negative channel history exceeds the neutral baseline', () => {
@@ -109,41 +112,15 @@ describe('feedScoreTruth', () => {
 
     expect(rawRuntimeRiskScore(score)).toBe(2.2);
     expect(feedHistoryAdjustmentScore(score)).toBe(3.5);
-    expect(feedDisplayRiskScore(score)).toBe(5.7);
-    expect(getFeedRiskTone(score)).toBe('medium');
+    expect(feedRiskScore(score)).toBe(5.7);
+    expect(truthScore(score)).toBe(4.3);
+    expect(getTruthBand(score)).toBe('orange');
   });
 
-  it('derives chip tone from feed risk and action severity', () => {
-    expect(
-      getFeedRiskTone(
-        makeScoreResult({
-          risk_score: 0.84,
-          recommended_action: 'ask-report',
-        }),
-      ),
-    ).toBe('low');
-    expect(
-      getFeedRiskTone(
-        makeScoreResult({
-          risk_score: 0.56,
-          recommended_action: 'badge',
-        }),
-      ),
-    ).toBe('medium');
-    expect(
-      getFeedRiskTone(
-        makeScoreResult({
-          risk_score: 0.18,
-          recommended_action: 'none',
-        }),
-      ),
-    ).toBe('high');
-    expect(
-      rawRuntimeRiskScore(
-        makeScoreResult({
-          risk_score: 0.84,
-        }),
-      ),
-    ).toBe(8.4);
+  it('maps truth scores onto the four product color bands', () => {
+    expect(truthBandFromScore(3.3)).toBe('red');
+    expect(truthBandFromScore(3.4)).toBe('orange');
+    expect(truthBandFromScore(5.0)).toBe('yellow');
+    expect(truthBandFromScore(6.7)).toBe('green');
   });
 });
