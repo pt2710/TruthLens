@@ -347,6 +347,14 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
     reported_item_count = int(channel_profile.get("reported_item_count", 0))
     transparent_count = int(channel_profile.get("transparent_count", 0))
     scored_item_count = max(int(channel_profile.get("scored_item_count", 0)), 1)
+    effective_sample_count = max(float(channel_profile.get("effective_sample_count", scored_item_count)), 1.0)
+    channel_risk_mean = float(channel_profile.get("channel_risk_mean", 1.0 - (float(channel_profile.get("trust_score", 5.0)) / 10.0)))
+    repeat_template_rate = float(
+        channel_profile.get(
+            "repeat_template_rate",
+            reported_item_count / max(effective_sample_count, 1.0),
+        )
+    )
     trust_score = float(channel_profile.get("trust_score", 5.0))
 
     score_request = ScoreItemRequest(
@@ -361,10 +369,12 @@ def mobile_analyze_share(payload: MobileAnalyzeShareRequest) -> MobileAnalyzeSha
             channel_url=watch_context.channel_url,
             prior_flags=reported_item_count,
             channel_history_features={
-                "channel_risk_mean": round(max(0.0, min(1.0, 1.0 - (trust_score / 10.0))), 4),
-                "repeat_template_rate": round(reported_item_count / max(scored_item_count, 1), 4),
+                "channel_risk_mean": round(max(0.0, min(1.0, channel_risk_mean)), 4),
+                "repeat_template_rate": round(max(0.0, min(1.0, repeat_template_rate)), 4),
                 "transparent_count": float(transparent_count),
                 "reported_item_count": float(reported_item_count),
+                "effective_sample_count": float(effective_sample_count),
+                "trust_score": float(trust_score),
             },
         ),
         user_context=payload.user_context,

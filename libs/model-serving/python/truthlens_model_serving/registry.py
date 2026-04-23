@@ -1417,23 +1417,33 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
         remove_request_count = int(profile["remove_request_count"])
         transparent_count = int(profile["transparent_count"])
         weighted_negative_signal = moderate_request_count + (remove_request_count * 1.35)
-        positive_signal = transparent_count * 0.75
-        total_signal = max(scored_item_count, 0) + 4.0
-        trust_score = round(
+        reported_item_count = moderate_request_count + remove_request_count
+        positive_signal = transparent_count * 0.85 + int(profile["dismiss_count"]) * 0.25
+        effective_sample_count = max(
+            1.0,
+            min(
+                float(scored_item_count),
+                float(reported_item_count + transparent_count + 2),
+            ),
+        )
+        channel_risk_mean = round(
             max(
                 0.0,
                 min(
-                    10.0,
-                    10.0
-                    * (
-                        1.0
-                        - max(0.0, (weighted_negative_signal + 2.0) - positive_signal)
-                        / total_signal
-                    ),
+                    1.0,
+                    0.08
+                    + (weighted_negative_signal / effective_sample_count) * 0.72
+                    + (reported_item_count / effective_sample_count) * 0.18
+                    - (positive_signal / effective_sample_count) * 0.42,
                 ),
             ),
-            2,
+            4,
         )
+        repeat_template_rate = round(
+            max(0.0, min(1.0, reported_item_count / effective_sample_count)),
+            4,
+        )
+        trust_score = round((1.0 - channel_risk_mean) * 10.0, 2)
         profile["bias"] = round(
             max(
                 -0.12,
@@ -1450,7 +1460,10 @@ def summarize_feedback_events(events: list[dict[str, Any]] | None = None) -> dic
             4,
         )
         profile["scored_item_count"] = scored_item_count
-        profile["reported_item_count"] = moderate_request_count + remove_request_count
+        profile["reported_item_count"] = reported_item_count
+        profile["effective_sample_count"] = round(effective_sample_count, 2)
+        profile["channel_risk_mean"] = channel_risk_mean
+        profile["repeat_template_rate"] = repeat_template_rate
         profile["trust_score"] = trust_score
 
     top_channels = sorted(

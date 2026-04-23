@@ -119,7 +119,7 @@ def test_browser_observations_are_persisted_to_sqlite_and_jsonl(
     assert summary["surface_counts"]["extension-feed"] == 1
 
 
-def test_feedback_summary_computes_channel_trust_score_from_scored_items(
+def test_feedback_summary_keeps_repeated_reports_risky_even_with_many_scored_items(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -179,7 +179,74 @@ def test_feedback_summary_computes_channel_trust_score_from_scored_items(
     assert channel["scored_item_count"] == 10
     assert channel["reported_item_count"] == 6
     assert channel["moderate_request_count"] == 6
-    assert channel["trust_score"] < 5.0
+    assert channel["effective_sample_count"] == 8.0
+    assert channel["repeat_template_rate"] == 0.75
+    assert channel["channel_risk_mean"] > 0.7
+    assert channel["trust_score"] < 3.0
+
+
+def test_feedback_summary_does_not_let_large_scored_history_hide_reported_channel_risk(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    for index in range(25):
+        append_score_event(
+            {
+                "item_id": f"airev-{index}",
+                "channel_name": "AI Revolution",
+                "model_version": "test-model",
+                "policy_version": "test-policy",
+                "recommended_action": "none",
+                "risk_score": 0.18,
+                "confidence": 0.72,
+                "uncertainty": 0.28,
+                "explanation_id": f"exp-airev-score-{index}",
+                "timestamp": f"2026-03-23T10:{index:02d}:00Z",
+            }
+        )
+
+    for index, outcome in enumerate(["moderate", "remove", "remove"]):
+        append_feedback_event(
+            {
+                "item_id": f"airev-{index}",
+                "item_hash": None,
+                "channel_name": "AI Revolution",
+                "model_version": "test-model",
+                "policy_version": "test-policy",
+                "action_shown": "badge",
+                "user_action": "confirm-report",
+                "explanation_id": f"exp-airev-feedback-{index}",
+                "before_score": 0.42,
+                "after_score": 0.42,
+                "timestamp": f"2026-03-23T11:{index:02d}:00Z",
+                "manual_report": {
+                    "target_url": f"https://www.youtube.com/watch?v=airev-{index}",
+                    "title_snapshot": "AI Revolution upload",
+                    "issues": [
+                        {
+                            "issue_type": "title",
+                            "comment": "The title overstates certainty relative to the visible context.",
+                        }
+                    ],
+                    "requested_outcome": outcome,
+                    "optimize_requested": False,
+                    "optimize_applied": False,
+                    "report_text": "Please review the misleading packaging claims.",
+                },
+            }
+        )
+
+    summary = summarize_feedback_events(load_feedback_events())
+    channel = summary["channel_profiles"]["ai revolution"]
+
+    assert channel["scored_item_count"] == 25
+    assert channel["reported_item_count"] == 3
+    assert channel["effective_sample_count"] == 5.0
+    assert channel["repeat_template_rate"] == 0.6
+    assert channel["channel_risk_mean"] > 0.7
+    assert channel["trust_score"] < 3.0
 
 
 def test_feedback_summary_rewards_confirmed_transparent_feedback(

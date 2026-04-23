@@ -27,16 +27,31 @@ export function buildChannelHistoryFeatures(
   if (!profile) {
     return taxonomyHints;
   }
-  const trustScore = clamp(Number(profile.trust_score ?? 5), 0, 10);
   const reportedItemCount = priorFlagsFromProfile(profile);
   const scoredItemCount = Math.max(Number(profile.scored_item_count ?? 0), 0);
+  const effectiveSampleCount = Math.max(
+    Number(profile.effective_sample_count ?? scoredItemCount),
+    1,
+  );
+  const channelRiskMean = clamp(
+    Number(profile.channel_risk_mean ?? 1 - Number(profile.trust_score ?? 5) / 10),
+    0,
+    1,
+  );
+  const repeatTemplateRate = clamp(
+    Number(profile.repeat_template_rate ?? reportedItemCount / effectiveSampleCount),
+    0,
+    1,
+  );
+  const trustScore = clamp(Number(profile.trust_score ?? (1 - channelRiskMean) * 10), 0, 10);
   return {
     ...taxonomyHints,
-    channel_risk_mean: Number(clamp(1 - trustScore / 10, 0, 1).toFixed(4)),
-    repeat_template_rate: Number((reportedItemCount / Math.max(scoredItemCount, 1)).toFixed(4)),
+    channel_risk_mean: Number(channelRiskMean.toFixed(4)),
+    repeat_template_rate: Number(repeatTemplateRate.toFixed(4)),
     trust_score: Number(trustScore.toFixed(2)),
     reported_item_count: Number(reportedItemCount.toFixed(0)),
     scored_item_count: Number(scoredItemCount.toFixed(0)),
+    effective_sample_count: Number(effectiveSampleCount.toFixed(2)),
   };
 }
 

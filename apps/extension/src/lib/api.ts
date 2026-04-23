@@ -122,6 +122,9 @@ export type FeedbackChannelProfile = {
   remove_request_count?: number;
   scored_item_count?: number;
   reported_item_count?: number;
+  effective_sample_count?: number;
+  channel_risk_mean?: number;
+  repeat_template_rate?: number;
   trust_score?: number;
 };
 

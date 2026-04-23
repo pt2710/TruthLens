@@ -566,13 +566,31 @@ def ingest_operator_feedback_records(
         channel_profile = dict(channel_profiles.get(channel_name.lower(), {}))
         prior_flags = int(channel_profile.get("reported_item_count", 0) or 0)
         scored_item_count = max(int(channel_profile.get("scored_item_count", 0) or 0), 1)
+        effective_sample_count = max(
+            float(channel_profile.get("effective_sample_count", scored_item_count) or scored_item_count),
+            1.0,
+        )
+        channel_risk_mean = float(
+            channel_profile.get(
+                "channel_risk_mean",
+                1.0 - (float(channel_profile.get("trust_score", 5.0) or 5.0) / 10.0),
+            )
+        )
+        repeat_template_rate = float(
+            channel_profile.get(
+                "repeat_template_rate",
+                prior_flags / max(effective_sample_count, 1.0),
+            )
+        )
         trust_score = float(channel_profile.get("trust_score", 5.0) or 5.0)
         history_features = {
             "channel_uploads": scored_item_count,
-            "channel_risk_mean": round(max(0.0, min(1.0, 1.0 - trust_score / 10.0)), 4),
+            "channel_risk_mean": round(max(0.0, min(1.0, channel_risk_mean)), 4),
             "publishing_velocity": round(scored_item_count / 7.0, 4),
             "recent_upload_velocity": round(scored_item_count / 7.0, 4),
-            "repeat_template_rate": round(prior_flags / max(scored_item_count, 1), 4),
+            "repeat_template_rate": round(max(0.0, min(1.0, repeat_template_rate)), 4),
+            "effective_sample_count": round(effective_sample_count, 2),
+            "trust_score": round(trust_score, 2),
             "engagement_anomaly": 1.0,
         }
         taxonomy = infer_content_taxonomy(

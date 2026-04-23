@@ -66,6 +66,9 @@ describe('feedScoreTruth', () => {
       mute_count: 0,
       scored_item_count: 6,
       reported_item_count: 3,
+      effective_sample_count: 5,
+      channel_risk_mean: 0.7208,
+      repeat_template_rate: 0.6,
       trust_score: 2.88,
     };
 
@@ -75,8 +78,9 @@ describe('feedScoreTruth', () => {
     });
 
     expect(priorFlagsFromProfile(profile)).toBe(3);
-    expect(history.channel_risk_mean).toBe(0.712);
-    expect(history.repeat_template_rate).toBe(0.5);
+    expect(history.channel_risk_mean).toBe(0.7208);
+    expect(history.repeat_template_rate).toBe(0.6);
+    expect(history.effective_sample_count).toBe(5);
     expect(history.taxonomy_hint_news).toBe(0.82);
   });
 
