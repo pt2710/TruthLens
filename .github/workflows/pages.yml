@@ -18,15 +18,63 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.preflight.outputs.should_deploy }}
+      configure_mode: ${{ steps.preflight.outputs.configure_mode }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ADMIN_TOKEN: ${{ secrets.PAGES_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
+          status_code="$(curl -sS -o pages-response.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${api_url}")"
+
+          if [ "${status_code}" = "200" ]; then
+            echo "should_deploy=true" >> "${GITHUB_OUTPUT}"
+            echo "configure_mode=github-token" >> "${GITHUB_OUTPUT}"
+            echo "GitHub Pages is already enabled for this repository." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          if [ "${status_code}" = "404" ] && [ -n "${PAGES_ADMIN_TOKEN}" ]; then
+            echo "should_deploy=true" >> "${GITHUB_OUTPUT}"
+            echo "configure_mode=admin-token" >> "${GITHUB_OUTPUT}"
+            echo "GitHub Pages is not enabled yet. The workflow will enable it with PAGES_ADMIN_TOKEN." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          if [ "${status_code}" = "404" ]; then
+            echo "should_deploy=false" >> "${GITHUB_OUTPUT}"
+            echo "configure_mode=skip" >> "${GITHUB_OUTPUT}"
+            echo "GitHub Pages is not enabled for this repository. Enable Pages in Settings > Pages or add a PAGES_ADMIN_TOKEN secret with repo/pages administration rights to allow first-time enablement from Actions." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          echo "Unexpected GitHub Pages API response: ${status_code}" >&2
+          cat pages-response.json >&2
+          exit 1
+      - if: steps.preflight.outputs.configure_mode == 'github-token'
+        uses: actions/configure-pages@v5
+      - if: steps.preflight.outputs.configure_mode == 'admin-token'
+        uses: actions/configure-pages@v5
+        with:
+          token: ${{ secrets.PAGES_ADMIN_TOKEN }}
+          enablement: true
+      - if: steps.preflight.outputs.should_deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
   deploy:
     needs: build
+    if: needs.build.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

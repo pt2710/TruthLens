@@ -20,6 +20,7 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 ## Public Surfaces
 
 - Landing page: [docs/index.html](docs/index.html)
+- GitHub Pages deployment: succeeds once repository Pages is enabled in Settings, or when `PAGES_ADMIN_TOKEN` is provided for first-time enablement from Actions
 - Extension beta install: [docs/beta-install.md](docs/beta-install.md)
 - Hosted beta contract: [docs/deployment/render-beta.md](docs/deployment/render-beta.md)
 - Hosted beta verification: [docs/deployment/hosted-beta-verification.md](docs/deployment/hosted-beta-verification.md)
