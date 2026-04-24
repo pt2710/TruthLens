@@ -49,6 +49,7 @@ function makeScore() {
 
 function makeSuggestion(
   workflowMode: 'report' | 'verify-transparent',
+  transcriptAvailable = false,
 ): ManualReportSuggestionResponse {
   return {
     issues: [
@@ -62,7 +63,13 @@ function makeSuggestion(
       },
       { issue_type: 'thumbnail', suggested: false, comment: '' },
       { issue_type: 'description', suggested: false, comment: '' },
-      { issue_type: 'transcript', suggested: false, comment: '' },
+      {
+        issue_type: 'transcript',
+        suggested: transcriptAvailable,
+        comment: transcriptAvailable
+          ? 'The transcript context should be reviewed alongside the packaging.'
+          : '',
+      },
       { issue_type: 'channel', suggested: false, comment: '' },
       {
         issue_type: 'other',
@@ -154,10 +161,7 @@ function makeTarget(
     linkUrl: 'https://www.youtube.com/watch?v=item-1',
     thumbnailRef: 'https://img.youtube.com/vi/item-1/default.jpg',
     descriptionSnapshot: 'Description snapshot',
-    transcriptExcerpt:
-      workflowMode === 'verify-transparent'
-        ? 'Lyrics and artist credits remain consistent.'
-        : 'The transcript does not support the claim.',
+    transcriptExcerpt: null,
     collectionScope,
     score: makeScore(),
   };
@@ -219,8 +223,10 @@ describe('manual review overlay', () => {
     });
     apiMocks.sendFeedbackEvent.mockResolvedValue(undefined);
     apiMocks.suggestManualReportComments.mockImplementation(
-      async (payload: { workflow_mode: 'report' | 'verify-transparent' }) =>
-        makeSuggestion(payload.workflow_mode),
+      async (payload: {
+        workflow_mode: 'report' | 'verify-transparent';
+        transcript_available?: boolean | null;
+      }) => makeSuggestion(payload.workflow_mode, payload.transcript_available === true),
     );
     apiMocks.submitYouTubeReport.mockResolvedValue({
       reason_id: 'reason',
@@ -264,6 +270,90 @@ describe('manual review overlay', () => {
     expect(getTagCheckbox('News').checked).toBe(false);
     expect(document.body.textContent).toContain('TruthLens recommends Moderate because the packaging appears misleading.');
     expect(document.body.textContent).toContain('Initial TruthLens draft suggestions are ready using local heuristics.');
+  });
+
+  it('hides transcript review when watch transcript evidence is unavailable and submits null transcript context', async () => {
+    useOverlayStore.getState().openManualReport(makeTarget('report'));
+    await flushUi();
+
+    const issueTexts = Array.from(document.querySelectorAll('.truthlens-issue-card')).map((node) =>
+      node.textContent?.trim() ?? '',
+    );
+    expect(issueTexts.some((text) => text.includes('Transcript'))).toBe(false);
+
+    const optimizeYes = document.querySelectorAll<HTMLInputElement>(
+      'input[name="truthlens-optimize-choice"]',
+    )[0];
+    if (!optimizeYes) {
+      throw new Error('Missing optimize choice');
+    }
+    optimizeYes.click();
+    await flushUi();
+
+    const optimizeButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.truthlens-secondary-button'),
+    ).find((button) => button.textContent?.includes('Optimize comments'));
+    const submitButton = document.querySelector<HTMLButtonElement>('.truthlens-primary-button');
+    if (!optimizeButton || !submitButton) {
+      throw new Error('Missing report buttons');
+    }
+
+    optimizeButton.click();
+    await flushUi();
+    submitButton.click();
+    await flushUi();
+
+    expect(apiMocks.optimizeManualReportComments).toHaveBeenCalledTimes(1);
+    expect(apiMocks.optimizeManualReportComments.mock.calls[0][0].transcript_excerpt).toBeNull();
+    expect(apiMocks.sendFeedbackEvent).toHaveBeenCalledTimes(1);
+    expect(apiMocks.sendFeedbackEvent.mock.calls[0][0].manual_report.transcript_excerpt).toBeNull();
+  });
+
+  it('shows transcript review only when fetched watch metadata provides transcript evidence', async () => {
+    metadataMocks.fetchYouTubeWatchMetadata.mockResolvedValue({
+      descriptionSnapshot: 'Fetched description snapshot',
+      transcriptExcerpt: 'Fetched transcript evidence from captions.',
+      transcriptAvailable: true,
+      channelUrl: 'https://www.youtube.com/@signalwatch',
+      channelContext: 'Recent public channel titles: "Weekly lab update"',
+    });
+
+    useOverlayStore.getState().openManualReport(makeTarget('report'));
+    await flushUi();
+
+    const issueTexts = Array.from(document.querySelectorAll('.truthlens-issue-card')).map((node) =>
+      node.textContent?.trim() ?? '',
+    );
+    expect(issueTexts.some((text) => text.includes('Transcript'))).toBe(true);
+
+    const optimizeYes = document.querySelectorAll<HTMLInputElement>(
+      'input[name="truthlens-optimize-choice"]',
+    )[0];
+    if (!optimizeYes) {
+      throw new Error('Missing optimize choice');
+    }
+    optimizeYes.click();
+    await flushUi();
+
+    const optimizeButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.truthlens-secondary-button'),
+    ).find((button) => button.textContent?.includes('Optimize comments'));
+    const submitButton = document.querySelector<HTMLButtonElement>('.truthlens-primary-button');
+    if (!optimizeButton || !submitButton) {
+      throw new Error('Missing report buttons');
+    }
+
+    optimizeButton.click();
+    await flushUi();
+    submitButton.click();
+    await flushUi();
+
+    expect(apiMocks.optimizeManualReportComments.mock.calls[0][0].transcript_excerpt).toBe(
+      'Fetched transcript evidence from captions.',
+    );
+    expect(apiMocks.sendFeedbackEvent.mock.calls[0][0].manual_report.transcript_excerpt).toBe(
+      'Fetched transcript evidence from captions.',
+    );
   });
 
   it('lets verify mode switch positive tags and persists the override in feedback', async () => {

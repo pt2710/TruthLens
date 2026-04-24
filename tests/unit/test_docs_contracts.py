@@ -34,22 +34,26 @@ def test_architecture_docs_surface_selective_verification_and_bseo_boundaries() 
 
 def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     readme = _read("README.md")
+    landing_page = _read("docs/index.html")
+    landing_css = _read("docs/assets/landing.css")
     benchmark_readme = _read("docs/benchmarks/README.md")
     beta_install = _read("docs/beta-install.md")
     deployment_guide = _read("docs/deployment/render-beta.md")
     hosted_verification = _read("docs/deployment/hosted-beta-verification.md")
     hardening_audit = _read("docs/decision-records/wave1-public-hardening-audit.md")
     render_blueprint = _read("render.yaml")
+    pages_workflow = _read(".github/workflows/pages.yml")
     security = _read("SECURITY.md")
     conduct = _read("CODE_OF_CONDUCT.md")
     env_example = _read(".env.example")
     codeowners = _read(".github/CODEOWNERS")
 
-    assert "docs/architecture/truthlens-architecture-blueprint.png" in readme
-    assert "docs/architecture/truthlens-runtime-decision-flow.png" in readme
-    assert "docs/architecture/truthlens-governance-feedback-loop.png" in readme
-    assert "## public beta positioning" in readme.lower()
     assert "## first 60 seconds" in readme.lower()
+    assert "## public surfaces" in readme.lower()
+    assert "## repo layout" in readme.lower()
+    assert "## extension beta quick start" in readme.lower()
+    assert "## benchmark truth" in readme.lower()
+    assert "docs/index.html" in readme
     assert "## extension beta quick start" in readme.lower()
     assert "docs/beta-install.md" in readme
     assert "docs/deployment/render-beta.md" in readme
@@ -57,16 +61,21 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "docs/decision-records/wave1-public-hardening-audit.md" in readme
     assert "docs/benchmarks/latest/benchmark_summary.json" in readme
     assert "docs/benchmarks/latest/verify_summary.json" in readme
-    assert "docs/benchmarks/latest/assets/observation_feedback_intake.svg" in readme
-    assert "## bseo" in readme.lower()
-    assert "bias structured evolutionary optimization" in readme.lower()
-    assert "positive bias preservation" in readme.lower()
-    assert "negative bias penalty" in readme.lower()
-    assert "thumbnails visible" in readme.lower()
-    assert "collection preview" in readme.lower()
+    assert "benchmark_freshness_gate.py" in readme
     assert "in-page report flow" in readme.lower()
-    assert "runtime governance" in readme.lower()
-    assert "runtime-governance-latest.json" in readme
+    assert "local reranking is a browser-side ordering layer only" in readme.lower()
+    assert "human-assisted manual submission" in readme.lower()
+    assert "what truthlens is" in landing_page.lower()
+    assert "what truthlens is not" in landing_page.lower()
+    assert "why it exists" in landing_page.lower()
+    assert "human-assisted manual submission" in landing_page.lower()
+    assert "does not claim autonomous mass reporting" in landing_page.lower()
+    assert "music, art, satire, gaming" in landing_page.lower()
+    assert "landing.css" in landing_page
+    assert "--page-bg" in landing_css
+    assert "upload-pages-artifact@v3" in pages_workflow.lower()
+    assert "deploy-pages@v4" in pages_workflow.lower()
+    assert "path: docs" in pages_workflow.lower()
     assert "hosted api plus unpacked chromium extension" in beta_install.lower()
     assert "there is no committed live default hostname" in beta_install.lower()
     assert "render web service" in deployment_guide.lower()
@@ -86,6 +95,8 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "security@truthlens.dev" in security.lower()
     assert "TRUTHLENS_DATABASE_URL" in env_example
     assert "@pt2710" in codeowners
+    assert "benchmark_freshness_gate.py" in benchmark_readme
+    assert "freshness gate" in benchmark_readme.lower()
     assert "pnpm docs:render-benchmarks" in benchmark_readme
     assert "pnpm docs:render-verify" in benchmark_readme
     assert "visible warning-state" in benchmark_readme.lower()

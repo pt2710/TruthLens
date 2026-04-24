@@ -40,6 +40,17 @@ jobs:
       - name: Pytest
         run: python -m uv run pytest
 
+  benchmark-freshness:
+    runs-on: ubuntu-latest
+    needs: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check benchmark freshness gate
+        run: python scripts/benchmark_freshness_gate.py
+
   typescript:
     runs-on: ubuntu-latest
     needs: hygiene

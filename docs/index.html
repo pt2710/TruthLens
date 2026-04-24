@@ -3,165 +3,162 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TruthLens Beta</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --bg: #f4f7fb;
-        --card: rgba(255, 255, 255, 0.88);
-        --ink: #0f172a;
-        --muted: #475569;
-        --line: rgba(15, 23, 42, 0.12);
-        --accent: #0f766e;
-        --accent-2: #1d4ed8;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Segoe UI", "Aptos", sans-serif;
-        color: var(--ink);
-        background:
-          radial-gradient(circle at top left, rgba(29, 78, 216, 0.12), transparent 30rem),
-          radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 24rem),
-          var(--bg);
-      }
-      main {
-        max-width: 1040px;
-        margin: 0 auto;
-        padding: 48px 24px 72px;
-      }
-      .hero {
-        display: grid;
-        gap: 24px;
-        padding: 32px;
-        background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(241,245,249,0.92));
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.08);
-      }
-      h1 {
-        margin: 0;
-        font-size: clamp(2.4rem, 5vw, 4.4rem);
-        line-height: 0.94;
-        letter-spacing: -0.04em;
-      }
-      p {
-        margin: 0;
-        line-height: 1.6;
-        color: var(--muted);
-      }
-      .pill {
-        display: inline-flex;
-        width: fit-content;
-        padding: 0.4rem 0.8rem;
-        border-radius: 999px;
-        background: rgba(15, 118, 110, 0.1);
-        color: var(--accent);
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        font-size: 0.78rem;
-      }
-      .actions,
-      .grid {
-        display: grid;
-        gap: 16px;
-      }
-      .actions {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      a.card,
-      .panel {
-        text-decoration: none;
-        color: inherit;
-        padding: 18px 20px;
-        border-radius: 20px;
-        background: var(--card);
-        border: 1px solid var(--line);
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-      }
-      a.card strong,
-      .panel strong {
-        display: block;
-        margin-bottom: 8px;
-        color: var(--ink);
-      }
-      .grid {
-        margin-top: 28px;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      }
-      .panel h2 {
-        margin: 0 0 10px;
-        font-size: 1rem;
-      }
-      ul {
-        margin: 12px 0 0;
-        padding-left: 18px;
-        color: var(--muted);
-        line-height: 1.6;
-      }
-    </style>
+    <title>TruthLens</title>
+    <meta
+      name="description"
+      content="TruthLens is a hosted-beta browser extension and API initiative for local feed reranking, manual review support, and detection of misleading video packaging."
+    />
+    <link rel="stylesheet" href="./assets/landing.css" />
   </head>
   <body>
-    <main>
+    <main class="page-shell">
       <section class="hero">
-        <span class="pill">TruthLens beta</span>
-        <h1>Detect misleading video packaging without a paywall.</h1>
-        <p>
-          TruthLens is a browser-extension and API system for scoring suspicious YouTube-style
-          packaging, preserving benign contexts like music and art, and helping humans review and
-          report what actually deserves scrutiny.
-        </p>
-        <div class="actions">
-          <a class="card" href="../README.md">
-            <strong>Read the repo</strong>
-            GitHub remains the primary truth surface.
-          </a>
-          <a class="card" href="./beta-install.md">
-            <strong>Install the extension beta</strong>
-            Hosted API plus unpacked Chromium build, with an explicit live beta origin.
-          </a>
-          <a class="card" href="./deployment/render-beta.md">
-            <strong>Review the hosted-beta contract</strong>
-            Render web service + persistent disk + Postgres.
-          </a>
-          <a class="card" href="./deployment/hosted-beta-verification.md">
-            <strong>Check hosted proof status</strong>
-            See whether the committed hosted beta origin is actually live.
-          </a>
+        <div class="hero-copy">
+          <span class="eyebrow">TruthLens hosted beta</span>
+          <h1>A local honesty layer for misleading video feeds.</h1>
+          <p class="lead">
+            TruthLens is a browser-extension and API initiative focused on misleading packaging:
+            clickbait, fake-news-like framing, deceptive thumbnails, and AI-mass-produced noise. It
+            works locally on top of what a platform already shows the individual user.
+          </p>
+          <div class="hero-actions">
+            <a
+              class="primary-link"
+              href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/beta-install.md"
+            >
+              Install the extension beta
+            </a>
+            <a
+              class="secondary-link"
+              href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/deployment/hosted-beta-verification.md"
+            >
+              Check hosted beta proof
+            </a>
+          </div>
         </div>
+        <aside class="hero-panel">
+          <img
+            alt="TruthLens logo"
+            class="hero-logo"
+            src="./logo/truthlens_logo.png"
+          />
+          <dl class="status-list">
+            <div>
+              <dt>Status</dt>
+              <dd>Controlled hosted beta</dd>
+            </div>
+            <div>
+              <dt>Reporting today</dt>
+              <dd>Human-assisted manual submission</dd>
+            </div>
+            <div>
+              <dt>Feed control</dt>
+              <dd>Local user-side reranking</dd>
+            </div>
+            <div>
+              <dt>Public release</dt>
+              <dd>Later, not claimed as live today</dd>
+            </div>
+          </dl>
+        </aside>
       </section>
-      <section class="grid">
-        <div class="panel">
-          <h2>Included now</h2>
-          <ul>
-            <li>Chromium extension beta on YouTube</li>
-            <li>FastAPI scoring, explanation, feedback, and browser-observation intake</li>
-            <li>BSEO runtime governance and benchmark truth surfaces</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h2>Deliberately not in first beta</h2>
-          <ul>
-            <li>Browser-store launch</li>
-            <li>Android as a public beta surface</li>
-            <li>Direct YouTube OAuth/report-submit as a supported hosted-beta path</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h2>Benchmarks</h2>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2>What TruthLens is</h2>
           <p>
-            Repo visuals and metrics are committed engineering evidence. They support governance and
-            regression tracking, not broad marketing claims.
+            TruthLens scores video packaging, surfaces warnings, keeps a human review sheet close to
+            the content, and can locally rerank a user’s feed so repeatedly problematic channels and
+            patterns become less prominent.
           </p>
-        </div>
-        <div class="panel">
-          <h2>Current closure gap</h2>
+        </article>
+        <article class="panel">
+          <h2>What TruthLens is not</h2>
           <p>
-            The hosted beta contract is committed, but live deployment proof must be verified before a
-            public tester wave should rely on a default hosted hostname.
+            TruthLens does not control YouTube’s backend recommender. It does not claim automatic
+            report submission today. The current reporting path is still explicitly human-initiated.
           </p>
-        </div>
+        </article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2>Why it exists</h2>
+          <p>
+            Misleading packaging gets rewarded when it drives curiosity clicks, repeat views, and
+            synthetic volume. TruthLens exists to make that pattern less attractive and to make
+            honest, transparent presentation more visible and easier to defend.
+          </p>
+          <ul>
+            <li>Reduce the payoff of clickbait and misleading framing.</li>
+            <li>Make repeated problem channels easier to demote locally.</li>
+            <li>Help people review what they are seeing before they report it.</li>
+            <li>Support better information quality and platform transparency.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h2>What it tries to protect</h2>
+          <p>
+            TruthLens is not meant to flatten honest creativity. It explicitly tries to preserve
+            legitimate music, art, satire, gaming, tutorials, and other transparent non-literal
+            formats instead of treating them like cheap deception.
+          </p>
+          <ul>
+            <li>Music and artistic framing should not be punished for being stylized.</li>
+            <li>Satire should not be treated like literal news by default.</li>
+            <li>Gaming and walkthrough content should not be demoted for normal presentation patterns.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2>Current beta truth</h2>
+          <ul>
+            <li>The Chromium extension is the first supported external beta surface.</li>
+            <li>The API is hosted and benchmark-tracked through the committed repo truth surfaces.</li>
+            <li>TruthLens can score, explain, suggest review, and locally rerank feed cards.</li>
+            <li>Review sheets open only on explicit user action.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h2>Reporting truth</h2>
+          <p>
+            A TruthLens-assisted report today is still a human report. TruthLens can draft reasoning
+            and help route the flow, but it does not claim autonomous mass reporting in the current
+            public repo truth.
+          </p>
+        </article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2>Public links</h2>
+          <div class="link-list">
+            <a href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/beta-install.md">
+              Extension beta install guide
+            </a>
+            <a href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/deployment/render-beta.md">
+              Hosted beta contract
+            </a>
+            <a href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/deployment/hosted-beta-verification.md">
+              Hosted beta verification
+            </a>
+            <a href="https://github.com/pt2710/TruthLens---Browser-plugin/blob/main/docs/benchmarks/README.md">
+              Benchmark docs
+            </a>
+            <a href="./benchmarks/latest/interactive/metrics_dashboard.html">Latest benchmark dashboard</a>
+            <a href="https://github.com/pt2710/TruthLens---Browser-plugin">GitHub repository</a>
+          </div>
+        </article>
+        <article class="panel">
+          <h2>What external readers should know</h2>
+          <p>
+            TruthLens is aimed at a world where misleading packaging, fake urgency, and synthetic
+            content farms can dominate attention. The project tries to nudge the ecosystem in the
+            opposite direction: less reward for deception, more reward for transparency.
+          </p>
+        </article>
       </section>
     </main>
   </body>

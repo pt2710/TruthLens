@@ -4,7 +4,6 @@ export type ReviewPromptDecision = {
   workflowMode: ManualReportWorkflowMode;
   label: string;
   reason: string;
-  autoOpen: boolean;
 };
 
 const TRANSPARENT_REVIEW_CLASSES = new Set(['music', 'art', 'gaming']);
@@ -31,7 +30,6 @@ export function inferReviewPromptDecision(
       workflowMode: 'report',
       label: 'Review report',
       reason: 'TruthLens wants a manual clickbait review for this item.',
-      autoOpen: score.confidence >= 0.8 && score.risk_score >= 0.68,
     };
   }
 
@@ -48,7 +46,6 @@ export function inferReviewPromptDecision(
       workflowMode: 'report',
       label: 'Review ambiguity',
       reason: 'TruthLens sees satire-like or ambiguous packaging that still needs human confirmation.',
-      autoOpen: score.risk_score >= 0.28 || score.uncertainty >= 0.3,
     };
   }
 
@@ -68,11 +65,6 @@ export function inferReviewPromptDecision(
       workflowMode: 'verify-transparent',
       label: 'Verify transparent',
       reason: `TruthLens thinks this likely looks like transparent ${classLabel} content.`,
-      autoOpen:
-        score.confidence >= 0.8 &&
-        score.risk_score <= 0.18 &&
-        score.uncertainty <= 0.18 &&
-        (score.content_class_confidence >= 0.84 || boundedMusicLikelihood >= 0.72),
     };
   }
 

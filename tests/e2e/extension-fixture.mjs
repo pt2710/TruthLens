@@ -107,6 +107,23 @@ function mockScore(item) {
       },
     };
   }
+  if (item.title.includes('Calm acoustic session in one take')) {
+    return {
+      risk_score: 0.16,
+      confidence: 0.87,
+      uncertainty: 0.13,
+      recommended_action: 'none',
+      reasons: [],
+      explanation_id: null,
+      explanation_summary: null,
+      evidence: [],
+      content_class: 'music',
+      content_class_confidence: 0.89,
+      path_scores: {
+        history: historyPath,
+      },
+    };
+  }
   return {
     risk_score: 0.44,
     confidence: 0.79,
@@ -358,6 +375,7 @@ async function main() {
     });
 
     await page.route(`${apiBase}/manual-report/suggest`, async (route) => {
+      const payload = JSON.parse(route.request().postData() ?? '{}');
       if (route.request().method() !== 'POST') {
         await route.fulfill({
           status: 204,
@@ -370,7 +388,7 @@ async function main() {
         });
         return;
       }
-      suggestionRequests.push(JSON.parse(route.request().postData() ?? '{}'));
+      suggestionRequests.push(payload);
       if (artificialSuggestDelayMs > 0) {
         const delay = artificialSuggestDelayMs;
         artificialSuggestDelayMs = 0;
@@ -398,8 +416,12 @@ async function main() {
             },
             {
               issue_type: 'transcript',
-              suggested: true,
-              comment: 'The transcript context does not clearly support the impression created by the thumbnail and title.',
+              suggested:
+                payload.transcript_available === true && Boolean(payload.transcript_excerpt),
+              comment:
+                payload.transcript_available === true && Boolean(payload.transcript_excerpt)
+                  ? 'The transcript context does not clearly support the impression created by the thumbnail and title.'
+                  : '',
             },
             {
               issue_type: 'channel',
@@ -566,6 +588,7 @@ async function main() {
 
     assert.equal(batchRequests, 1);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
+    assert.equal(await page.locator('.truthlens-report-card').count(), 0);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
     assert.equal(browserObservations.length, 3);
 
@@ -723,7 +746,6 @@ async function main() {
       'thumbnail',
       'title',
       'description',
-      'transcript',
       'channel',
       'other',
     ]);
@@ -770,6 +792,16 @@ async function main() {
         !updatedCard.querySelector('.truthlens-card-flag')
       );
     });
+    await page.waitForFunction(() => {
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
+        (node) => node.textContent?.trim(),
+      );
+      return (
+        titles[0] === 'Weekly launch schedule and mission recap' &&
+        titles[1] === 'Weekly launch schedule and mission update' &&
+        titles[2] === 'Secret lab leak exposed in new footage'
+      );
+    });
     await waitForNodeCondition(() => browserObservations.length >= 4);
     assert.equal(batchRequests, 2);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
@@ -802,22 +834,50 @@ async function main() {
         <div class="metadata-snippet">Dynamic transcript with moderate mismatch for observer testing.</div>
       `;
       feed.appendChild(article);
+      const secondArticle = document.createElement('article');
+      secondArticle.setAttribute('data-truthlens-card', '');
+      secondArticle.innerHTML = `
+        <a id="thumbnail" href="/watch?v=fixture-item-5">
+          <img alt="thumbnail five" src="https://example.com/thumb-5.jpg" />
+        </a>
+        <h3 id="video-title">Calm acoustic session in one take</h3>
+        <div id="channel-name">Aurora Sessions</div>
+        <div class="metadata-snippet">Single-take performance footage with transparent music framing.</div>
+      `;
+      feed.appendChild(secondArticle);
     });
 
     await page.waitForFunction(
-      () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 4,
+      () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 5,
     );
-    await waitForNodeCondition(() => browserObservations.length >= 5);
+    await page.waitForFunction(() => {
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
+        (node) => node.textContent?.trim(),
+      );
+      return (
+        titles[0] === 'Weekly launch schedule and mission recap' &&
+        titles[1] === 'Weekly launch schedule and mission update' &&
+        titles[2] === 'Secret lab leak exposed in new footage' &&
+        titles[3] === 'Calm acoustic session in one take' &&
+        titles[4] === 'Dynamic emergency update from orbit'
+      );
+    });
+    await waitForNodeCondition(() => browserObservations.length >= 6);
     assert.equal(batchRequests, 3);
     assert.equal(await page.locator('#truthlens-overlay-root').count(), 1);
+    assert.equal(await page.locator('.truthlens-report-card').count(), 0);
     const dynamicCard = page.locator('[data-truthlens-card]', {
       hasText: 'Dynamic emergency update from orbit',
+    });
+    const acousticCard = page.locator('[data-truthlens-card]', {
+      hasText: 'Calm acoustic session in one take',
     });
     assert.equal(await dynamicCard.locator('.truthlens-card-flag').count(), 1);
     assert.equal(await dynamicCard.getAttribute('data-truthlens-personalization'), 'steady');
     assert.equal(await dynamicCard.evaluate((element) => element.style.order), '');
-    assert.equal(await page.locator('.truthlens-action-row').count(), 4);
-    assert.equal(browserObservations.length, 5);
+    assert.equal(await acousticCard.locator('.truthlens-card-flag').count(), 1);
+    assert.equal(await page.locator('.truthlens-action-row').count(), 5);
+    assert.equal(browserObservations.length, 6);
 
     artificialBatchDelayMs = 13000;
     const batchRequestsBeforeFallbackReload = batchRequests;

@@ -28,10 +28,17 @@ Primary outputs:
 Regenerate everything with:
 
 ```powershell
+python scripts/benchmark_freshness_gate.py
 pnpm runtime:promote-auto
 pnpm docs:render-benchmarks
 pnpm docs:render-verify
 ```
+
+Benchmark gate:
+
+- `python scripts/benchmark_freshness_gate.py` is the explicit freshness gate for committed creator/operator benchmark truth.
+- If newer committed operator manifests, adjudication records, gold rows, or build truth exist than the current benchmark summary references, the gate must fail and retraining / validation / evaluation / docs refresh are required.
+- If no newer committed creator/operator benchmark truth exists, the gate passes as an explicit no-op and the current benchmark surface remains the committed truth.
 
 Current committed caveat:
 

@@ -49,7 +49,6 @@ function makeReviewPrompt(
     workflowMode: 'verify-transparent',
     label: 'Verify transparent',
     reason: 'TruthLens thinks this likely looks transparent.',
-    autoOpen: false,
     ...overrides,
   };
 }

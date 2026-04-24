@@ -68,6 +68,8 @@ const RUNTIME_SCORE = 'data-truthlens-runtime-score';
 const TRUTH_BAND = 'data-truthlens-truth-band';
 const RERANK_PRIORITY = 'data-truthlens-rerank-priority';
 const RERANK_LOCKED = 'data-truthlens-rerank-locked';
+const RERANK_CHUNK_ID = 'data-truthlens-rerank-chunk-id';
+const RERANK_CHUNK_SEALED = 'data-truthlens-rerank-sealed';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
 const OBSERVATION_ID = 'data-truthlens-observation-id';
 const UNKNOWN_CHANNEL_NAME = 'Unknown channel';
@@ -152,7 +154,6 @@ const TAXONOMY_HINT_MARKERS: Record<string, readonly string[]> = {
 let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
-let autoOpenedReviewPrompt = false;
 let homepageStartupRetryCount = 0;
 let homepageStartupRetryTimer: number | null = null;
 let feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
@@ -256,9 +257,16 @@ function buildCardSignature(
   title: string,
   channelName: string,
   thumbnailRef: string | null,
+  descriptionSnapshot: string | null,
   transcriptExcerpt: string | null,
 ) {
-  return [title, channelName, thumbnailRef || '', transcriptExcerpt || ''].join('||');
+  return [
+    title,
+    channelName,
+    thumbnailRef || '',
+    descriptionSnapshot || '',
+    transcriptExcerpt || '',
+  ].join('||');
 }
 
 function parseDurationSeconds(rawText: string | null): number | null {
@@ -580,7 +588,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   const { channelName, channelUrl } = extractChannelIdentity(card);
   const thumbnailRef = card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
   const descriptionSnapshot = extractText(card, '#description-text, #metadata-line, .metadata-snippet');
-  const transcriptExcerpt = descriptionSnapshot;
+  const transcriptExcerpt = null;
   const linkUrl =
     card.querySelector<HTMLAnchorElement>(
       'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
@@ -599,7 +607,13 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
     parseLocalizedInteger(descriptionSnapshot);
   const uploadTime = metadataLineSpans[1]?.textContent?.trim() || null;
   const itemId = buildItemId(card, index);
-  const signature = buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt);
+  const signature = buildCardSignature(
+    title,
+    channelName,
+    thumbnailRef,
+    descriptionSnapshot,
+    transcriptExcerpt,
+  );
   const taxonomyHints = estimateTaxonomyHints(title, channelName, descriptionSnapshot);
   const historyFeatures = buildChannelHistoryFeatures(getChannelProfile(channelName), taxonomyHints);
   const profile = getChannelProfile(channelName);
@@ -619,6 +633,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
       item_id: itemId,
       title,
       thumbnail_ref: thumbnailRef,
+      description_snapshot: descriptionSnapshot,
       transcript_excerpt: transcriptExcerpt,
       channel: {
         channel_name: channelName,
@@ -804,6 +819,42 @@ function directCardChildren(container: HTMLElement): HTMLElement[] {
   return Array.from(container.children).filter(matchesFeedCardSelector);
 }
 
+function readRerankChunkId(card: HTMLElement): number | null {
+  const attributeValue = card.getAttribute(RERANK_CHUNK_ID);
+  if (attributeValue === null) {
+    return null;
+  }
+  const value = Number(attributeValue);
+  if (!Number.isInteger(value) || value < 0) {
+    return null;
+  }
+  return value;
+}
+
+function clearRerankChunkState(card: HTMLElement): void {
+  card.removeAttribute(RERANK_CHUNK_ID);
+  card.removeAttribute(RERANK_CHUNK_SEALED);
+}
+
+function markRerankChunk(card: HTMLElement, chunkId: number): void {
+  card.setAttribute(RERANK_CHUNK_ID, String(chunkId));
+  card.setAttribute(RERANK_CHUNK_SEALED, 'true');
+}
+
+function isSealedRerankChunk(card: HTMLElement): boolean {
+  return (
+    card.getAttribute(RERANK_CHUNK_SEALED) === 'true' &&
+    readRerankChunkId(card) !== null
+  );
+}
+
+function nextRerankChunkId(cardsInContainer: HTMLElement[]): number {
+  return cardsInContainer.reduce((maxChunkId, card) => {
+    const chunkId = readRerankChunkId(card);
+    return chunkId === null ? maxChunkId : Math.max(maxChunkId, chunkId);
+  }, -1) + 1;
+}
+
 function resolveRerankContainer(card: HTMLElement): HTMLElement | null {
   let current = card.parentElement;
   while (current) {
@@ -829,18 +880,14 @@ function reorderCardsWithinContainer(
   }
 
   beginFeedRerankMutationWindow();
-  const anchors = currentCards.map((card) => {
-    const anchor = document.createComment('truthlens-rerank-slot');
-    container.insertBefore(anchor, card);
-    return anchor;
+  const startAnchor = document.createComment('truthlens-rerank-start');
+  container.insertBefore(startAnchor, currentCards[0]);
+  const fragment = document.createDocumentFragment();
+  orderedCards.forEach((card) => {
+    fragment.appendChild(card);
   });
-
-  orderedCards.forEach((card, index) => {
-    const anchor = anchors[index];
-    container.insertBefore(card, anchor.nextSibling);
-  });
-
-  anchors.forEach((anchor) => anchor.remove());
+  container.insertBefore(fragment, startAnchor.nextSibling);
+  startAnchor.remove();
 }
 
 function restoreOriginalFeedOrdering(): void {
@@ -848,6 +895,7 @@ function restoreOriginalFeedOrdering(): void {
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
   cards.forEach((card) => {
+    clearRerankChunkState(card);
     const container = resolveRerankContainer(card);
     if (!container) {
       return;
@@ -865,13 +913,16 @@ function restoreOriginalFeedOrdering(): void {
   });
 }
 
-function applyLocalPersonalizationOrdering() {
+function applyLocalPersonalizationOrdering(targetCards?: HTMLElement[]) {
   if (!feedRerankEnabled) {
     restoreOriginalFeedOrdering();
     return;
   }
 
-  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  const cards =
+    targetCards && targetCards.length > 0
+      ? targetCards
+      : Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
   cards.forEach((card, index) => {
@@ -885,12 +936,25 @@ function applyLocalPersonalizationOrdering() {
     containers.set(container, group);
   });
 
-  containers.forEach((cardsInContainer, container) => {
-    const orderedCards = planStableRerankOrder(
-      cardsInContainer.map((card) => {
+  containers.forEach((_targetCardsInContainer, container) => {
+    const cardsInContainer = directCardChildren(container);
+    cardsInContainer.forEach((card, index) => {
+      ensureOriginalIndex(card, index);
+    });
+    const chunkCards = cardsInContainer.filter(
+      (card) => card.getAttribute(PROCESSED) === 'true' && readRerankChunkId(card) === null,
+    );
+    if (chunkCards.length === 0) {
+      return;
+    }
+
+    const chunkId = nextRerankChunkId(cardsInContainer);
+    const orderedChunkCards = planStableRerankOrder(
+      chunkCards.map((card) => {
         const originalIndex = ensureOriginalIndex(card, 0);
         const rerankPriority = Number(card.getAttribute(RERANK_PRIORITY) ?? Number.NaN);
-        const rerankLocked = card.getAttribute(RERANK_LOCKED) === 'true' || !Number.isFinite(rerankPriority);
+        const rerankLocked =
+          card.getAttribute(RERANK_LOCKED) === 'true' || !Number.isFinite(rerankPriority);
         const truthBand = (card.getAttribute(TRUTH_BAND) as TruthBand | null) ?? 'yellow';
         return {
           card,
@@ -901,7 +965,23 @@ function applyLocalPersonalizationOrdering() {
         };
       }),
     );
-    reorderCardsWithinContainer(container, orderedCards);
+    const chunkSet = new Set(chunkCards);
+    const orderedChunkSet = new Set(orderedChunkCards);
+    const sealedCards = cardsInContainer.filter(
+      (card) => !chunkSet.has(card) && isSealedRerankChunk(card),
+    );
+    const remainingCards = cardsInContainer.filter(
+      (card) => !sealedCards.includes(card) && !orderedChunkSet.has(card),
+    );
+
+    reorderCardsWithinContainer(container, [
+      ...sealedCards,
+      ...orderedChunkCards,
+      ...remainingCards,
+    ]);
+    orderedChunkCards.forEach((card) => {
+      markRerankChunk(card, chunkId);
+    });
   });
 }
 
@@ -1153,7 +1233,13 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
     card.setAttribute(PROCESSED, 'true');
     card.setAttribute(
       SIGNATURE,
-      buildCardSignature(title, channelName, thumbnailRef, transcriptExcerpt),
+      buildCardSignature(
+        title,
+        channelName,
+        thumbnailRef,
+        entry.descriptionSnapshot,
+        transcriptExcerpt,
+      ),
     );
     return null;
   }
@@ -1209,14 +1295,6 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
         openManualReview(pendingCard, score, reviewPrompt.workflowMode);
       });
       card.appendChild(reviewButton);
-    }
-    if (!autoOpenedReviewPrompt && reviewPrompt.autoOpen && useOverlayStore.getState().manualReportTarget === null) {
-      autoOpenedReviewPrompt = true;
-      window.setTimeout(() => {
-        if (useOverlayStore.getState().manualReportTarget === null) {
-          openManualReview(pendingCard, score, reviewPrompt.workflowMode);
-        }
-      }, 240);
     }
   } else {
     card.removeAttribute('data-truthlens-review-mode');
@@ -1376,7 +1454,7 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
 
-  let scoredAny = false;
+  const scoredCards: HTMLElement[] = [];
 
   for (const batch of chunk(pendingCards, BATCH_SIZE)) {
     const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
@@ -1384,7 +1462,7 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
       const score = scores[entry.itemId];
       if (score) {
         applyScoreToCard(entry, score);
-        scoredAny = true;
+        scoredCards.push(entry.card);
       } else {
         logHomepageWarn('score payload missing for pending card', {
           itemId: entry.itemId,
@@ -1394,8 +1472,8 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
       }
     }
   }
-  if (scoredAny) {
-    applyLocalPersonalizationOrdering();
+  if (scoredCards.length > 0) {
+    applyLocalPersonalizationOrdering(scoredCards);
   }
 }
 

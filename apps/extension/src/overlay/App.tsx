@@ -19,7 +19,7 @@ import {
 import { buildTruthLensApiUrl } from '../lib/runtimeConfig';
 import { fetchYouTubeWatchMetadata } from '../lib/youtubeWatchMetadata';
 import { submitYouTubePageReport } from '../lib/youtubePageReporting';
-import { useOverlayStore } from './store';
+import { type ManualReportTarget, useOverlayStore } from './store';
 
 const ISSUE_OPTIONS: Array<{ issueType: ManualReportIssueType; label: string }> = [
   { issueType: 'thumbnail', label: 'Thumbnail' },
@@ -54,6 +54,14 @@ type LiveStatusEntry = {
   tone: LiveStatusTone;
 };
 
+type ReviewEvidence = {
+  descriptionSnapshot: string | null;
+  transcriptExcerpt: string | null;
+  transcriptAvailable: boolean | null;
+  channelUrl: string | null;
+  channelContext: string | null;
+};
+
 const DEFAULT_SELECTED_ISSUES: SelectedIssueState = {
   thumbnail: false,
   title: false,
@@ -84,6 +92,28 @@ const DEFAULT_SELECTED_TAGS: SelectedTagState = {
   Art: false,
   Unknown: false,
 };
+
+const EMPTY_REVIEW_EVIDENCE: ReviewEvidence = {
+  descriptionSnapshot: null,
+  transcriptExcerpt: null,
+  transcriptAvailable: null,
+  channelUrl: null,
+  channelContext: null,
+};
+
+function reviewEvidenceFromTarget(target: ManualReportTarget | null): ReviewEvidence {
+  if (!target) {
+    return EMPTY_REVIEW_EVIDENCE;
+  }
+
+  return {
+    descriptionSnapshot: target.descriptionSnapshot,
+    transcriptExcerpt: target.transcriptExcerpt,
+    transcriptAvailable: target.transcriptExcerpt ? true : null,
+    channelUrl: target.channelUrl,
+    channelContext: null,
+  };
+}
 
 function createClientId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -231,6 +261,7 @@ export function App() {
   const [statusEntries, setStatusEntries] = useState<LiveStatusEntry[]>([]);
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [collectionConfirmed, setCollectionConfirmed] = useState(false);
+  const [reviewEvidence, setReviewEvidence] = useState<ReviewEvidence>(EMPTY_REVIEW_EVIDENCE);
   const statusIdRef = useRef(0);
 
   function appendStatusLine(message: string, tone: LiveStatusTone = 'info') {
@@ -272,6 +303,7 @@ export function App() {
     setSuccessMessage(null);
     setSubmissionCompleted(false);
     setCollectionConfirmed(false);
+    setReviewEvidence(reviewEvidenceFromTarget(manualReportTarget));
     setStatusEntries(
       manualReportTarget
         ? [
@@ -352,8 +384,20 @@ export function App() {
         enrichedMetadata.descriptionSnapshot ?? manualReportTarget.descriptionSnapshot;
       const transcriptExcerpt =
         enrichedMetadata.transcriptExcerpt ?? manualReportTarget.transcriptExcerpt;
-      const transcriptAvailable = enrichedMetadata.transcriptAvailable;
-      const channelUrl = enrichedMetadata.channelUrl ?? manualReportTarget.channelUrl;
+      const transcriptAvailable =
+        typeof enrichedMetadata.transcriptAvailable === 'boolean'
+          ? enrichedMetadata.transcriptAvailable
+          : Boolean(transcriptExcerpt);
+      const nextReviewEvidence = {
+        descriptionSnapshot,
+        transcriptExcerpt,
+        transcriptAvailable,
+        channelUrl: enrichedMetadata.channelUrl ?? manualReportTarget.channelUrl,
+        channelContext: enrichedMetadata.channelContext,
+      } satisfies ReviewEvidence;
+      if (!cancelled) {
+        setReviewEvidence(nextReviewEvidence);
+      }
       appendStatusLine('Drafting initial comments with Gemini…');
 
       return suggestManualReportComments({
@@ -362,12 +406,16 @@ export function App() {
         thumbnail_ref: manualReportTarget.thumbnailRef,
         title_snapshot: manualReportTarget.title,
         channel_name: manualReportTarget.channelName,
-        channel_url: channelUrl,
-        channel_context: enrichedMetadata.channelContext,
-        description_snapshot: descriptionSnapshot,
+        channel_url: nextReviewEvidence.channelUrl,
+        channel_context: nextReviewEvidence.channelContext,
+        description_snapshot: nextReviewEvidence.descriptionSnapshot,
         transcript_excerpt:
-          transcriptExcerpt && transcriptExcerpt !== descriptionSnapshot ? transcriptExcerpt : null,
-        transcript_available: transcriptAvailable,
+          nextReviewEvidence.transcriptAvailable === true &&
+          nextReviewEvidence.transcriptExcerpt &&
+          nextReviewEvidence.transcriptExcerpt !== nextReviewEvidence.descriptionSnapshot
+            ? nextReviewEvidence.transcriptExcerpt
+            : null,
+        transcript_available: nextReviewEvidence.transcriptAvailable,
         explanation_summary: manualReportTarget.score?.explanation_summary ?? null,
         reasons: manualReportTarget.score?.reasons ?? [],
         content_class: manualReportTarget.score?.content_class ?? 'unknown',
@@ -442,7 +490,13 @@ export function App() {
     };
   }, [closeManualReport, manualReportTarget, submissionCompleted]);
 
-  const activeIssues = ISSUE_OPTIONS.filter(({ issueType }) => selectedIssues[issueType]).map(
+  const transcriptIssueVisible =
+    reviewEvidence.transcriptAvailable === true &&
+    Boolean(reviewEvidence.transcriptExcerpt?.trim());
+  const visibleIssueOptions = ISSUE_OPTIONS.filter(({ issueType }) => {
+    return issueType !== 'transcript' || transcriptIssueVisible;
+  });
+  const activeIssues = visibleIssueOptions.filter(({ issueType }) => selectedIssues[issueType]).map(
     ({ issueType, label }) => ({
       issueType,
       label,
@@ -509,12 +563,14 @@ export function App() {
     setSuccessMessage(null);
     appendStatusLine('Sending selected comments to Gemini for optimization…');
     try {
+      const transcriptExcerpt =
+        reviewEvidence.transcriptAvailable === true ? reviewEvidence.transcriptExcerpt : null;
       const response = await optimizeManualReportComments({
         workflow_mode: manualReportTarget.workflowMode,
       target_url: manualReportTarget.linkUrl,
       title_snapshot: manualReportTarget.title,
       channel_name: manualReportTarget.channelName,
-      transcript_excerpt: manualReportTarget.transcriptExcerpt,
+      transcript_excerpt: transcriptExcerpt,
       requested_outcome: requestedOutcome,
       selected_tags: activeTags,
       collection_scope:
@@ -622,7 +678,8 @@ export function App() {
       target_url: target.link_url ?? null,
       thumbnail_ref: target.thumbnail_ref ?? manualReportTarget.thumbnailRef,
       title_snapshot: target.title_snapshot ?? manualReportTarget.title,
-      transcript_excerpt: manualReportTarget.transcriptExcerpt,
+      transcript_excerpt:
+        reviewEvidence.transcriptAvailable === true ? reviewEvidence.transcriptExcerpt : null,
       issues: manualReportIssues,
       requested_outcome: requestedOutcome,
       suggested_outcome_reason: suggestedOutcomeReason,
@@ -961,7 +1018,7 @@ export function App() {
             </div>
 
             <div className="truthlens-report-grid">
-              {ISSUE_OPTIONS.map(({ issueType, label }) => (
+              {visibleIssueOptions.map(({ issueType, label }) => (
                 <label className="truthlens-issue-card" key={issueType}>
                   <span className="truthlens-issue-toggle">
                     <input

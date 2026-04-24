@@ -31,7 +31,6 @@ describe('inferReviewPromptDecision', () => {
       workflowMode: 'report',
       label: 'Review report',
       reason: 'TruthLens wants a manual clickbait review for this item.',
-      autoOpen: true,
     });
   });
 
@@ -62,7 +61,6 @@ describe('inferReviewPromptDecision', () => {
       workflowMode: 'verify-transparent',
       label: 'Verify transparent',
       reason: 'TruthLens thinks this likely looks like transparent music content.',
-      autoOpen: true,
     });
   });
 
@@ -119,7 +117,6 @@ describe('inferReviewPromptDecision', () => {
       workflowMode: 'report',
       label: 'Review ambiguity',
       reason: 'TruthLens sees satire-like or ambiguous packaging that still needs human confirmation.',
-      autoOpen: true,
     });
   });
 });
