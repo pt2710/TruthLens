@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-25T14:46:29.672952+00:00",
+  "generated_at": "2026-04-25T17:14:36.225812+00:00",
   "build_id": "build-20260425085620",
   "model_version": "baseline-v1-build-20260425085620",
   "trained_at": "2026-04-25T08:56:20.686458+00:00",
@@ -38,7 +38,7 @@
     "runtime_policy": "2026-04-23T17:16:04.310801+00:00",
     "thresholds": "2026-04-25T09:02:24.773667+00:00",
     "bseo_policy": "2026-04-25T09:02:24.775678+00:00",
-    "runtime_governance": "2026-04-25T14:46:29.604280+00:00",
+    "runtime_governance": "2026-04-25T17:14:35.948167+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
@@ -61,7 +61,7 @@
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-04-25T14:46:29.604279+00:00",
+    "generated_at": "2026-04-25T17:14:35.931286+00:00",
     "build_id": "build-20260425085620",
     "runtime_policy": {
       "configured_mode": "bseo-live",
@@ -77,7 +77,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 5.836,
+        "age_hours": 8.304,
         "build_id": "build-20260425085620",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -1119,9 +1119,9 @@
   },
   "feedback_layers": {
     "local_user_feedback": {
-      "total_events": 75,
+      "total_events": 77,
       "action_counts": {
-        "not-misleading": 75
+        "not-misleading": 77
       }
     },
     "creator_operator_feedback": {

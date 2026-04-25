@@ -1,6 +1,6 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-25T14:46:29.672952+00:00`
+- Generated at: `2026-04-25T17:14:36.225812+00:00`
 - Build ID: `build-20260425085620`
 - Model version: `baseline-v1-build-20260425085620`
 - Eval sample count: `101`
@@ -27,7 +27,7 @@
 - Observation rows linked back to scored items: `1459`
 - Legacy supplemental candidates: `0`
 - Legacy split-blocked candidates: `0`
-- Local-user feedback events: `75`
+- Local-user feedback events: `77`
 - Creator/operator candidates: `53`
 - Creator/operator gold rows: `53`
 - Creator/operator ingested rows: `53`

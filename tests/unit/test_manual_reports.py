@@ -450,6 +450,54 @@ def test_suggest_manual_report_uses_music_aware_heuristics(
     assert result.suggested_outcome.value == "moderate"
 
 
+def test_suggest_manual_report_recovers_unknown_music_context_for_verify_drafts(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=nightdrive-type-beat",
+                "thumbnail_ref": "https://img.youtube.com/vi/nightdrive-type-beat/default.jpg",
+                "title_snapshot": "Night Drive Type Beat - Neon Instrumental",
+                "channel_name": "Nova Beats",
+                "channel_context": 'Recent public channel titles: "Night Drive Type Beat - Neon Instrumental"; "Rainy Lofi Beat"; "Midnight Synth Track"',
+                "description_snapshot": "Atmospheric instrumental beat for late-night writing and coding sessions.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "unknown",
+                "content_class_confidence": 0.21,
+                "explanation_summary": "Visible metadata looks aligned with transparent music packaging.",
+                "reasons": ["Music-like title and channel signals remain consistent across the available metadata."],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    assert tag_map["Music"].selected is True
+    assert "creative artwork" in issue_map["thumbnail"].comment.lower() or "release artwork" in issue_map["thumbnail"].comment.lower()
+    assert "beat" in issue_map["title"].comment.lower() or "instrumental" in issue_map["title"].comment.lower()
+    assert 'description says "atmospheric instrumental beat' in issue_map["description"].comment.lower()
+    assert "transparency verification" in issue_map["channel"].comment.lower()
+    assert "thumbnail" not in issue_map["other"].comment.lower() or "music packaging" in issue_map["other"].comment.lower()
+
+
 def test_suggest_manual_report_uses_prior_channel_reports_in_channel_comment(
     monkeypatch,
     tmp_path: Path,
@@ -523,6 +571,54 @@ def test_suggest_manual_report_uses_prior_channel_reports_in_channel_comment(
 
     issue_map = {issue.issue_type: issue for issue in result.issues}
     assert "prior report" in issue_map["channel"].comment.lower()
+
+
+def test_suggest_manual_report_recovers_unknown_art_context_for_verify_drafts(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=fragments-blue-process",
+                "thumbnail_ref": "https://img.youtube.com/vi/fragments-blue-process/default.jpg",
+                "title_snapshot": "Fragments of Blue - Sketchbook Process",
+                "channel_name": "North Gallery Studio",
+                "channel_context": 'Recent public channel titles: "Fragments of Blue - Sketchbook Process"; "Gallery install notes"; "Illustration study timelapse"',
+                "description_snapshot": "Sketchbook process and gallery prep notes for Fragments of Blue.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "unknown",
+                "content_class_confidence": 0.18,
+                "explanation_summary": "Creative-work signals remain aligned across title, description, and channel context.",
+                "reasons": ["Artwork and gallery markers remain stronger than factual-news markers."],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    tag_map = {tag.tag.value: tag for tag in result.suggested_tags}
+    assert tag_map["Art"].selected is True
+    assert "artwork" in issue_map["thumbnail"].comment.lower() or "illustration" in issue_map["thumbnail"].comment.lower()
+    assert "creative work" in issue_map["title"].comment.lower() or "artwork" in issue_map["title"].comment.lower()
+    assert 'description says "sketchbook process and gallery prep notes' in issue_map["description"].comment.lower()
+    assert "transparency verification" in issue_map["channel"].comment.lower()
+    assert "art packaging" in issue_map["other"].comment.lower() or "creative context" in issue_map["other"].comment.lower()
 
 
 def test_suggest_manual_report_fills_report_channel_when_gemini_leaves_it_unsuggested(
@@ -739,6 +835,82 @@ def test_suggest_manual_report_fills_verify_comments_when_gemini_returns_blank_d
         assert len(issue_map[issue_type].comment.split()) >= 10
     assert "transparent music packaging" in issue_map["thumbnail"].comment.lower()
     assert "channel context" in issue_map["channel"].comment.lower()
+
+
+def test_suggest_manual_report_channel_verify_comment_uses_transparency_ordinal_history(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.post",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("Gemini returned malformed suggestion JSON.")
+        ),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"heuristic-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+
+    for index in range(2):
+        append_feedback_event(
+            {
+                "item_id": f"aurora-transparent-{index}",
+                "item_hash": None,
+                "channel_name": "Aurora Records",
+                "model_version": "test-model",
+                "policy_version": "test-policy",
+                "action_shown": "none",
+                "user_action": "confirm-transparent",
+                "explanation_id": None,
+                "before_score": 0.12,
+                "after_score": 0.09,
+                "timestamp": f"2026-03-24T10:0{index}:00Z",
+                "manual_report": {
+                    "workflow_mode": "verify-transparent",
+                    "target_url": f"https://www.youtube.com/watch?v=aurora-transparent-{index}",
+                    "title_snapshot": "Transparent upload",
+                    "issues": [
+                        {
+                            "issue_type": "title",
+                            "comment": "The title matches the visible context.",
+                        }
+                    ],
+                    "requested_outcome": "moderate",
+                    "optimize_requested": False,
+                    "optimize_applied": False,
+                    "report_text": "Transparency verification: the visible packaging appears consistent.",
+                },
+            }
+        )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=moonlight-echoes",
+                "thumbnail_ref": "https://img.youtube.com/vi/moonlight-echoes/default.jpg",
+                "title_snapshot": "Moonlight Echoes (Official Audio)",
+                "channel_name": "Aurora Records",
+                "channel_context": 'Recent public channel titles: "Moonlight Echoes (Official Audio)"; "Northern Lights (Lyric Video)"',
+                "description_snapshot": "Official audio release for Moonlight Echoes by Aurora.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "music",
+                "content_class_confidence": 0.92,
+                "explanation_summary": "Metadata appears aligned with a transparent music release.",
+                "reasons": ["Release framing remains consistent across title, description, and channel context."],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert "third truthlens transparency verification" in issue_map["channel"].comment.lower()
 
 
 def test_suggest_manual_report_uses_satire_aware_heuristics(

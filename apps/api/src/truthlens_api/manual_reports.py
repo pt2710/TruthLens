@@ -120,6 +120,7 @@ POSITIVE_ALIGNMENT_MARKERS = (
     "broadly aligned",
 )
 MUSIC_TITLE_MARKERS = (
+    "music",
     "official audio",
     "official video",
     "music video",
@@ -127,13 +128,31 @@ MUSIC_TITLE_MARKERS = (
     "lyrics",
     "visualizer",
     "visualiser",
+    "beat",
+    "beats",
+    "type beat",
     "remix",
     "cover",
+    "song",
+    "track",
     "instrumental",
+    "lofi",
+    "lo-fi",
+    "chillhop",
+    "hip hop",
+    "hip-hop",
+    "rap",
+    "r&b",
+    "edm",
+    "mix",
     "live session",
     "live performance",
     "single",
+    "album",
     "album track",
+    "soundtrack",
+    "prod.",
+    "produced by",
     "feat.",
     " ft.",
 )
@@ -171,13 +190,23 @@ NON_MUSIC_CONTEXT_MARKERS = (
 )
 ART_MARKERS = (
     "artwork",
+    "concept art",
+    "digital art",
+    "cover art",
     "painting",
+    "digital painting",
     "illustration",
+    "drawing",
+    "animation",
     "gallery",
     "exhibition",
     "studio",
     "visual art",
     "sketch",
+    "sketchbook",
+    "artist",
+    "creator",
+    "portfolio",
 )
 GAMING_MARKERS = (
     "gameplay",
@@ -808,6 +837,7 @@ def _verify_channel_comment(
     channel_name: str,
     resolved_class: str,
     channel_support: bool,
+    prior_transparent_count: int = 0,
 ) -> str:
     class_label = CLASS_LABELS.get(resolved_class, "the visible content context")
     framing_label = {
@@ -816,20 +846,27 @@ def _verify_channel_comment(
         "art": "creative or exhibition-style framing",
         "gaming": "gameplay or run-style framing",
     }.get(resolved_class, f"{class_label} framing")
+    verification_context = _channel_verification_count_comment(
+        channel_name=channel_name,
+        prior_transparent_count=prior_transparent_count,
+    )
     if sampled_titles:
         sampled_excerpt = _format_series([f'"{title}"' for title in sampled_titles[:2]])
         if channel_support:
             return (
                 f"Recent public titles from {channel_name}, including {sampled_excerpt}, support the same {framing_label}, "
-                "so the channel context strengthens the positive transparency read instead of suggesting a bait-and-switch pattern."
+                "so the channel context strengthens the positive transparency read instead of suggesting a bait-and-switch pattern. "
+                f"{verification_context}"
             )
         return (
             f"Recent public titles from {channel_name}, including {sampled_excerpt}, do not show a clear recurring deceptive pattern in the supplied context, "
-            "so the current verification should stay focused on whether this specific upload is honestly framed."
+            "so the current verification should stay focused on whether this specific upload is honestly framed. "
+            f"{verification_context}"
         )
     return (
         f"No recent public channel-title sample was available for {channel_name}, and no prior TruthLens channel reports were supplied, "
-        "so the channel note should be treated cautiously: it does not add channel-wide proof, but it also does not undermine the positive transparency assessment for this upload."
+        "so the channel note should be treated cautiously: it does not add channel-wide proof, but it also does not undermine the positive transparency assessment for this upload. "
+        f"{verification_context}"
     )
 
 
@@ -837,6 +874,48 @@ def _first_report_channel_comment(channel_name: str) -> str:
     return (
         f"No prior TruthLens channel reports are currently recorded for {channel_name}, so this draft treats the concern as item-specific rather than a proven channel-wide pattern. "
         "If similar reports accumulate later, the channel history should carry more weight."
+    )
+
+
+def _ordinal_word(value: int) -> str:
+    if value <= 0:
+        value = 1
+    names = {
+        1: "first",
+        2: "second",
+        3: "third",
+        4: "fourth",
+        5: "fifth",
+        6: "sixth",
+        7: "seventh",
+        8: "eighth",
+        9: "ninth",
+        10: "tenth",
+    }
+    if value in names:
+        return names[value]
+    if 10 < value % 100 < 14:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(value % 10, "th")
+    return f"{value}{suffix}"
+
+
+def _channel_verification_count_comment(
+    *,
+    channel_name: str,
+    prior_transparent_count: int,
+) -> str:
+    next_verification = max(1, prior_transparent_count + 1)
+    ordinal = _ordinal_word(next_verification)
+    if prior_transparent_count <= 0:
+        return (
+            f"This would be the first TruthLens transparency verification recorded for {channel_name}, "
+            "so the channel claim should remain item-level rather than pretending there is already a long verification history."
+        )
+    return (
+        f"This would be the {ordinal} TruthLens transparency verification recorded for {channel_name}, "
+        f"after {prior_transparent_count} earlier verified item(s), so the channel context can support trust without replacing the item-level evidence."
     )
 
 
@@ -916,6 +995,46 @@ def _estimate_music_likelihood(
     )
 
 
+def _estimate_art_likelihood(
+    *,
+    title: str,
+    description: str,
+    transcript: str,
+    channel_name: str,
+    channel_context: str,
+) -> float:
+    lower_title = title.lower()
+    lower_description = description.lower()
+    lower_transcript = transcript.lower()
+    lower_channel_name = channel_name.lower()
+    lower_channel_context = channel_context.lower()
+    title_hits = _count_phrase_hits(lower_title, ART_MARKERS)
+    description_hits = _count_phrase_hits(lower_description, ART_MARKERS)
+    channel_hits = _count_phrase_hits(
+        f"{lower_channel_name} {lower_channel_context}",
+        ART_MARKERS,
+    )
+    transcript_hits = _count_phrase_hits(lower_transcript, ART_MARKERS)
+    non_art_hits = _count_phrase_hits(
+        f"{lower_title} {lower_description} {lower_transcript}",
+        ("news", "breaking", "tutorial", "review", "podcast", "gameplay", "music video"),
+    )
+    return round(
+        max(
+            0.0,
+            min(
+                1.0,
+                title_hits * 0.36
+                + description_hits * 0.2
+                + channel_hits * 0.18
+                + transcript_hits * 0.08
+                - non_art_hits * 0.14,
+            ),
+        ),
+        4,
+    )
+
+
 def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> dict[str, object]:
     raw_content_class = (
         payload.content_class.value
@@ -928,6 +1047,13 @@ def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> di
     normalized_channel_name = _normalize_text(payload.channel_name)
     normalized_channel_context = _normalize_text(payload.channel_context)
     music_likelihood = _estimate_music_likelihood(
+        title=normalized_title,
+        description=normalized_description,
+        transcript=normalized_transcript,
+        channel_name=normalized_channel_name,
+        channel_context=normalized_channel_context,
+    )
+    art_likelihood = _estimate_art_likelihood(
         title=normalized_title,
         description=normalized_description,
         transcript=normalized_transcript,
@@ -948,16 +1074,21 @@ def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> di
     non_music_hits = _count_phrase_hits(lower_combined, NON_MUSIC_CONTEXT_MARKERS)
     if raw_content_class in CLASS_LABELS and raw_content_class != "unknown":
         resolved_class = raw_content_class
+        resolved_class_confidence = payload.content_class_confidence
     elif raw_content_class == "unknown":
-        resolved_class = (
-            "music"
-            if music_likelihood >= 0.72
-            and payload.content_class_confidence <= 0.35
-            and non_music_hits == 0
-            else "unknown"
-        )
+        music_threshold = 0.48 if non_music_hits == 0 else 0.68
+        if music_likelihood >= music_threshold and music_likelihood >= art_likelihood - 0.05:
+            resolved_class = "music"
+            resolved_class_confidence = max(payload.content_class_confidence, music_likelihood)
+        elif art_likelihood >= 0.48 and art_likelihood >= music_likelihood - 0.05:
+            resolved_class = "art"
+            resolved_class_confidence = max(payload.content_class_confidence, art_likelihood)
+        else:
+            resolved_class = "unknown"
+            resolved_class_confidence = payload.content_class_confidence
     else:
         resolved_class = "unknown"
+        resolved_class_confidence = payload.content_class_confidence
     negative_biases = {
         str(bias).strip().lower()
         for bias in payload.bias_profile.negative_biases
@@ -970,6 +1101,8 @@ def _resolve_manual_report_context(payload: ManualReportSuggestionRequest) -> di
         "resolved_class": resolved_class,
         "class_label": CLASS_LABELS.get(resolved_class, "mixed or unclear"),
         "music_likelihood": music_likelihood,
+        "art_likelihood": art_likelihood,
+        "resolved_class_confidence": resolved_class_confidence,
         "non_music_hits": non_music_hits,
         "transparent_context_class": resolved_class in TRANSPARENT_CONTEXT_CLASSES,
         "factual_context_class": resolved_class in FACTUAL_CONTEXT_CLASSES,
@@ -1012,17 +1145,49 @@ def _default_suggestion_comment(
     transcript = _excerpt_text(_normalize_text(payload.transcript_excerpt), limit=120)
     channel_context = _normalize_text(payload.channel_context)
     workflow = payload.workflow_mode
+    review_context = _resolve_manual_report_context(payload)
+    resolved_class = str(review_context["resolved_class"])
+    channel_profile = _channel_feedback_profile(_normalize_text(payload.channel_name))
+    prior_transparent_count = int(channel_profile.get("transparent_count", 0)) if channel_profile else 0
+    verification_context = _channel_verification_count_comment(
+        channel_name=payload.channel_name,
+        prior_transparent_count=prior_transparent_count,
+    )
     if workflow == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
         if issue_type == "thumbnail":
+            if resolved_class == "music":
+                return (
+                    f'The thumbnail for "{title}" reads like creative artwork, cover art, visualizer art, or performance-style imagery for the music itself rather than a literal factual scene, which supports a transparent music draft.'
+                )
+            if resolved_class == "art":
+                return (
+                    f'The thumbnail for "{title}" reads like artwork, illustration, gallery material, or other creative framing rather than fabricated factual evidence, which supports a transparent art draft.'
+                )
             return (
                 f"The thumbnail should be read against \"{title}\" as a positive transparency check: the visible packaging does not by itself create a stronger factual promise than the title and surrounding context appear to support."
             )
         if issue_type == "title":
+            if resolved_class == "music":
+                return (
+                    f'The title "{title}" reads like the name of a beat, instrumental, song, track, official audio, lyric video, or similar music upload rather than a sensational factual claim.'
+                )
+            if resolved_class == "art":
+                return (
+                    f'The title "{title}" reads like the name of an artwork, exhibition, gallery edit, artist process, or other creative work rather than an overblown factual promise.'
+                )
             return (
                 f"The title \"{title}\" appears to identify the upload without adding unsupported urgency or a bait-style factual claim, so it supports the verification rather than a report recommendation."
             )
         if issue_type == "description":
             if description:
+                if resolved_class == "music":
+                    return (
+                        f'Description says "{description}", which honestly describes the music upload, release context, or artist-track framing instead of inflating the promise carried by the title and thumbnail.'
+                    )
+                if resolved_class == "art":
+                    return (
+                        f'Description says "{description}", which honestly describes the artwork, exhibition, creator context, or creative process rather than overstating what the upload is.'
+                    )
                 return (
                     f'Description says "{description}", which gives supporting context for the upload instead of escalating the title into a stronger or contradictory promise.'
                 )
@@ -1042,14 +1207,32 @@ def _default_suggestion_comment(
                 sampled_titles = _sampled_channel_titles(channel_context)
                 if sampled_titles:
                     sampled_excerpt = _format_series([f'"{title}"' for title in sampled_titles[:2]])
+                    if resolved_class == "music":
+                        return (
+                            f"Recent public channel context includes {sampled_excerpt}, which fits the same music, beat, song, or release framing as this upload. {verification_context}"
+                        )
+                    if resolved_class == "art":
+                        return (
+                            f"Recent public channel context includes {sampled_excerpt}, which fits the same artwork, gallery, illustration, or creator framing as this upload. {verification_context}"
+                        )
                     return (
                         f"Recent public channel context includes {sampled_excerpt}; within the supplied evidence, that channel framing does not show a clear recurring deceptive pattern, so it supports a cautious positive verification for this item."
+                        f" {verification_context}"
                     )
             return (
                 f"No stronger negative channel-history signal was supplied for {payload.channel_name}, so the channel field should not be used to inflate suspicion beyond the current item-level evidence."
+                f" {verification_context}"
+            )
+        if resolved_class == "music":
+            return (
+                f'Taken together, the thumbnail reads like creative music artwork, the title reads like music content naming, the description stays honest about the upload, and the channel context supports this as ordinary music packaging for "{title}" rather than clickbait.'
+            )
+        if resolved_class == "art":
+            return (
+                f'Taken together, the thumbnail reads like creative artwork, the title reads like artwork or exhibition naming, the description stays honest about the creative context, and the channel context supports this as legitimate creative packaging for "{title}" rather than clickbait.'
             )
         return (
-            "Taken together, the available thumbnail, title, metadata, and channel signals are better explained as transparent packaging than as deceptive clickbait, while still leaving room for human review if stronger contradictory evidence appears."
+            "Taken together, the available thumbnail, title, description, and channel signals are better explained as transparent packaging than as deceptive clickbait, while still leaving room for human review if stronger contradictory evidence appears."
         )
 
     if issue_type == "thumbnail":
@@ -1228,8 +1411,10 @@ def _build_heuristic_suggestion_response(
     prior_report_count = int(channel_profile.get("report_count", 0)) if channel_profile else 0
     prior_remove_count = int(channel_profile.get("remove_request_count", 0)) if channel_profile else 0
     prior_moderate_count = int(channel_profile.get("moderate_request_count", 0)) if channel_profile else 0
+    prior_transparent_count = int(channel_profile.get("transparent_count", 0)) if channel_profile else 0
     review_context = _resolve_manual_report_context(payload)
     resolved_class = str(review_context["resolved_class"])
+    resolved_class_confidence = float(review_context["resolved_class_confidence"])
     likely_music_content = resolved_class == "music"
     transparent_context_class = bool(review_context["transparent_context_class"])
     factual_context_class = bool(review_context["factual_context_class"])
@@ -1345,9 +1530,10 @@ def _build_heuristic_suggestion_response(
                 channel_name=channel_name,
                 resolved_class=resolved_class,
                 channel_support=channel_support,
+                prior_transparent_count=prior_transparent_count,
             )
             other_comment = (
-                "Taken together, the artwork-style thumbnail, track-labelled title, and release-focused context look like ordinary music packaging rather than clickbait."
+                f"Taken together, the creative artwork-style thumbnail, music title, honest description context, and channel verification context support a transparent music-content draft for {quoted_title_excerpt}; this reads like ordinary music packaging rather than a clickbait report."
             )
         elif resolved_class == "art":
             thumbnail_comment = (
@@ -1371,9 +1557,10 @@ def _build_heuristic_suggestion_response(
                 channel_name=channel_name,
                 resolved_class=resolved_class,
                 channel_support=channel_support,
+                prior_transparent_count=prior_transparent_count,
             )
             other_comment = (
-                "Taken together, the artwork-style thumbnail, naming, and supporting context read like legitimate creative packaging rather than deceptive clickbait."
+                f"Taken together, the artwork-style thumbnail, creative title, description context, and channel verification context read like legitimate creative packaging for {quoted_title_excerpt}; this is transparent art packaging rather than deceptive clickbait."
             )
         elif resolved_class == "gaming":
             thumbnail_comment = (
@@ -1397,9 +1584,10 @@ def _build_heuristic_suggestion_response(
                 channel_name=channel_name,
                 resolved_class=resolved_class,
                 channel_support=channel_support,
+                prior_transparent_count=prior_transparent_count,
             )
             other_comment = (
-                "Taken together, the scene selection, title framing, and supporting context look like ordinary gaming packaging rather than deceptive overstatement."
+                f"Taken together, the scene-selection thumbnail, gameplay title, supporting description or transcript context, and channel verification context look like ordinary gaming packaging for {quoted_title_excerpt} rather than deceptive overstatement."
             )
         elif resolved_class == "satire":
             thumbnail_comment = (
@@ -1423,9 +1611,10 @@ def _build_heuristic_suggestion_response(
                 channel_name=channel_name,
                 resolved_class=resolved_class,
                 channel_support=channel_support,
+                prior_transparent_count=prior_transparent_count,
             )
             other_comment = (
-                "Taken together, the packaging reads like satire or parody; the transparency check is whether that joke framing stays legible enough not to be confused with real reporting."
+                f"Taken together, the packaging reads like satire or parody: the parody-styled thumbnail, satirical title, supporting description or transcript context, and channel verification context explain why {quoted_title_excerpt} should be checked as transparent satire rather than treated as literal reporting."
             )
         else:
             thumbnail_comment = (
@@ -1449,11 +1638,12 @@ def _build_heuristic_suggestion_response(
                 channel_name=channel_name,
                 resolved_class=resolved_class,
                 channel_support=channel_support,
+                prior_transparent_count=prior_transparent_count,
             )
             other_comment = (
-                "Taken together, the visible packaging is more consistent with transparent presentation than with aggressive clickbait."
+                f"Taken together, the thumbnail, title, description, and channel context are more consistent with transparent presentation for {quoted_title_excerpt} than with aggressive clickbait."
                 if transparent_signal
-                else "Taken together, the available cues are more aligned than misleading, but the verification should remain cautious until stronger context is exposed."
+                else f"Taken together, the thumbnail, title, description, and channel context for {quoted_title_excerpt} are more aligned than misleading, but the verification should remain cautious until stronger context is exposed."
             )
         if not description_comment:
             description_comment = _default_suggestion_comment(
@@ -1513,7 +1703,7 @@ def _build_heuristic_suggestion_response(
             suggested_tags=_build_tag_suggestions(
                 payload,
                 resolved_class=resolved_class,
-                base_confidence=payload.content_class_confidence,
+                base_confidence=resolved_class_confidence,
                 music_likelihood=float(review_context["music_likelihood"]),
                 transparent_signal=transparent_signal,
                 has_clickbait_title=has_clickbait_title,
@@ -1633,7 +1823,7 @@ def _build_heuristic_suggestion_response(
         suggested_tags=_build_tag_suggestions(
             payload,
             resolved_class=resolved_class,
-            base_confidence=payload.content_class_confidence,
+            base_confidence=resolved_class_confidence,
         ),
         suggestion_model=HEURISTIC_SUGGESTION_MODEL,
     )
@@ -1777,11 +1967,13 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
     resolved_class = str(review_context["resolved_class"])
     class_label = str(review_context["class_label"])
     music_likelihood = float(review_context["music_likelihood"])
+    art_likelihood = float(review_context["art_likelihood"])
+    resolved_class_confidence = float(review_context["resolved_class_confidence"])
     negative_biases = sorted(str(value) for value in review_context["negative_biases"])
     positive_biases = sorted(str(value) for value in review_context["positive_biases"])
     class_context_line = (
-        f"{class_label} ({payload.content_class_confidence:.0%} confidence)"
-        if resolved_class != "unknown" or payload.content_class_confidence > 0.0
+        f"{class_label} ({resolved_class_confidence:.0%} confidence)"
+        if resolved_class != "unknown" or resolved_class_confidence > 0.0
         else "mixed or unclear"
     )
     positive_bias_line = ", ".join(positive_biases) if positive_biases else "None recorded."
@@ -1800,9 +1992,10 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
     channel_history_line = (
         f"{int(channel_profile.get('report_count', 0))} prior TruthLens report(s), "
         f"{int(channel_profile.get('moderate_request_count', 0))} moderation request(s), "
-        f"{int(channel_profile.get('remove_request_count', 0))} removal request(s)."
+        f"{int(channel_profile.get('remove_request_count', 0))} removal request(s), "
+        f"{int(channel_profile.get('transparent_count', 0))} prior transparency verification(s)."
         if channel_profile
-        else "No prior TruthLens channel reports recorded."
+        else "No prior TruthLens channel reports or transparency verifications recorded."
     )
     explanation_summary = payload.explanation_summary or "Not available."
     reasons = "\n".join(f"- {reason}" for reason in payload.reasons) or "- Not available."
@@ -1820,6 +2013,7 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             f"TruthLens channel history: {channel_history_line}\n"
             f"TruthLens content class: {class_context_line}\n"
             f"TruthLens music-likelihood fallback: {music_likelihood:.2f}\n"
+            f"TruthLens art-likelihood fallback: {art_likelihood:.2f}\n"
             f"TruthLens positive biases: {positive_bias_line}\n"
             f"TruthLens negative biases: {negative_bias_line}\n"
             f"Description snippet: {description_line}\n"
@@ -1842,8 +2036,12 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- If it appears to be music content, do not treat non-literal artwork, performance imagery, lyric phrasing, or missing captions as automatic mismatch.\n"
             "- If it appears to be art content, do not treat stylized or non-literal artwork as automatic mismatch.\n"
             "- If it appears to be gaming content, do not treat selective scene choice or hype framing as automatic mismatch unless it overstates the actual gameplay or release context.\n"
-            "- For music content, focus on whether the artist, track, or release framing appears honest rather than literal scene-to-title alignment.\n"
-            "- For art content, focus on whether the packaging honestly frames artwork, exhibition, or creator context rather than forcing literal factual consistency.\n"
+            "- For music content, Thumbnail should explain that the thumbnail is creative artwork, cover art, visualizer art, or performance imagery for the music content.\n"
+            "- For music content, Title should explain that the title reads like the name of a beat, instrumental, song, track, official audio, lyric video, or similar music content.\n"
+            "- For art content, Thumbnail should explain that the thumbnail is artwork, illustration, gallery material, poster-style creative framing, or creator imagery rather than fabricated factual evidence.\n"
+            "- For art content, Title should explain that the title reads like artwork, exhibition, gallery, artist, or other creative-work naming.\n"
+            "- For Description, honestly summarize what the description says and how it supports the title and thumbnail.\n"
+            "- For Channel, say whether this is the first, second, third, or later TruthLens transparency verification recorded for the channel whenever history is available.\n"
             "- For satire content, explain whether the parody setup remains legible enough not to be confused with literal news or documentary framing.\n"
             "- Prefer reasoning about alignment and transparency across thumbnail, title, description, and transcript.\n"
             "- For Thumbnail, mention at least one concrete visible cue from the image itself before judging alignment.\n"
@@ -1851,7 +2049,7 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- For Description and Transcript, quote the concrete detail that reinforces or undermines the packaging when possible.\n"
             "- If Transcript availability is marked Unavailable, leave Transcript unsuggested instead of writing a generic absence note.\n"
             "- For Channel, use the supplied recent channel-title context and TruthLens channel history before making any broader claim, but still write a non-empty item-level channel note.\n"
-            "- For Other, use it for the overall combined packaging assessment.\n"
+            "- For Other, synthesize Thumbnail, Title, Description, and Channel into one argument; do not return a thin generic summary.\n"
             f"- suggested_tags must cover this UI tag set: {', '.join(tag.value for tag in MANUAL_REVIEW_TAG_ORDER)}.\n"
             "- Select exactly one positive tag as selected=true for this verification workflow, and leave Clickbait unselected unless the visible evidence strongly contradicts the workflow.\n"
             "- Tag confidences must vary by class and evidence; do not flatten all unselected positive tags to the same low value.\n"
@@ -1861,7 +2059,9 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- Prefer comments like:\n"
             "  * Thumbnail reads like release artwork for the track rather than a literal factual scene, which is consistent with transparent music packaging.\n"
             "  * Title 'Moonlight Echoes (Official Audio)' labels the upload as a track release instead of promising a factual event.\n"
-            "  * Taken together, the artwork-style thumbnail, track-labelled title, and release-focused description look like ordinary music packaging rather than clickbait.\n"
+            "  * Description says 'Official audio release for Moonlight Echoes by Aurora.', which honestly describes the music upload without inflating the claim.\n"
+            "  * Channel context shows this is the second TruthLens transparency verification for the channel, so channel trust supports the item-level verification without replacing it.\n"
+            "  * Taken together, the artwork-style thumbnail, track-labelled title, honest description, and channel verification context look like ordinary music packaging rather than clickbait.\n"
             "- suggested_outcome must be 'moderate' for this workflow.\n"
         )
     return (
@@ -1877,6 +2077,7 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
         f"TruthLens channel history: {channel_history_line}\n"
         f"TruthLens content class: {class_context_line}\n"
         f"TruthLens music-likelihood fallback: {music_likelihood:.2f}\n"
+        f"TruthLens art-likelihood fallback: {art_likelihood:.2f}\n"
         f"TruthLens positive biases: {positive_bias_line}\n"
         f"TruthLens negative biases: {negative_bias_line}\n"
         f"Description snippet: {description_line}\n"
@@ -2008,7 +2209,13 @@ def _normalize_suggestion_response(
                 comment = ""
             else:
                 suggested = True
-                minimum_words = 16 if issue_type == "channel" else 10
+                minimum_words = (
+                    18
+                    if issue_type == "channel"
+                    else 20
+                    if issue_type == "other"
+                    else 14
+                )
                 if len(comment.split()) < minimum_words:
                     comment = (
                         fallback_issue.comment

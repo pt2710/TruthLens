@@ -37,8 +37,12 @@ function keywordSet(value: string): Set<string> {
 }
 
 function inferContentClass(item: ScoreItemRequest): string {
-  const text = `${item.title} ${item.description_snapshot ?? ''} ${item.transcript_excerpt ?? ''}`.toLowerCase();
-  if (/(official audio|music video|lyric video|chorus|verse|album|single|records)/.test(text)) {
+  const text = `${item.title} ${item.description_snapshot ?? ''} ${item.transcript_excerpt ?? ''} ${item.channel.channel_name}`.toLowerCase();
+  if (
+    /(official audio|music video|lyric video|chorus|verse|album|single|records|beat|beats|type beat|instrumental|song|track|lofi|lo-fi|mix|soundtrack|artist|prod\.|produced by)/.test(
+      text,
+    )
+  ) {
     return 'music';
   }
   if (/(documentary|explainer|investigation|history|lecture|lesson|course|case study)/.test(text)) {
@@ -56,7 +60,11 @@ function inferContentClass(item: ScoreItemRequest): string {
   if (/(gameplay|walkthrough|speedrun|gaming)/.test(text)) {
     return 'gaming';
   }
-  if (/(gallery|art|painting|illustration)/.test(text)) {
+  if (
+    /(gallery|art|painting|illustration|artwork|cover art|concept art|digital art|drawing|sketch|sketchbook|exhibition|studio|artist|creator|portfolio)/.test(
+      text,
+    )
+  ) {
     return 'art';
   }
   if (/(breaking|news|officials|alert|report|transfer|injury)/.test(text)) {
