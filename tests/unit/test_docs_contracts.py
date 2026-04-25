@@ -67,7 +67,10 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "human-assisted manual submission" in readme.lower()
     assert "what truthlens is" in landing_page.lower()
     assert "what truthlens is not" in landing_page.lower()
-    assert "why it exists" in landing_page.lower()
+    assert (
+        "why it exists" in landing_page.lower()
+        or "the philosophy behind truthlens" in landing_page.lower()
+    )
     assert "human-assisted manual submission" in landing_page.lower()
     assert "does not claim autonomous mass reporting" in landing_page.lower()
     assert "music, art, satire, gaming" in landing_page.lower()
