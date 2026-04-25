@@ -13,6 +13,14 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(__import__("json").dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
 
 
+def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(__import__("json").dumps(row, sort_keys=True) for row in rows),
+        encoding="utf-8",
+    )
+
+
 def _seed_common_artifacts(root: Path) -> None:
     _write_json(
         root / "artifacts/trained_models/latest/model_info.json",
@@ -111,6 +119,50 @@ def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
     assert summary["runtime_truth"]["configured_policy_mode"] == "threshold-default"
     assert summary["runtime_governance"]["promotion"]["recommended_mode"] == "threshold-default"
     assert summary["supplemental_intake"]["browser_observations"]["total_observations"] == 0
+
+
+def test_render_benchmark_bundle_prefers_run_specific_operator_gold(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    _seed_common_artifacts(tmp_path)
+    operator_run_id = "discovery-operator-current"
+    _write_json(
+        tmp_path / "datasets/manifests/operator_feedback/latest.json",
+        {
+            "run_id": operator_run_id,
+            "generated_at": "2026-04-25T06:00:00+00:00",
+            "selected_count": 1,
+        },
+    )
+    _write_json(
+        tmp_path / f"datasets/manifests/operator_feedback/adjudication/{operator_run_id}.json",
+        {"run_id": operator_run_id, "summary": {"saved_count": 1}},
+    )
+    _write_json(
+        tmp_path / "datasets/manifests/operator_feedback/adjudication/latest.json",
+        {"run_id": operator_run_id, "summary": {"saved_count": 1}},
+    )
+    _write_jsonl(
+        tmp_path / f"datasets/manifests/operator_feedback/gold/{operator_run_id}.jsonl",
+        [{"feedback_id": "current"}],
+    )
+    _write_jsonl(
+        tmp_path / "datasets/manifests/operator_feedback/gold/latest.jsonl",
+        [{"feedback_id": "current"}],
+    )
+
+    summary = render_benchmark_bundle()
+
+    assert (
+        summary["artifact_paths"]["operator_adjudication"]
+        == f"datasets/manifests/operator_feedback/adjudication/{operator_run_id}.json"
+    )
+    assert (
+        summary["artifact_paths"]["operator_gold"]
+        == f"datasets/manifests/operator_feedback/gold/{operator_run_id}.jsonl"
+    )
 
 
 def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(

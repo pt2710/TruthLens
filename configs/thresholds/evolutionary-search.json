@@ -1,20 +1,20 @@
 {
   "best_thresholds": {
-    "badge_threshold": 0.316,
-    "blur_threshold": 0.469,
-    "report_prompt_threshold": 0.61,
-    "hide_threshold": 0.81
+    "badge_threshold": 0.257,
+    "blur_threshold": 0.35,
+    "report_prompt_threshold": 0.601,
+    "hide_threshold": 0.857
   },
-  "best_fitness": 1.199,
+  "best_fitness": 1.2514,
   "best_metrics": {
-    "average_reward": 1.2608,
-    "intervention_rate": 0.5149,
+    "average_reward": 1.3144,
+    "intervention_rate": 0.5248,
     "action_counts": {
-      "none": 49,
-      "badge": 11,
-      "blur": 10,
-      "ask-report": 15,
-      "hide": 16
+      "none": 48,
+      "badge": 1,
+      "blur": 21,
+      "ask-report": 21,
+      "hide": 10
     }
   },
   "population_size": 18,
@@ -22,72 +22,72 @@
   "history": [
     {
       "generation": 0,
-      "best_fitness": 1.1864,
+      "best_fitness": 1.2267,
       "best_thresholds": {
-        "badge_threshold": 0.283,
-        "blur_threshold": 0.457,
-        "report_prompt_threshold": 0.614,
-        "hide_threshold": 0.778
+        "badge_threshold": 0.288,
+        "blur_threshold": 0.375,
+        "report_prompt_threshold": 0.611,
+        "hide_threshold": 0.801
       }
     },
     {
       "generation": 1,
-      "best_fitness": 1.1886,
+      "best_fitness": 1.2343,
       "best_thresholds": {
-        "badge_threshold": 0.342,
-        "blur_threshold": 0.442,
-        "report_prompt_threshold": 0.623,
-        "hide_threshold": 0.79
+        "badge_threshold": 0.304,
+        "blur_threshold": 0.384,
+        "report_prompt_threshold": 0.608,
+        "hide_threshold": 0.806
       }
     },
     {
       "generation": 2,
-      "best_fitness": 1.194,
+      "best_fitness": 1.2366,
       "best_thresholds": {
-        "badge_threshold": 0.313,
-        "blur_threshold": 0.445,
+        "badge_threshold": 0.266,
+        "blur_threshold": 0.352,
         "report_prompt_threshold": 0.608,
-        "hide_threshold": 0.808
+        "hide_threshold": 0.821
       }
     },
     {
       "generation": 3,
-      "best_fitness": 1.194,
+      "best_fitness": 1.2366,
       "best_thresholds": {
-        "badge_threshold": 0.313,
-        "blur_threshold": 0.445,
+        "badge_threshold": 0.266,
+        "blur_threshold": 0.352,
         "report_prompt_threshold": 0.608,
-        "hide_threshold": 0.808
+        "hide_threshold": 0.821
       }
     },
     {
       "generation": 4,
-      "best_fitness": 1.194,
+      "best_fitness": 1.2465,
       "best_thresholds": {
-        "badge_threshold": 0.313,
-        "blur_threshold": 0.445,
-        "report_prompt_threshold": 0.608,
-        "hide_threshold": 0.808
+        "badge_threshold": 0.285,
+        "blur_threshold": 0.365,
+        "report_prompt_threshold": 0.612,
+        "hide_threshold": 0.84
       }
     },
     {
       "generation": 5,
-      "best_fitness": 1.199,
+      "best_fitness": 1.2465,
       "best_thresholds": {
-        "badge_threshold": 0.316,
-        "blur_threshold": 0.469,
-        "report_prompt_threshold": 0.61,
-        "hide_threshold": 0.81
+        "badge_threshold": 0.285,
+        "blur_threshold": 0.365,
+        "report_prompt_threshold": 0.612,
+        "hide_threshold": 0.84
       }
     },
     {
       "generation": 6,
-      "best_fitness": 1.199,
+      "best_fitness": 1.2465,
       "best_thresholds": {
-        "badge_threshold": 0.316,
-        "blur_threshold": 0.469,
-        "report_prompt_threshold": 0.61,
-        "hide_threshold": 0.81
+        "badge_threshold": 0.285,
+        "blur_threshold": 0.365,
+        "report_prompt_threshold": 0.612,
+        "hide_threshold": 0.84
       }
     }
   ]

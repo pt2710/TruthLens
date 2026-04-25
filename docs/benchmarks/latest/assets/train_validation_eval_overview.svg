@@ -40,7 +40,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="value" x="458" y="420">1.000</text>
 <rect class="card" x="820" y="338" width="360" height="182" rx="20" />
 <text class="label" x="842" y="370">Validation calibration</text>
-<text class="value" x="842" y="420">0.187</text>
+<text class="value" x="842" y="420">0.185</text>
 <text class="small" x="842" y="460">Calibration remains more informative</text>
 <text class="small" x="842" y="478">than the perfect binary snapshot alone.</text>
 </svg>

@@ -49,9 +49,9 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="693.7" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
 <rect x="744.0" y="154.0" width="44.3" height="340.0" fill="#c2410c" rx="6" />
 <text class="small" x="687.7" y="522" text-anchor="middle">history</text>
-<rect x="820.6" y="239.0" width="44.3" height="255.0" fill="#2563eb" rx="6" />
-<rect x="870.9" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />
-<rect x="921.1" y="202.6" width="44.3" height="291.4" fill="#c2410c" rx="6" />
+<rect x="820.6" y="236.4" width="44.3" height="257.6" fill="#2563eb" rx="6" />
+<rect x="870.9" y="160.7" width="44.3" height="333.3" fill="#0f766e" rx="6" />
+<rect x="921.1" y="203.4" width="44.3" height="290.6" fill="#c2410c" rx="6" />
 <text class="small" x="864.9" y="522" text-anchor="middle">anomaly</text>
 <rect x="997.7" y="160.5" width="44.3" height="333.5" fill="#2563eb" rx="6" />
 <rect x="1048.0" y="154.0" width="44.3" height="340.0" fill="#0f766e" rx="6" />

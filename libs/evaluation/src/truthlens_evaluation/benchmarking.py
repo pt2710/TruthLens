@@ -152,6 +152,12 @@ def _artifact_paths() -> dict[str, Path | None]:
     bseo_policy_path = thresholds_dir / "bseo-policy.json"
     runtime_governance_path = root / "artifacts" / "reports" / "runtime-governance-latest.json"
     operator_feedback_manifest_path = operator_feedback_dir / "latest.json"
+    operator_feedback_manifest = _read_json_if_exists(operator_feedback_manifest_path)
+    operator_run_id = str((operator_feedback_manifest or {}).get("run_id", "")).strip()
+    operator_adjudication_path = (
+        operator_adjudication_dir / f"{operator_run_id}.json" if operator_run_id else None
+    )
+    operator_gold_path = operator_gold_dir / f"{operator_run_id}.jsonl" if operator_run_id else None
     operator_ingestion_manifest_path = (
         operator_feedback_dir / f"{build_id}-ingestion.json" if build_id else None
     )
@@ -179,8 +185,16 @@ def _artifact_paths() -> dict[str, Path | None]:
             if operator_ingestion_manifest_path is not None and operator_ingestion_manifest_path.exists()
             else _find_latest_json(operator_feedback_dir, "-ingestion.json")
         ),
-        "operator_adjudication": _find_latest_json(operator_adjudication_dir, ".json"),
-        "operator_gold": _find_latest_json(operator_gold_dir, ".jsonl"),
+        "operator_adjudication": (
+            operator_adjudication_path
+            if operator_adjudication_path is not None and operator_adjudication_path.exists()
+            else _find_latest_json(operator_adjudication_dir, ".json")
+        ),
+        "operator_gold": (
+            operator_gold_path
+            if operator_gold_path is not None and operator_gold_path.exists()
+            else _find_latest_json(operator_gold_dir, ".jsonl")
+        ),
         "build_manifest": build_manifest_path if build_manifest_path.exists() else None,
     }
 

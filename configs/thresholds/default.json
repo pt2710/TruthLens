@@ -1,6 +1,6 @@
 {
-  "badge_threshold": 0.316,
-  "blur_threshold": 0.469,
-  "report_prompt_threshold": 0.61,
-  "hide_threshold": 0.81
+  "badge_threshold": 0.257,
+  "blur_threshold": 0.35,
+  "report_prompt_threshold": 0.601,
+  "hide_threshold": 0.857
 }

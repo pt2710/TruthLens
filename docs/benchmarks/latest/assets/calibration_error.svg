@@ -41,15 +41,15 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="422.0" y="522" text-anchor="middle">metadata</text>
 <rect x="525.3" y="431.7" width="48.0" height="62.3" fill="#7c3aed" rx="6" />
 <text class="small" x="559.8" y="522" text-anchor="middle">history</text>
-<rect x="663.1" y="308.0" width="48.0" height="186.0" fill="#7c3aed" rx="6" />
+<rect x="663.1" y="295.3" width="48.0" height="198.7" fill="#7c3aed" rx="6" />
 <text class="small" x="697.6" y="522" text-anchor="middle">anomaly</text>
-<rect x="800.9" y="395.3" width="48.0" height="98.7" fill="#7c3aed" rx="6" />
+<rect x="800.9" y="396.3" width="48.0" height="97.7" fill="#7c3aed" rx="6" />
 <text class="small" x="835.3" y="522" text-anchor="middle">fusion</text>
-<rect x="938.7" y="322.8" width="48.0" height="171.2" fill="#7c3aed" rx="6" />
+<rect x="938.7" y="323.6" width="48.0" height="170.4" fill="#7c3aed" rx="6" />
 <text class="small" x="973.1" y="522" text-anchor="middle">calibrated</text>
-<rect x="1076.4" y="322.8" width="48.0" height="171.2" fill="#7c3aed" rx="6" />
+<rect x="1076.4" y="323.6" width="48.0" height="170.4" fill="#7c3aed" rx="6" />
 <text class="small" x="1110.9" y="522" text-anchor="middle">eval</text>
-<rect x="1214.2" y="312.6" width="48.0" height="181.4" fill="#7c3aed" rx="6" />
+<rect x="1214.2" y="314.2" width="48.0" height="179.8" fill="#7c3aed" rx="6" />
 <text class="small" x="1248.7" y="522" text-anchor="middle">validation</text>
 <rect x="86" y="540" width="16" height="16" fill="#7c3aed" rx="4" />
 <text class="legend" x="110" y="553">Calibration error</text>

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-23T17:19:57.707478+00:00",
-  "build_id": "build-20260423171503",
+  "generated_at": "2026-04-25T06:43:18.863923+00:00",
+  "build_id": "build-20260425062850",
   "runtime_policy": {
     "configured_mode": "bseo-live",
     "resolved_mode": "bseo-live",
@@ -15,8 +15,8 @@
       "stale": false,
       "status": "compatible",
       "reason": null,
-      "age_hours": 0.081,
-      "build_id": "build-20260423171503",
+      "age_hours": 0.241,
+      "build_id": "build-20260425062850",
       "policy_version": "bseo-control-policy-v1"
     },
     "lineage_count": 125,
@@ -33,8 +33,8 @@
     "eval_f1": 0.9808,
     "validation_f1": 1.0,
     "validation_gap": 0.0192,
-    "calibration_error": 0.1762,
-    "bseo_objective_score": 0.8375,
+    "calibration_error": 0.1754,
+    "bseo_objective_score": 0.819,
     "benign_false_positive_rate": 0.0,
     "shadow_observation_count": 911
   },

@@ -43,15 +43,15 @@
           <h2>BSEO macro bias profile</h2>
           <table>
             <thead><tr><th>Bias primitive</th><th>Macro value</th></tr></thead>
-            <tbody><tr><td>sensational_weight</td><td>0.056</td></tr><tr><td>crossmodal_rigidity</td><td>0.395</td></tr><tr><td>channel_prior_dependency</td><td>0.277</td></tr><tr><td>genre_confusion</td><td>0.218</td></tr><tr><td>uncertainty_calibration</td><td>0.112</td></tr></tbody>
+            <tbody><tr><td>sensational_weight</td><td>0.056</td></tr><tr><td>crossmodal_rigidity</td><td>0.402</td></tr><tr><td>channel_prior_dependency</td><td>0.252</td></tr><tr><td>genre_confusion</td><td>0.218</td></tr><tr><td>uncertainty_calibration</td><td>0.111</td></tr></tbody>
           </table>
         </div>
         
       <div class="card">
         <h2>Embedded summary payload</h2>
         <pre>{
-  &quot;build_id&quot;: &quot;build-20260423171503&quot;,
-  &quot;model_version&quot;: &quot;baseline-v1-build-20260423171503&quot;,
+  &quot;build_id&quot;: &quot;build-20260425062850&quot;,
+  &quot;model_version&quot;: &quot;baseline-v1-build-20260425062850&quot;,
   &quot;sample_count&quot;: 101,
   &quot;runtime_truth&quot;: {
     &quot;configured_policy_mode&quot;: &quot;bseo-live&quot;,
@@ -66,8 +66,8 @@
     &quot;live_eligible&quot;: true
   },
   &quot;runtime_governance&quot;: {
-    &quot;generated_at&quot;: &quot;2026-04-23T17:19:57.707478+00:00&quot;,
-    &quot;build_id&quot;: &quot;build-20260423171503&quot;,
+    &quot;generated_at&quot;: &quot;2026-04-25T06:43:18.863923+00:00&quot;,
+    &quot;build_id&quot;: &quot;build-20260425062850&quot;,
     &quot;runtime_policy&quot;: {
       &quot;configured_mode&quot;: &quot;bseo-live&quot;,
       &quot;resolved_mode&quot;: &quot;bseo-live&quot;,
@@ -82,8 +82,8 @@
         &quot;stale&quot;: false,
         &quot;status&quot;: &quot;compatible&quot;,
         &quot;reason&quot;: null,
-        &quot;age_hours&quot;: 0.081,
-        &quot;build_id&quot;: &quot;build-20260423171503&quot;,
+        &quot;age_hours&quot;: 0.241,
+        &quot;build_id&quot;: &quot;build-20260425062850&quot;,
         &quot;policy_version&quot;: &quot;bseo-control-policy-v1&quot;
       },
       &quot;lineage_count&quot;: 125,
@@ -100,8 +100,8 @@
       &quot;eval_f1&quot;: 0.9808,
       &quot;validation_f1&quot;: 1.0,
       &quot;validation_gap&quot;: 0.0192,
-      &quot;calibration_error&quot;: 0.1762,
-      &quot;bseo_objective_score&quot;: 0.8375,
+      &quot;calibration_error&quot;: 0.1754,
+      &quot;bseo_objective_score&quot;: 0.819,
       &quot;benign_false_positive_rate&quot;: 0.0,
       &quot;shadow_observation_count&quot;: 911
     },
@@ -145,8 +145,8 @@
       &quot;roc_auc&quot;: 1.0,
       &quot;pr_auc&quot;: 1.0
     },
-    &quot;calibration_error&quot;: 0.1762,
-    &quot;validation_calibration_error&quot;: 0.1867,
+    &quot;calibration_error&quot;: 0.1754,
+    &quot;validation_calibration_error&quot;: 0.1851,
     &quot;per_head_metrics&quot;: {
       &quot;text&quot;: {
         &quot;metrics&quot;: {
@@ -182,8 +182,8 @@
           &quot;positive_rate&quot;: 0.5743,
           &quot;false_positive_rate&quot;: 0.18,
           &quot;false_negative_rate&quot;: 0.0392,
-          &quot;roc_auc&quot;: 0.9718,
-          &quot;pr_auc&quot;: 0.9623
+          &quot;roc_auc&quot;: 0.9761,
+          &quot;pr_auc&quot;: 0.9734
         },
         &quot;calibration_error&quot;: 0.1639
       },
@@ -202,16 +202,16 @@
       },
       &quot;anomaly&quot;: {
         &quot;metrics&quot;: {
-          &quot;precision&quot;: 0.75,
-          &quot;recall&quot;: 1.0,
-          &quot;f1&quot;: 0.8571,
-          &quot;positive_rate&quot;: 0.6733,
-          &quot;false_positive_rate&quot;: 0.34,
-          &quot;false_negative_rate&quot;: 0.0,
-          &quot;roc_auc&quot;: 0.9565,
-          &quot;pr_auc&quot;: 0.9604
+          &quot;precision&quot;: 0.7576,
+          &quot;recall&quot;: 0.9804,
+          &quot;f1&quot;: 0.8547,
+          &quot;positive_rate&quot;: 0.6535,
+          &quot;false_positive_rate&quot;: 0.32,
+          &quot;false_negative_rate&quot;: 0.0196,
+          &quot;roc_auc&quot;: 0.9592,
+          &quot;pr_auc&quot;: 0.9632
         },
-        &quot;calibration_error&quot;: 0.1915
+        &quot;calibration_error&quot;: 0.2045
       },
       &quot;fusion&quot;: {
         &quot;metrics&quot;: {
@@ -224,7 +224,7 @@
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.1016
+        &quot;calibration_error&quot;: 0.1006
       },
       &quot;calibrated&quot;: {
         &quot;metrics&quot;: {
@@ -237,7 +237,7 @@
           &quot;roc_auc&quot;: 1.0,
           &quot;pr_auc&quot;: 1.0
         },
-        &quot;calibration_error&quot;: 0.1762
+        &quot;calibration_error&quot;: 0.1754
       }
     },
     &quot;confusion_matrix&quot;: {
@@ -252,13 +252,13 @@
   ],
   &quot;artifact_paths&quot;: {
     &quot;model_info&quot;: &quot;artifacts/trained_models/latest/model_info.json&quot;,
-    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260423171503.json&quot;,
-    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260423171503-simulation.json&quot;,
-    &quot;training_history&quot;: &quot;artifacts/eval_runs/build-20260423171503-training-history.json&quot;,
-    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260423171503-bseo-report.json&quot;,
-    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260423171503-mutation-bias-atlas.json&quot;,
-    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260423171503-bseo-lineage.json&quot;,
-    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260423171503.json&quot;,
+    &quot;eval_report&quot;: &quot;artifacts/eval_runs/build-20260425062850.json&quot;,
+    &quot;simulation&quot;: &quot;artifacts/eval_runs/build-20260425062850-simulation.json&quot;,
+    &quot;training_history&quot;: &quot;artifacts/eval_runs/build-20260425062850-training-history.json&quot;,
+    &quot;bseo_report&quot;: &quot;artifacts/eval_runs/build-20260425062850-bseo-report.json&quot;,
+    &quot;mutation_atlas&quot;: &quot;artifacts/eval_runs/build-20260425062850-mutation-bias-atlas.json&quot;,
+    &quot;lineage&quot;: &quot;artifacts/eval_runs/build-20260425062850-bseo-lineage.json&quot;,
+    &quot;drift_report&quot;: &quot;artifacts/drift_reports/build-20260425062850.json&quot;,
     &quot;runtime_policy&quot;: &quot;configs/thresholds/runtime-policy.json&quot;,
     &quot;thresholds&quot;: &quot;configs/thresholds/default.json&quot;,
     &quot;bseo_policy&quot;: &quot;configs/thresholds/bseo-policy.json&quot;,
@@ -267,9 +267,9 @@
     &quot;supplemental_adjudication&quot;: null,
     &quot;supplemental_gold&quot;: null,
     &quot;operator_feedback_manifest&quot;: &quot;datasets/manifests/operator_feedback/latest.json&quot;,
-    &quot;operator_ingestion_manifest&quot;: &quot;datasets/manifests/operator_feedback/build-20260423171503-ingestion.json&quot;,
-    &quot;operator_adjudication&quot;: &quot;datasets/manifests/operator_feedback/adjudication/discovery-20260423171502-operator-feedback.json&quot;,
-    &quot;operator_gold&quot;: &quot;datasets/manifests/operator_feedback/gold/discovery-20260423171502-operator-feedback.jsonl&quot;,
+    &quot;operator_ingestion_manifest&quot;: &quot;datasets/manifests/operator_feedback/build-20260425062850-ingestion.json&quot;,
+    &quot;operator_adjudication&quot;: &quot;datasets/manifests/operator_feedback/adjudication/discovery-20260425062849-operator-feedback.json&quot;,
+    &quot;operator_gold&quot;: &quot;datasets/manifests/operator_feedback/gold/discovery-20260425062849-operator-feedback.jsonl&quot;,
     &quot;build_manifest&quot;: &quot;datasets/manifests/builds/latest.json&quot;
   }
 }</pre>

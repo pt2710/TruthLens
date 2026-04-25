@@ -1,8 +1,8 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-23T17:19:57.991263+00:00`
-- Build ID: `build-20260423171503`
-- Model version: `baseline-v1-build-20260423171503`
+- Generated at: `2026-04-25T06:43:18.947670+00:00`
+- Build ID: `build-20260425062850`
+- Model version: `baseline-v1-build-20260425062850`
 - Eval sample count: `101`
 - Configured runtime policy mode: `bseo-live`
 - Resolved runtime policy mode: `bseo-live`
@@ -18,7 +18,7 @@
 | F1 | 0.981 | 1.000 |
 | ROC AUC | 1.000 | 1.000 |
 | PR AUC | 1.000 | 1.000 |
-| Calibration error | 0.176 | 0.187 |
+| Calibration error | 0.175 | 0.185 |
 
 ## Observation And Feedback Intake
 
@@ -27,7 +27,7 @@
 - Observation rows linked back to scored items: `1459`
 - Legacy supplemental candidates: `0`
 - Legacy split-blocked candidates: `0`
-- Local-user feedback events: `60`
+- Local-user feedback events: `65`
 - Creator/operator candidates: `53`
 - Creator/operator gold rows: `53`
 - Creator/operator ingested rows: `53`
@@ -38,7 +38,7 @@
 - Shadow eligible: `True`
 - Live eligible: `True`
 - Shadow observation count: `911`
-- BSEO objective score: `0.8375`
+- BSEO objective score: `0.819`
 
 ## Caveats
 
@@ -51,13 +51,13 @@
 ## Artifact Provenance
 
 - `model_info`: `artifacts/trained_models/latest/model_info.json`
-- `eval_report`: `artifacts/eval_runs/build-20260423171503.json`
-- `simulation`: `artifacts/eval_runs/build-20260423171503-simulation.json`
-- `training_history`: `artifacts/eval_runs/build-20260423171503-training-history.json`
-- `bseo_report`: `artifacts/eval_runs/build-20260423171503-bseo-report.json`
-- `mutation_atlas`: `artifacts/eval_runs/build-20260423171503-mutation-bias-atlas.json`
-- `lineage`: `artifacts/eval_runs/build-20260423171503-bseo-lineage.json`
-- `drift_report`: `artifacts/drift_reports/build-20260423171503.json`
+- `eval_report`: `artifacts/eval_runs/build-20260425062850.json`
+- `simulation`: `artifacts/eval_runs/build-20260425062850-simulation.json`
+- `training_history`: `artifacts/eval_runs/build-20260425062850-training-history.json`
+- `bseo_report`: `artifacts/eval_runs/build-20260425062850-bseo-report.json`
+- `mutation_atlas`: `artifacts/eval_runs/build-20260425062850-mutation-bias-atlas.json`
+- `lineage`: `artifacts/eval_runs/build-20260425062850-bseo-lineage.json`
+- `drift_report`: `artifacts/drift_reports/build-20260425062850.json`
 - `runtime_policy`: `configs/thresholds/runtime-policy.json`
 - `thresholds`: `configs/thresholds/default.json`
 - `bseo_policy`: `configs/thresholds/bseo-policy.json`
@@ -66,7 +66,7 @@
 - `supplemental_adjudication`: `missing`
 - `supplemental_gold`: `missing`
 - `operator_feedback_manifest`: `datasets/manifests/operator_feedback/latest.json`
-- `operator_ingestion_manifest`: `datasets/manifests/operator_feedback/build-20260423171503-ingestion.json`
-- `operator_adjudication`: `datasets/manifests/operator_feedback/adjudication/discovery-20260423171502-operator-feedback.json`
-- `operator_gold`: `datasets/manifests/operator_feedback/gold/discovery-20260423171502-operator-feedback.jsonl`
+- `operator_ingestion_manifest`: `datasets/manifests/operator_feedback/build-20260425062850-ingestion.json`
+- `operator_adjudication`: `datasets/manifests/operator_feedback/adjudication/discovery-20260425062849-operator-feedback.json`
+- `operator_gold`: `datasets/manifests/operator_feedback/gold/discovery-20260425062849-operator-feedback.jsonl`
 - `build_manifest`: `datasets/manifests/builds/latest.json`

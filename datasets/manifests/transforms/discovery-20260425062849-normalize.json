@@ -1,0 +1,15 @@
+{
+  "run_id": "discovery-20260425062849",
+  "generated_at": "2026-03-01T12:00:00Z",
+  "transform_version": "normalize-v1",
+  "record_count": 346,
+  "missing_field_rate": 0.0,
+  "artifact_kind_counts": {
+    "signal-json": 346
+  },
+  "normalized_path": "datasets/interim/normalized/discovery-20260425062849.jsonl",
+  "fingerprints": [
+    "image_fingerprint",
+    "text_fingerprint"
+  ]
+}
