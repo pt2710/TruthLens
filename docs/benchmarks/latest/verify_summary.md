@@ -1,9 +1,9 @@
 # TruthLens Verify Summary
 
-- Generated at: `2026-04-25T12:12:17.825411+00:00`
+- Generated at: `2026-04-25T14:47:06.909150+00:00`
 - Overall status: `passed`
 - Commands passed: `9/9`
-- Total duration (s): `195.162`
+- Total duration (s): `250.886`
 
 ## Benchmark Context
 
@@ -18,15 +18,15 @@
 
 | Command | Status | Exit code | Duration (s) |
 | --- | --- | ---: | ---: |
-| `pytest` | `passed` | 0 | 94.527 |
-| `ruff` | `passed` | 0 | 0.214 |
-| `mypy` | `passed` | 0 | 7.086 |
-| `pnpm-typecheck` | `passed` | 0 | 9.381 |
-| `pnpm-test` | `passed` | 0 | 15.38 |
-| `pnpm-build` | `passed` | 0 | 8.697 |
-| `docs-render-architecture` | `passed` | 0 | 9.586 |
-| `docs-render-benchmarks` | `passed` | 0 | 12.822 |
-| `pnpm-test-e2e` | `passed` | 0 | 37.469 |
+| `pytest` | `passed` | 0 | 127.923 |
+| `ruff` | `passed` | 0 | 0.206 |
+| `mypy` | `passed` | 0 | 31.159 |
+| `pnpm-typecheck` | `passed` | 0 | 10.753 |
+| `pnpm-test` | `passed` | 0 | 16.591 |
+| `pnpm-build` | `passed` | 0 | 8.545 |
+| `docs-render-architecture` | `passed` | 0 | 8.834 |
+| `docs-render-benchmarks` | `passed` | 0 | 10.552 |
+| `pnpm-test-e2e` | `passed` | 0 | 36.323 |
 
 ## Output Excerpts
 
@@ -36,8 +36,8 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 
 ```text
 ........................................................................ [ 59%]
-.................................................                        [100%]
-121 passed in 89.86s (0:01:29)
+..................................................                       [100%]
+122 passed in 125.13s (0:02:05)
 ```
 
 ### `ruff`
@@ -96,8 +96,8 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 14:10:55
-[2m   Duration [22m 549ms[2m (transform 94ms, setup 0ms, collect 123ms, tests 8ms, environment 0ms, prepare 155ms)[22m
+[2m   Start at [22m 16:45:47
+[2m   Duration [22m 664ms[2m (transform 103ms, setup 0ms, collect 140ms, tests 8ms, environment 0ms, prepare 191ms)[22m
 
 
 > @truthlens/extension@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
@@ -124,22 +124,22 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
   reason: [32m'TruthLens API request timed out after 12000ms.'[39m
 }
 
- [32m✓[39m src/lib/api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 43[2mms[22m[39m
- [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 57[2mms[22m[39m
- [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/background.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 20[2mms[22m[39m
- [32m✓[39m src/lib/youtubeWatchMetadata.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/overlay/store.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 653[2mms[22m[39m
- [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/lib/feedReranking.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/lib/sessionStats.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/lib/channelTrustCache.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/homepageScoring.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/reportFeedbackScoring.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/feedRerankS
+ [32m✓[39m src/lib/api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m src/background.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/lib/youtubeWatchMetadata.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/feedReranking.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 731[2mms[22m[39m
+ [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/overlay/store.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/sessionStats.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/channelTrustCache.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/homepageScoring.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/feedRerankSettings.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/reportF
 ... [truncated]
 ```
 
@@ -168,15 +168,15 @@ computing gzip size...
 [2mdist/[22m[36mbackground.js            [39m[1m[2m  2.60 kB[22m[1m[22m[2m │ gzip:  1.16 kB[22m
 [2mdist/[22m[36mchunks/runtimeConfig.js  [39m[1m[2m 68.71 kB[22m[1m[22m[2m │ gzip: 15.61 kB[22m
 [2mdist/[22m[36mpopup.js                 [39m[1m[2m204.16 kB[22m[1m[22m[2m │ gzip: 63.41 kB[22m
-[32m✓ built in 1.10s[39m
+[32m✓ built in 1.08s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 61 modules transformed.
 rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.12 kB[22m[1m[22m[2m │ gzip:   1.87 kB[22m
-[2mdist/[22m[36mcontent.js          [39m[1m[2m357.04 kB[22m[1m[22m[2m │ gzip: 104.68 kB[22m
-[32m✓ built in 1.32s[39m
+[2mdist/[22m[36mcontent.js          [39m[1m[2m359.62 kB[22m[1m[22m[2m │ gzip: 105.52 kB[22m
+[32m✓ built in 1.29s[39m
 Extension build verified.
 
 > @truthlens/labeling-ui@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\labeling-ui
@@ -191,7 +191,7 @@ computing gzip size...
 [2mdist/[22m[32mannotation-batch.data.json  [39m[1m[2m287.13 kB[22m[1m[22m[2m │ gzip: 11.64 kB[22m
 [2mdist/[22m[35massets/index-KaTrgatk.css   [39m[1m[2m  3.61 kB[22m[1m[22m[2m │ gzip:  1.15 kB[22m
 [2mdist/[22m[36massets/index-6lzYeW9X.js    [39m[1m[2m277.95 kB[22m[1m[22m[2m │ gzip: 79.74 kB[22m
-[32m✓ built in 1.13s[39m
+[32m✓ built in 1.08s[39m
 ```
 
 ### `docs-render-architecture`
@@ -209,7 +209,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 
 ```text
 {
-  "generated_at": "2026-04-25T12:11:39.401640+00:00",
+  "generated_at": "2026-04-25T14:46:29.672952+00:00",
   "build_id": "build-20260425085620",
   "model_version": "baseline-v1-build-20260425085620",
   "trained_at": "2026-04-25T08:56:20.686458+00:00",
@@ -248,7 +248,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
     "runtime_policy": "2026-04-23T17:16:04.310801+00:00",
     "thresholds": "2026-04-25T09:02:24.773667+00:00",
     "bseo_policy": "2026-04-25T09:02:24.775678+00:00",
-    "runtime_governance": "2026-04-25T12:11:39.184834+00:00",
+    "runtime_governance": "2026-04-25T14:46:29.604280+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
@@ -271,7 +271,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-04-25T12:11:39.184833+00:00",
+    "generated_at": "2026-04-25T14:46:29.604279+00:00",
     "build_id": "build-20260425085620",
     "runtime_policy": {
       "configured_mode": "bseo-live",
@@ -287,7 +287,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 3.255,
+        "age_hours": 5.836,
         "build_id": "build-20260425085620",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -317,15 +317,15 @@ computing gzip size...
 [2mdist/[22m[36mbackground.js            [39m[1m[2m  2.60 kB[22m[1m[22m[2m │ gzip:  1.16 kB[22m
 [2mdist/[22m[36mchunks/runtimeConfig.js  [39m[1m[2m 68.71 kB[22m[1m[22m[2m │ gzip: 15.61 kB[22m
 [2mdist/[22m[36mpopup.js                 [39m[1m[2m204.16 kB[22m[1m[22m[2m │ gzip: 63.41 kB[22m
-[32m✓ built in 1.18s[39m
+[32m✓ built in 1.08s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 61 modules transformed.
 rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.12 kB[22m[1m[22m[2m │ gzip:   1.87 kB[22m
-[2mdist/[22m[36mcontent.js          [39m[1m[2m357.04 kB[22m[1m[22m[2m │ gzip: 104.68 kB[22m
-[32m✓ built in 1.38s[39m
+[2mdist/[22m[36mcontent.js          [39m[1m[2m359.62 kB[22m[1m[22m[2m │ gzip: 105.52 kB[22m
+[32m✓ built in 1.36s[39m
 Extension build verified.
 {
   "batchRequests": 6,

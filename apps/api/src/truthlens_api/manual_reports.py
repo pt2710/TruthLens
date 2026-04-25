@@ -802,6 +802,44 @@ def _channel_report_context_comment(
     )
 
 
+def _verify_channel_comment(
+    *,
+    sampled_titles: list[str],
+    channel_name: str,
+    resolved_class: str,
+    channel_support: bool,
+) -> str:
+    class_label = CLASS_LABELS.get(resolved_class, "the visible content context")
+    framing_label = {
+        "music": "release-style framing",
+        "satire": "parody or sketch framing",
+        "art": "creative or exhibition-style framing",
+        "gaming": "gameplay or run-style framing",
+    }.get(resolved_class, f"{class_label} framing")
+    if sampled_titles:
+        sampled_excerpt = _format_series([f'"{title}"' for title in sampled_titles[:2]])
+        if channel_support:
+            return (
+                f"Recent public titles from {channel_name}, including {sampled_excerpt}, support the same {framing_label}, "
+                "so the channel context strengthens the positive transparency read instead of suggesting a bait-and-switch pattern."
+            )
+        return (
+            f"Recent public titles from {channel_name}, including {sampled_excerpt}, do not show a clear recurring deceptive pattern in the supplied context, "
+            "so the current verification should stay focused on whether this specific upload is honestly framed."
+        )
+    return (
+        f"No recent public channel-title sample was available for {channel_name}, and no prior TruthLens channel reports were supplied, "
+        "so the channel note should be treated cautiously: it does not add channel-wide proof, but it also does not undermine the positive transparency assessment for this upload."
+    )
+
+
+def _first_report_channel_comment(channel_name: str) -> str:
+    return (
+        f"No prior TruthLens channel reports are currently recorded for {channel_name}, so this draft treats the concern as item-specific rather than a proven channel-wide pattern. "
+        "If similar reports accumulate later, the channel history should carry more weight."
+    )
+
+
 def _uses_benign_class_preface(comment: str) -> bool:
     normalized = _normalize_text(comment).lower()
     return normalized.startswith(
@@ -960,6 +998,90 @@ def _fallback_suggestion_issue(
         issue_type=issue_type,
         suggested=suggested,
         comment=comment if suggested else "",
+    )
+
+
+def _default_suggestion_comment(
+    *,
+    issue_type: str,
+    payload: ManualReportSuggestionRequest,
+    fallback_issue: ManualReportSuggestionIssue | None = None,
+) -> str:
+    title = _excerpt_text(payload.title_snapshot, limit=80) or "this upload"
+    description = _excerpt_text(_normalize_text(payload.description_snapshot), limit=120)
+    transcript = _excerpt_text(_normalize_text(payload.transcript_excerpt), limit=120)
+    channel_context = _normalize_text(payload.channel_context)
+    workflow = payload.workflow_mode
+    if workflow == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
+        if issue_type == "thumbnail":
+            return (
+                f"The thumbnail should be read against \"{title}\" as a positive transparency check: the visible packaging does not by itself create a stronger factual promise than the title and surrounding context appear to support."
+            )
+        if issue_type == "title":
+            return (
+                f"The title \"{title}\" appears to identify the upload without adding unsupported urgency or a bait-style factual claim, so it supports the verification rather than a report recommendation."
+            )
+        if issue_type == "description":
+            if description:
+                return (
+                    f'Description says "{description}", which gives supporting context for the upload instead of escalating the title into a stronger or contradictory promise.'
+                )
+            return (
+                "No description snippet was exposed to TruthLens, so this field should be treated cautiously; the available title, thumbnail, and channel signals still do not show a clear description-level contradiction."
+            )
+        if issue_type == "transcript":
+            if transcript:
+                return (
+                    f'Transcript excerpt says "{transcript}", which does not materially contradict the visible packaging and therefore supports a cautious transparency verification.'
+                )
+            return (
+                "No transcript excerpt was available, so this field should not add a positive evidence claim; the verification should rely on the visible packaging and any supplied metadata instead."
+            )
+        if issue_type == "channel":
+            if channel_context:
+                sampled_titles = _sampled_channel_titles(channel_context)
+                if sampled_titles:
+                    sampled_excerpt = _format_series([f'"{title}"' for title in sampled_titles[:2]])
+                    return (
+                        f"Recent public channel context includes {sampled_excerpt}; within the supplied evidence, that channel framing does not show a clear recurring deceptive pattern, so it supports a cautious positive verification for this item."
+                    )
+            return (
+                f"No stronger negative channel-history signal was supplied for {payload.channel_name}, so the channel field should not be used to inflate suspicion beyond the current item-level evidence."
+            )
+        return (
+            "Taken together, the available thumbnail, title, metadata, and channel signals are better explained as transparent packaging than as deceptive clickbait, while still leaving room for human review if stronger contradictory evidence appears."
+        )
+
+    if issue_type == "thumbnail":
+        return (
+            f"The thumbnail should be reviewed against \"{title}\" because the visual packaging may be carrying more dramatic expectation than the exposed supporting context confirms."
+        )
+    if issue_type == "title":
+        return (
+            f"The title \"{title}\" should be reviewed for whether its claim, urgency, or curiosity framing overstates what the available context actually supports."
+        )
+    if issue_type == "description":
+        if description:
+            return (
+                f'Description says "{description}", which should be checked against the title and thumbnail because it may not substantiate the stronger packaging claim.'
+            )
+        return (
+            "No description snippet was exposed to TruthLens, so this draft cannot verify the title-thumbnail promise from description evidence and should treat the mismatch concern cautiously."
+        )
+    if issue_type == "transcript":
+        if transcript:
+            return (
+                f'Transcript excerpt says "{transcript}", which should be compared against the title and thumbnail to decide whether the packaging overstates the actual content.'
+            )
+        return (
+            "No transcript excerpt was available, so this field should not invent spoken-content evidence; the report concern remains based on visible packaging and metadata."
+        )
+    if issue_type == "channel":
+        if fallback_issue is not None and fallback_issue.comment:
+            return fallback_issue.comment
+        return _first_report_channel_comment(payload.channel_name)
+    return (
+        "Overall, the packaging should be reviewed as a combined thumbnail-title-metadata pattern rather than as isolated wording, because the visible cues may steer the user toward a stronger expectation than the content context supports."
     )
 
 
@@ -1194,7 +1316,7 @@ def _build_heuristic_suggestion_response(
         ) and prior_report_count == 0
         title_excerpt = _excerpt_text(title, limit=80)
         quoted_title_excerpt = f'"{title_excerpt}"' if title_excerpt else "the current title"
-        description_suggested = bool(description)
+        description_suggested = True
         description_comment = ""
         thumbnail_comment = ""
         title_comment = ""
@@ -1210,7 +1332,7 @@ def _build_heuristic_suggestion_response(
             )
             description_comment = (
                 f'Description says "{description_excerpt}", which supports the same artist, track, or release framing as the title instead of introducing a conflicting promise.'
-                if description_suggested and description_excerpt
+                if description_excerpt
                 else ""
             )
             transcript_comment = (
@@ -1218,10 +1340,11 @@ def _build_heuristic_suggestion_response(
                 if transcript and transcript_excerpt
                 else ""
             )
-            channel_comment = (
-                "Recent public titles sampled from this channel show the same release-style framing, which supports a transparent music context for this upload."
-                if channel_support
-                else ""
+            channel_comment = _verify_channel_comment(
+                sampled_titles=sampled_titles,
+                channel_name=channel_name,
+                resolved_class=resolved_class,
+                channel_support=channel_support,
             )
             other_comment = (
                 "Taken together, the artwork-style thumbnail, track-labelled title, and release-focused context look like ordinary music packaging rather than clickbait."
@@ -1235,7 +1358,7 @@ def _build_heuristic_suggestion_response(
             )
             description_comment = (
                 f'Description says "{description_excerpt}", which supports the same artwork or exhibition framing as the title.'
-                if description_suggested and description_excerpt
+                if description_excerpt
                 else ""
             )
             transcript_comment = (
@@ -1243,10 +1366,11 @@ def _build_heuristic_suggestion_response(
                 if transcript and transcript_excerpt
                 else ""
             )
-            channel_comment = (
-                "Recent public titles sampled from this channel point toward the same creative or exhibition-style framing, which supports a transparent art context."
-                if channel_support
-                else ""
+            channel_comment = _verify_channel_comment(
+                sampled_titles=sampled_titles,
+                channel_name=channel_name,
+                resolved_class=resolved_class,
+                channel_support=channel_support,
             )
             other_comment = (
                 "Taken together, the artwork-style thumbnail, naming, and supporting context read like legitimate creative packaging rather than deceptive clickbait."
@@ -1260,7 +1384,7 @@ def _build_heuristic_suggestion_response(
             )
             description_comment = (
                 f'Description says "{description_excerpt}", which supports the same gameplay or release framing as the title.'
-                if description_suggested and description_excerpt
+                if description_excerpt
                 else ""
             )
             transcript_comment = (
@@ -1268,10 +1392,11 @@ def _build_heuristic_suggestion_response(
                 if transcript and transcript_excerpt
                 else ""
             )
-            channel_comment = (
-                "Recent public titles sampled from this channel show similar gameplay or run-style framing, which supports a transparent gaming context."
-                if channel_support
-                else ""
+            channel_comment = _verify_channel_comment(
+                sampled_titles=sampled_titles,
+                channel_name=channel_name,
+                resolved_class=resolved_class,
+                channel_support=channel_support,
             )
             other_comment = (
                 "Taken together, the scene selection, title framing, and supporting context look like ordinary gaming packaging rather than deceptive overstatement."
@@ -1285,7 +1410,7 @@ def _build_heuristic_suggestion_response(
             )
             description_comment = (
                 f'Description says "{description_excerpt}", which signals satirical commentary rather than a literal emergency report.'
-                if description_suggested and description_excerpt
+                if description_excerpt
                 else ""
             )
             transcript_comment = (
@@ -1293,10 +1418,11 @@ def _build_heuristic_suggestion_response(
                 if transcript and transcript_excerpt
                 else ""
             )
-            channel_comment = (
-                "Recent public titles sampled from this channel also read like parody or sketch framing, which supports a satire context for this upload."
-                if channel_support
-                else ""
+            channel_comment = _verify_channel_comment(
+                sampled_titles=sampled_titles,
+                channel_name=channel_name,
+                resolved_class=resolved_class,
+                channel_support=channel_support,
             )
             other_comment = (
                 "Taken together, the packaging reads like satire or parody; the transparency check is whether that joke framing stays legible enough not to be confused with real reporting."
@@ -1310,7 +1436,7 @@ def _build_heuristic_suggestion_response(
             )
             description_comment = (
                 f'Description says "{description_excerpt}", which stays broadly aligned with the title instead of escalating it into a stronger promise.'
-                if description_suggested and description_excerpt
+                if description_excerpt
                 else ""
             )
             transcript_comment = (
@@ -1318,15 +1444,26 @@ def _build_heuristic_suggestion_response(
                 if transcript and transcript_excerpt
                 else ""
             )
-            channel_comment = (
-                "Recent public titles sampled from this channel stay broadly aligned with the same packaging style, which supports a tentative transparency assessment."
-                if channel_support
-                else ""
+            channel_comment = _verify_channel_comment(
+                sampled_titles=sampled_titles,
+                channel_name=channel_name,
+                resolved_class=resolved_class,
+                channel_support=channel_support,
             )
             other_comment = (
                 "Taken together, the visible packaging is more consistent with transparent presentation than with aggressive clickbait."
                 if transparent_signal
                 else "Taken together, the available cues are more aligned than misleading, but the verification should remain cautious until stronger context is exposed."
+            )
+        if not description_comment:
+            description_comment = _default_suggestion_comment(
+                issue_type="description",
+                payload=payload,
+            )
+        if not channel_comment:
+            channel_comment = _default_suggestion_comment(
+                issue_type="channel",
+                payload=payload,
             )
         issues = [
             _fallback_suggestion_issue(
@@ -1351,7 +1488,7 @@ def _build_heuristic_suggestion_response(
             ),
             _fallback_suggestion_issue(
                 "channel",
-                suggested=bool(channel_comment),
+                suggested=True,
                 comment=channel_comment,
             ),
             _fallback_suggestion_issue(
@@ -1412,6 +1549,8 @@ def _build_heuristic_suggestion_response(
             else ""
         )
     )
+    if payload.workflow_mode == ManualReportWorkflowMode.REPORT and not channel_comment:
+        channel_comment = _first_report_channel_comment(channel_name)
     channel_suggested = bool(channel_comment)
     other_suggested = ambiguous_context_class or not (
         transparent_context_class and not has_alignment_warning and not has_channel_pattern
@@ -1692,11 +1831,13 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "Issue types to evaluate in this exact order:\n"
             f"{issue_lines}\n\n"
             "Rules:\n"
-            "- Return all six issue types.\n"
-            "- Return all six issue types, but you may set suggested to false when a field genuinely lacks evidence to comment on.\n"
-            "- When suggested is false, leave comment empty.\n"
-            "- Prefer leaving Transcript unsuggested instead of inventing a generic missing-transcript comment.\n"
-            "- Prefer leaving Channel unsuggested unless the supplied channel context or TruthLens channel history shows a real recurring pattern.\n"
+            "- Return all six issue types in the exact order above.\n"
+            "- Set Thumbnail, Title, Description, Channel, and Other to suggested=true with a non-empty comment every time.\n"
+            "- Set Transcript to suggested=true only when transcript availability is Available and an excerpt is provided; otherwise set Transcript to suggested=false with an empty comment.\n"
+            "- Never return a suggested=true issue with a blank comment.\n"
+            "- Verify comments must be descriptive and carefully argued: explain why the cue supports transparent presentation, what evidence is available or missing, and why that should not be inflated into suspicion.\n"
+            "- Description still needs a comment when the snippet is unavailable; explain that no description-level contradiction is visible from the supplied evidence.\n"
+            "- Channel always needs a comment for this workflow. Use the supplied recent channel-title context and TruthLens history to explain either supportive channel context, no visible recurring deceptive pattern, or limited channel evidence that keeps the assessment item-specific.\n"
             "- Start from the supplied TruthLens content class and bias profile unless the visible evidence strongly contradicts it.\n"
             "- If it appears to be music content, do not treat non-literal artwork, performance imagery, lyric phrasing, or missing captions as automatic mismatch.\n"
             "- If it appears to be art content, do not treat stylized or non-literal artwork as automatic mismatch.\n"
@@ -1709,7 +1850,7 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
             "- For Title, quote or paraphrase the exact claim, warning cue, or overstatement that matters.\n"
             "- For Description and Transcript, quote the concrete detail that reinforces or undermines the packaging when possible.\n"
             "- If Transcript availability is marked Unavailable, leave Transcript unsuggested instead of writing a generic absence note.\n"
-            "- For Channel, use the supplied recent channel-title context and TruthLens channel history before making any broader claim.\n"
+            "- For Channel, use the supplied recent channel-title context and TruthLens channel history before making any broader claim, but still write a non-empty item-level channel note.\n"
             "- For Other, use it for the overall combined packaging assessment.\n"
             f"- suggested_tags must cover this UI tag set: {', '.join(tag.value for tag in MANUAL_REVIEW_TAG_ORDER)}.\n"
             "- Select exactly one positive tag as selected=true for this verification workflow, and leave Clickbait unselected unless the visible evidence strongly contradicts the workflow.\n"
@@ -1750,14 +1891,13 @@ def _build_suggestion_prompt(payload: ManualReportSuggestionRequest) -> str:
         "- Identify whether the packaging overpromises, misstates, or visually suggests something different from the text context.\n\n"
         "Issue types to evaluate in this exact order:\n"
         f"{issue_lines}\n\n"
-        "Rules:\n"
-        "- Return all six issue types.\n"
-        "- Return all six issue types, but you may set suggested to false when a field genuinely lacks evidence to comment on.\n"
-        "- When suggested is false, leave comment empty.\n"
-        "- This workflow was explicitly opened as a report flow, so default to suspected clickbait or misleading packaging review.\n"
-        "- Prefer leaving Transcript unsuggested instead of inventing a generic missing-transcript comment.\n"
-        "- Prefer leaving Channel unsuggested unless the supplied channel context or TruthLens channel history shows a real recurring pattern.\n"
-        "- Start from the supplied TruthLens content class and bias profile unless the visible evidence strongly contradicts it.\n"
+            "Rules:\n"
+            "- Return all six issue types in the exact order above.\n"
+            "- Never return a suggested=true issue with a blank comment.\n"
+            "- This workflow was explicitly opened as a report flow, so default to suspected clickbait or misleading packaging review.\n"
+            "- Prefer leaving Transcript unsuggested instead of inventing a generic missing-transcript comment.\n"
+            "- Channel should be suggested=true with a non-empty comment that explains either a repeated pattern or that this appears to be the first recorded item-specific concern for the channel.\n"
+            "- Start from the supplied TruthLens content class and bias profile unless the visible evidence strongly contradicts it.\n"
         "- Use class context only to calibrate the mismatch analysis; do not start issue comments with phrases like 'This appears to be art content' or replace the clickbait review with a benign-category explanation.\n"
         "- If it appears to be music, art, gaming, or satire content, use that only to explain why a specific mismatch is weaker or stronger, not as the primary draft framing.\n"
         "- Keep comments neutral, specific, and useful for a human reviewer.\n"
@@ -1800,8 +1940,9 @@ def _build_optimization_prompt(payload: ManualReportOptimizationRequest) -> str:
             f"{issue_lines}\n\n"
             "Rules:\n"
             "- Keep the same issue order.\n"
-            "- Each issue comment must stay short, neutral, and factual.\n"
-            "- Emphasize consistency, transparency, and non-clickbait framing.\n"
+            "- Each issue comment must remain neutral and factual while preserving the user's concrete reasoning.\n"
+            "- Emphasize consistency, transparency, and non-clickbait framing with enough detail for the verification to stand on its own.\n"
+            "- Keep every provided issue comment non-empty; do not drop Channel, Description, or Other into blank placeholders.\n"
             "- report_text must be a clean multi-line verification summary with one short opening line and one bullet-style line per issue.\n"
             "- The opening line should clearly state that the content appears transparently presented.\n"
             "- Do not mention Gemini, optimization, or JSON in the report text."
@@ -1857,6 +1998,29 @@ def _normalize_suggestion_response(
         comment = _normalize_text(raw_issue.comment if raw_issue else "")
         if suggested and not comment and fallback_issue is not None and fallback_issue.suggested:
             comment = fallback_issue.comment
+        if request_payload is not None and request_payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
+            transcript_missing = issue_type == "transcript" and not (
+                request_payload.transcript_available is True
+                and _normalize_text(request_payload.transcript_excerpt)
+            )
+            if transcript_missing:
+                suggested = False
+                comment = ""
+            else:
+                suggested = True
+                minimum_words = 16 if issue_type == "channel" else 10
+                if len(comment.split()) < minimum_words:
+                    comment = (
+                        fallback_issue.comment
+                        if fallback_issue is not None
+                        and fallback_issue.comment
+                        and len(fallback_issue.comment.split()) >= minimum_words
+                        else _default_suggestion_comment(
+                            issue_type=issue_type,
+                            payload=request_payload,
+                            fallback_issue=fallback_issue,
+                        )
+                    )
         if (
             request_payload is not None
             and request_payload.workflow_mode == ManualReportWorkflowMode.REPORT
@@ -1867,6 +2031,12 @@ def _normalize_suggestion_response(
                 comment = fallback_issue.comment
             elif suggested and comment and _uses_benign_class_preface(comment) and fallback_issue.comment:
                 comment = fallback_issue.comment
+        if request_payload is not None and suggested and not comment:
+            comment = _default_suggestion_comment(
+                issue_type=issue_type,
+                payload=request_payload,
+                fallback_issue=fallback_issue,
+            )
         normalized_issues.append(
             ManualReportSuggestionIssue(
                 issue_type=issue_type,

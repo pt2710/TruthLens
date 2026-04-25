@@ -118,6 +118,45 @@ function reviewEvidenceFromTarget(target: ManualReportTarget | null): ReviewEvid
   };
 }
 
+function fallbackDraftComment(
+  issueType: ManualReportIssueType,
+  target: ManualReportTarget,
+): string {
+  const title = target.title.trim() || 'this upload';
+  const channelName = target.channelName.trim() || 'this channel';
+  if (target.workflowMode === 'verify-transparent') {
+    switch (issueType) {
+      case 'thumbnail':
+        return `The thumbnail should be read as a transparency check against "${title}": the visible packaging does not currently create a stronger promise than the surrounding video context appears to support.`;
+      case 'title':
+        return `The title "${title}" appears to identify the upload without adding an unsupported urgency cue or bait-style factual claim, so it supports verification rather than a report recommendation.`;
+      case 'description':
+        return 'The available description context does not show a clear contradiction with the thumbnail and title, so there is no description-level reason to treat the packaging as deceptive in this verification draft.';
+      case 'transcript':
+        return 'The available transcript context does not introduce a clear contradiction with the thumbnail, title, or description, so it supports keeping the verification focused on transparent presentation.';
+      case 'channel':
+        return `The channel note for ${channelName} should remain evidence-aware: no stronger channel-history signal is visible in this draft, so the verification should stay focused on this upload rather than assuming a channel-wide pattern.`;
+      case 'other':
+        return 'Taken together, the visible packaging is better explained as transparent presentation than deceptive clickbait because the available cues do not create a clear bait-and-switch mismatch.';
+    }
+  }
+
+  switch (issueType) {
+    case 'thumbnail':
+      return `The thumbnail should be reviewed against "${title}" because the visual framing may create expectations that need to match the actual video context.`;
+    case 'title':
+      return `The title "${title}" should be reviewed for possible overstatement or curiosity framing relative to the available thumbnail, description, and transcript evidence.`;
+    case 'description':
+      return 'The description should be checked against the thumbnail and title because it needs to substantiate the framing rather than leave the viewer with an unsupported impression.';
+    case 'transcript':
+      return 'The transcript should be checked against the visible packaging because spoken context may confirm whether the title and thumbnail overpromise the actual content.';
+    case 'channel':
+      return `No stronger channel-history detail is visible for ${channelName} in this draft, so this report should treat the concern as item-specific unless similar channel reports accumulate.`;
+    case 'other':
+      return 'The combined packaging should be reviewed for possible clickbait because the visible cues may steer attention before the actual context is clear.';
+  }
+}
+
 function createClientId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -483,7 +522,9 @@ export function App() {
         const nextComments = { ...DEFAULT_COMMENTS };
         for (const issue of draft.issues) {
           nextSelected[issue.issue_type] = issue.suggested;
-          nextComments[issue.issue_type] = issue.suggested ? issue.comment : '';
+          nextComments[issue.issue_type] = issue.suggested
+            ? issue.comment.trim() || fallbackDraftComment(issue.issue_type, manualReportTarget)
+            : '';
         }
         setSelectedIssues(nextSelected);
         setComments(nextComments);

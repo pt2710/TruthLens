@@ -395,6 +395,30 @@ describe('manual review overlay', () => {
     );
   });
 
+  it('fills selected verify draft comments when the API returns blank issue text', async () => {
+    const blankVerifyDraft = makeSuggestion('verify-transparent', false);
+    blankVerifyDraft.issues = blankVerifyDraft.issues.map((issue) =>
+      issue.issue_type === 'transcript'
+        ? issue
+        : {
+            ...issue,
+            suggested: true,
+            comment: issue.issue_type === 'title' ? issue.comment : '',
+          },
+    );
+    apiMocks.suggestManualReportComments.mockResolvedValueOnce(blankVerifyDraft);
+
+    useOverlayStore.getState().openManualReport(makeTarget('verify-transparent'));
+    await flushUi();
+
+    const commentBoxes = Array.from(
+      document.querySelectorAll<HTMLTextAreaElement>('.truthlens-issue-comment'),
+    );
+    expect(commentBoxes.length).toBeGreaterThanOrEqual(5);
+    expect(commentBoxes.every((box) => box.value.trim().length > 0)).toBe(true);
+    expect(commentBoxes.some((box) => box.value.includes('Aurora Records'))).toBe(true);
+  });
+
   it('requires collection confirmation before batch verify and stores collection provenance', async () => {
     useOverlayStore.getState().openManualReport(makeTarget('verify-transparent', true));
     await flushUi();

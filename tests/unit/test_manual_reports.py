@@ -525,7 +525,7 @@ def test_suggest_manual_report_uses_prior_channel_reports_in_channel_comment(
     assert "prior report" in issue_map["channel"].comment.lower()
 
 
-def test_suggest_manual_report_preserves_unsuggested_gemini_fields(
+def test_suggest_manual_report_fills_report_channel_when_gemini_leaves_it_unsuggested(
     monkeypatch,
 ) -> None:
     def fake_post(url: str, **kwargs):
@@ -625,8 +625,120 @@ def test_suggest_manual_report_preserves_unsuggested_gemini_fields(
     issue_map = {issue.issue_type: issue for issue in result.issues}
     assert issue_map["transcript"].suggested is False
     assert issue_map["transcript"].comment == ""
-    assert issue_map["channel"].suggested is False
-    assert issue_map["channel"].comment == ""
+    assert issue_map["channel"].suggested is True
+    assert "item-specific" in issue_map["channel"].comment.lower()
+    assert issue_map["channel"].comment.strip()
+
+
+def test_suggest_manual_report_fills_verify_comments_when_gemini_returns_blank_drafts(
+    monkeypatch,
+) -> None:
+    def fake_post(url: str, **kwargs):
+        return _MockResponse(
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps(
+                                        {
+                                            "issues": [
+                                                {
+                                                    "issue_type": "thumbnail",
+                                                    "suggested": True,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "title",
+                                                    "suggested": True,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "description",
+                                                    "suggested": True,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "transcript",
+                                                    "suggested": False,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "channel",
+                                                    "suggested": True,
+                                                    "comment": "",
+                                                },
+                                                {
+                                                    "issue_type": "other",
+                                                    "suggested": True,
+                                                    "comment": "",
+                                                },
+                                            ],
+                                            "suggested_outcome": "moderate",
+                                            "suggested_outcome_reason": "TruthLens recommends this as transparent music packaging.",
+                                            "suggested_tags": [
+                                                {
+                                                    "tag": "Music",
+                                                    "selected": True,
+                                                    "confidence": 0.91,
+                                                    "rationale": "Music framing is strongest.",
+                                                }
+                                            ],
+                                            "suggestion_model": "LLM_Report_Generator",
+                                        }
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr("truthlens_api.manual_reports.httpx.post", fake_post)
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.httpx.get",
+        lambda *args, **kwargs: _MockImageResponse(b"fake-thumbnail-bytes"),
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_model",
+        "gemini-2.5-flash",
+    )
+
+    result = suggest_manual_report(
+        ManualReportSuggestionRequest.model_validate(
+            {
+                "workflow_mode": "verify-transparent",
+                "target_url": "https://www.youtube.com/watch?v=moonlight-echoes",
+                "thumbnail_ref": "https://img.youtube.com/vi/moonlight-echoes/default.jpg",
+                "title_snapshot": "Moonlight Echoes (Official Audio)",
+                "channel_name": "Aurora Records",
+                "channel_url": "https://www.youtube.com/@aurorarecords",
+                "channel_context": 'Recent public channel titles: "Moonlight Echoes (Official Audio)"; "Northern Lights (Lyric Video)"',
+                "description_snapshot": "Official audio release for Moonlight Echoes by Aurora.",
+                "transcript_excerpt": None,
+                "transcript_available": False,
+                "content_class": "music",
+                "content_class_confidence": 0.91,
+                "explanation_summary": "Metadata appears consistent with music packaging.",
+                "reasons": ["Class-conditioned guardrail reduced the mismatch penalty."],
+            }
+        )
+    )
+
+    issue_map = {issue.issue_type: issue for issue in result.issues}
+    assert issue_map["transcript"].suggested is False
+    assert issue_map["transcript"].comment == ""
+    for issue_type in ("thumbnail", "title", "description", "channel", "other"):
+        assert issue_map[issue_type].suggested is True
+        assert len(issue_map[issue_type].comment.split()) >= 10
+    assert "transparent music packaging" in issue_map["thumbnail"].comment.lower()
+    assert "channel context" in issue_map["channel"].comment.lower()
 
 
 def test_suggest_manual_report_uses_satire_aware_heuristics(
