@@ -247,6 +247,81 @@ function extractText(card: HTMLElement, selector: string): string | null {
   return card.querySelector(selector)?.textContent?.trim() || null;
 }
 
+function extractAttribute(card: HTMLElement, selector: string, attribute: string): string | null {
+  const value = card.querySelector<HTMLElement>(selector)?.getAttribute(attribute)?.trim();
+  return value || null;
+}
+
+function firstNonEmpty(...values: Array<string | null | undefined>): string | null {
+  return (
+    values.find((value) => value !== null && value !== undefined && value.trim().length > 0) ??
+    null
+  );
+}
+
+function titleFromAriaLabel(label: string | null): string | null {
+  if (!label) {
+    return null;
+  }
+
+  const normalized = label.trim().replace(/\s+/g, ' ');
+  const separatorMatch = normalized.match(/\s(?:by|af)\s/i);
+  if (!separatorMatch || separatorMatch.index === undefined || separatorMatch.index <= 0) {
+    return normalized;
+  }
+  return normalized.slice(0, separatorMatch.index).trim() || normalized;
+}
+
+function channelNameFromAriaLabel(label: string | null, title: string): string | null {
+  if (!label) {
+    return null;
+  }
+
+  const normalized = label.trim().replace(/\s+/g, ' ');
+  const normalizedTitle = title.trim().replace(/\s+/g, ' ').toLowerCase();
+  const searchStart = normalized.toLowerCase().startsWith(normalizedTitle)
+    ? title.trim().replace(/\s+/g, ' ').length
+    : 0;
+  const tail = normalized.slice(searchStart);
+  const markerMatch = tail.match(/\s(?:by|af)\s+(.+)$/i);
+  if (!markerMatch) {
+    return null;
+  }
+
+  return (
+    markerMatch[1]
+      .replace(/\s+\d[\d.,]*\s*(views?|visninger|subscribers?|abonnenter)\b.*$/i, '')
+      .replace(
+        /\s+\d+\s+(seconds?|minutes?|hours?|days?|weeks?|months?|years?|sekunder|minutter|timer|dage|uger|maaneder|ar)\b.*$/i,
+        '',
+      )
+      .replace(/\s+for\s+\d+.*$/i, '')
+      .trim() || null
+  );
+}
+
+function extractVideoAriaLabel(card: HTMLElement): string | null {
+  return firstNonEmpty(
+    extractAttribute(card, 'a#video-title-link[aria-label]', 'aria-label'),
+    extractAttribute(card, '#video-title[aria-label]', 'aria-label'),
+    extractAttribute(card, 'a#thumbnail[aria-label]', 'aria-label'),
+    extractAttribute(card, 'a[href*="watch"][aria-label]', 'aria-label'),
+  );
+}
+
+function extractCardTitle(card: HTMLElement, index: number): string {
+  const ariaLabel = extractVideoAriaLabel(card);
+  return (
+    firstNonEmpty(
+      extractText(card, '#video-title, h3, a[title]'),
+      extractAttribute(card, '#video-title[title]', 'title'),
+      extractAttribute(card, 'a#video-title-link[title]', 'title'),
+      extractAttribute(card, 'a[href*="watch"][title]', 'title'),
+      titleFromAriaLabel(ariaLabel),
+    ) ?? `Untitled item ${index + 1}`
+  );
+}
+
 function buildItemId(card: HTMLElement, index: number): string {
   const href =
     card.querySelector<HTMLAnchorElement>(
@@ -431,7 +506,10 @@ function extractChannelAnchor(card: HTMLElement): HTMLAnchorElement | null {
   );
 }
 
-function extractChannelIdentity(card: HTMLElement): { channelName: string; channelUrl: string | null } {
+function extractChannelIdentity(
+  card: HTMLElement,
+  title: string,
+): { channelName: string; channelUrl: string | null } {
   const channelAnchor = extractChannelAnchor(card);
   const channelUrl = channelAnchor?.href ?? null;
   const anchorText = channelAnchor?.textContent?.trim() ?? null;
@@ -449,8 +527,9 @@ function extractChannelIdentity(card: HTMLElement): { channelName: string; chann
       ].join(', '),
     ) ?? null;
   const derivedName = deriveChannelNameFromUrl(channelUrl);
+  const ariaName = channelNameFromAriaLabel(extractVideoAriaLabel(card), title);
   return {
-    channelName: anchorText || selectorText || derivedName || UNKNOWN_CHANNEL_NAME,
+    channelName: anchorText || selectorText || derivedName || ariaName || UNKNOWN_CHANNEL_NAME,
     channelUrl,
   };
 }
@@ -590,8 +669,8 @@ function collectionTitleFromCard(card: HTMLElement): string | null {
 
 function extractCardContext(card: HTMLElement, index: number): PendingCard | null {
   ensureOriginalIndex(card, index);
-  const title = extractText(card, '#video-title, h3, a[title]') || `Untitled item ${index + 1}`;
-  const { channelName, channelUrl } = extractChannelIdentity(card);
+  const title = extractCardTitle(card, index);
+  const { channelName, channelUrl } = extractChannelIdentity(card, title);
   const thumbnailRef = card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
   const descriptionSnapshot = extractText(card, '#description-text, #metadata-line, .metadata-snippet');
   const transcriptExcerpt = null;
@@ -1468,15 +1547,14 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
 
-  const scoredCards: HTMLElement[] = [];
-  const batchResults = await Promise.all(
-    chunk(pendingCards, BATCH_SIZE).map(async (batch) => ({
-      batch,
-      scores: await batchScoreFeedItems(batch.map((entry) => entry.request)),
-    })),
-  );
+  const batchPromises = chunk(pendingCards, BATCH_SIZE).map(async (batch) => ({
+    batch,
+    scores: await batchScoreFeedItems(batch.map((entry) => entry.request)),
+  }));
 
-  for (const { batch, scores } of batchResults) {
+  for (const batchPromise of batchPromises) {
+    const { batch, scores } = await batchPromise;
+    const scoredCards: HTMLElement[] = [];
     for (const entry of batch) {
       const score = scores[entry.itemId];
       if (score) {
@@ -1490,9 +1568,9 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
         entry.card.removeAttribute(PROCESSING);
       }
     }
-  }
-  if (scoredCards.length > 0) {
-    applyLocalPersonalizationOrdering(scoredCards);
+    if (scoredCards.length > 0) {
+      applyLocalPersonalizationOrdering(scoredCards);
+    }
   }
 }
 

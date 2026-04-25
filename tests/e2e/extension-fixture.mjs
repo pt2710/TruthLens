@@ -938,6 +938,41 @@ async function main() {
     assert.equal(await page.locator('.truthlens-action-row').count(), 5);
     assert.equal(browserObservations.length, 6);
 
+    const batchRequestsBeforeAriaHydrationCard = batchRequests;
+    await page.evaluate(() => {
+      const feed = document.querySelector('.feed');
+      if (!(feed instanceof HTMLElement)) {
+        throw new Error('fixture feed missing');
+      }
+      const article = document.createElement('article');
+      article.setAttribute('data-truthlens-card', '');
+      article.setAttribute('data-fixture-card', 'aria-hydrating');
+      article.innerHTML = `
+        <a id="thumbnail" href="/watch?v=fixture-item-6" aria-label="Source-backed explainer by Context First Media 1K views 1 day ago">
+          <img alt="thumbnail six" src="https://example.com/thumb-6.jpg" />
+        </a>
+        <a id="video-title-link" href="/watch?v=fixture-item-6" title="Source-backed explainer" aria-label="Source-backed explainer by Context First Media 1K views 1 day ago">
+          <h3 id="video-title"></h3>
+        </a>
+        <div id="channel-name"></div>
+        <div class="metadata-snippet">Visible thumbnail is ready before lower metadata text hydrates.</div>
+      `;
+      feed.appendChild(article);
+    });
+
+    await page.waitForFunction(() => {
+      const article = document.querySelector('[data-fixture-card="aria-hydrating"]');
+      return (
+        article instanceof HTMLElement &&
+        article.getAttribute('data-truthlens-processed') === 'true' &&
+        article.getAttribute('data-truthlens-signature')?.includes('Source-backed explainer') &&
+        article.getAttribute('data-truthlens-signature')?.includes('context first media') &&
+        article.querySelector('.truthlens-card-flag') instanceof HTMLElement
+      );
+    });
+    await waitForNodeCondition(() => browserObservations.length >= 7);
+    assert.equal(batchRequests, batchRequestsBeforeAriaHydrationCard + 1);
+
     const batchRequestsBeforeHydrationCard = batchRequests;
     await page.evaluate(() => {
       const feed = document.querySelector('.feed');
@@ -948,8 +983,8 @@ async function main() {
       article.setAttribute('data-truthlens-card', '');
       article.setAttribute('data-fixture-card', 'hydrating');
       article.innerHTML = `
-        <a id="thumbnail" href="/watch?v=fixture-item-6">
-          <img alt="thumbnail six" src="https://example.com/thumb-6.jpg" />
+        <a id="thumbnail" href="/watch?v=fixture-item-7">
+          <img alt="thumbnail seven" src="https://example.com/thumb-7.jpg" />
         </a>
         <h3 id="video-title"></h3>
         <div id="channel-name">Unknown channel</div>
@@ -991,7 +1026,7 @@ async function main() {
         article.querySelector('.truthlens-card-flag') instanceof HTMLElement
       );
     });
-    await waitForNodeCondition(() => browserObservations.length >= 7);
+    await waitForNodeCondition(() => browserObservations.length >= 8);
     assert.equal(batchRequests, batchRequestsBeforeHydrationCard + 1);
 
     artificialBatchDelayMs = 13000;
