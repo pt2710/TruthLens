@@ -33,6 +33,14 @@ import {
   loadFeedRerankEnabled,
 } from './lib/feedRerankSettings';
 import {
+  loadCachedChannelTrustProfiles,
+  persistCachedChannelTrustProfiles,
+} from './lib/channelTrustCache';
+import {
+  buildStableFeedCardSignature,
+  isReadyForStableFeedScoring,
+} from './lib/feedCardStability';
+import {
   buildPersonalizationSnapshot,
   shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
@@ -159,6 +167,7 @@ let homepageStartupRetryTimer: number | null = null;
 let feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
 let isApplyingFeedRerank = false;
 let rerankMutationWindowTimer: number | null = null;
+let channelTrustProfilesRefreshPromise: Promise<void> | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
@@ -251,22 +260,6 @@ function buildItemId(card: HTMLElement, index: number): string {
 
 function matchesFeedCardSelector(element: Element): element is HTMLElement {
   return element instanceof HTMLElement && element.matches(CARD_SELECTOR);
-}
-
-function buildCardSignature(
-  title: string,
-  channelName: string,
-  thumbnailRef: string | null,
-  descriptionSnapshot: string | null,
-  transcriptExcerpt: string | null,
-) {
-  return [
-    title,
-    channelName,
-    thumbnailRef || '',
-    descriptionSnapshot || '',
-    transcriptExcerpt || '',
-  ].join('||');
 }
 
 function parseDurationSeconds(rawText: string | null): number | null {
@@ -463,12 +456,25 @@ function extractChannelIdentity(card: HTMLElement): { channelName: string; chann
 }
 
 async function refreshChannelTrustProfiles(): Promise<void> {
-  try {
-    const summary = await fetchFeedbackSummary();
-    channelTrustProfiles = summary.channel_profiles ?? {};
-  } catch {
-    // Fail soft and keep the previous trust snapshot.
+  if (channelTrustProfilesRefreshPromise) {
+    return channelTrustProfilesRefreshPromise;
   }
+
+  channelTrustProfilesRefreshPromise = (async () => {
+    try {
+      const summary = await fetchFeedbackSummary();
+      if (summary.channel_profiles !== undefined) {
+        channelTrustProfiles = summary.channel_profiles;
+        await persistCachedChannelTrustProfiles(channelTrustProfiles);
+      }
+    } catch {
+      // Fail soft and keep the previous trust snapshot.
+    } finally {
+      channelTrustProfilesRefreshPromise = null;
+    }
+  })();
+
+  return channelTrustProfilesRefreshPromise;
 }
 
 function ensureOriginalIndex(card: HTMLElement, index: number): number {
@@ -607,13 +613,12 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
     parseLocalizedInteger(descriptionSnapshot);
   const uploadTime = metadataLineSpans[1]?.textContent?.trim() || null;
   const itemId = buildItemId(card, index);
-  const signature = buildCardSignature(
+  const signature = buildStableFeedCardSignature({
+    itemId,
     title,
     channelName,
-    thumbnailRef,
-    descriptionSnapshot,
-    transcriptExcerpt,
-  );
+    linkUrl,
+  });
   const taxonomyHints = estimateTaxonomyHints(title, channelName, descriptionSnapshot);
   const historyFeatures = buildChannelHistoryFeatures(getChannelProfile(channelName), taxonomyHints);
   const profile = getChannelProfile(channelName);
@@ -1227,19 +1232,28 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
   if (!entry) {
     return null;
   }
-  const { title, channelName, thumbnailRef, transcriptExcerpt, itemId, signature } = entry;
+  const { title, channelName, itemId, signature } = entry;
+  if (
+    !isReadyForStableFeedScoring({
+      itemId,
+      title,
+      channelName,
+      linkUrl: entry.linkUrl,
+    })
+  ) {
+    return null;
+  }
   if (!isUnknownChannelName(channelName) && isChannelMuted(channelName)) {
     card.classList.add('truthlens-card-hidden');
     card.setAttribute(PROCESSED, 'true');
     card.setAttribute(
       SIGNATURE,
-      buildCardSignature(
+      buildStableFeedCardSignature({
+        itemId,
         title,
         channelName,
-        thumbnailRef,
-        entry.descriptionSnapshot,
-        transcriptExcerpt,
-      ),
+        linkUrl: entry.linkUrl,
+      }),
     );
     return null;
   }
@@ -1411,7 +1425,7 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
   });
 
   if (cards.length > 0) {
-    await refreshChannelTrustProfiles();
+    void refreshChannelTrustProfiles();
   }
 
   const pendingCards = collectSafePendingEntries(cards, (card, index) => buildPendingCard(card, index), (error, card, index) => {
@@ -1455,9 +1469,14 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
   }
 
   const scoredCards: HTMLElement[] = [];
+  const batchResults = await Promise.all(
+    chunk(pendingCards, BATCH_SIZE).map(async (batch) => ({
+      batch,
+      scores: await batchScoreFeedItems(batch.map((entry) => entry.request)),
+    })),
+  );
 
-  for (const batch of chunk(pendingCards, BATCH_SIZE)) {
-    const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
+  for (const { batch, scores } of batchResults) {
     for (const entry of batch) {
       const score = scores[entry.itemId];
       if (score) {
@@ -1529,16 +1548,22 @@ function requestScoreCards(trigger: HomepageScoreTrigger): void {
 mountOverlay();
 installRuntimeListeners();
 installFeedRerankSettingListener();
-void loadFeedRerankEnabled()
-  .then((enabled) => {
-    feedRerankEnabled = enabled;
-  })
-  .catch(() => {
+void (async () => {
+  try {
+    feedRerankEnabled = await loadFeedRerankEnabled();
+  } catch {
     feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
-  })
-  .finally(() => {
-    requestScoreCards('startup');
-  });
+  }
+
+  try {
+    channelTrustProfiles = await loadCachedChannelTrustProfiles();
+  } catch {
+    channelTrustProfiles = {};
+  }
+
+  void refreshChannelTrustProfiles();
+  requestScoreCards('startup');
+})();
 
 const observer = new MutationObserver((mutations) => {
   if (isApplyingFeedRerank) {

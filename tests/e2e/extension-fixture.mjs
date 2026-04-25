@@ -182,7 +182,66 @@ async function main() {
       const listeners = [];
       const sentMessages = [];
       const storageListeners = [];
-      const storageState = new Map();
+      const storageState = new Map([
+        [
+          'truthlens-feedback-channel-profiles',
+          {
+            'opensky alerts': {
+              channel_name: 'OpenSky Alerts',
+              event_count: 4,
+              bias: -0.08,
+              report_count: 3,
+              dismiss_count: 0,
+              mute_count: 0,
+              moderate_request_count: 2,
+              remove_request_count: 1,
+              scored_item_count: 6,
+              reported_item_count: 3,
+              trust_score: 3.4,
+            },
+            'context first media': {
+              channel_name: 'Context First Media',
+              event_count: 5,
+              bias: 0.04,
+              report_count: 0,
+              dismiss_count: 0,
+              mute_count: 0,
+              transparent_count: 5,
+              moderate_request_count: 0,
+              remove_request_count: 0,
+              scored_item_count: 9,
+              reported_item_count: 0,
+              trust_score: 8.6,
+            },
+            'signal watch europe': {
+              channel_name: 'Signal Watch Europe',
+              event_count: 3,
+              bias: -0.04,
+              report_count: 2,
+              dismiss_count: 1,
+              mute_count: 0,
+              moderate_request_count: 2,
+              remove_request_count: 0,
+              scored_item_count: 8,
+              reported_item_count: 2,
+              trust_score: 6.0,
+            },
+            'dynamic signal desk': {
+              channel_name: 'Dynamic Signal Desk',
+              event_count: 1,
+              bias: 0.0,
+              report_count: 0,
+              dismiss_count: 0,
+              mute_count: 0,
+              moderate_request_count: 0,
+              remove_request_count: 0,
+              scored_item_count: 2,
+              reported_item_count: 0,
+              trust_score: 5.2,
+            },
+          },
+        ],
+      ]);
 
       function normalizeStorageKeys(keys) {
         if (keys == null) {
@@ -878,6 +937,62 @@ async function main() {
     assert.equal(await acousticCard.locator('.truthlens-card-flag').count(), 1);
     assert.equal(await page.locator('.truthlens-action-row').count(), 5);
     assert.equal(browserObservations.length, 6);
+
+    const batchRequestsBeforeHydrationCard = batchRequests;
+    await page.evaluate(() => {
+      const feed = document.querySelector('.feed');
+      if (!(feed instanceof HTMLElement)) {
+        throw new Error('fixture feed missing');
+      }
+      const article = document.createElement('article');
+      article.setAttribute('data-truthlens-card', '');
+      article.setAttribute('data-fixture-card', 'hydrating');
+      article.innerHTML = `
+        <a id="thumbnail" href="/watch?v=fixture-item-6">
+          <img alt="thumbnail six" src="https://example.com/thumb-6.jpg" />
+        </a>
+        <h3 id="video-title"></h3>
+        <div id="channel-name">Unknown channel</div>
+        <div class="metadata-snippet">This card is still hydrating and should not be scored yet.</div>
+      `;
+      feed.appendChild(article);
+    });
+
+    await page.waitForTimeout(400);
+    assert.equal(
+      await page.locator('[data-fixture-card="hydrating"] .truthlens-card-flag').count(),
+      0,
+    );
+    assert.equal(
+      await page.locator('[data-fixture-card="hydrating"]').getAttribute('data-truthlens-processed'),
+      null,
+    );
+    assert.equal(batchRequests, batchRequestsBeforeHydrationCard);
+
+    await page.evaluate(() => {
+      const article = document.querySelector('[data-fixture-card="hydrating"]');
+      if (!(article instanceof HTMLElement)) {
+        throw new Error('fixture hydrating card missing');
+      }
+      const title = article.querySelector('#video-title');
+      const channel = article.querySelector('#channel-name');
+      if (!(title instanceof HTMLElement) || !(channel instanceof HTMLElement)) {
+        throw new Error('fixture hydrating card content missing');
+      }
+      title.textContent = 'Contextual market wrap with source links';
+      channel.textContent = 'Signal Ledger';
+    });
+
+    await page.waitForFunction(() => {
+      const article = document.querySelector('[data-fixture-card="hydrating"]');
+      return (
+        article instanceof HTMLElement &&
+        article.getAttribute('data-truthlens-processed') === 'true' &&
+        article.querySelector('.truthlens-card-flag') instanceof HTMLElement
+      );
+    });
+    await waitForNodeCondition(() => browserObservations.length >= 7);
+    assert.equal(batchRequests, batchRequestsBeforeHydrationCard + 1);
 
     artificialBatchDelayMs = 13000;
     const batchRequestsBeforeFallbackReload = batchRequests;
