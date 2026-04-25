@@ -464,6 +464,77 @@
         margin-top: 18px;
       }
 
+      .tutorial-section {
+        overflow: hidden;
+      }
+
+      .tutorial-header {
+        display: grid;
+        gap: 12px;
+        max-width: 980px;
+        margin-bottom: 24px;
+      }
+
+      .tutorial-flow {
+        display: grid;
+        gap: 18px;
+        margin-top: 20px;
+      }
+
+      .tutorial-flow h3 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .tutorial-flow > p {
+        margin: 0;
+        max-width: 900px;
+      }
+
+      .tutorial-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tutorial-step {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .tutorial-step img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 16px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        background: #0f172a;
+      }
+
+      .tutorial-step strong {
+        color: var(--ink);
+      }
+
+      .tutorial-step span {
+        color: var(--muted);
+      }
+
+      .tutorial-note {
+        margin-top: 22px;
+        padding: 18px;
+        border-radius: 18px;
+        color: #1f2937;
+        background: rgba(251, 191, 36, 0.16);
+        border: 1px solid rgba(245, 158, 11, 0.22);
+      }
+
       .footer {
         margin-top: 36px;
         padding: 28px 0 8px;
@@ -479,7 +550,8 @@
         .score-grid,
         .split-list,
         .philosophy-grid,
-        .three-column {
+        .three-column,
+        .tutorial-grid {
           grid-template-columns: 1fr;
         }
 
@@ -894,6 +966,216 @@
             creative framing and manipulative factual packaging visible, reviewable, and actionable.
           </p>
         </article>
+      </section>
+
+      <section class="wide-panel tutorial-section" id="manual-review-tutorial">
+        <div class="tutorial-header">
+          <span class="small-label">Visual walkthrough</span>
+          <h2>Manual report and verification from the feed</h2>
+          <p>
+            These screenshots show the current human-initiated flow. The user right-clicks a
+            thumbnail or title, chooses a TruthLens action, reviews the generated evidence and
+            comments, optionally optimizes wording with Gemini, and then manually confirms the final
+            report or transparency verification.
+          </p>
+        </div>
+
+        <article class="tutorial-flow" aria-labelledby="manual-report-flow-title">
+          <h3 id="manual-report-flow-title">Manual report flow</h3>
+          <p>
+            Use this path when a feed card looks highly scored or polished but the packaging should
+            still be reviewed as potentially misleading, clickbait, or mismatched to the actual
+            content.
+          </p>
+          <ol class="tutorial-grid">
+            <li class="tutorial-step">
+              <img
+                alt="A YouTube feed card with a high TruthLens score that the user wants to inspect for possible reporting."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-01-feed-card.png"
+              />
+              <strong>1. Start from the feed card.</strong>
+              <span>TruthLens shows the score and controls in context, but the user still decides whether to inspect it.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The browser right-click menu with the TruthLens submenu and Report video with TruthLens selected."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-02-right-click-menu.png"
+              />
+              <strong>2. Open the explicit right-click action.</strong>
+              <span>The report sheet opens only after the user chooses Report video with TruthLens.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The TruthLens manual report sheet while initial processing and Gemini drafting are still running."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-03-initial-processing.png"
+              />
+              <strong>3. TruthLens gathers context.</strong>
+              <span>The sheet shows live processing while it checks reporting connection, metadata, transcript availability, and draft status.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The manual report sheet after initial draft suggestions are ready for review."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-04-draft-ready-context.png"
+              />
+              <strong>4. Review the draft rationale.</strong>
+              <span>TruthLens drafts field-specific comments for thumbnail, title, description, channel, and other packaging evidence.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Report issue-tag controls with suggested categories and editable comments."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-05-issue-tags.png"
+              />
+              <strong>5. Adjust tags and issue comments.</strong>
+              <span>The user can keep, remove, or edit issue selections before anything is submitted.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="TruthLens report preview with selected tags, selected issues, and submission text."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-06-report-preview.png"
+              />
+              <strong>6. Inspect the final preview.</strong>
+              <span>The report preview keeps the requested outcome, selected tags, selected issues, and submission text visible.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The final manual report review state before the user presses Report."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-07-final-review-before-submit.png"
+              />
+              <strong>7. Confirm manually.</strong>
+              <span>The final Report button is a user action; TruthLens does not claim autonomous mass reporting in this beta.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The manual report sheet after the user has pressed Report and TruthLens is reporting."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/report-08-after-report-click.png"
+              />
+              <strong>8. Submission proceeds after confirmation.</strong>
+              <span>The flow records that the report was TruthLens-assisted, but the final action remains manual.</span>
+            </li>
+          </ol>
+        </article>
+
+        <article class="tutorial-flow" aria-labelledby="manual-verify-flow-title">
+          <h3 id="manual-verify-flow-title">Manual transparency verification flow</h3>
+          <p>
+            Use this path when the content appears honestly packaged, such as music or other
+            transparent creative formats that TruthLens should learn to preserve rather than demote.
+          </p>
+          <ol class="tutorial-grid">
+            <li class="tutorial-step">
+              <img
+                alt="A YouTube music feed card with a high TruthLens score that should be verified as transparent."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-01-feed-card.png"
+              />
+              <strong>1. Identify a transparent card.</strong>
+              <span>A high score can still be manually verified when the packaging honestly matches the content class.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The browser right-click menu with the TruthLens submenu and Verify transparent with TruthLens selected."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-02-right-click-menu.png"
+              />
+              <strong>2. Choose Verify transparent.</strong>
+              <span>The verification sheet opens from explicit right-click selection, not from passive scoring.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The TruthLens transparency verification sheet while initial processing is running."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-03-initial-processing.png"
+              />
+              <strong>3. Let TruthLens prepare evidence.</strong>
+              <span>The sheet loads local transparency evidence, watch metadata, transcript context if available, and Gemini drafting.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Transparency verification suggestions with the Music category selected."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-04-draft-ready-tags.png"
+              />
+              <strong>4. Review suggested positive tags.</strong>
+              <span>For this example, TruthLens identifies the content as music rather than clickbait or misleading factual packaging.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Editable transparency notes for thumbnail, title, description, channel, and other fields."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-05-verification-notes.png"
+              />
+              <strong>5. Edit positive evidence notes.</strong>
+              <span>The user can document why the thumbnail, title, description, and channel appear transparent.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Transparency verification preview before pressing the final verify button."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-06-before-verify-submit.png"
+              />
+              <strong>6. Inspect the verification preview.</strong>
+              <span>The preview records the positive rationale and selected tags before the user saves the verification.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Gemini optimization option selected for improving verification wording."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-07-gemini-optimize-choice.png"
+              />
+              <strong>7. Optionally optimize wording.</strong>
+              <span>Gemini can help tighten the language, but the user chooses whether to run optimization.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="Verification wording after Gemini optimization has refined the channel note."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png"
+              />
+              <strong>8. Review the optimized wording.</strong>
+              <span>Optimized comments remain editable and visible before the user confirms the verification.</span>
+            </li>
+            <li class="tutorial-step">
+              <img
+                alt="The transparency verification sheet after the user has pressed Verify and the sheet is saving."
+                loading="lazy"
+                decoding="async"
+                src="./assets/tutorial/manual-review/verify-09-after-verify-click.png"
+              />
+              <strong>9. Save the verification.</strong>
+              <span>The final Verify action records positive transparency feedback for the local TruthLens workflow.</span>
+            </li>
+          </ol>
+        </article>
+
+        <div class="tutorial-note">
+          This visual tutorial is intentionally manual: right-click selection opens the review sheet,
+          Gemini assists drafting or wording when selected, and the user remains responsible for the
+          final Report or Verify action.
+        </div>
       </section>
 
       <section class="section-grid">

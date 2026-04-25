@@ -74,6 +74,10 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "human-assisted manual submission" in landing_page.lower()
     assert "does not claim autonomous mass reporting" in landing_page.lower()
     assert "music, art, satire, gaming" in landing_page.lower()
+    assert "manual report and verification from the feed" in landing_page.lower()
+    assert "./assets/tutorial/manual-review/report-02-right-click-menu.png" in landing_page
+    assert "./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png" in landing_page
+    assert "gemini assists drafting or wording" in landing_page.lower()
     assert "landing.css" in landing_page
     assert "--page-bg" in landing_css
     assert "upload-pages-artifact@v3" in pages_workflow.lower()
