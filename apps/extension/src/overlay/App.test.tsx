@@ -222,7 +222,12 @@ describe('manual review overlay', () => {
       report_text: 'Optimized preview text',
       selected_tags: [],
     });
-    apiMocks.sendFeedbackEvent.mockResolvedValue(undefined);
+    apiMocks.sendFeedbackEvent.mockResolvedValue({
+      status: 'remote',
+      transport: 'content-fetch',
+      queued_count: 0,
+      flushed_count: 0,
+    });
     apiMocks.suggestManualReportComments.mockImplementation(
       async (payload: {
         workflow_mode: 'report' | 'verify-transparent';
@@ -451,7 +456,10 @@ describe('manual review overlay', () => {
     expect(pageReportingMocks.submitYouTubePageReport).toHaveBeenCalledTimes(1);
     expect(apiMocks.sendFeedbackEvent).toHaveBeenCalledTimes(1);
     expect(document.body.textContent).toContain(
-      'Rapporten blev sendt via YouTubes indbyggede report-flow under "Spam or misleading" / "Misleading metadata", og TruthLens-feedback blev gemt lokalt.',
+      'Rapporten blev sendt via YouTubes indbyggede report-flow under "Spam or misleading" / "Misleading metadata", og TruthLens-feedback blev registreret i den hostede API.',
+    );
+    expect(document.body.textContent).toContain(
+      'TruthLens feedback was recorded by the hosted API.',
     );
     expect(document.body.textContent).toContain(
       'The in-page YouTube report flow completed on the current page.',

@@ -10,6 +10,7 @@ import type {
 } from '@truthlens/shared-schemas';
 
 import {
+  type FeedbackDeliveryResult,
   fetchYouTubeAuthStatus,
   optimizeManualReportComments,
   sendFeedbackEvent,
@@ -191,6 +192,48 @@ function buildDraftReportText(
 
 function requestedOutcomeLabel(value: ManualReportRequestedOutcome): string {
   return value === 'remove' ? 'Remove' : 'Moderate';
+}
+
+function summarizeFeedbackDelivery(results: FeedbackDeliveryResult[]): {
+  statusLine: string;
+  successSuffix: string;
+  tone: LiveStatusTone;
+} {
+  const queuedCount = results.filter((result) => result.status === 'queued').length;
+  const remoteCount = results.filter((result) => result.status === 'remote').length;
+  const flushedCount = results.reduce((total, result) => total + result.flushed_count, 0);
+  if (queuedCount > 0) {
+    return {
+      statusLine:
+        queuedCount === 1
+          ? 'TruthLens feedback was saved locally and queued for retry.'
+          : `TruthLens saved ${queuedCount} feedback events locally and queued them for retry.`,
+      successSuffix:
+        queuedCount === 1
+          ? 'TruthLens-feedback blev gemt lokalt og sat i kø til synkronisering.'
+          : `${queuedCount} TruthLens-feedback-events blev gemt lokalt og sat i kø til synkronisering.`,
+      tone: 'info',
+    };
+  }
+
+  const backgroundRelayed = results.some((result) => result.transport === 'background-fetch');
+  const flushedSuffix =
+    flushedCount > 0 ? ` It also synced ${flushedCount} queued feedback event(s).` : '';
+  return {
+    statusLine:
+      remoteCount === 1
+        ? `TruthLens feedback was recorded by the hosted API${
+            backgroundRelayed ? ' via extension background relay' : ''
+          }.${flushedSuffix}`
+        : `TruthLens recorded ${remoteCount} feedback events by the hosted API${
+            backgroundRelayed ? ' via extension background relay' : ''
+          }.${flushedSuffix}`,
+    successSuffix:
+      remoteCount === 1
+        ? 'TruthLens-feedback blev registreret i den hostede API.'
+        : `${remoteCount} TruthLens-feedback-events blev registreret i den hostede API.`,
+    tone: 'success',
+  };
 }
 
 function shouldUsePageReportFallback(message: string): boolean {
@@ -712,8 +755,8 @@ export function App() {
             : 'Saving a positive transparency verification to TruthLens…',
         );
         successText = collectionBatch && collectionConfirmed
-          ? `Den positive transparens-verifikation blev gemt lokalt for ${reviewTargets.length} items i samlingen.`
-          : 'Den positive transparens-verifikation blev gemt lokalt som TruthLens-feedback.';
+          ? `Den positive transparens-verifikation blev registreret for ${reviewTargets.length} items i samlingen.`
+          : 'Den positive transparens-verifikation blev registreret som TruthLens-feedback.';
       } else if (collectionBatch && collectionConfirmed && effectiveCollectionScope) {
         const resolvableTargets = reviewTargets.filter((target) => Boolean(target.link_url));
         let reportedCount = 0;
@@ -811,8 +854,9 @@ export function App() {
         }
       }
 
+      const feedbackDeliveryResults: FeedbackDeliveryResult[] = [];
       if (collectionBatch && collectionConfirmed) {
-        await sendFeedbackEvent(
+        feedbackDeliveryResults.push(await sendFeedbackEvent(
           createFeedbackPayload(
             manualReportTarget.itemId,
             manualReportTarget.channelName,
@@ -829,11 +873,11 @@ export function App() {
             manualReportTarget.score?.artifact_provenance ?? null,
             afterReportScore,
           ),
-        );
+        ));
       }
 
       for (const target of reviewTargets) {
-        await sendFeedbackEvent(
+        feedbackDeliveryResults.push(await sendFeedbackEvent(
           createFeedbackPayload(
             target.item_id,
             target.channel_name ?? manualReportTarget.channelName,
@@ -845,7 +889,7 @@ export function App() {
             manualReportTarget.score?.artifact_provenance ?? null,
             afterReportScore,
           ),
-        );
+        ));
       }
       dispatchManualReviewSubmitted({
         workflowMode: manualReportTarget.workflowMode,
@@ -858,16 +902,12 @@ export function App() {
           thumbnailRef: target.thumbnail_ref ?? manualReportTarget.thumbnailRef,
         })),
       });
-      appendStatusLine(
-        collectionBatch && collectionConfirmed
-          ? `TruthLens feedback was stored locally for ${reviewTargets.length} collection item(s).`
-          : 'TruthLens feedback was stored locally.',
-        'success',
-      );
+      const feedbackDelivery = summarizeFeedbackDelivery(feedbackDeliveryResults);
+      appendStatusLine(feedbackDelivery.statusLine, feedbackDelivery.tone);
       setSuccessMessage(
         manualReportTarget.workflowMode === 'verify-transparent'
-          ? successText
-          : `${successText}, og TruthLens-feedback blev gemt lokalt.`,
+          ? `${successText} ${feedbackDelivery.successSuffix}`
+          : `${successText}, og ${feedbackDelivery.successSuffix}`,
       );
       appendStatusLine('Closing the sheet in a moment…', 'success');
       setSubmissionCompleted(true);

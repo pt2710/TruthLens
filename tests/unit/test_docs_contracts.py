@@ -67,6 +67,9 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "human-assisted manual submission" in readme.lower()
     assert "what truthlens is" in landing_page.lower()
     assert "what truthlens is not" in landing_page.lower()
+    assert "an honesty layer for misleading video feeds" in landing_page.lower()
+    assert "free-to-use and open-source philosophy" in landing_page.lower()
+    assert "truthlens uses ai against the misuse of ai" in landing_page.lower()
     assert (
         "why it exists" in landing_page.lower()
         or "the philosophy behind truthlens" in landing_page.lower()
@@ -74,6 +77,9 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "human-assisted manual submission" in landing_page.lower()
     assert "does not claim autonomous mass reporting" in landing_page.lower()
     assert "music, art, satire, gaming" in landing_page.lower()
+    assert "bias structured evolutionary optimization was developed specifically for truthlens" in landing_page.lower()
+    assert "positive bias preservation" in landing_page.lower()
+    assert "negative bias penalty" in landing_page.lower()
     assert "manual report and verification from the feed" in landing_page.lower()
     assert "./assets/tutorial/manual-review/report-02-right-click-menu.png" in landing_page
     assert "./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png" in landing_page
@@ -87,6 +93,10 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "there is no committed live default hostname" in beta_install.lower()
     assert "render web service" in deployment_guide.lower()
     assert "postgres" in deployment_guide.lower()
+    assert "runtime event database" in deployment_guide.lower()
+    assert "feedback events" in deployment_guide.lower()
+    assert "browser observations" in deployment_guide.lower()
+    assert "score audit" in deployment_guide.lower()
     assert "live service confirmed" in hosted_verification.lower()
     assert "hosted write-path proof green" in hosted_verification.lower()
     assert "extension-to-live-host proof closed" in hosted_verification.lower()

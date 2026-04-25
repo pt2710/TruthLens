@@ -792,7 +792,11 @@ async function main() {
       '.truthlens-status-success',
       'Rapporten blev sendt via YouTubes indbyggede report-flow',
     );
-    await expectText(page, '.truthlens-live-status', 'TruthLens feedback was stored locally');
+    await expectText(
+      page,
+      '.truthlens-status-success',
+      'TruthLens-feedback blev registreret i den hostede API',
+    );
     await page.waitForFunction(
       () => document.querySelector('.truthlens-report-sheet') === null,
       null,

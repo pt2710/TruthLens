@@ -22,6 +22,22 @@ The committed Blueprint currently provisions:
 - a `truthlens-beta-db` Postgres database
 - a persistent disk mounted at `/var/data/truthlens`
 
+## Runtime event database
+
+`truthlens-beta-db` is the hosted beta runtime event store. When the API runs with
+`TRUTHLENS_RUNTIME_EVENT_STORE=postgres`, feedback events, browser observations, and score audit
+events are written through the API into Postgres instead of the local JSONL/SQLite fallback files.
+
+The database is not the model-training source of truth by itself, and the extension does not write
+directly to it. Extension feedback first goes to `truthlens-beta-api` over `/feedback`; the API then
+normalizes the event, attaches the configured feedback actor, and persists it to the runtime event
+store. Curated creator/operator feedback only becomes benchmark/training material after the separate
+governance pipeline selects, adjudicates, split-blocks, and manifests those events.
+
+The "Updated" timestamp shown in Render's services list should be treated as Render resource
+metadata, not as the authoritative last-row-write timestamp for feedback. The operational truth for
+the beta write path is exposed through `/health`, `/ready`, `/feedback-summary`, and `/metrics`.
+
 ## Required environment
 
 Set these on the Render web service:

@@ -586,7 +586,7 @@
       <section class="hero">
         <div class="hero-copy">
           <span class="eyebrow">TruthLens hosted beta</span>
-          <h1>A local honesty layer for misleading video feeds.</h1>
+          <h1>An honesty layer for misleading video feeds.</h1>
           <p class="lead">
             TruthLens is a browser-extension and API initiative focused on misleading packaging in
             the age of synthetic promotion: clickbait, fake-news-like framing, deceptive thumbnails,
@@ -695,6 +695,97 @@
             <strong>Preserve human review</strong>
             <span>TruthLens assists judgment, but review and reporting remain visible and controllable by the user.</span>
           </div>
+        </div>
+      </section>
+
+      <section class="wide-panel">
+        <h2>Free-to-use and open-source philosophy</h2>
+        <p>
+          TruthLens is built on the principle that protection against misleading content should not
+          be locked behind a paywall.
+        </p>
+        <p>
+          The project is intended to remain free to use for any user who wants to install, test, or
+          rely on it — both during the current beta phase and in a future public release.
+        </p>
+        <p>
+          This matters because the problem TruthLens addresses is not limited to a small group of
+          technical users. Misleading thumbnails, clickbait strategies, fake-news-like packaging,
+          synthetic media, and low-value AI-generated noise affect ordinary users directly. A tool
+          designed to help people navigate that environment should therefore remain accessible to
+          ordinary users as well.
+        </p>
+        <p>
+          TruthLens is also an open-source project. That is not only a licensing choice; it is part
+          of the philosophy behind the initiative.
+        </p>
+        <p>The project welcomes:</p>
+        <ul>
+          <li>user feedback</li>
+          <li>bug reports</li>
+          <li>public discussion</li>
+          <li>technical contributions</li>
+          <li>dataset and evaluation ideas</li>
+          <li>UX suggestions</li>
+          <li>policy and governance critique</li>
+          <li>broader conversation about responsible feed design</li>
+        </ul>
+        <p>
+          The goal is to build more than a tool. The goal is to build a public, transparent
+          development space around the question:
+        </p>
+        <div class="quote-card">
+          How should users regain control over feeds that are increasingly shaped by synthetic
+          attention-optimization?
+        </div>
+        <p>
+          TruthLens begins with YouTube because YouTube is one of the clearest places where
+          thumbnails, titles, descriptions, channel behavior, and user attention collide. But the
+          vision is broader than YouTube.
+        </p>
+        <p>The same underlying problem exists across many internet platforms:</p>
+        <ul>
+          <li>Facebook</li>
+          <li>Instagram</li>
+          <li>TikTok</li>
+          <li>X / Twitter</li>
+          <li>news feeds</li>
+          <li>short-form video feeds</li>
+          <li>recommendation-driven social platforms</li>
+          <li>future AI-generated content feeds</li>
+        </ul>
+        <p>
+          As more platforms become algorithmic attention streams, the risk increases that feeds
+          become dominated by content engineered primarily to attract clicks rather than to represent
+          truthfully what the user is about to consume.
+        </p>
+        <p>
+          TruthLens therefore aims, over time, to extend beyond one platform and into a broader
+          ecosystem of feed-level transparency tools.
+        </p>
+        <p>
+          The long-term vision is to help push internet feeds back toward honesty, clarity, and
+          usefulness — not by replacing creativity, satire, music, art, or expressive framing, but by
+          reducing the reward for deceptive packaging.
+        </p>
+        <p>In that sense, TruthLens fights fire with fire.</p>
+        <p>
+          Many of the same technological forces that make misleading synthetic content easier to
+          produce — machine learning, neural networks, visual analysis, language models, multimodal
+          reasoning, and automated interpretation — can also be used to detect, explain, demote, and
+          report that content.
+        </p>
+        <p>TruthLens uses AI against the misuse of AI.</p>
+        <p>Not to censor the internet.</p>
+        <p>Not to flatten creativity.</p>
+        <p>Not to punish legitimate art, music, satire, or non-literal expression.</p>
+        <p>
+          But to make deception less profitable, transparency more visible, and user attention less
+          exploitable.
+        </p>
+        <div class="quote-card">
+          If synthetic tools can be used to scale misleading content, then transparent AI tools
+          should also be used to scale user protection, accountability, and honest content discovery.
         </div>
       </section>
 
@@ -946,20 +1037,60 @@
         </div>
       </section>
 
+      <section class="wide-panel">
+        <h2>BSEO in plain terms</h2>
+        <p>
+          Bias Structured Evolutionary Optimization was developed specifically for TruthLens while
+          building the project. It is one of the core contributions TruthLens brings to applied AI:
+          a way to treat bias as a structured policy signal instead of pretending that every useful
+          system should be bias-free in the same way.
+        </p>
+        <p>
+          Conventional AI language often frames the goal as removing bias. For the problem TruthLens
+          is solving, that is too simple. Feed quality is partly objective: a thumbnail can make a
+          concrete promise the video does not deliver, a title can overstate evidence, and fake
+          urgency can misrepresent the content. But feed quality is also subjective because one
+          person’s personal feed is not the same as another person’s personal feed.
+        </p>
+        <p>
+          Ordinary recommender systems tend to optimize globally measurable behavior: clicks, watch
+          time, retention, and engagement. BSEO asks a different question: how should a user-side AI
+          layer structure preference, context, and risk when the user wants both protection from
+          deception and preservation of legitimate creative expression?
+        </p>
+        <p>
+          Bias is treated like a two-sided signal rather than a one-sided flaw. There is no useful
+          one-sided coin here: a bias can express what a user wants preserved, and it can also
+          express what a user does not want amplified. BSEO uses that distinction to make bias a
+          functional form of subjective weighting while keeping the runtime policy auditable.
+        </p>
+        <div class="truth-grid">
+          <div class="truth-card">
+            <strong>Positive bias preservation</strong>
+            <span>Music, art, satire, gaming, tutorials, and transparent creative framing can be non-literal without being deceptive.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Negative bias penalty</strong>
+            <span>Fake urgency, false-official framing, recycled shock packaging, and claim-content mismatch should increase scrutiny.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Class-conditioned policy</strong>
+            <span>News-like claims, music videos, satire, tutorials, and synthetic spam should not all be judged by one flat moderation rule.</span>
+          </div>
+        </div>
+        <p>
+          In practice, BSEO stays downstream from core perception. The model can detect signals, but
+          BSEO structures how those signals should influence policy: what should be demoted, what
+          should be reported, what should be verified as transparent, and what should be preserved
+          because the context makes non-literal framing legitimate.
+        </p>
+        <p>
+          That is why BSEO matters to TruthLens. It turns bias from an uncontrolled hidden weakness
+          into an explicit, testable, artifact-guarded policy layer for personal feed transparency.
+        </p>
+      </section>
+
       <section class="section-grid">
-        <article class="panel">
-          <h2>BSEO in plain terms</h2>
-          <p>
-            TruthLens uses Bias Structured Evolutionary Optimization as a downstream policy layer:
-            not to remove all bias, but to structure it. Some bias is negative and should be
-            penalized. Some context is positive and should be preserved.
-          </p>
-          <ul>
-            <li>Music and art can be non-literal without being deceptive.</li>
-            <li>Fake urgency and false-official framing should increase scrutiny.</li>
-            <li>Class-conditioned policy prevents one-size-fits-all moderation logic.</li>
-          </ul>
-        </article>
         <article class="panel">
           <h2>What external readers should know</h2>
           <p>
@@ -970,6 +1101,14 @@
           <p>
             The vision is not to punish creativity. It is to make the difference between legitimate
             creative framing and manipulative factual packaging visible, reviewable, and actionable.
+          </p>
+        </article>
+        <article class="panel">
+          <h2>Why subjective weighting matters</h2>
+          <p>
+            TruthLens does not assume that every user wants the same feed. The goal is not to replace
+            human preference with a rigid universal verdict, but to make user-controlled preference,
+            risk, and transparency visible enough that the feed can be adjusted deliberately.
           </p>
         </article>
       </section>

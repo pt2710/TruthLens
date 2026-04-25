@@ -38,10 +38,37 @@ const MANUAL_REPORT_OPTIMIZE_TIMEOUT_MS = 25000;
 const YOUTUBE_AUTH_STATUS_TIMEOUT_MS = 5000;
 const YOUTUBE_REPORT_TIMEOUT_MS = 5000;
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
+const PENDING_FEEDBACK_EVENTS_KEY = 'truthlens-pending-feedback-events';
+const MAX_PENDING_FEEDBACK_EVENTS = 100;
+
+let memoryPendingFeedbackEvents: FeedbackEvent[] = [];
+
+type ChromeStorageAreaCompat = {
+  get: (
+    keys: string,
+    callback?: (items: Record<string, unknown>) => void,
+  ) => void | Promise<Record<string, unknown>>;
+  set: (
+    items: Record<string, unknown>,
+    callback?: () => void,
+  ) => void | Promise<void>;
+};
 
 type BackgroundOptimizeResponse =
   | { ok: true; data: ManualReportOptimizationResponse }
   | { ok: false; error?: string };
+
+type BackgroundFeedbackResponse =
+  | { ok: true; status: number }
+  | { ok: false; error?: string; status?: number };
+
+export type FeedbackDeliveryResult = {
+  status: 'remote' | 'queued';
+  transport: 'content-fetch' | 'background-fetch' | 'local-queue';
+  queued_count: number;
+  flushed_count: number;
+  error?: string;
+};
 
 export type ModelInfo = {
   mode: string;
@@ -165,6 +192,99 @@ function stableObjectString(value: Record<string, number>): string {
   );
 }
 
+function hasChromeStorage(): boolean {
+  return (
+    typeof chrome !== 'undefined' &&
+    Boolean(chrome.storage?.local?.get) &&
+    Boolean(chrome.storage?.local?.set)
+  );
+}
+
+async function getChromeStorageValue<T>(key: string): Promise<T | undefined> {
+  if (!hasChromeStorage()) {
+    return undefined;
+  }
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const resolveOnce = (value: T | undefined) => {
+      if (resolved) {
+        return;
+      }
+      resolved = true;
+      resolve(value);
+    };
+    try {
+      const storage = chrome.storage.local as unknown as ChromeStorageAreaCompat;
+      const maybePromise = storage.get(key, (items) => {
+        if (chrome.runtime?.lastError) {
+          resolveOnce(undefined);
+          return;
+        }
+        resolveOnce(items[key] as T | undefined);
+      });
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise
+          .then((items) => {
+            resolveOnce(items[key] as T | undefined);
+          })
+          .catch(() => {
+            resolveOnce(undefined);
+          });
+      }
+    } catch {
+      resolveOnce(undefined);
+    }
+  });
+}
+
+async function setChromeStorageValue<T>(key: string, value: T): Promise<void> {
+  if (!hasChromeStorage()) {
+    memoryPendingFeedbackEvents = Array.isArray(value)
+      ? (value as FeedbackEvent[])
+      : memoryPendingFeedbackEvents;
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    let resolved = false;
+    const resolveOnce = () => {
+      if (resolved) {
+        return;
+      }
+      resolved = true;
+      resolve();
+    };
+    try {
+      const storage = chrome.storage.local as unknown as ChromeStorageAreaCompat;
+      const maybePromise = storage.set({ [key]: value }, resolveOnce);
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.then(resolveOnce).catch(resolveOnce);
+      }
+    } catch {
+      resolveOnce();
+    }
+  });
+}
+
+async function readPendingFeedbackEvents(): Promise<FeedbackEvent[]> {
+  const stored = await getChromeStorageValue<unknown>(PENDING_FEEDBACK_EVENTS_KEY);
+  if (!Array.isArray(stored)) {
+    return [...memoryPendingFeedbackEvents];
+  }
+
+  return stored
+    .map((event) => feedbackEventSchema.safeParse(event))
+    .filter((result): result is { success: true; data: FeedbackEvent } => result.success)
+    .map((result) => result.data);
+}
+
+async function writePendingFeedbackEvents(events: FeedbackEvent[]): Promise<void> {
+  const boundedEvents = events.slice(-MAX_PENDING_FEEDBACK_EVENTS);
+  memoryPendingFeedbackEvents = boundedEvents;
+  await setChromeStorageValue(PENDING_FEEDBACK_EVENTS_KEY, boundedEvents);
+}
+
 function cacheKey(item: ScoreItemRequest): string {
   return [
     item.item_id,
@@ -198,6 +318,99 @@ async function fetchWithTimeout(
       globalThis.clearTimeout(timeoutId);
     }
   }
+}
+
+async function postFeedbackDirect(parsedEvent: FeedbackEvent): Promise<void> {
+  const response = await fetchWithTimeout(
+    buildTruthLensApiUrl('/feedback'),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsedEvent),
+    },
+    EVENT_POST_TIMEOUT_MS,
+  );
+  if (!response.ok) {
+    throw new Error(`Feedback request failed: ${response.status}`);
+  }
+}
+
+async function postFeedbackViaBackground(parsedEvent: FeedbackEvent): Promise<void> {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+    throw new Error('Extension background relay is unavailable.');
+  }
+
+  const response = (await chrome.runtime.sendMessage({
+    type: 'TRUTHLENS_POST_FEEDBACK',
+    payload: parsedEvent,
+  })) as BackgroundFeedbackResponse | undefined;
+
+  if (!response?.ok) {
+    throw new Error(
+      response?.error ??
+        (response?.status ? `Feedback background request failed: ${response.status}` : 'Feedback background request failed.'),
+    );
+  }
+}
+
+async function postFeedbackToRemote(
+  parsedEvent: FeedbackEvent,
+): Promise<'content-fetch' | 'background-fetch'> {
+  try {
+    await postFeedbackDirect(parsedEvent);
+    return 'content-fetch';
+  } catch (directError) {
+    try {
+      await postFeedbackViaBackground(parsedEvent);
+      return 'background-fetch';
+    } catch (backgroundError) {
+      throw new Error(
+        `Content fetch failed (${describeError(directError)}); background relay failed (${describeError(
+          backgroundError,
+        )}).`,
+      );
+    }
+  }
+}
+
+async function queueFeedbackEvent(
+  parsedEvent: FeedbackEvent,
+  error: unknown,
+): Promise<FeedbackDeliveryResult> {
+  const pendingEvents = await readPendingFeedbackEvents();
+  pendingEvents.push(parsedEvent);
+  await writePendingFeedbackEvents(pendingEvents);
+
+  return {
+    status: 'queued',
+    transport: 'local-queue',
+    queued_count: Math.min(pendingEvents.length, MAX_PENDING_FEEDBACK_EVENTS),
+    flushed_count: 0,
+    error: describeError(error),
+  };
+}
+
+export async function flushPendingFeedbackEvents(): Promise<number> {
+  const pendingEvents = await readPendingFeedbackEvents();
+  if (pendingEvents.length === 0) {
+    return 0;
+  }
+
+  const remainingEvents: FeedbackEvent[] = [];
+  let flushedCount = 0;
+  for (const event of pendingEvents) {
+    try {
+      await postFeedbackToRemote(event);
+      flushedCount += 1;
+    } catch {
+      remainingEvents.push(event);
+    }
+  }
+
+  if (flushedCount > 0 || remainingEvents.length !== pendingEvents.length) {
+    await writePendingFeedbackEvents(remainingEvents);
+  }
+  return flushedCount;
 }
 
 export async function scoreFeedItem(
@@ -293,20 +506,20 @@ export async function batchScoreFeedItems(
   }
 }
 
-export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<void> {
+export async function sendFeedbackEvent(payload: FeedbackEvent): Promise<FeedbackDeliveryResult> {
   const parsedEvent = feedbackEventSchema.parse(payload);
   try {
-    await fetchWithTimeout(
-      buildTruthLensApiUrl('/feedback'),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsedEvent),
-      },
-      EVENT_POST_TIMEOUT_MS,
-    );
-  } catch {
-    // Fail soft in the browser; feedback is advisory and should not block UI interaction.
+    const transport = await postFeedbackToRemote(parsedEvent);
+    const flushedCount = await flushPendingFeedbackEvents();
+    const queuedCount = (await readPendingFeedbackEvents()).length;
+    return {
+      status: 'remote',
+      transport,
+      queued_count: queuedCount,
+      flushed_count: flushedCount,
+    };
+  } catch (error) {
+    return queueFeedbackEvent(parsedEvent, error);
   }
 }
 
@@ -513,4 +726,5 @@ export async function submitYouTubeReport(
 
 export function __resetExtensionApiStateForTests(): void {
   scoreCache.clear();
+  memoryPendingFeedbackEvents = [];
 }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ScoreItemRequest } from '@truthlens/shared-schemas';
+import type { FeedbackEvent, ScoreItemRequest } from '@truthlens/shared-schemas';
 
 import {
   __resetExtensionApiStateForTests,
@@ -8,6 +8,7 @@ import {
   fetchFeedbackSummary,
   optimizeManualReportComments,
   scoreFeedItem,
+  sendFeedbackEvent,
   suggestManualReportComments,
   submitYouTubeReport,
 } from './api';
@@ -33,6 +34,30 @@ function makeScoreItem(itemId: string, title: string): ScoreItemRequest {
       review_requested: false,
       source_provenance: null,
     },
+  };
+}
+
+function makeFeedbackEvent(overrides: Partial<FeedbackEvent> = {}): FeedbackEvent {
+  return {
+    feedback_id: 'feedback-test-1',
+    item_id: 'card-1',
+    item_hash: null,
+    channel_name: 'Test channel',
+    model_version: 'extension-runtime',
+    policy_version: 'adaptive-threshold-v1',
+    action_shown: 'ask-report',
+    user_action: 'confirm-report',
+    explanation_id: 'exp-test',
+    before_score: 0.72,
+    after_score: 0.33,
+    timestamp: '2026-04-25T10:00:00.000Z',
+    runtime_context: {
+      surface: 'extension-feed',
+      review_requested: true,
+      source_provenance: '/watch',
+    },
+    artifact_provenance: null,
+    ...overrides,
   };
 }
 
@@ -97,6 +122,54 @@ describe('scoreFeedItem', () => {
     expect(Object.keys(results)).toHaveLength(2);
     expect(results['card-3'].reasons.length).toBeGreaterThan(0);
     expect(results['card-3'].explanation_id).toBeTruthy();
+  });
+
+  it('records feedback with a remote acknowledgement when the API accepts it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'accepted' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await sendFeedbackEvent(makeFeedbackEvent());
+
+    expect(result.status).toBe('remote');
+    expect(result.transport).toBe('content-fetch');
+    expect(result.queued_count).toBe(0);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/feedback'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('falls back to the background worker when direct feedback fetch fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    vi.stubGlobal('chrome', {
+      runtime: {
+        sendMessage: vi.fn().mockResolvedValue({ ok: true, status: 200 }),
+      },
+    });
+
+    const result = await sendFeedbackEvent(makeFeedbackEvent());
+
+    expect(result.status).toBe('remote');
+    expect(result.transport).toBe('background-fetch');
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'TRUTHLENS_POST_FEEDBACK',
+      payload: expect.objectContaining({ feedback_id: 'feedback-test-1' }),
+    });
+  });
+
+  it('queues feedback locally when both direct and background delivery fail', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    const result = await sendFeedbackEvent(makeFeedbackEvent());
+
+    expect(result.status).toBe('queued');
+    expect(result.transport).toBe('local-queue');
+    expect(result.queued_count).toBe(1);
+    expect(result.error).toContain('Content fetch failed');
   });
 
   it('does not cache bootstrap fallback after a batch timeout', async () => {

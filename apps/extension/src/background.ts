@@ -1,7 +1,10 @@
+import { feedbackEventSchema } from '@truthlens/shared-schemas';
+
 import { buildTruthLensApiUrl } from './lib/runtimeConfig';
 
 export const MANUAL_REPORT_MENU_ID = 'truthlens-manual-report';
 export const VERIFY_TRANSPARENT_MENU_ID = 'truthlens-verify-transparent';
+const FEEDBACK_POST_TIMEOUT_MS = 5000;
 
 export function buildManualReportMenuOptions(): chrome.contextMenus.CreateProperties {
   return {
@@ -19,6 +22,71 @@ export function buildTransparentVerificationMenuOptions(): chrome.contextMenus.C
     contexts: ['image', 'link'],
     documentUrlPatterns: ['https://www.youtube.com/*'],
   };
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      fetchImpl(input, init),
+      new Promise<Response>((_, reject) => {
+        timeoutId = globalThis.setTimeout(() => {
+          reject(new Error(`TruthLens API request timed out after ${timeoutMs}ms.`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== null) {
+      globalThis.clearTimeout(timeoutId);
+    }
+  }
+}
+
+export async function postFeedbackFromBackground(
+  payload: unknown,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true; status: number } | { ok: false; error?: string; status?: number }> {
+  const parsed = feedbackEventSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues.map((issue) => issue.message).join('; '),
+    };
+  }
+
+  try {
+    const response = await fetchWithTimeout(
+      buildTruthLensApiUrl('/feedback'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed.data),
+      },
+      FEEDBACK_POST_TIMEOUT_MS,
+      fetchImpl,
+    );
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        error: `Feedback request failed: ${response.status}`,
+      };
+    }
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Feedback request failed in the background worker.',
+    };
+  }
 }
 
 function ensureContextMenu() {
@@ -93,6 +161,11 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onInstalled) {
                 : 'Manual report optimization failed in the background worker.',
           });
         });
+      return true;
+    }
+
+    if (message?.type === 'TRUTHLENS_POST_FEEDBACK') {
+      void postFeedbackFromBackground(message.payload).then(sendResponse);
       return true;
     }
 
