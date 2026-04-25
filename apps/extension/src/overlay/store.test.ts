@@ -66,6 +66,7 @@ describe('overlay store', () => {
       descriptionSnapshot: 'Metadata snippet referencing the claimed leak.',
       transcriptExcerpt: 'Short transcript excerpt with vague claims.',
       collectionScope: null,
+      channelReportCount: 0,
       score: score('ask-report'),
     });
 

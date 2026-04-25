@@ -18,6 +18,7 @@ export type ManualReportTarget = {
   descriptionSnapshot: string | null;
   transcriptExcerpt: string | null;
   collectionScope: ManualReviewCollectionScope | null;
+  channelReportCount: number;
   score: ScoreResult | null;
 };
 

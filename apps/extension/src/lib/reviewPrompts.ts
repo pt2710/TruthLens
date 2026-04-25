@@ -20,12 +20,12 @@ function clamp(value: number, min: number, max: number): number {
 export function inferReviewPromptDecision(
   score: ScoreResult,
   musicLikelihood: number,
-): ReviewPromptDecision | null {
+): ReviewPromptDecision {
   const boundedMusicLikelihood = clamp(musicLikelihood, 0, 1);
   const resolvedClass = score.content_class;
   const negativeBiases = new Set(score.bias_profile.negative_biases);
 
-  if (score.recommended_action === 'ask-report') {
+  if (score.recommended_action === 'ask-report' || score.recommended_action === 'hide') {
     return {
       workflowMode: 'report',
       label: 'Review report',
@@ -44,7 +44,7 @@ export function inferReviewPromptDecision(
   ) {
     return {
       workflowMode: 'report',
-      label: 'Review ambiguity',
+      label: 'Review report',
       reason: 'TruthLens sees satire-like or ambiguous packaging that still needs human confirmation.',
     };
   }
@@ -68,5 +68,21 @@ export function inferReviewPromptDecision(
     };
   }
 
-  return null;
+  if (
+    score.risk_score >= 0.42 ||
+    score.recommended_action === 'blur' ||
+    Array.from(SEVERE_NEGATIVE_BIASES).some((bias) => negativeBiases.has(bias))
+  ) {
+    return {
+      workflowMode: 'report',
+      label: 'Review report',
+      reason: 'TruthLens wants a human report decision for this feed item.',
+    };
+  }
+
+  return {
+    workflowMode: 'verify-transparent',
+    label: 'Verify transparent',
+    reason: 'TruthLens thinks this likely looks transparent enough to verify.',
+  };
 }

@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-04-25T06:43:18.947670+00:00",
-  "build_id": "build-20260425062850",
-  "model_version": "baseline-v1-build-20260425062850",
-  "trained_at": "2026-04-25T06:28:51.514471+00:00",
+  "generated_at": "2026-04-25T09:21:55.667005+00:00",
+  "build_id": "build-20260425085620",
+  "model_version": "baseline-v1-build-20260425085620",
+  "trained_at": "2026-04-25T08:56:20.686458+00:00",
   "sample_count": 101,
   "artifact_paths": {
     "model_info": "artifacts/trained_models/latest/model_info.json",
-    "eval_report": "artifacts/eval_runs/build-20260425062850.json",
-    "simulation": "artifacts/eval_runs/build-20260425062850-simulation.json",
-    "training_history": "artifacts/eval_runs/build-20260425062850-training-history.json",
-    "bseo_report": "artifacts/eval_runs/build-20260425062850-bseo-report.json",
-    "mutation_atlas": "artifacts/eval_runs/build-20260425062850-mutation-bias-atlas.json",
-    "lineage": "artifacts/eval_runs/build-20260425062850-bseo-lineage.json",
-    "drift_report": "artifacts/drift_reports/build-20260425062850.json",
+    "eval_report": "artifacts/eval_runs/build-20260425085620.json",
+    "simulation": "artifacts/eval_runs/build-20260425085620-simulation.json",
+    "training_history": "artifacts/eval_runs/build-20260425085620-training-history.json",
+    "bseo_report": "artifacts/eval_runs/build-20260425085620-bseo-report.json",
+    "mutation_atlas": "artifacts/eval_runs/build-20260425085620-mutation-bias-atlas.json",
+    "lineage": "artifacts/eval_runs/build-20260425085620-bseo-lineage.json",
+    "drift_report": "artifacts/drift_reports/build-20260425085620.json",
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
     "bseo_policy": "configs/thresholds/bseo-policy.json",
@@ -21,32 +21,32 @@
     "supplemental_adjudication": null,
     "supplemental_gold": null,
     "operator_feedback_manifest": "datasets/manifests/operator_feedback/latest.json",
-    "operator_ingestion_manifest": "datasets/manifests/operator_feedback/build-20260425062850-ingestion.json",
-    "operator_adjudication": "datasets/manifests/operator_feedback/adjudication/discovery-20260425062849-operator-feedback.json",
-    "operator_gold": "datasets/manifests/operator_feedback/gold/discovery-20260425062849-operator-feedback.jsonl",
+    "operator_ingestion_manifest": "datasets/manifests/operator_feedback/build-20260425085620-ingestion.json",
+    "operator_adjudication": "datasets/manifests/operator_feedback/adjudication/discovery-20260425085618-operator-feedback.json",
+    "operator_gold": "datasets/manifests/operator_feedback/gold/discovery-20260425085618-operator-feedback.jsonl",
     "build_manifest": "datasets/manifests/builds/latest.json"
   },
   "artifact_timestamps": {
-    "model_info": "2026-04-25T06:29:16.989547+00:00",
-    "eval_report": "2026-04-25T06:29:16.989547+00:00",
-    "simulation": "2026-04-25T06:29:55.910514+00:00",
-    "training_history": "2026-04-25T06:29:16.989547+00:00",
-    "bseo_report": "2026-04-25T06:29:55.912269+00:00",
-    "mutation_atlas": "2026-04-25T06:29:55.934127+00:00",
-    "lineage": "2026-04-25T06:29:55.934127+00:00",
-    "drift_report": "2026-04-25T06:29:55.936134+00:00",
+    "model_info": "2026-04-25T09:01:47.857107+00:00",
+    "eval_report": "2026-04-25T09:01:47.857107+00:00",
+    "simulation": "2026-04-25T09:02:24.749063+00:00",
+    "training_history": "2026-04-25T09:01:47.857107+00:00",
+    "bseo_report": "2026-04-25T09:02:24.751071+00:00",
+    "mutation_atlas": "2026-04-25T09:02:24.771651+00:00",
+    "lineage": "2026-04-25T09:02:24.769642+00:00",
+    "drift_report": "2026-04-25T09:02:24.771651+00:00",
     "runtime_policy": "2026-04-23T17:16:04.310801+00:00",
-    "thresholds": "2026-04-25T06:29:55.936134+00:00",
-    "bseo_policy": "2026-04-25T06:29:55.940149+00:00",
-    "runtime_governance": "2026-04-25T06:43:18.863923+00:00",
+    "thresholds": "2026-04-25T09:02:24.773667+00:00",
+    "bseo_policy": "2026-04-25T09:02:24.775678+00:00",
+    "runtime_governance": "2026-04-25T09:21:55.457645+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
-    "operator_feedback_manifest": "2026-04-25T06:28:51.129792+00:00",
-    "operator_ingestion_manifest": "2026-04-25T06:28:51.413160+00:00",
-    "operator_adjudication": "2026-04-25T06:28:51.163243+00:00",
-    "operator_gold": "2026-04-25T06:28:51.163243+00:00",
-    "build_manifest": "2026-04-25T06:28:51.533604+00:00"
+    "operator_feedback_manifest": "2026-04-25T08:56:20.303763+00:00",
+    "operator_ingestion_manifest": "2026-04-25T08:56:20.586240+00:00",
+    "operator_adjudication": "2026-04-25T08:56:20.336170+00:00",
+    "operator_gold": "2026-04-25T08:56:20.339904+00:00",
+    "build_manifest": "2026-04-25T08:56:20.703349+00:00"
   },
   "runtime_truth": {
     "configured_policy_mode": "bseo-live",
@@ -61,8 +61,8 @@
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-04-25T06:43:18.863923+00:00",
-    "build_id": "build-20260425062850",
+    "generated_at": "2026-04-25T09:21:55.453640+00:00",
+    "build_id": "build-20260425085620",
     "runtime_policy": {
       "configured_mode": "bseo-live",
       "resolved_mode": "bseo-live",
@@ -77,8 +77,8 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 0.241,
-        "build_id": "build-20260425062850",
+        "age_hours": 0.426,
+        "build_id": "build-20260425085620",
         "policy_version": "bseo-control-policy-v1"
       },
       "lineage_count": 125,
@@ -676,8 +676,8 @@
   "bseo": {
     "policy_artifact": {
       "policy_version": "bseo-control-policy-v1",
-      "generated_at": "2026-04-25T06:28:51.514471+00:00",
-      "build_id": "build-20260425062850",
+      "generated_at": "2026-04-25T08:56:20.686458+00:00",
+      "build_id": "build-20260425085620",
       "head_spec_version": "2026-04-02",
       "architecture_plan_version": "2026-04-02",
       "recommended_thresholds": {
@@ -759,13 +759,13 @@
           }
         ]
       },
-      "lineage_log_path": "artifacts/eval_runs/build-20260425062850-bseo-lineage.json",
-      "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260425062850-mutation-bias-atlas.json",
-      "report_path": "artifacts/eval_runs/build-20260425062850-bseo-report.json"
+      "lineage_log_path": "artifacts/eval_runs/build-20260425085620-bseo-lineage.json",
+      "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260425085620-mutation-bias-atlas.json",
+      "report_path": "artifacts/eval_runs/build-20260425085620-bseo-report.json"
     },
     "report": {
-      "build_id": "build-20260425062850",
-      "generated_at": "2026-04-25T06:28:51.514471+00:00",
+      "build_id": "build-20260425085620",
+      "generated_at": "2026-04-25T08:56:20.686458+00:00",
       "policy_version": "bseo-control-policy-v1",
       "best_candidate_id": "g6-child12",
       "best_objective": 0.819,
@@ -1119,9 +1119,9 @@
   },
   "feedback_layers": {
     "local_user_feedback": {
-      "total_events": 65,
+      "total_events": 68,
       "action_counts": {
-        "not-misleading": 65
+        "not-misleading": 68
       }
     },
     "creator_operator_feedback": {
@@ -1182,13 +1182,13 @@
         "Unknown channel": 10
       },
       "manifest_path": "datasets/manifests/operator_feedback/latest.json",
-      "ingestion_manifest_path": "datasets/manifests/operator_feedback/build-20260425062850-ingestion.json",
-      "adjudication_path": "datasets/manifests/operator_feedback/adjudication/discovery-20260425062849-operator-feedback.json",
-      "gold_path": "datasets/manifests/operator_feedback/gold/discovery-20260425062849-operator-feedback.jsonl",
-      "ingestion_path": "datasets/interim/operator_feedback/build-20260425062850.jsonl"
+      "ingestion_manifest_path": "datasets/manifests/operator_feedback/build-20260425085620-ingestion.json",
+      "adjudication_path": "datasets/manifests/operator_feedback/adjudication/discovery-20260425085618-operator-feedback.json",
+      "gold_path": "datasets/manifests/operator_feedback/gold/discovery-20260425085618-operator-feedback.jsonl",
+      "ingestion_path": "datasets/interim/operator_feedback/build-20260425085620.jsonl"
     },
     "global_benchmark_truth": {
-      "build_id": "build-20260425062850",
+      "build_id": "build-20260425085620",
       "train_count": 236,
       "validation_count": 58,
       "test_count": 101,

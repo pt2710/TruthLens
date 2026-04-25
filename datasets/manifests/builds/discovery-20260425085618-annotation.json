@@ -1,0 +1,26 @@
+{
+  "run_id": "discovery-20260425085618",
+  "generated_at": "2026-03-01T12:00:00Z",
+  "annotation_batch_path": "datasets/labels/annotation_batches/discovery-20260425085618.json",
+  "latest_annotation_batch_path": "datasets/labels/annotation_batches/latest.json",
+  "weak_labels_path": "datasets/labels/weak_labels/discovery-20260425085618.jsonl",
+  "review_count": 159,
+  "hard_negative_count": 79,
+  "disagreement_count": 18,
+  "class_coverage": {
+    "art": 36,
+    "commentary": 78,
+    "documentary": 49,
+    "gaming": 20,
+    "music": 21,
+    "news": 43,
+    "promo": 40,
+    "satire": 38,
+    "unknown": 21
+  },
+  "dominant_bias_coverage": {
+    "channel_prior_dependency": 105,
+    "crossmodal_rigidity": 171,
+    "genre_confusion": 70
+  }
+}

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo/truthlens_logo.png" alt="TruthLens logo" width="220" />
+  <img src="docs/logo/truthlens_logo.png" alt="TruthLens logo" width="560" />
 </p>
 
 # TruthLens

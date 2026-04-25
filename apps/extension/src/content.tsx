@@ -53,6 +53,13 @@ import {
 } from './lib/homepageScoring';
 import { createHomepageScoreScheduler } from './lib/homepageScheduler';
 import { inferReviewPromptDecision } from './lib/reviewPrompts';
+import {
+  MANUAL_REVIEW_SUBMITTED_EVENT,
+  registerManualReviewSubmittedHandler,
+  type ManualReviewSubmittedDetail,
+  type ManualReviewSubmittedTarget,
+} from './lib/manualReviewEvents';
+import { adjustScoreForReportedContent } from './lib/reportFeedbackScoring';
 import { shouldRescoreFromMutations } from './lib/domMutationFilter';
 import { buildUserContext, isChannelMuted, muteChannel } from './lib/userPreferences';
 import { App } from './overlay/App';
@@ -80,6 +87,7 @@ const RERANK_CHUNK_ID = 'data-truthlens-rerank-chunk-id';
 const RERANK_CHUNK_SEALED = 'data-truthlens-rerank-sealed';
 const ORIGINAL_INDEX = 'data-truthlens-original-index';
 const OBSERVATION_ID = 'data-truthlens-observation-id';
+const SUPPRESSED = 'data-truthlens-suppressed';
 const UNKNOWN_CHANNEL_NAME = 'Unknown channel';
 const CARD_SELECTOR = 'ytd-rich-item-renderer, ytd-video-renderer, [data-truthlens-card]';
 const MUSIC_TITLE_MARKERS = [
@@ -161,6 +169,8 @@ const TAXONOMY_HINT_MARKERS: Record<string, readonly string[]> = {
 };
 let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
+const MAX_PENDING_CARDS_PER_PASS = 36;
+const BACKLOG_SCORE_DELAY_MS = 180;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let homepageStartupRetryCount = 0;
 let homepageStartupRetryTimer: number | null = null;
@@ -168,6 +178,7 @@ let feedRerankEnabled = DEFAULT_FEED_RERANK_ENABLED;
 let isApplyingFeedRerank = false;
 let rerankMutationWindowTimer: number | null = null;
 let channelTrustProfilesRefreshPromise: Promise<void> | null = null;
+let backlogScoreTimer: number | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
 
@@ -323,6 +334,10 @@ function extractCardTitle(card: HTMLElement, index: number): string {
 }
 
 function buildItemId(card: HTMLElement, index: number): string {
+  const existingItemId = card.getAttribute(ITEM_ID);
+  if (existingItemId) {
+    return existingItemId;
+  }
   const href =
     card.querySelector<HTMLAnchorElement>(
       'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
@@ -809,6 +824,7 @@ function buildManualReportTarget(
   workflowMode: ManualReportWorkflowMode,
 ): ManualReportTarget {
   const { collectionScope } = resolveCollectionMembers(entry);
+  const profile = getChannelProfile(entry.channelName);
   return {
     itemId: entry.itemId,
     workflowMode,
@@ -820,6 +836,7 @@ function buildManualReportTarget(
     descriptionSnapshot: entry.descriptionSnapshot,
     transcriptExcerpt: entry.transcriptExcerpt,
     collectionScope,
+    channelReportCount: priorFlagsFromProfile(profile),
     score,
   };
 }
@@ -832,12 +849,23 @@ function openManualReview(entry: PendingCard, score: ScoreResult | null, workflo
   useOverlayStore.getState().openManualReport(buildManualReportTarget(entry, score, workflowMode));
 }
 
+function isSuppressedFeedCard(card: HTMLElement): boolean {
+  return (
+    card.getAttribute(SUPPRESSED) !== null ||
+    card.classList.contains('truthlens-card-hidden') ||
+    card.classList.contains('truthlens-card-suppressed')
+  );
+}
+
 function clearCardAugmentations(card: HTMLElement) {
   card.classList.remove('truthlens-card-hidden');
+  card.classList.remove('truthlens-card-suppressed');
   card.classList.remove('truthlens-card-blur');
   card.classList.remove('truthlens-card-boosted');
   card.classList.remove('truthlens-card-steady');
   card.classList.remove('truthlens-card-downranked');
+  card.removeAttribute(SUPPRESSED);
+  card.removeAttribute('aria-hidden');
   card.querySelector('.truthlens-card-flag')?.remove();
   card.querySelector('.truthlens-review-prompt')?.remove();
   card.querySelector('.truthlens-action-row')?.remove();
@@ -900,7 +928,12 @@ function beginFeedRerankMutationWindow(): void {
 }
 
 function directCardChildren(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.children).filter(matchesFeedCardSelector);
+  return Array.from(container.children).filter(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement &&
+      matchesFeedCardSelector(child) &&
+      !isSuppressedFeedCard(child),
+  );
 }
 
 function readRerankChunkId(card: HTMLElement): number | null {
@@ -975,7 +1008,9 @@ function reorderCardsWithinContainer(
 }
 
 function restoreOriginalFeedOrdering(): void {
-  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR)).filter(
+    (card) => !isSuppressedFeedCard(card),
+  );
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
   cards.forEach((card) => {
@@ -1005,8 +1040,10 @@ function applyLocalPersonalizationOrdering(targetCards?: HTMLElement[]) {
 
   const cards =
     targetCards && targetCards.length > 0
-      ? targetCards
-      : Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+      ? targetCards.filter((card) => !isSuppressedFeedCard(card))
+      : Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR)).filter(
+          (card) => !isSuppressedFeedCard(card),
+        );
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
   cards.forEach((card, index) => {
@@ -1069,6 +1106,19 @@ function applyLocalPersonalizationOrdering(targetCards?: HTMLElement[]) {
   });
 }
 
+function suppressCardFromFeed(card: HTMLElement, reason: string): void {
+  const container = resolveRerankContainer(card);
+  card.classList.add('truthlens-card-hidden', 'truthlens-card-suppressed');
+  card.setAttribute(SUPPRESSED, reason);
+  card.setAttribute('aria-hidden', 'true');
+  card.removeAttribute(PROCESSING);
+  clearRerankChunkState(card);
+
+  const visibleSiblings = container ? directCardChildren(container) : [];
+  visibleSiblings.forEach(clearRerankChunkState);
+  applyLocalPersonalizationOrdering(visibleSiblings);
+}
+
 function createFeedbackPayload(
   itemId: string,
   channelName: string | null,
@@ -1078,6 +1128,7 @@ function createFeedbackPayload(
   explanationId: string | null,
   observationId: string | null,
   artifactProvenance: ScoreResult['artifact_provenance'],
+  afterScore = beforeScore,
 ) {
   return {
     feedback_id: createClientId('feedback'),
@@ -1091,7 +1142,7 @@ function createFeedbackPayload(
     user_action: userAction,
     explanation_id: explanationId,
     before_score: beforeScore,
-    after_score: beforeScore,
+    after_score: afterScore,
     timestamp: new Date().toISOString(),
     runtime_context: {
       surface: 'extension-feed',
@@ -1259,7 +1310,7 @@ function attachActions(
   });
 
   hideButton.addEventListener('click', () => {
-    card.classList.add('truthlens-card-hidden');
+    suppressCardFromFeed(card, 'hide-locally');
     void sendFeedbackEvent(
       createFeedbackPayload(
         itemId,
@@ -1279,7 +1330,7 @@ function attachActions(
       return;
     }
     muteChannel(channelName);
-    card.classList.add('truthlens-card-hidden');
+    suppressCardFromFeed(card, 'mute-channel-local');
     void sendFeedbackEvent(
       createFeedbackPayload(
         itemId,
@@ -1303,6 +1354,9 @@ function attachActions(
 }
 
 function buildPendingCard(card: HTMLElement, index: number): PendingCard | null {
+  if (isSuppressedFeedCard(card)) {
+    return null;
+  }
   if (card.getAttribute(PROCESSING) === 'true') {
     return null;
   }
@@ -1323,7 +1377,6 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
     return null;
   }
   if (!isUnknownChannelName(channelName) && isChannelMuted(channelName)) {
-    card.classList.add('truthlens-card-hidden');
     card.setAttribute(PROCESSED, 'true');
     card.setAttribute(
       SIGNATURE,
@@ -1334,6 +1387,7 @@ function buildPendingCard(card: HTMLElement, index: number): PendingCard | null 
         linkUrl: entry.linkUrl,
       }),
     );
+    suppressCardFromFeed(card, 'muted-channel');
     return null;
   }
   if (
@@ -1364,34 +1418,24 @@ function applyScoreToCard(pendingCard: PendingCard, score: ScoreResult) {
     profile,
     reviewPrompt,
     pendingCard.rerankLocked ||
-      isUnknownChannelName(pendingCard.channelName) ||
-      score.recommended_action === 'hide',
+      isUnknownChannelName(pendingCard.channelName),
   );
 
   syncPersonalizationPresentation(card, score, personalization, presentation);
 
-  if (score.recommended_action === 'hide') {
-    card.classList.add('truthlens-card-hidden');
-  }
   if (score.recommended_action === 'blur') {
     card.classList.add('truthlens-card-blur');
   }
-  if (reviewPrompt !== null) {
-    card.setAttribute('data-truthlens-review-mode', reviewPrompt.workflowMode);
-    if (score.recommended_action !== 'hide') {
-      const reviewButton = document.createElement('button');
-      reviewButton.type = 'button';
-      reviewButton.className = `truthlens-review-prompt truthlens-review-prompt-${reviewPrompt.workflowMode}`;
-      reviewButton.textContent = reviewPrompt.label;
-      reviewButton.title = reviewPrompt.reason;
-      reviewButton.addEventListener('click', () => {
-        openManualReview(pendingCard, score, reviewPrompt.workflowMode);
-      });
-      card.appendChild(reviewButton);
-    }
-  } else {
-    card.removeAttribute('data-truthlens-review-mode');
-  }
+  card.setAttribute('data-truthlens-review-mode', reviewPrompt.workflowMode);
+  const reviewButton = document.createElement('button');
+  reviewButton.type = 'button';
+  reviewButton.className = `truthlens-review-prompt truthlens-review-prompt-${reviewPrompt.workflowMode}`;
+  reviewButton.textContent = reviewPrompt.label;
+  reviewButton.title = reviewPrompt.reason;
+  reviewButton.addEventListener('click', () => {
+    openManualReview(pendingCard, score, reviewPrompt.workflowMode);
+  });
+  card.appendChild(reviewButton);
   attachActions(pendingCard, score);
   card.setAttribute(PROCESSED, 'true');
   card.setAttribute(ITEM_ID, itemId);
@@ -1434,6 +1478,80 @@ function findManualReportTarget(message: ManualReportMessage): ManualReportTarge
   }
 
   return null;
+}
+
+function matchesSubmittedReviewTarget(
+  entry: PendingCard,
+  target: ManualReviewSubmittedTarget,
+): boolean {
+  if (entry.itemId === target.itemId) {
+    return true;
+  }
+
+  const linkMatch =
+    target.linkUrl !== null &&
+    normalizeComparableUrl(entry.linkUrl) === normalizeComparableUrl(target.linkUrl);
+  const imageMatch =
+    target.thumbnailRef !== null &&
+    normalizeAssetUrl(entry.thumbnailRef) === normalizeAssetUrl(target.thumbnailRef);
+  return linkMatch || imageMatch;
+}
+
+function findSubmittedReviewCard(
+  target: ManualReviewSubmittedTarget,
+): { card: HTMLElement; entry: PendingCard } | null {
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  for (let index = 0; index < cards.length; index += 1) {
+    const card = cards[index];
+    const entry = extractCardContext(card, index);
+    if (!entry || !matchesSubmittedReviewTarget(entry, target)) {
+      continue;
+    }
+    return { card, entry };
+  }
+  return null;
+}
+
+function applyManualReviewSubmission(detail: ManualReviewSubmittedDetail): void {
+  if (detail.workflowMode !== 'report') {
+    return;
+  }
+
+  const touchedCards: HTMLElement[] = [];
+  detail.targets.forEach((target) => {
+    const resolved = findSubmittedReviewCard(target);
+    if (!resolved) {
+      return;
+    }
+    const score =
+      useOverlayStore.getState().scoresByItemId[resolved.entry.itemId] ??
+      useOverlayStore.getState().scoresByItemId[target.itemId] ??
+      null;
+    if (score) {
+      const profile = getChannelProfile(resolved.entry.channelName);
+      const adjustment = adjustScoreForReportedContent(
+        score,
+        detail.requestedOutcome,
+        priorFlagsFromProfile(profile),
+      );
+      applyScoreToCard(resolved.entry, adjustment.adjustedScore);
+    }
+    suppressCardFromFeed(resolved.card, detail.userAction);
+    touchedCards.push(resolved.card);
+  });
+
+  if (touchedCards.length > 0) {
+    void refreshChannelTrustProfiles();
+  }
+}
+
+function installManualReviewSubmissionListener(): void {
+  registerManualReviewSubmittedHandler(applyManualReviewSubmission);
+  window.addEventListener(MANUAL_REVIEW_SUBMITTED_EVENT, (event) => {
+    applyManualReviewSubmission(
+      (event as CustomEvent<ManualReviewSubmittedDetail>).detail,
+    );
+  });
 }
 
 function installRuntimeListeners() {
@@ -1487,6 +1605,17 @@ function installFeedRerankSettingListener() {
       typeof nextValue === 'boolean' ? nextValue : DEFAULT_FEED_RERANK_ENABLED;
     applyLocalPersonalizationOrdering();
   });
+}
+
+function scheduleBacklogScorePass(): void {
+  if (backlogScoreTimer !== null) {
+    return;
+  }
+
+  backlogScoreTimer = window.setTimeout(() => {
+    backlogScoreTimer = null;
+    requestScoreCards('mutation');
+  }, BACKLOG_SCORE_DELAY_MS);
 }
 
 async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
@@ -1547,13 +1676,22 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
 
-  const batchPromises = chunk(pendingCards, BATCH_SIZE).map(async (batch) => ({
-    batch,
-    scores: await batchScoreFeedItems(batch.map((entry) => entry.request)),
-  }));
+  const cardsForPass = pendingCards.slice(0, MAX_PENDING_CARDS_PER_PASS);
+  const deferredCards = pendingCards.slice(MAX_PENDING_CARDS_PER_PASS);
+  deferredCards.forEach((entry) => {
+    entry.card.removeAttribute(PROCESSING);
+  });
+  if (deferredCards.length > 0) {
+    logHomepageDebug('deferred pending cards to keep feed scoring responsive', {
+      deferredCount: deferredCards.length,
+      maxPendingCardsPerPass: MAX_PENDING_CARDS_PER_PASS,
+      trigger,
+    });
+    scheduleBacklogScorePass();
+  }
 
-  for (const batchPromise of batchPromises) {
-    const { batch, scores } = await batchPromise;
+  for (const batch of chunk(cardsForPass, BATCH_SIZE)) {
+    const scores = await batchScoreFeedItems(batch.map((entry) => entry.request));
     const scoredCards: HTMLElement[] = [];
     for (const entry of batch) {
       const score = scores[entry.itemId];
@@ -1626,6 +1764,7 @@ function requestScoreCards(trigger: HomepageScoreTrigger): void {
 mountOverlay();
 installRuntimeListeners();
 installFeedRerankSettingListener();
+installManualReviewSubmissionListener();
 void (async () => {
   try {
     feedRerankEnabled = await loadFeedRerankEnabled();

@@ -1,7 +1,7 @@
 {
   "policy_version": "bseo-control-policy-v1",
-  "generated_at": "2026-04-25T06:28:51.514471+00:00",
-  "build_id": "build-20260425062850",
+  "generated_at": "2026-04-25T08:56:20.686458+00:00",
+  "build_id": "build-20260425085620",
   "head_spec_version": "2026-04-02",
   "architecture_plan_version": "2026-04-02",
   "recommended_thresholds": {
@@ -176,7 +176,7 @@
       }
     ]
   },
-  "lineage_log_path": "artifacts/eval_runs/build-20260425062850-bseo-lineage.json",
-  "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260425062850-mutation-bias-atlas.json",
-  "report_path": "artifacts/eval_runs/build-20260425062850-bseo-report.json"
+  "lineage_log_path": "artifacts/eval_runs/build-20260425085620-bseo-lineage.json",
+  "mutation_bias_atlas_path": "artifacts/eval_runs/build-20260425085620-mutation-bias-atlas.json",
+  "report_path": "artifacts/eval_runs/build-20260425085620-bseo-report.json"
 }

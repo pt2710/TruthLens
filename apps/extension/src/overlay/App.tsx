@@ -19,6 +19,8 @@ import {
 import { buildTruthLensApiUrl } from '../lib/runtimeConfig';
 import { fetchYouTubeWatchMetadata } from '../lib/youtubeWatchMetadata';
 import { submitYouTubePageReport } from '../lib/youtubePageReporting';
+import { dispatchManualReviewSubmitted } from '../lib/manualReviewEvents';
+import { riskScoreAfterReportFeedback } from '../lib/reportFeedbackScoring';
 import { type ManualReportTarget, useOverlayStore } from './store';
 
 const ISSUE_OPTIONS: Array<{ issueType: ManualReportIssueType; label: string }> = [
@@ -131,6 +133,7 @@ function createFeedbackPayload(
   manualReport: FeedbackEvent['manual_report'],
   userAction: FeedbackEvent['user_action'],
   artifactProvenance: FeedbackEvent['artifact_provenance'],
+  afterScore: number | null = beforeScore,
 ): FeedbackEvent {
   return {
     feedback_id: createClientId('feedback'),
@@ -143,7 +146,7 @@ function createFeedbackPayload(
     user_action: userAction,
     explanation_id: explanationId,
     before_score: beforeScore,
-    after_score: beforeScore,
+    after_score: afterScore,
     timestamp: new Date().toISOString(),
     runtime_context: {
       surface: 'extension-watch',
@@ -667,6 +670,14 @@ export function App() {
               resolved: Boolean(manualReportTarget.linkUrl),
             },
           ];
+    const afterReportScore =
+      manualReportTarget.workflowMode === 'report'
+        ? riskScoreAfterReportFeedback(
+            manualReportTarget.score,
+            requestedOutcome,
+            manualReportTarget.channelReportCount,
+          )
+        : manualReportTarget.score?.risk_score ?? null;
 
     const buildManualReport = (target: {
       item_id: string;
@@ -816,6 +827,7 @@ export function App() {
             }),
             collectionSummaryAction,
             manualReportTarget.score?.artifact_provenance ?? null,
+            afterReportScore,
           ),
         );
       }
@@ -831,9 +843,21 @@ export function App() {
             buildManualReport(target),
             reviewUserAction,
             manualReportTarget.score?.artifact_provenance ?? null,
+            afterReportScore,
           ),
         );
       }
+      dispatchManualReviewSubmitted({
+        workflowMode: manualReportTarget.workflowMode,
+        userAction: reviewUserAction,
+        requestedOutcome,
+        targets: reviewTargets.map((target) => ({
+          itemId: target.item_id,
+          channelName: target.channel_name ?? manualReportTarget.channelName,
+          linkUrl: target.link_url ?? null,
+          thumbnailRef: target.thumbnail_ref ?? manualReportTarget.thumbnailRef,
+        })),
+      });
       appendStatusLine(
         collectionBatch && collectionConfirmed
           ? `TruthLens feedback was stored locally for ${reviewTargets.length} collection item(s).`

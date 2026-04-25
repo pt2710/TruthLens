@@ -64,7 +64,7 @@ describe('inferReviewPromptDecision', () => {
     });
   });
 
-  it('returns no prompt for ordinary badge-level items without strong music evidence', () => {
+  it('routes ordinary low-risk badge-level items into transparent verification', () => {
     const decision = inferReviewPromptDecision(
       scoreResultSchema.parse({
         risk_score: 0.24,
@@ -87,7 +87,11 @@ describe('inferReviewPromptDecision', () => {
       0.12,
     );
 
-    expect(decision).toBeNull();
+    expect(decision).toEqual({
+      workflowMode: 'verify-transparent',
+      label: 'Verify transparent',
+      reason: 'TruthLens thinks this likely looks transparent enough to verify.',
+    });
   });
 
   it('routes satire-like ambiguity into a review prompt instead of silent verification', () => {
@@ -115,8 +119,38 @@ describe('inferReviewPromptDecision', () => {
 
     expect(decision).toEqual({
       workflowMode: 'report',
-      label: 'Review ambiguity',
+      label: 'Review report',
       reason: 'TruthLens sees satire-like or ambiguous packaging that still needs human confirmation.',
+    });
+  });
+
+  it('always asks for a report decision on high-risk ordinary feed items', () => {
+    const decision = inferReviewPromptDecision(
+      scoreResultSchema.parse({
+        risk_score: 0.51,
+        confidence: 0.77,
+        uncertainty: 0.2,
+        content_class: 'commentary',
+        content_class_confidence: 0.66,
+        bias_profile: {
+          metrics: {},
+          positive_biases: [],
+          negative_biases: [],
+          guardrail_applied: null,
+        },
+        recommended_action: 'badge',
+        reasons: ['reason'],
+        explanation_id: 'exp-4',
+        explanation_summary: 'summary',
+        evidence: [],
+      }),
+      0.04,
+    );
+
+    expect(decision).toEqual({
+      workflowMode: 'report',
+      label: 'Review report',
+      reason: 'TruthLens wants a human report decision for this feed item.',
     });
   });
 });

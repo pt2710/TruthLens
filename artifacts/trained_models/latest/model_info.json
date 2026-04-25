@@ -1,7 +1,7 @@
 {
-  "model_version": "baseline-v1-build-20260425062850",
-  "trained_at": "2026-04-25T06:28:51.514471+00:00",
-  "build_id": "build-20260425062850",
+  "model_version": "baseline-v1-build-20260425085620",
+  "trained_at": "2026-04-25T08:56:20.686458+00:00",
+  "build_id": "build-20260425085620",
   "head_spec_version": "2026-04-02",
   "head_specs": [
     {

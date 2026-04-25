@@ -629,6 +629,9 @@ async function main() {
       type: 'module',
       path: resolve(repoRoot, 'apps/extension/dist/content.js'),
     });
+    await page.addStyleTag({
+      path: resolve(repoRoot, 'apps/extension/dist/assets/content.css'),
+    });
 
     await page.waitForFunction(
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 3,
@@ -820,6 +823,20 @@ async function main() {
       await secretCard.getAttribute('data-youtube-report-submitted'),
       'true',
     );
+    await page.waitForFunction(() => {
+      const card = Array.from(document.querySelectorAll('[data-truthlens-card]')).find((candidate) =>
+        candidate.textContent?.includes('Secret lab leak exposed in new footage'),
+      );
+      return (
+        card instanceof HTMLElement &&
+        card.classList.contains('truthlens-card-hidden') &&
+        getComputedStyle(card).display === 'none'
+      );
+    });
+    assert.equal(
+      await secretCard.evaluate((element) => getComputedStyle(element).display),
+      'none',
+    );
     const sentMessages = await page.evaluate(() => window.__truthlensSentMessages);
     assert.equal(sentMessages.length, 0);
 
@@ -910,15 +927,20 @@ async function main() {
       () => document.querySelectorAll('[data-truthlens-processed="true"]').length === 5,
     );
     await page.waitForFunction(() => {
-      const titles = Array.from(document.querySelectorAll('[data-truthlens-card] #video-title')).map(
-        (node) => node.textContent?.trim(),
-      );
+      const titles = Array.from(document.querySelectorAll('[data-truthlens-card]'))
+        .filter((card) => {
+          return (
+            card instanceof HTMLElement &&
+            !card.classList.contains('truthlens-card-hidden') &&
+            getComputedStyle(card).display !== 'none'
+          );
+        })
+        .map((card) => card.querySelector('#video-title')?.textContent?.trim());
       return (
         titles[0] === 'Weekly launch schedule and mission recap' &&
         titles[1] === 'Weekly launch schedule and mission update' &&
-        titles[2] === 'Secret lab leak exposed in new footage' &&
-        titles[3] === 'Calm acoustic session in one take' &&
-        titles[4] === 'Dynamic emergency update from orbit'
+        titles[2] === 'Calm acoustic session in one take' &&
+        titles[3] === 'Dynamic emergency update from orbit'
       );
     });
     await waitForNodeCondition(() => browserObservations.length >= 6);
@@ -1035,6 +1057,9 @@ async function main() {
     await page.addScriptTag({
       type: 'module',
       path: resolve(repoRoot, 'apps/extension/dist/content.js'),
+    });
+    await page.addStyleTag({
+      path: resolve(repoRoot, 'apps/extension/dist/assets/content.css'),
     });
     await page.evaluate(() => {
       const intervalId = window.setInterval(() => {

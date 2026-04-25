@@ -163,6 +163,7 @@ function makeTarget(
     descriptionSnapshot: 'Description snapshot',
     transcriptExcerpt: null,
     collectionScope,
+    channelReportCount: 2,
     score: makeScore(),
   };
 }
@@ -307,6 +308,9 @@ describe('manual review overlay', () => {
     expect(apiMocks.optimizeManualReportComments.mock.calls[0][0].transcript_excerpt).toBeNull();
     expect(apiMocks.sendFeedbackEvent).toHaveBeenCalledTimes(1);
     expect(apiMocks.sendFeedbackEvent.mock.calls[0][0].manual_report.transcript_excerpt).toBeNull();
+    expect(apiMocks.sendFeedbackEvent.mock.calls[0][0].after_score).toBeGreaterThan(
+      apiMocks.sendFeedbackEvent.mock.calls[0][0].before_score,
+    );
   });
 
   it('shows transcript review only when fetched watch metadata provides transcript evidence', async () => {
