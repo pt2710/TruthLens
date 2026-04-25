@@ -6,9 +6,502 @@
     <title>TruthLens</title>
     <meta
       name="description"
-      content="TruthLens is a hosted-beta browser extension and API initiative for local feed reranking, manual review support, and detection of misleading video packaging."
+      content="TruthLens is a hosted-beta browser extension and API initiative for local feed reranking, manual review support, lower-friction reporting, and detection of misleading video packaging in the age of synthetic promotion."
     />
     <link rel="stylesheet" href="./assets/landing.css" />
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #42526b;
+        --panel: rgba(255, 252, 247, 0.92);
+        --panel-border: rgba(15, 23, 42, 0.1);
+        --teal: #0f766e;
+        --teal-dark: #0f5f63;
+        --blue: #38bdf8;
+        --green: #22c55e;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 32rem),
+          radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 30rem),
+          linear-gradient(135deg, #f8f3ea 0%, #eef6f8 100%);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.65;
+      }
+
+      a { color: inherit; }
+
+      .page-shell {
+        width: min(1440px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 64px 0;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.75fr);
+        gap: 56px;
+        align-items: center;
+        margin-bottom: 34px;
+        padding: clamp(32px, 5vw, 64px);
+        border: 1px solid var(--panel-border);
+        border-radius: 34px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .eyebrow,
+      .status-badge,
+      .small-label {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        gap: 8px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow {
+        padding: 8px 18px;
+        color: #0f766e;
+        background: rgba(13, 148, 136, 0.14);
+      }
+
+      h1 {
+        max-width: 900px;
+        margin: 26px 0 24px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(3.6rem, 7vw, 7.4rem);
+        line-height: 0.92;
+        letter-spacing: -0.07em;
+      }
+
+      .lead {
+        max-width: 780px;
+        color: #334155;
+        font-size: clamp(1.08rem, 1.5vw, 1.35rem);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 30px;
+      }
+
+      .primary-link,
+      .secondary-link,
+      .link-list a {
+        text-decoration: none;
+        font-weight: 750;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      .primary-link,
+      .secondary-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 56px;
+        padding: 0 24px;
+        border-radius: 18px;
+      }
+
+      .primary-link {
+        color: #ffffff;
+        background: var(--teal-dark);
+        box-shadow: 0 12px 32px rgba(15, 95, 99, 0.24);
+      }
+
+      .secondary-link {
+        color: #0f172a;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(15, 23, 42, 0.12);
+      }
+
+      .primary-link:hover,
+      .secondary-link:hover,
+      .link-list a:hover {
+        transform: translateY(-1px);
+      }
+
+      .hero-panel {
+        position: relative;
+        overflow: hidden;
+        min-height: 560px;
+        padding: 34px;
+        color: #f8fafc;
+        background:
+          radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 18rem),
+          linear-gradient(145deg, #07111f 0%, #0f172a 52%, #0b3b3f 100%);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 30px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 60px rgba(15, 23, 42, 0.22);
+      }
+
+      .hero-panel::before {
+        content: "";
+        position: absolute;
+        inset: -30% -10% auto auto;
+        width: 240px;
+        height: 240px;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.12);
+        filter: blur(2px);
+      }
+
+      .brand-lockup {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .hero-logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 8px;
+        filter: drop-shadow(0 8px 20px rgba(0,0,0,0.35));
+      }
+
+      .brand-name {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .brand-name strong {
+        font-size: 1.35rem;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-name span {
+        color: #bae6fd;
+        font-size: 0.9rem;
+      }
+
+      .panel-title {
+        position: relative;
+        margin: 0 0 14px;
+        color: var(--blue);
+        font-size: 0.8rem;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .status-badge.live {
+        margin-bottom: 18px;
+        padding: 7px 12px;
+        color: #bbf7d0;
+        background: rgba(34, 197, 94, 0.16);
+        border: 1px solid rgba(34, 197, 94, 0.24);
+      }
+
+      .status-list {
+        position: relative;
+        display: grid;
+        gap: 0;
+        margin: 18px 0 0;
+      }
+
+      .status-list div {
+        padding: 18px 0;
+        border-top: 1px solid rgba(255,255,255,0.12);
+      }
+
+      .status-list dt {
+        color: #bae6fd;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+      }
+
+      .status-list dd {
+        margin: 4px 0 0;
+        color: #f8fafc;
+        font-size: 1.05rem;
+        font-weight: 550;
+      }
+
+      .hero-note {
+        margin: 22px 0 0;
+        padding: 14px 16px;
+        color: #dbeafe;
+        background: rgba(15, 23, 42, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        font-size: 0.95rem;
+      }
+
+      .section-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+        margin: 22px 0;
+      }
+
+      .panel,
+      .wide-panel {
+        padding: clamp(24px, 3vw, 34px);
+        border: 1px solid var(--panel-border);
+        border-radius: 28px;
+        background: rgba(255, 252, 247, 0.9);
+        box-shadow: 0 16px 50px rgba(15, 23, 42, 0.08);
+      }
+
+      .wide-panel { margin: 22px 0; }
+
+      h2 {
+        margin: 0 0 16px;
+        font-size: clamp(1.45rem, 2vw, 2rem);
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+      }
+
+      h3 {
+        margin: 20px 0 8px;
+        font-size: 1rem;
+      }
+
+      p { color: var(--muted); font-size: 1.06rem; }
+
+      ul,
+      ol {
+        color: var(--muted);
+        padding-left: 1.2rem;
+      }
+
+      li + li { margin-top: 8px; }
+
+      .feature-list,
+      .score-grid,
+      .truth-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .truth-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 18px;
+      }
+
+      .truth-card,
+      .score-card {
+        padding: 18px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .truth-card strong,
+      .score-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--ink);
+      }
+
+      .score-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .score-card { min-height: 150px; }
+      .score-card.red { border-top: 6px solid var(--red); }
+      .score-card.orange { border-top: 6px solid var(--amber); }
+      .score-card.yellow { border-top: 6px solid #eab308; }
+      .score-card.green { border-top: 6px solid var(--green); }
+
+      .split-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .callout {
+        margin-top: 20px;
+        padding: 18px;
+        border-left: 5px solid var(--teal);
+        border-radius: 18px;
+        background: rgba(13, 148, 136, 0.08);
+        color: #1e3a3a;
+      }
+
+      .link-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .link-list a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 58px;
+        padding: 14px 18px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .link-list a::after {
+        content: "↗";
+        color: var(--teal);
+      }
+
+
+
+      .philosophy-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 22px;
+        margin-top: 18px;
+      }
+
+      .statement-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .statement {
+        padding: 16px 18px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .statement strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
+      }
+
+      .dark-panel {
+        color: #f8fafc;
+        background:
+          radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 18rem),
+          linear-gradient(145deg, #07111f 0%, #0f172a 52%, #0b3b3f 100%);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
+      .dark-panel p,
+      .dark-panel ul,
+      .dark-panel li,
+      .dark-panel span {
+        color: #dbeafe;
+      }
+
+      .dark-panel h2,
+      .dark-panel h3,
+      .dark-panel strong {
+        color: #ffffff;
+      }
+
+      .ethics-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        overflow: hidden;
+        border-radius: 18px;
+      }
+
+      .ethics-table th,
+      .ethics-table td {
+        padding: 16px;
+        vertical-align: top;
+        text-align: left;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.09);
+      }
+
+      .ethics-table th {
+        color: #0f172a;
+        background: rgba(13, 148, 136, 0.1);
+        font-size: 0.92rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .ethics-table td {
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.48);
+      }
+
+      .quote-card {
+        margin-top: 20px;
+        padding: 22px;
+        border-radius: 22px;
+        color: #172554;
+        background: linear-gradient(135deg, rgba(186, 230, 253, 0.62), rgba(220, 252, 231, 0.62));
+        border: 1px solid rgba(14, 165, 233, 0.18);
+        font-size: 1.06rem;
+      }
+
+      .three-column {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .footer {
+        margin-top: 36px;
+        padding: 28px 0 8px;
+        color: #64748b;
+        text-align: center;
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .section-grid,
+        .truth-grid,
+        .score-grid,
+        .split-list,
+        .philosophy-grid,
+        .three-column {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-panel { min-height: auto; }
+      }
+
+      @media (max-width: 640px) {
+        .page-shell {
+          width: min(100% - 24px, 1440px);
+          padding: 28px 0;
+        }
+
+        .hero,
+        .panel,
+        .wide-panel {
+          border-radius: 22px;
+        }
+
+        .hero-actions { flex-direction: column; }
+        .primary-link, .secondary-link { width: 100%; }
+      }
+    </style>
   </head>
   <body>
     <main class="page-shell">
@@ -17,9 +510,10 @@
           <span class="eyebrow">TruthLens hosted beta</span>
           <h1>A local honesty layer for misleading video feeds.</h1>
           <p class="lead">
-            TruthLens is a browser-extension and API initiative focused on misleading packaging:
-            clickbait, fake-news-like framing, deceptive thumbnails, and AI-mass-produced noise. It
-            works locally on top of what a platform already shows the individual user.
+            TruthLens is a browser-extension and API initiative focused on misleading packaging in
+            the age of synthetic promotion: clickbait, fake-news-like framing, deceptive thumbnails,
+            and AI-mass-produced noise. It works locally on top of what a platform already shows
+            the individual user.
           </p>
           <div class="hero-actions">
             <a
@@ -36,12 +530,22 @@
             </a>
           </div>
         </div>
-        <aside class="hero-panel">
-          <img
-            alt="TruthLens logo"
-            class="hero-logo"
-            src="./logo/truthlens_logo.png"
-          />
+
+        <aside class="hero-panel" aria-label="TruthLens live system state">
+          <div class="brand-lockup">
+            <img
+              alt="TruthLens logo"
+              class="hero-logo"
+              src="./logo/truthlens_logo.png"
+            />
+            <div class="brand-name">
+              <strong>TruthLens</strong>
+              <span>Hosted beta initiative</span>
+            </div>
+          </div>
+
+          <h2 class="panel-title">Live system state</h2>
+          <span class="status-badge live">API: operational when hosted proof is green</span>
           <dl class="status-list">
             <div>
               <dt>Status</dt>
@@ -60,6 +564,10 @@
               <dd>Later, not claimed as live today</dd>
             </div>
           </dl>
+          <p class="hero-note">
+            TruthLens can assist review and reporting, but it does not currently claim autonomous
+            mass reporting. The current report path remains explicitly human-initiated.
+          </p>
         </aside>
       </section>
 
@@ -81,21 +589,171 @@
         </article>
       </section>
 
+      <section class="wide-panel">
+        <h2>The philosophy behind TruthLens</h2>
+        <p>
+          The internet is entering a period where synthetic promotion is becoming ordinary. As
+          generative AI, machine learning, GAN-style image generation, LLM-assisted drafting, and
+          image-editing tools become easier for anyone to use, it becomes easier than ever to make a
+          thumbnail look like polished professional content — even when the actual video does not
+          deliver what the packaging promises.
+        </p>
+        <p>
+          TruthLens exists because this is no longer only a technical problem. It is an incentive
+          problem. If misleading packaging is rewarded with clicks, views, and attention, then honest
+          presentation becomes comparatively less attractive. A healthy information ecosystem should
+          make transparency easier to defend and deception less profitable.
+        </p>
+        <div class="truth-grid">
+          <div class="truth-card">
+            <strong>Reduce deception incentives</strong>
+            <span>Repeated clickbait and misleading framing should become less profitable in the local feed experience.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Promote transparent work</strong>
+            <span>Channels that are repeatedly verified as honest, artistic, educational, or transparent can become more prominent locally.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Preserve human review</strong>
+            <span>TruthLens assists judgment, but review and reporting remain visible and controllable by the user.</span>
+          </div>
+        </div>
+      </section>
+
+
+
+      <section class="wide-panel">
+        <h2>The reporting-friction hypothesis</h2>
+        <p>
+          A central question behind TruthLens is simple: does clickbait survive and scale partly
+          because too few users report content that should be reported? TruthLens is built on the
+          working belief that the answer is often yes. Many users may recognize misleading packaging,
+          but still avoid reporting it because the reporting process is slow, fragmented, cognitively
+          demanding, or unclear.
+        </p>
+        <p>
+          TruthLens reduces that friction. It looks at the thumbnail, title, description, channel
+          context, and available packaging signals, compares them as one combined interpretation, and
+          drafts concrete field-specific comments for human review. The goal is not to remove the
+          human from the loop. The goal is to make responsible reporting fast enough that honest users
+          can realistically do it from the feed.
+        </p>
+        <div class="truth-grid">
+          <div class="truth-card">
+            <strong>Observe</strong>
+            <span>TruthLens reads the visible packaging: thumbnail, title, description, channel, and available context.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Compare</strong>
+            <span>The system checks whether the packaging seems proportionate, consistent, or misleading for its content class.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Draft</strong>
+            <span>Gemini-assisted or local fallback drafting turns the review into concrete comments instead of a blank form.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Submit with control</strong>
+            <span>Today, the final platform report remains human-initiated: the user reviews the draft and clicks the final report button.</span>
+          </div>
+        </div>
+        <div class="callout">
+          The practical aim is to turn reporting from a high-friction task into a review-and-confirm
+          action, while keeping the user responsible for the final submission in the current beta.
+        </div>
+      </section>
+
       <section class="section-grid">
         <article class="panel">
-          <h2>Why it exists</h2>
+          <h2>The synthetic packaging problem</h2>
           <p>
-            Misleading packaging gets rewarded when it drives curiosity clicks, repeat views, and
-            synthetic volume. TruthLens exists to make that pattern less attractive and to make
-            honest, transparent presentation more visible and easier to defend.
+            Modern tools make it simple to generate, edit, composite, upscale, and dramatize images.
+            That can be legitimate creative work. It can also become visual bait: a professional,
+            sensational, eye-candy surface that creates an expectation the underlying content does
+            not satisfy.
           </p>
           <ul>
-            <li>Reduce the payoff of clickbait and misleading framing.</li>
-            <li>Make repeated problem channels easier to demote locally.</li>
-            <li>Help people review what they are seeing before they report it.</li>
-            <li>Support better information quality and platform transparency.</li>
+            <li>Thumbnails can imply events, claims, products, or scenes that are not actually delivered.</li>
+            <li>Titles can amplify urgency while the content remains thin, recycled, or unrelated.</li>
+            <li>AI-assisted mass production can flood feeds with low-value synthetic packaging.</li>
           </ul>
         </article>
+        <article class="panel">
+          <h2>The incentive problem</h2>
+          <p>
+            Even honest creators can feel pressure to add a synthetic promotional layer because the
+            feed rewards highly optimized visuals. Over time, that makes synthetic packaging look
+            like the normal competitive baseline, even when a plain, honest frame from the actual
+            content would be more transparent.
+          </p>
+          <div class="callout">
+            TruthLens is built around a simple principle: the honest path should not be the losing
+            strategy.
+          </div>
+        </article>
+      </section>
+
+      <section class="wide-panel">
+        <h2>Where mismatch matters — and where it does not</h2>
+        <p>
+          TruthLens does not treat every non-literal image as deception. A music thumbnail, album
+          cover, artwork, satire frame, or game cover can be expressive without being misleading.
+          The problem is sharper when the content is presented as documentary, news, factual
+          explanation, product information, or evidence-sharing.
+        </p>
+        <table class="ethics-table" aria-label="TruthLens content-context distinction">
+          <thead>
+            <tr>
+              <th>Usually high-risk context</th>
+              <th>Usually protected creative context</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>News-like claims, documentary framing, evidence claims, fake urgency, fake official visual language, and factual explainer packaging.</td>
+              <td>Music, art, satire, gaming, tutorials, stylized covers, non-literal creative framing, and transparent artistic presentation.</td>
+            </tr>
+            <tr>
+              <td>A generated thumbnail that visually promises a concrete event, object, person, or claim the video does not deliver.</td>
+              <td>Artwork that sets mood, genre, tone, or identity without pretending to be literal evidence.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="philosophy-grid">
+        <article class="panel dark-panel">
+          <h2>The menu-board analogy</h2>
+          <p>
+            A feed thumbnail works like a picture on a menu board. If the board shows a burger with
+            gravy, the customer reasonably expects that product — not a ham sandwich with mayonnaise.
+            Likewise, when documentary, news, or factual content is packaged with a specific visual
+            promise, the user reasonably expects the video to deliver that promise.
+          </p>
+          <p>
+            TruthLens is not asking every thumbnail to be plain. It is asking the packaging to be
+            proportionate to the content it claims to represent.
+          </p>
+        </article>
+        <article class="panel">
+          <h2>What TruthLens tries to rebalance</h2>
+          <div class="statement-list">
+            <div class="statement">
+              <strong>Less reward for deception</strong>
+              <span>Repeated misleading packaging should become easier to detect, review, report, and demote locally.</span>
+            </div>
+            <div class="statement">
+              <strong>More reward for transparency</strong>
+              <span>Content that honestly represents itself should become easier to verify and prioritize.</span>
+            </div>
+            <div class="statement">
+              <strong>Protection for creativity</strong>
+              <span>Legitimate artistic, musical, satirical, and game-related non-literal framing should not be flattened by naive literalism.</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-grid">
         <article class="panel">
           <h2>What it tries to protect</h2>
           <p>
@@ -109,6 +767,46 @@
             <li>Gaming and walkthrough content should not be demoted for normal presentation patterns.</li>
           </ul>
         </article>
+        <article class="panel">
+          <h2>How it acts locally</h2>
+          <p>
+            TruthLens acts as a local user-side layer over the feed. It can warn, explain, suggest
+            review, assist reporting, and rerank cards locally without claiming control over a
+            platform’s backend ranking system.
+          </p>
+          <ul>
+            <li>Low-trust patterns can be demoted locally.</li>
+            <li>Positive transparency signals can be promoted locally.</li>
+            <li>Badges and explanations remain visible so the user can inspect the decision.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="wide-panel">
+        <h2>User-facing score contract</h2>
+        <p>
+          TruthLens presents a user-facing score from <strong>0.0</strong> to <strong>10.0</strong>.
+          Higher means more likely honest and transparent. Lower means more likely clickbait,
+          misleading, spam-like, or AI-mass-produced noise.
+        </p>
+        <div class="score-grid">
+          <div class="score-card red">
+            <strong>0.0 – 3.3 · Red</strong>
+            <span>Bad. Likely clickbait, misleading packaging, or synthetic noise.</span>
+          </div>
+          <div class="score-card orange">
+            <strong>3.4 – 4.9 · Orange</strong>
+            <span>Negative doubt. Probably problematic and worth review.</span>
+          </div>
+          <div class="score-card yellow">
+            <strong>5.0 – 6.6 · Yellow</strong>
+            <span>Positive or neutral doubt. Likely honest, but not strong enough for green.</span>
+          </div>
+          <div class="score-card green">
+            <strong>6.7 – 10.0 · Green</strong>
+            <span>Good. Likely honest, transparent, or contextually legitimate.</span>
+          </div>
+        </div>
       </section>
 
       <section class="section-grid">
@@ -127,6 +825,73 @@
             A TruthLens-assisted report today is still a human report. TruthLens can draft reasoning
             and help route the flow, but it does not claim autonomous mass reporting in the current
             public repo truth.
+          </p>
+          <div class="callout">
+            Reports can state that they were assisted by TruthLens, and should distinguish manual
+            human submission from any future automatic submission capability if such a capability is
+            actually implemented later.
+          </div>
+        </article>
+      </section>
+
+      <section class="wide-panel">
+        <h2>Why this may matter beyond one user</h2>
+        <p>
+          Misleading thumbnails and titles do not only waste attention. They can trigger avoidable
+          video loads, short abandoned views, repeated searches, and extra streaming work when the
+          user quickly discovers that the content does not match the expectation set by the packaging.
+        </p>
+        <p>
+          At large scale, that becomes a resource question as well as a user-experience question.
+          If clearly misleading content is locally demoted, moderated, or eventually removed through
+          responsible review, there is a plausible infrastructure upside: fewer wasted streams, fewer
+          pointless video loads, and less compute and bandwidth spent on content the user never
+          actually wanted.
+        </p>
+        <div class="three-column">
+          <div class="truth-card">
+            <strong>Attention waste</strong>
+            <span>Users click because the package promises one thing, then leave because the content delivers another.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Feed noise</strong>
+            <span>Low-integrity packaging occupies ranking space that could have gone to more transparent content.</span>
+          </div>
+          <div class="truth-card">
+            <strong>Resource vision</strong>
+            <span>Reducing deceptive engagement loops may also reduce unnecessary server, network, and datacenter load over time.</span>
+          </div>
+        </div>
+        <div class="quote-card">
+          TruthLens is a small local layer aimed at a larger principle: attention, compute, and
+          recommendation space should not be structurally rewarded for deception.
+        </div>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2>BSEO in plain terms</h2>
+          <p>
+            TruthLens uses Bias Structured Evolutionary Optimization as a downstream policy layer:
+            not to remove all bias, but to structure it. Some bias is negative and should be
+            penalized. Some context is positive and should be preserved.
+          </p>
+          <ul>
+            <li>Music and art can be non-literal without being deceptive.</li>
+            <li>Fake urgency and false-official framing should increase scrutiny.</li>
+            <li>Class-conditioned policy prevents one-size-fits-all moderation logic.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h2>What external readers should know</h2>
+          <p>
+            TruthLens is built for a world where misleading packaging, fake urgency, and synthetic
+            content farms can dominate attention. The project tries to nudge the ecosystem in the
+            opposite direction: less reward for deception, more reward for transparency.
+          </p>
+          <p>
+            The vision is not to punish creativity. It is to make the difference between legitimate
+            creative framing and manipulative factual packaging visible, reviewable, and actionable.
           </p>
         </article>
       </section>
@@ -152,14 +917,25 @@
           </div>
         </article>
         <article class="panel">
-          <h2>What external readers should know</h2>
+          <h2>Public status</h2>
           <p>
-            TruthLens is aimed at a world where misleading packaging, fake urgency, and synthetic
-            content farms can dominate attention. The project tries to nudge the ecosystem in the
-            opposite direction: less reward for deception, more reward for transparency.
+            TruthLens is a controlled hosted beta. The public repository documents current truth,
+            benchmark artifacts, architecture, and verification surfaces. Broad public release and
+            autonomous reporting are not claimed as live today.
+          </p>
+          <p>
+            This page is intended as the public-facing explanation layer; the repository remains the
+            technical source of truth for code, docs, benchmarks, and deployment contracts.
           </p>
         </article>
       </section>
+
+      <footer class="footer">
+        <p>
+          TruthLens is a controlled hosted beta initiative for local, user-side review assistance and
+          feed-quality intervention. It is not an official YouTube or Google product.
+        </p>
+      </footer>
     </main>
   </body>
 </html>
