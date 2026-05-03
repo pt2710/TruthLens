@@ -80,6 +80,7 @@ def test_score_item_contract() -> None:
         "path_contributors",
         "content_class",
         "content_class_confidence",
+        "semantic_evidence_route",
         "bias_profile",
         "verification",
         "action_decision_basis",
@@ -92,6 +93,13 @@ def test_score_item_contract() -> None:
         "explanation_summary",
         "evidence",
     }.issubset(payload.keys())
+    assert payload["semantic_evidence_route"]["runtime_route"] in {
+        "minimal_creative",
+        "informational_consistency",
+        "high_risk_factual",
+        "ambiguous_escalated",
+    }
+    assert payload["semantic_evidence_route"]["learning_capture_plan"] == "full_multimodal_capture"
     assert "metrics" in payload["bias_profile"]
     assert "status" in payload["verification"]
     assert "threshold_action" in payload["action_decision_basis"]
@@ -130,6 +138,50 @@ def test_score_endpoint_writes_audit_event(
     assert payload["channel_name"] == "Audit Channel"
     assert "model_version" in payload
     assert "policy_version" in payload
+    assert payload["content_class"] == "news"
+    assert "content_class_confidence" in payload
+    assert payload["semantic_evidence_route"]["runtime_route"] == "high_risk_factual"
+
+
+def test_clean_minimal_creative_skips_remote_thumbnail_fetch_and_preserves_context(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+
+    def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("clean minimal creative route should not fetch remote thumbnail bytes")
+
+    monkeypatch.setattr("truthlens_model_serving.scorer.urlopen", fail_if_called)
+
+    response = client.post(
+        "/score-item",
+        json={
+            "item_id": "creative-route-item-1",
+            "title": "Dark trap instrumental type beat",
+            "thumbnail_ref": "https://example.com/thumb.jpg",
+            "description_snapshot": "Producer credits, streaming links, and artist notes.",
+            "metadata": {},
+            "channel": {
+                "channel_name": "Aurora Beats",
+                "prior_flags": 0,
+                "channel_history_features": {
+                    "music_likelihood": 0.95,
+                    "title_music_signal": 1.0,
+                    "channel_music_signal": 1.0,
+                },
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    route = payload["semantic_evidence_route"]
+    assert route["runtime_route"] == "minimal_creative"
+    assert route["adversarial_guard"] == "clean"
+    assert route["mismatch_pressure"] == "reduced"
+    assert "thumbnail_ref" in route["preserved_learning_evidence"]
+    assert "description_snapshot" in route["preserved_learning_evidence"]
 
 
 def test_feedback_endpoint_accepts_event() -> None:

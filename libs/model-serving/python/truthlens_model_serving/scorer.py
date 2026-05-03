@@ -15,7 +15,6 @@ import numpy as np
 from truthlens_feature_extractors import (
     build_bias_primitives,
     build_bias_profile,
-    class_adjusted_mismatch,
     count_sensational_tokens,
     extract_thumbnail_features,
     infer_bseo_prior_frames,
@@ -27,6 +26,10 @@ from truthlens_feature_extractors import (
     uppercase_ratio,
 )
 from truthlens_model_serving.registry import load_model_bundle, load_model_info
+from truthlens_model_serving.semantic_router import (
+    AdaptiveSemanticEvidenceRouter,
+    route_adjusted_mismatch,
+)
 from truthlens_model_serving.temporal import (
     CHANNEL_SEQUENCE_FEATURE_NAMES,
     temporal_artifacts_from_payload,
@@ -42,6 +45,9 @@ from truthlens_model_serving.vision import (
     vision_artifacts_from_payload,
 )
 from truthlens_shared_schemas.contracts import ScoreItemRequest
+
+
+_SEMANTIC_ROUTER = AdaptiveSemanticEvidenceRouter()
 
 
 @dataclass(slots=True)
@@ -381,6 +387,29 @@ def _music_context(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
     return float(taxonomy["music_likelihood"])
 
 
+def _refresh_semantic_route(payload: ScoreItemRequest, summary: dict[str, Any]) -> dict[str, Any]:
+    route = _SEMANTIC_ROUTER.route(payload, summary).to_payload()
+    summary["semantic_evidence_route"] = route
+    summary["runtime_route"] = route["runtime_route"]
+    summary["learning_capture_plan"] = route["learning_capture_plan"]
+    summary["adversarial_guard"] = route["adversarial_guard"]
+    summary["mismatch_pressure"] = route["mismatch_pressure"]
+    return route
+
+
+def _semantic_route_allows_remote_thumbnail_fetch(
+    payload: ScoreItemRequest,
+    summary: dict[str, Any],
+) -> bool:
+    route = dict(summary.get("semantic_evidence_route", {}))
+    if not str(payload.thumbnail_ref or "").startswith(("http://", "https://")):
+        return True
+    return not (
+        route.get("runtime_route") == "minimal_creative"
+        and route.get("adversarial_guard") == "clean"
+    )
+
+
 def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> float:
     transcript = payload.transcript_excerpt or ""
     if not transcript:
@@ -391,9 +420,10 @@ def _transcript_mismatch(payload: ScoreItemRequest, summary: dict[str, Any]) -> 
 
     overlap = transcript_overlap(payload.title, transcript)
     raw_mismatch = transcript_mismatch_score(payload.title, transcript, summary["token_hits"])
-    mismatch, guardrail = class_adjusted_mismatch(
+    mismatch, guardrail = route_adjusted_mismatch(
         raw_mismatch,
         str(summary.get("content_class", "unknown")),
+        dict(summary.get("semantic_evidence_route", {})),
     )
     summary["transcript_title_overlap"] = round(overlap, 4)
     summary["raw_transcript_mismatch_score"] = round(raw_mismatch, 4)
@@ -466,7 +496,12 @@ def _bias_profile_summary(
     return profile
 
 
-def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[float]:
+def _vision_vector(
+    payload: ScoreItemRequest,
+    summary: dict[str, Any],
+    *,
+    allow_remote_thumbnail_fetch: bool = True,
+) -> list[float]:
     thumbnail_signal: dict[str, float] = {}
     if payload.thumbnail_ref:
         thumbnail_path = Path(payload.thumbnail_ref)
@@ -485,7 +520,7 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[f
                 "aspect_ratio": extracted.get("thumbnail_aspect_ratio", (16 / 9) / 2.5),
                 "byte_size": extracted.get("thumbnail_byte_size", 0.0),
             }
-        elif payload.thumbnail_ref.startswith(("http://", "https://")):
+        elif payload.thumbnail_ref.startswith(("http://", "https://")) and allow_remote_thumbnail_fetch:
             try:
                 parsed = urlparse(payload.thumbnail_ref)
                 suffix = Path(parsed.path).suffix or ".jpg"
@@ -511,6 +546,10 @@ def _vision_vector(payload: ScoreItemRequest, summary: dict[str, Any]) -> list[f
                 }
             except OSError:
                 thumbnail_signal = {}
+        elif payload.thumbnail_ref.startswith(("http://", "https://")):
+            summary["thumbnail_remote_fetch_skipped_reason"] = (
+                "Adaptive semantic routing kept clean creative content on the minimal runtime route."
+            )
 
     brightness = float(thumbnail_signal.get("brightness", 0.42))
     saturation = float(thumbnail_signal.get("saturation", 0.18 + summary["token_hits"] * 0.12))
@@ -725,8 +764,16 @@ def _packaging_vector(
 def _bootstrap_signals(payload: ScoreItemRequest) -> ModelSignals:
     summary = _title_summary(payload)
     _music_context(payload, summary)
+    initial_route = _refresh_semantic_route(payload, summary)
     _transcript_mismatch(payload, summary)
-    vision_vector = _vision_vector(payload, summary)
+    vision_vector = _vision_vector(
+        payload,
+        summary,
+        allow_remote_thumbnail_fetch=_semantic_route_allows_remote_thumbnail_fetch(payload, summary),
+    )
+    updated_route = _refresh_semantic_route(payload, summary)
+    if updated_route != initial_route:
+        _transcript_mismatch(payload, summary)
     metadata_vector = _metadata_vector(payload, summary)
     _history_vector(payload, summary)
     text_score = min(0.12 + summary["token_hits"] * 0.18 + summary["uppercase_ratio"] * 0.2, 0.98)
@@ -792,6 +839,7 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
 
     summary = _title_summary(payload)
     _music_context(payload, summary)
+    initial_route = _refresh_semantic_route(payload, summary)
     _transcript_mismatch(payload, summary)
     model_info = load_model_info()
     text_resolution = _text_encoder_resolution(bundle, model_info)
@@ -842,7 +890,14 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         if not text_runtime_fallback:
             text_matrix = _text_matrix(payload, bundle, model_info)
             text_score = _safe_probability(bundle["text_model"], text_matrix)
-        vision_values = _vision_vector(payload, summary)
+        vision_values = _vision_vector(
+            payload,
+            summary,
+            allow_remote_thumbnail_fetch=_semantic_route_allows_remote_thumbnail_fetch(payload, summary),
+        )
+        updated_route = _refresh_semantic_route(payload, summary)
+        if updated_route != initial_route:
+            _transcript_mismatch(payload, summary)
         metadata_values = _metadata_vector(payload, summary)
         history_values = _history_vector(payload, summary)
         packaging_values = _packaging_vector(vision_values, metadata_values)
@@ -852,13 +907,20 @@ def predict_item_signals(payload: ScoreItemRequest) -> ModelSignals:
         packaging_vector = np.asarray([packaging_values], dtype=float)
         vision_score = _safe_probability(bundle["vision_model"], vision_vector)
         vision_used_learned_encoder = False
-        if not vision_runtime_fallback and summary["vision_encoder_actual"] in {"tiny-cnn-thumbnail", "vision-transformer"}:
+        if (
+            not vision_runtime_fallback
+            and summary["vision_encoder_actual"] in {"tiny-cnn-thumbnail", "vision-transformer"}
+        ):
             vision_payload = bundle.get("vision_encoder_artifacts")
             if isinstance(vision_payload, dict):
                 vision_artifacts = vision_artifacts_from_payload(vision_payload)
-                thumbnail_image = _thumbnail_image_from_ref(
-                    payload.thumbnail_ref,
-                    image_size=vision_artifacts.image_size,
+                thumbnail_image = (
+                    _thumbnail_image_from_ref(
+                        payload.thumbnail_ref,
+                        image_size=vision_artifacts.image_size,
+                    )
+                    if _semantic_route_allows_remote_thumbnail_fetch(payload, summary)
+                    else None
                 )
                 if thumbnail_image is not None:
                     vision_score = float(

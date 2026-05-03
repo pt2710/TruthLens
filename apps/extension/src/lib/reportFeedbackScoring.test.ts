@@ -19,6 +19,17 @@ function makeScore(overrides: Partial<ScoreResult> = {}): ScoreResult {
     path_contributors: {},
     content_class: 'news',
     content_class_confidence: 0.76,
+    semantic_evidence_route: {
+      content_class: 'news',
+      class_confidence: 0.76,
+      runtime_route: 'high_risk_factual',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: 'clean',
+      mismatch_pressure: 'elevated',
+      required_runtime_evidence: ['title', 'description', 'thumbnail', 'channel_history', 'light_spam_check'],
+      preserved_learning_evidence: ['title', 'description_snapshot', 'thumbnail_ref', 'feedback'],
+      route_reasons: [],
+    },
     bias_profile: {
       metrics: {},
       positive_biases: [],

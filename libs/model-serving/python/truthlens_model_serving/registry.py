@@ -423,7 +423,8 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     runtime_context_json,
                     artifact_provenance_json,
                     manual_report_json,
-                    feedback_actor_json
+                    feedback_actor_json,
+                    semantic_evidence_route_json
                 FROM feedback_events
                 ORDER BY rowid ASC
                 """
@@ -455,6 +456,9 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     "feedback_actor": _normalize_feedback_actor(
                         json.loads(feedback_actor_json) if feedback_actor_json else None
                     ),
+                    "semantic_evidence_route": json.loads(semantic_evidence_route_json)
+                    if semantic_evidence_route_json
+                    else None,
                 }
                 for (
                     feedback_id,
@@ -474,6 +478,7 @@ def load_feedback_events() -> list[dict[str, Any]]:
                     artifact_provenance_json,
                     manual_report_json,
                     feedback_actor_json,
+                    semantic_evidence_route_json,
                 ) in cursor.fetchall()
             ]
         return db_rows
@@ -510,6 +515,9 @@ def load_score_events() -> list[dict[str, Any]]:
                     risk_score,
                     confidence,
                     uncertainty,
+                    content_class,
+                    content_class_confidence,
+                    semantic_evidence_route_json,
                     explanation_id,
                     timestamp
                 FROM score_events
@@ -526,6 +534,11 @@ def load_score_events() -> list[dict[str, Any]]:
                     "risk_score": risk_score,
                     "confidence": confidence,
                     "uncertainty": uncertainty,
+                    "content_class": content_class,
+                    "content_class_confidence": content_class_confidence,
+                    "semantic_evidence_route": json.loads(semantic_evidence_route_json)
+                    if semantic_evidence_route_json
+                    else None,
                     "explanation_id": explanation_id,
                     "timestamp": timestamp,
                 }
@@ -538,6 +551,9 @@ def load_score_events() -> list[dict[str, Any]]:
                     risk_score,
                     confidence,
                     uncertainty,
+                    content_class,
+                    content_class_confidence,
+                    semantic_evidence_route_json,
                     explanation_id,
                     timestamp,
                 ) in cursor.fetchall()
@@ -653,7 +669,8 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
             runtime_context_json TEXT,
             artifact_provenance_json TEXT,
             manual_report_json TEXT,
-            feedback_actor_json TEXT
+            feedback_actor_json TEXT,
+            semantic_evidence_route_json TEXT
         )
         """
     )
@@ -673,6 +690,8 @@ def _ensure_feedback_table(connection: sqlite3.Connection) -> None:
         connection.execute("ALTER TABLE feedback_events ADD COLUMN artifact_provenance_json TEXT")
     if "feedback_actor_json" not in columns:
         connection.execute("ALTER TABLE feedback_events ADD COLUMN feedback_actor_json TEXT")
+    if "semantic_evidence_route_json" not in columns:
+        connection.execute("ALTER TABLE feedback_events ADD COLUMN semantic_evidence_route_json TEXT")
     connection.commit()
 
 
@@ -688,11 +707,24 @@ def _ensure_score_table(connection: sqlite3.Connection) -> None:
             risk_score REAL NOT NULL,
             confidence REAL NOT NULL,
             uncertainty REAL NOT NULL,
+            content_class TEXT,
+            content_class_confidence REAL,
+            semantic_evidence_route_json TEXT,
             explanation_id TEXT,
             timestamp TEXT NOT NULL
         )
         """
     )
+    columns = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(score_events)").fetchall()
+    }
+    if "content_class" not in columns:
+        connection.execute("ALTER TABLE score_events ADD COLUMN content_class TEXT")
+    if "content_class_confidence" not in columns:
+        connection.execute("ALTER TABLE score_events ADD COLUMN content_class_confidence REAL")
+    if "semantic_evidence_route_json" not in columns:
+        connection.execute("ALTER TABLE score_events ADD COLUMN semantic_evidence_route_json TEXT")
     connection.commit()
 
 
@@ -748,11 +780,13 @@ def _ensure_postgres_feedback_table(connection: Any) -> None:
             runtime_context_json TEXT,
             artifact_provenance_json TEXT,
             manual_report_json TEXT,
-            feedback_actor_json TEXT
+            feedback_actor_json TEXT,
+            semantic_evidence_route_json TEXT
         )
         """
     )
     connection.execute("ALTER TABLE feedback_events ADD COLUMN IF NOT EXISTS feedback_actor_json TEXT")
+    connection.execute("ALTER TABLE feedback_events ADD COLUMN IF NOT EXISTS semantic_evidence_route_json TEXT")
 
 
 def _ensure_postgres_score_table(connection: Any) -> None:
@@ -767,11 +801,17 @@ def _ensure_postgres_score_table(connection: Any) -> None:
             risk_score DOUBLE PRECISION NOT NULL,
             confidence DOUBLE PRECISION NOT NULL,
             uncertainty DOUBLE PRECISION NOT NULL,
+            content_class TEXT,
+            content_class_confidence DOUBLE PRECISION,
+            semantic_evidence_route_json TEXT,
             explanation_id TEXT,
             timestamp TEXT NOT NULL
         )
         """
     )
+    connection.execute("ALTER TABLE score_events ADD COLUMN IF NOT EXISTS content_class TEXT")
+    connection.execute("ALTER TABLE score_events ADD COLUMN IF NOT EXISTS content_class_confidence DOUBLE PRECISION")
+    connection.execute("ALTER TABLE score_events ADD COLUMN IF NOT EXISTS semantic_evidence_route_json TEXT")
 
 
 def _ensure_postgres_browser_observation_table(connection: Any) -> None:
@@ -830,7 +870,8 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 runtime_context_json,
                 artifact_provenance_json,
                 manual_report_json,
-                feedback_actor_json
+                feedback_actor_json,
+                semantic_evidence_route_json
             FROM feedback_events
             ORDER BY timestamp ASC, item_id ASC
             """
@@ -858,6 +899,9 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 "feedback_actor": _normalize_feedback_actor(
                     json.loads(feedback_actor_json) if feedback_actor_json else None
                 ),
+                "semantic_evidence_route": json.loads(semantic_evidence_route_json)
+                if semantic_evidence_route_json
+                else None,
             }
             for (
                 feedback_id,
@@ -877,6 +921,7 @@ def _load_feedback_events_postgres() -> list[dict[str, Any]]:
                 artifact_provenance_json,
                 manual_report_json,
                 feedback_actor_json,
+                semantic_evidence_route_json,
             ) in cursor.fetchall()
         ]
 
@@ -895,6 +940,9 @@ def _load_score_events_postgres() -> list[dict[str, Any]]:
                 risk_score,
                 confidence,
                 uncertainty,
+                content_class,
+                content_class_confidence,
+                semantic_evidence_route_json,
                 explanation_id,
                 timestamp
             FROM score_events
@@ -911,6 +959,11 @@ def _load_score_events_postgres() -> list[dict[str, Any]]:
                 "risk_score": risk_score,
                 "confidence": confidence,
                 "uncertainty": uncertainty,
+                "content_class": content_class,
+                "content_class_confidence": content_class_confidence,
+                "semantic_evidence_route": json.loads(semantic_evidence_route_json)
+                if semantic_evidence_route_json
+                else None,
                 "explanation_id": explanation_id,
                 "timestamp": timestamp,
             }
@@ -923,6 +976,9 @@ def _load_score_events_postgres() -> list[dict[str, Any]]:
                 risk_score,
                 confidence,
                 uncertainty,
+                content_class,
+                content_class_confidence,
+                semantic_evidence_route_json,
                 explanation_id,
                 timestamp,
             ) in cursor.fetchall()
@@ -1027,8 +1083,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     runtime_context_json,
                     artifact_provenance_json,
                     manual_report_json,
-                    feedback_actor_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    feedback_actor_json,
+                    semantic_evidence_route_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     payload_to_store.get("feedback_id"),
@@ -1054,6 +1111,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     if payload_to_store.get("manual_report") is not None
                     else None,
                     json.dumps(feedback_actor, ensure_ascii=True),
+                    json.dumps(payload_to_store.get("semantic_evidence_route"), ensure_ascii=True)
+                    if payload_to_store.get("semantic_evidence_route") is not None
+                    else None,
                 ),
             )
             connection.commit()
@@ -1083,8 +1143,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     runtime_context_json,
                     artifact_provenance_json,
                     manual_report_json,
-                    feedback_actor_json
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    feedback_actor_json,
+                    semantic_evidence_route_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     payload_to_store.get("feedback_id"),
@@ -1110,6 +1171,9 @@ def append_feedback_event(payload: dict[str, Any]) -> Path:
                     if payload_to_store.get("manual_report") is not None
                     else None,
                     json.dumps(feedback_actor, ensure_ascii=True),
+                    json.dumps(payload_to_store.get("semantic_evidence_route"), ensure_ascii=True)
+                    if payload_to_store.get("semantic_evidence_route") is not None
+                    else None,
                 ),
             )
             connection.commit()
@@ -1231,9 +1295,12 @@ def append_score_event(payload: dict[str, Any]) -> Path:
                     risk_score,
                     confidence,
                     uncertainty,
+                    content_class,
+                    content_class_confidence,
+                    semantic_evidence_route_json,
                     explanation_id,
                     timestamp
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     payload.get("item_id"),
@@ -1244,6 +1311,11 @@ def append_score_event(payload: dict[str, Any]) -> Path:
                     payload.get("risk_score"),
                     payload.get("confidence"),
                     payload.get("uncertainty"),
+                    payload.get("content_class"),
+                    payload.get("content_class_confidence"),
+                    json.dumps(payload.get("semantic_evidence_route"), ensure_ascii=True)
+                    if payload.get("semantic_evidence_route") is not None
+                    else None,
                     payload.get("explanation_id"),
                     payload.get("timestamp"),
                 ),
@@ -1263,9 +1335,12 @@ def append_score_event(payload: dict[str, Any]) -> Path:
                     risk_score,
                     confidence,
                     uncertainty,
+                    content_class,
+                    content_class_confidence,
+                    semantic_evidence_route_json,
                     explanation_id,
                     timestamp
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     payload.get("item_id"),
@@ -1276,6 +1351,11 @@ def append_score_event(payload: dict[str, Any]) -> Path:
                     payload.get("risk_score"),
                     payload.get("confidence"),
                     payload.get("uncertainty"),
+                    payload.get("content_class"),
+                    payload.get("content_class_confidence"),
+                    json.dumps(payload.get("semantic_evidence_route"), ensure_ascii=True)
+                    if payload.get("semantic_evidence_route") is not None
+                    else None,
                     payload.get("explanation_id"),
                     payload.get("timestamp"),
                 ),

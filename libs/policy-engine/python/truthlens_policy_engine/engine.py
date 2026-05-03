@@ -21,6 +21,7 @@ from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPE
 from truthlens_model_serving.verification import run_selective_verification
 from truthlens_shared_schemas.contracts import (
     ActionDecisionBasis,
+    AdaptiveSemanticEvidenceRoute,
     ArtifactProvenance,
     BiasProfile,
     ContentClass,
@@ -405,6 +406,18 @@ def _path_contributors(feature_summary: dict[str, Any]) -> dict[str, list[str]]:
     return contributors
 
 
+def _semantic_route_payload(feature_summary: dict[str, Any]) -> dict[str, Any]:
+    route = feature_summary.get("semantic_evidence_route", {})
+    return route if isinstance(route, dict) else {}
+
+
+def _route_requires_review_floor(route: dict[str, Any]) -> bool:
+    return (
+        route.get("runtime_route") == "ambiguous_escalated"
+        and route.get("adversarial_guard") == "triggered"
+    )
+
+
 def _resolve_bseo_action(
     payload: ScoreItemRequest,
     *,
@@ -489,17 +502,36 @@ def _resolve_bseo_action(
     sensational_weight = float(
         control_genome.get("sensational_weight_by_class", {}).get(content_class, 1.0)
     )
+    semantic_route = _semantic_route_payload(signals.feature_summary)
+    runtime_route = str(semantic_route.get("runtime_route", "ambiguous_escalated"))
+    adversarial_guard = str(semantic_route.get("adversarial_guard", "triggered"))
+    mismatch_pressure = str(semantic_route.get("mismatch_pressure", "normal"))
+    if mismatch_pressure == "reduced" and runtime_route == "minimal_creative" and adversarial_guard == "clean":
+        mismatch_weight *= 0.55
+    elif mismatch_pressure == "elevated":
+        mismatch_weight = max(mismatch_weight, 1.12) * 1.08
+        sensational_weight = max(sensational_weight, 1.05)
+    elif adversarial_guard == "triggered" and content_class in {"music", "art"}:
+        mismatch_weight = max(mismatch_weight, 1.0)
+        sensational_weight = max(sensational_weight, 1.0)
     policy_score = float(signals.calibrated_score)
     policy_score += float(signals.feature_summary.get("transcript_mismatch_score", 0.0)) * 0.14 * mismatch_weight
     policy_score += min(float(signals.feature_summary.get("token_hits", 0.0)) / 4.0, 1.0) * 0.1 * sensational_weight
     policy_score += channel_prior_dependency * 0.08 * float(control_genome.get("channel_prior_temperature", 1.0))
     policy_score += float(signals.uncertainty) * 0.06 * float(control_genome.get("uncertainty_escalation_bias", 1.0))
-    if content_class in {"music", "art"} and float(signals.feature_summary.get("content_class_confidence", 0.0)) >= 0.65:
+    if (
+        content_class in {"music", "art"}
+        and float(signals.feature_summary.get("content_class_confidence", 0.0)) >= 0.65
+        and runtime_route == "minimal_creative"
+        and adversarial_guard == "clean"
+    ):
         policy_score -= 0.04
     elif content_class in {"news", "commentary", "documentary", "promo", "unknown"}:
         policy_score += 0.03
     if content_class == "satire" and float(signals.feature_summary.get("content_class_confidence", 0.0)) < 0.72:
         policy_score += 0.02
+    if _route_requires_review_floor(semantic_route):
+        policy_score = max(policy_score, thresholds["badge_threshold"])
     policy_score = max(0.0, min(policy_score, 1.0))
     action = _resolve_threshold_action(policy_score, thresholds, muted_channel=False)
     if action not in _ACTION_BY_NAME.values():
@@ -583,6 +615,16 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
     muted_channels = {channel.strip().lower() for channel in payload.user_context.muted_channels}
     muted_channel_key = payload.channel.channel_name.strip().lower()
     muted_channel = bool(muted_channel_key) and muted_channel_key != "unknown channel" and muted_channel_key in muted_channels
+    semantic_route = _semantic_route_payload(signals.feature_summary)
+    if not muted_channel and _route_requires_review_floor(semantic_route):
+        route_floor = float(thresholds["badge_threshold"])
+        if float(risk_score) < route_floor:
+            risk_score = route_floor
+            signals.feature_summary["semantic_route_risk_floor"] = round(route_floor, 4)
+            signals.feature_summary["runtime_policy_note"] = (
+                "Adaptive semantic routing escalated this ambiguous creative-looking item for review "
+                "instead of treating creative keywords as sufficient for a green route."
+            )
     verification = run_selective_verification(payload, signals, thresholds=thresholds)
     signals.feature_summary["verification"] = {
         "status": verification.status,
@@ -683,6 +725,7 @@ def score_item(payload: ScoreItemRequest) -> ScoreResult:
             float(signals.feature_summary.get("content_class_confidence", 0.0)),
             2,
         ),
+        semantic_evidence_route=AdaptiveSemanticEvidenceRoute.model_validate(semantic_route),
         bias_profile=BiasProfile(
             metrics=dict(bias_profile.get("metrics", {})) if isinstance(bias_profile, dict) else {},
             positive_biases=list(bias_profile.get("positive_biases", []))

@@ -120,6 +120,9 @@ def _audit_score_event(
             "risk_score": result.risk_score,
             "confidence": result.confidence,
             "uncertainty": result.uncertainty,
+            "content_class": result.content_class.value,
+            "content_class_confidence": result.content_class_confidence,
+            "semantic_evidence_route": result.semantic_evidence_route.model_dump(mode="json"),
             "explanation_id": result.explanation_id,
             "timestamp": _utc_timestamp(),
         }

@@ -1,17 +1,23 @@
-from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone
 import json
+from pathlib import Path
 
 import pytest
+import truthlens_policy_engine.engine as policy_engine
 
 from truthlens_explanation_engine.explainer import ExplanationBundle
 from truthlens_feature_extractors.image import make_test_png_bytes
 from truthlens_model_serving import append_feedback_event
-from truthlens_model_serving.scorer import ModelSignals, predict_item_signals
 from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPEC_VERSION
+from truthlens_model_serving.scorer import ModelSignals, predict_item_signals
 from truthlens_policy_engine import get_policy_profile, score_item
-from truthlens_shared_schemas.contracts import ChannelInfo, ItemMetadata, ScoreItemRequest
+from truthlens_shared_schemas.contracts import (
+    ChannelInfo,
+    ItemMetadata,
+    RecommendedAction,
+    ScoreItemRequest,
+)
 
 
 def _payload(channel_name: str) -> ScoreItemRequest:
@@ -100,6 +106,88 @@ def _mock_signals(*, score: float, confidence: float, uncertainty: float) -> Mod
     )
 
 
+def _route(
+    *,
+    content_class: str = "music",
+    confidence: float = 0.88,
+    runtime_route: str = "minimal_creative",
+    guard: str = "clean",
+    pressure: str = "reduced",
+) -> dict[str, object]:
+    return {
+        "content_class": content_class,
+        "class_confidence": confidence,
+        "runtime_route": runtime_route,
+        "learning_capture_plan": "full_multimodal_capture",
+        "adversarial_guard": guard,
+        "mismatch_pressure": pressure,
+        "required_runtime_evidence": ["title", "channel_sanity", "light_spam_check"],
+        "preserved_learning_evidence": [
+            "title",
+            "description_snapshot",
+            "transcript_excerpt",
+            "thumbnail_ref",
+            "thumbnail_features",
+            "channel",
+            "metadata",
+            "score",
+            "content_class",
+            "route",
+            "class_confidence",
+            "adversarial_guard",
+            "feedback",
+            "verify_report_outcome",
+        ],
+        "route_reasons": [],
+    }
+
+
+def _mock_music_signals(
+    *,
+    runtime_route: str,
+    guard: str,
+    pressure: str,
+    score: float = 0.3,
+    mismatch: float = 0.8,
+) -> ModelSignals:
+    signals = _mock_signals(score=score, confidence=0.91, uncertainty=0.1)
+    signals.feature_summary.update(
+        {
+            "content_class": "music",
+            "content_class_confidence": 0.88,
+            "transcript_mismatch_score": mismatch,
+            "token_hits": 0.0,
+            "channel_risk_mean": 0.0,
+            "repeat_template_rate": 0.0,
+            "semantic_evidence_route": _route(
+                runtime_route=runtime_route,
+                guard=guard,
+                pressure=pressure,
+            ),
+            "bias_primitives": {
+                "sensational_weight": 0.0,
+                "crossmodal_rigidity": mismatch,
+                "channel_prior_dependency": 0.0,
+                "genre_confusion": 0.08,
+                "uncertainty_calibration": 0.05,
+            },
+            "bias_profile": {
+                "metrics": {
+                    "sensational_weight": 0.0,
+                    "crossmodal_rigidity": mismatch,
+                    "channel_prior_dependency": 0.0,
+                    "genre_confusion": 0.08,
+                    "uncertainty_calibration": 0.05,
+                },
+                "positive_biases": ["stylistic-divergence-tolerance"],
+                "negative_biases": [],
+                "guardrail_applied": "semantic-route-test",
+            },
+        }
+    )
+    return signals
+
+
 def _mock_explanation(*_args, **_kwargs) -> ExplanationBundle:
     return ExplanationBundle(
         explanation_id="exp-policy-test",
@@ -172,6 +260,22 @@ def _write_bseo_policy(thresholds_dir: Path, *, build_id: str) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def _bseo_artifact(tmp_path: Path) -> dict[str, object]:
+    thresholds_dir = tmp_path / "configs" / "thresholds"
+    thresholds_dir.mkdir(parents=True, exist_ok=True)
+    _write_bseo_policy(thresholds_dir, build_id="build-route-test")
+    return json.loads((thresholds_dir / "bseo-policy.json").read_text(encoding="utf-8"))
+
+
+def _runtime_config() -> dict[str, object]:
+    return {
+        "resolved_policy_mode": "bseo-live",
+        "bseo_min_confidence": 0.5,
+        "bseo_max_uncertainty": 0.5,
+        "bseo_artifact_max_age_hours": 400,
+    }
 
 
 def test_channel_feedback_bias_makes_policy_more_aggressive(
@@ -515,6 +619,110 @@ def test_bseo_live_falls_back_to_threshold_policy_when_uncertainty_is_high(
     assert profile["runtime_metrics"]["rl_live_decisions"] == 0
     assert profile["runtime_metrics"]["rl_fallbacks"] == 1
     assert profile["runtime_metrics"]["fallback_reasons"]["high-uncertainty"] == 1
+
+
+def test_minimal_creative_clean_lowers_bseo_mismatch_pressure(tmp_path: Path) -> None:
+    artifact = _bseo_artifact(tmp_path)
+    payload = _payload("Aurora Beats")
+    minimal = policy_engine._resolve_bseo_action(
+        payload,
+        signals=_mock_music_signals(
+            runtime_route="minimal_creative",
+            guard="clean",
+            pressure="reduced",
+        ),
+        runtime_config=_runtime_config(),
+        artifact=artifact,
+    )
+    guarded = policy_engine._resolve_bseo_action(
+        payload,
+        signals=_mock_music_signals(
+            runtime_route="ambiguous_escalated",
+            guard="triggered",
+            pressure="normal",
+        ),
+        runtime_config=_runtime_config(),
+        artifact=artifact,
+    )
+
+    assert minimal["eligible"] is True
+    assert guarded["eligible"] is True
+    assert float(minimal["policy_score"]) < float(guarded["policy_score"])
+
+
+def test_triggered_creative_route_does_not_get_bseo_discount(tmp_path: Path) -> None:
+    artifact = _bseo_artifact(tmp_path)
+    payload = _payload("Camouflage Beats")
+    triggered = policy_engine._resolve_bseo_action(
+        payload,
+        signals=_mock_music_signals(
+            runtime_route="ambiguous_escalated",
+            guard="triggered",
+            pressure="normal",
+        ),
+        runtime_config=_runtime_config(),
+        artifact=artifact,
+    )
+    clean = policy_engine._resolve_bseo_action(
+        payload,
+        signals=_mock_music_signals(
+            runtime_route="minimal_creative",
+            guard="clean",
+            pressure="reduced",
+        ),
+        runtime_config=_runtime_config(),
+        artifact=artifact,
+    )
+
+    assert triggered["eligible"] is True
+    assert clean["eligible"] is True
+    assert float(triggered["policy_score"]) > float(clean["policy_score"])
+    assert triggered["action"] != RecommendedAction.NONE
+
+
+def test_ambiguous_triggered_route_does_not_create_false_green(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signals = _mock_music_signals(
+        runtime_route="ambiguous_escalated",
+        guard="triggered",
+        pressure="normal",
+        score=0.12,
+        mismatch=0.0,
+    )
+    monkeypatch.setattr("truthlens_policy_engine.engine.predict_item_signals", lambda _payload: signals)
+    monkeypatch.setattr("truthlens_policy_engine.engine.build_explanation", _mock_explanation)
+    monkeypatch.setattr(
+        "truthlens_policy_engine.engine.get_policy_profile",
+        lambda: {
+            "policy_version": "adaptive-threshold-v1",
+            "policy_mode": "threshold-default",
+            "resolved_policy_mode": "threshold-default",
+            "effective_thresholds": {
+                "badge_threshold": 0.35,
+                "blur_threshold": 0.6,
+                "report_prompt_threshold": 0.8,
+                "hide_threshold": 0.93,
+            },
+            "runtime_policy_config": {
+                "policy_mode": "threshold-default",
+                "resolved_policy_mode": "threshold-default",
+                "bseo_min_confidence": 0.58,
+                "bseo_max_uncertainty": 0.45,
+                "bseo_artifact_max_age_hours": 168,
+            },
+            "bseo_artifact": {
+                "status": "missing",
+            },
+        },
+    )
+
+    result = score_item(_payload("Ambiguous Beats"))
+
+    assert result.semantic_evidence_route.runtime_route == "ambiguous_escalated"
+    assert result.semantic_evidence_route.adversarial_guard == "triggered"
+    assert result.risk_score >= 0.35
+    assert result.recommended_action == RecommendedAction.BADGE
 
 
 def test_remote_thumbnail_bytes_influence_score(

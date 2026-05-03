@@ -26,6 +26,17 @@ function makeScoreResult(
     path_contributors: {},
     content_class: 'news',
     content_class_confidence: 0.7,
+    semantic_evidence_route: {
+      content_class: 'news',
+      class_confidence: 0.7,
+      runtime_route: 'high_risk_factual',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: 'clean',
+      mismatch_pressure: 'elevated',
+      required_runtime_evidence: ['title', 'description', 'thumbnail', 'channel_history', 'light_spam_check'],
+      preserved_learning_evidence: ['title', 'description_snapshot', 'thumbnail_ref', 'feedback'],
+      route_reasons: [],
+    },
     bias_profile: {
       metrics: {},
       positive_biases: [],
@@ -99,6 +110,16 @@ describe('feedScoreTruth', () => {
     expect(feedRiskScore(score)).toBe(1.8);
     expect(truthScore(score)).toBe(8.2);
     expect(getTruthBand(score)).toBe('green');
+  });
+
+  it('keeps raw runtime risk and UI truth score in opposite directions', () => {
+    const lowRisk = makeScoreResult({ risk_score: 0.1 });
+    const highRisk = makeScoreResult({ risk_score: 0.8 });
+
+    expect(rawRuntimeRiskScore(highRisk)).toBeGreaterThan(rawRuntimeRiskScore(lowRisk));
+    expect(truthScore(highRisk)).toBeLessThan(truthScore(lowRisk));
+    expect(getTruthBand(highRisk)).toBe('red');
+    expect(getTruthBand(lowRisk)).toBe('green');
   });
 
   it('lifts feed skepticism when negative channel history exceeds the neutral baseline', () => {

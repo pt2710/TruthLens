@@ -32,6 +32,10 @@ def run_selective_verification(
     reasons: list[str] = []
     feature_summary = signals.feature_summary
     content_class = str(feature_summary.get("content_class", "unknown"))
+    semantic_route = feature_summary.get("semantic_evidence_route", {})
+    semantic_route = semantic_route if isinstance(semantic_route, dict) else {}
+    runtime_route = str(semantic_route.get("runtime_route", "ambiguous_escalated"))
+    adversarial_guard = str(semantic_route.get("adversarial_guard", "triggered"))
     transcript_mismatch = float(feature_summary.get("transcript_mismatch_score", 0.0))
     guardrail = str(feature_summary.get("taxonomy_guardrail", "")) or "balanced-context"
     negative_biases = [
@@ -44,7 +48,12 @@ def run_selective_verification(
         triggers.append("high-risk")
     if float(signals.uncertainty) >= 0.35:
         triggers.append("high-uncertainty")
-    mismatch_threshold = 0.72 if content_class in {"music", "art", "satire", "gaming"} else 0.55
+    if runtime_route == "minimal_creative" and adversarial_guard == "clean":
+        mismatch_threshold = 0.72
+    elif runtime_route in {"ambiguous_escalated", "high_risk_factual"}:
+        mismatch_threshold = 0.5
+    else:
+        mismatch_threshold = 0.72 if content_class in {"music", "art", "satire", "gaming"} else 0.55
     if transcript_mismatch >= mismatch_threshold:
         triggers.append("high-mismatch")
     if _threshold_near(float(signals.calibrated_score), thresholds):

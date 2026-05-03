@@ -4,6 +4,7 @@ import {
   datasetRecordSchema,
   manualReportSchema,
   manualReportSuggestionRequestSchema,
+  observationScoreSnapshotSchema,
   scoreItemRequestSchema,
   scoreResultSchema,
 } from './index';
@@ -86,6 +87,67 @@ describe('shared schemas', () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it('defaults semantic evidence route for old score and observation payloads', () => {
+    const result = scoreResultSchema.parse({
+      risk_score: 0.2,
+      confidence: 0.8,
+      uncertainty: 0.2,
+      recommended_action: 'none',
+      reasons: [],
+      explanation_id: null,
+      explanation_summary: null,
+      evidence: [],
+    });
+    const snapshot = observationScoreSnapshotSchema.parse({
+      risk_score: 0.2,
+      calibrated_score: 0.2,
+      uncertainty: 0.2,
+      recommended_action: 'none',
+      content_class: 'unknown',
+      content_class_confidence: 0,
+      explanation_id: null,
+    });
+
+    expect(result.semantic_evidence_route.runtime_route).toBe('ambiguous_escalated');
+    expect(result.semantic_evidence_route.learning_capture_plan).toBe('full_multimodal_capture');
+    expect(snapshot.semantic_evidence_route.adversarial_guard).toBe('triggered');
+  });
+
+  it('accepts new semantic evidence route payloads', () => {
+    const result = scoreResultSchema.parse({
+      risk_score: 0.12,
+      confidence: 0.91,
+      uncertainty: 0.09,
+      content_class: 'music',
+      content_class_confidence: 0.91,
+      semantic_evidence_route: {
+        content_class: 'music',
+        class_confidence: 0.91,
+        runtime_route: 'minimal_creative',
+        learning_capture_plan: 'full_multimodal_capture',
+        adversarial_guard: 'clean',
+        mismatch_pressure: 'reduced',
+        required_runtime_evidence: ['title', 'channel_sanity', 'light_spam_check'],
+        preserved_learning_evidence: [
+          'title',
+          'description_snapshot',
+          'thumbnail_ref',
+          'feedback',
+          'verify_report_outcome',
+        ],
+        route_reasons: ['Title strongly matches instrumental/music pattern.'],
+      },
+      recommended_action: 'none',
+      reasons: [],
+      explanation_id: null,
+      explanation_summary: null,
+      evidence: [],
+    });
+
+    expect(result.semantic_evidence_route.runtime_route).toBe('minimal_creative');
+    expect(result.semantic_evidence_route.mismatch_pressure).toBe('reduced');
   });
 
   it('validates canonical dataset records', () => {

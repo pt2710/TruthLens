@@ -127,6 +127,62 @@ describe('feedReranking', () => {
     expect(snapshot.rerankPriority).toBeGreaterThanOrEqual(8.0);
   });
 
+  it('keeps rerank priority aligned with higher UI truth score', () => {
+    const highTrust = buildFeedPresentationSnapshot(
+      scoreResultSchema.parse({
+        risk_score: 0.1,
+        confidence: 0.9,
+        uncertainty: 0.1,
+        path_scores: {},
+        content_class: 'music',
+        content_class_confidence: 0.88,
+        bias_profile: {
+          metrics: {},
+          positive_biases: ['stylistic-divergence-tolerance'],
+          negative_biases: [],
+          guardrail_applied: 'music-context-dampens-crossmodal-rigidity',
+        },
+        recommended_action: 'none',
+        reasons: [],
+        explanation_id: null,
+        explanation_summary: null,
+        evidence: [],
+      }),
+      makePersonalization({ rankingScore: 8.8 }),
+      makeProfile({ trust_score: 8.8 }),
+      makeReviewPrompt(),
+      false,
+    );
+    const lowTrust = buildFeedPresentationSnapshot(
+      scoreResultSchema.parse({
+        risk_score: 0.82,
+        confidence: 0.9,
+        uncertainty: 0.1,
+        path_scores: {},
+        content_class: 'news',
+        content_class_confidence: 0.88,
+        bias_profile: {
+          metrics: {},
+          positive_biases: ['factual-scrutiny'],
+          negative_biases: ['sensational-overweighting'],
+          guardrail_applied: 'factual-context-amplifies-mismatch',
+        },
+        recommended_action: 'ask-report',
+        reasons: ['Example'],
+        explanation_id: 'exp-low-trust',
+        explanation_summary: 'Example',
+        evidence: [],
+      }),
+      makePersonalization({ rankingScore: 2.1 }),
+      makeProfile({ trust_score: 2.1, reported_item_count: 3 }),
+      null,
+      false,
+    );
+
+    expect(highTrust.truthScore).toBeGreaterThan(lowTrust.truthScore);
+    expect(highTrust.rerankPriority).toBeGreaterThan(lowTrust.rerankPriority);
+  });
+
   it('keeps satire above the negative bands when only genre confusion is present', () => {
     const snapshot = buildFeedPresentationSnapshot(
       scoreResultSchema.parse({

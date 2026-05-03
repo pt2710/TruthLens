@@ -173,6 +173,7 @@ function createFeedbackPayload(
   manualReport: FeedbackEvent['manual_report'],
   userAction: FeedbackEvent['user_action'],
   artifactProvenance: FeedbackEvent['artifact_provenance'],
+  semanticEvidenceRoute: FeedbackEvent['semantic_evidence_route'],
   afterScore: number | null = beforeScore,
 ): FeedbackEvent {
   return {
@@ -194,6 +195,7 @@ function createFeedbackPayload(
       source_provenance: window.location.pathname,
     },
     artifact_provenance: artifactProvenance,
+    semantic_evidence_route: semanticEvidenceRoute,
     manual_report: manualReport,
   };
 }
@@ -912,6 +914,7 @@ export function App() {
             }),
             collectionSummaryAction,
             manualReportTarget.score?.artifact_provenance ?? null,
+            manualReportTarget.score?.semantic_evidence_route ?? null,
             afterReportScore,
           ),
         ));
@@ -928,6 +931,7 @@ export function App() {
             buildManualReport(target),
             reviewUserAction,
             manualReportTarget.score?.artifact_provenance ?? null,
+            manualReportTarget.score?.semantic_evidence_route ?? null,
             afterReportScore,
           ),
         ));

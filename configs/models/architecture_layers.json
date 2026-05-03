@@ -50,6 +50,18 @@
       "notes": "Channel-history aggregation over prior flags, upload velocity, repeat templates, and engagement anomalies."
     },
     {
+      "component_id": "adaptive-semantic-evidence-router",
+      "label": "Adaptive semantic evidence routing",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "evidence-routing",
+      "family": "semantic-evidence-router",
+      "encoder": "heuristic-router-v1",
+      "backend": "python-rules",
+      "runtime_path": "pre-policy-routing",
+      "notes": "Class-conditioned route layer that reduces clean creative mismatch pressure while preserving full observation and feedback learning context and escalating adversarial creative camouflage."
+    },
+    {
       "component_id": "text-head",
       "label": "Text sigmoid classifier",
       "phase": "V1",

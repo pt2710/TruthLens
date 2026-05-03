@@ -18,6 +18,11 @@ from .registry import (
     summarize_score_events,
 )
 from .scorer import ModelSignals, describe_model, predict_item_signals
+from .semantic_router import (
+    AdaptiveSemanticEvidenceRouter,
+    SemanticRouteDecision,
+    route_adjusted_mismatch,
+)
 from .temporal import (
     CHANNEL_SEQUENCE_FEATURE_NAMES,
     HistorySequenceArtifacts,
@@ -53,6 +58,8 @@ __all__ = [
     "ARCHITECTURE_PLAN_VERSION",
     "CHANNEL_SEQUENCE_FEATURE_NAMES",
     "ModelSignals",
+    "AdaptiveSemanticEvidenceRouter",
+    "SemanticRouteDecision",
     "HistorySequenceArtifacts",
     "PACKAGING_VAE_FEATURE_NAMES",
     "PackagingVAEArtifacts",
@@ -74,6 +81,7 @@ __all__ = [
     "runtime_architecture_layers",
     "runtime_event_store_backend",
     "runtime_head_specs",
+    "route_adjusted_mismatch",
     "summarize_browser_observations",
     "summarize_feedback_events",
     "summarize_score_events",

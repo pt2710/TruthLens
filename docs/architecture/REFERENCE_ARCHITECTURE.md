@@ -9,11 +9,12 @@ It is intentionally stricter than a roadmap note. If runtime, contracts, diagram
 TruthLens runtime is organized as:
 
 1. input and context
-2. core multimodal perception
-3. fusion and calibration
-4. selective deep verification
-5. policy and action selection
-6. explanation and review provenance
+2. adaptive semantic evidence routing
+3. core multimodal perception
+4. fusion and calibration
+5. selective deep verification
+6. policy and action selection
+7. explanation and review provenance
 
 This is not a single linear neural chain. Optional learned components plug into bounded paths and preserve explicit fallbacks.
 
@@ -33,7 +34,20 @@ Required runtime inputs:
 
 Input normalization must preserve enough context for both baseline scoring and later review flows.
 
-## 3. Core Multimodal Perception Layer
+## 3. Adaptive Semantic Evidence Routing
+
+Adaptive semantic evidence routing sits before policy/BSEO and near the scorer's evidence selection.
+
+Rules:
+
+- Route light. Learn deep.
+- runtime route is not the same thing as learning capture
+- `minimal_creative` lowers literal thumbnail/title/description mismatch pressure for clean music, art, and visualizer-like content
+- creative classification is not immunity; scam, fake-official, negative channel-history, prior report, and feedback signals can still escalate scrutiny
+- `learning_capture_plan = full_multimodal_capture` preserves route context and existing observation/feedback signals without raw media dumping or direct train/validation/test ingestion
+- BSEO remains downstream policy and bias interpretation; the route only conditions evidence pressure and guardrails
+
+## 4. Core Multimodal Perception Layer
 
 Required baseline paths:
 
@@ -55,7 +69,7 @@ Rules:
 - BSEO is not part of this layer
 - Gemini is not part of this layer
 
-## 4. Fusion And Calibration Layer
+## 5. Fusion And Calibration Layer
 
 The perception layer feeds a fused score and then a calibrated score.
 
@@ -69,7 +83,7 @@ This layer must surface:
 
 The calibrated score is the final output of the classifier itself. Policy is downstream from here.
 
-## 5. Selective Deep Verification Layer
+## 6. Selective Deep Verification Layer
 
 Selective deep verification is explicit, not implicit.
 
@@ -96,7 +110,7 @@ Rules:
 - verification must emit provenance fields, not hidden score mutations
 - verification may inform policy, but it does not replace calibrated perception
 
-## 6. Policy And Action Layer
+## 7. Policy And Action Layer
 
 Policy consumes:
 
@@ -126,7 +140,7 @@ Rules:
 - missing, stale, or incompatible BSEO artifacts must fall back cleanly
 - the committed root repo must not claim live BSEO control unless the artifact is actually present and eligible
 
-## 7. BSEO Placement
+## 8. BSEO Placement
 
 BSEO is treated as:
 
@@ -149,7 +163,7 @@ BSEO artifacts may include:
 - shadow/live divergence summaries
 - guardrail eligibility signals
 
-## 8. Explanation And Review Provenance Layer
+## 9. Explanation And Review Provenance Layer
 
 User-facing and developer-facing explanations must be traceable to:
 
@@ -181,7 +195,7 @@ Review-flow rules:
 - optional Gemini assistance may improve wording, but draft suggestion must fail soft to local heuristics
 - direct `/youtube/report` calls must be gated by account capability truth; if the authenticated account lacks a usable misleading-report category, TruthLens must route single-item reports to the in-page flow instead of knowingly issuing a failing direct API request
 
-## 9. Observation, Feedback, And Supplemental Intake
+## 10. Observation, Feedback, And Supplemental Intake
 
 Observation and feedback intake is an explicit adjunct to the runtime, not an implicit training write.
 
@@ -196,7 +210,7 @@ Rules:
 - adjudicated supplemental rows must remain separate from direct `train` / `validation` / `test` artifacts
 - any future ingestion of supplemental rows must re-enter deterministic dataset governance and split assignment
 
-## 10. Offline Artifact Pipeline
+## 11. Offline Artifact Pipeline
 
 The offline system produces:
 
@@ -210,7 +224,7 @@ The offline system produces:
 
 README benchmark claims must be derived from committed artifacts only.
 
-## 11. Fallback Rules
+## 12. Fallback Rules
 
 Mandatory fallback behavior:
 
@@ -220,7 +234,7 @@ Mandatory fallback behavior:
 - if BSEO artifact is missing or incompatible, stay on threshold policy
 - if explanation evidence is sparse, do not invent causality
 
-## 12. V1 / V2 / V3 Alignment
+## 13. V1 / V2 / V3 Alignment
 
 `V1`
 

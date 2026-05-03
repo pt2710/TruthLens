@@ -73,6 +73,131 @@ function inferContentClass(item: ScoreItemRequest): string {
   return 'unknown';
 }
 
+function createSemanticEvidenceRoute(
+  item: ScoreItemRequest,
+  contentClass: string,
+  contentClassConfidence: number,
+) {
+  const text = `${item.title} ${item.description_snapshot ?? ''}`.toLowerCase();
+  const history = item.channel.channel_history_features;
+  const negativeChannelHistory =
+    item.channel.prior_flags > 0 ||
+    Number(history.channel_risk_mean ?? 0) >= 0.55 ||
+    Number(history.repeat_template_rate ?? 0) >= 0.45 ||
+    Number(history.trust_score ?? 5) <= 4;
+  const fakeOfficialClaim =
+    /(official (government|warning|report|leak|proof)|government confirms|government confirmed|police confirmed|court confirmed|who confirms|cdc confirms|breaking|confirmed|bank|finance|election|health|vaccine|crisis)/.test(
+      text,
+    );
+  const scammyDescription =
+    /(claim now|free prize|free reward|guaranteed profit|double your money|crypto giveaway|telegram|whatsapp|cashapp)/.test(
+      item.description_snapshot?.toLowerCase() ?? '',
+    );
+  const creative = contentClass === 'music' || contentClass === 'art';
+  const preservedLearningEvidence = [
+    'title',
+    'description_snapshot',
+    'transcript_excerpt',
+    'thumbnail_ref',
+    'thumbnail_features',
+    'channel',
+    'metadata',
+    'score',
+    'content_class',
+    'route',
+    'class_confidence',
+    'adversarial_guard',
+    'feedback',
+    'verify_report_outcome',
+    'user_correction',
+    'later_adjudication_state',
+  ];
+
+  if (
+    creative &&
+    contentClassConfidence >= 0.62 &&
+    !negativeChannelHistory &&
+    !fakeOfficialClaim &&
+    !scammyDescription
+  ) {
+    return {
+      content_class: contentClass,
+      class_confidence: Number(contentClassConfidence.toFixed(2)),
+      runtime_route: 'minimal_creative',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: 'clean',
+      mismatch_pressure: 'reduced',
+      required_runtime_evidence: ['title', 'channel_sanity', 'light_spam_check'],
+      preserved_learning_evidence: preservedLearningEvidence,
+      route_reasons: [
+        'Title or taxonomy indicates creative music/art context.',
+        'No suspicious factual claim detected.',
+      ],
+    };
+  }
+
+  if (creative && (negativeChannelHistory || fakeOfficialClaim || scammyDescription)) {
+    return {
+      content_class: contentClass,
+      class_confidence: Number(contentClassConfidence.toFixed(2)),
+      runtime_route: 'ambiguous_escalated',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: 'triggered',
+      mismatch_pressure: 'normal',
+      required_runtime_evidence: ['title', 'description', 'thumbnail', 'channel_history', 'light_spam_check'],
+      preserved_learning_evidence: preservedLearningEvidence,
+      route_reasons: ['Creative-looking context requires adversarial guard escalation.'],
+    };
+  }
+
+  if (contentClass === 'news' || fakeOfficialClaim) {
+    return {
+      content_class: contentClass,
+      class_confidence: Number(contentClassConfidence.toFixed(2)),
+      runtime_route: 'high_risk_factual',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: fakeOfficialClaim ? 'triggered' : 'clean',
+      mismatch_pressure: 'elevated',
+      required_runtime_evidence: [
+        'title',
+        'description',
+        'thumbnail',
+        'channel_history',
+        'light_spam_check',
+        'factual_claim_guard',
+      ],
+      preserved_learning_evidence: preservedLearningEvidence,
+      route_reasons: ['Factual or high-risk claim context requires strong consistency analysis.'],
+    };
+  }
+
+  if (contentClass === 'commentary' || contentClass === 'documentary') {
+    return {
+      content_class: contentClass,
+      class_confidence: Number(contentClassConfidence.toFixed(2)),
+      runtime_route: 'informational_consistency',
+      learning_capture_plan: 'full_multimodal_capture',
+      adversarial_guard: 'clean',
+      mismatch_pressure: 'normal',
+      required_runtime_evidence: ['title', 'description', 'thumbnail', 'channel_context', 'light_spam_check'],
+      preserved_learning_evidence: preservedLearningEvidence,
+      route_reasons: ['Informational content expects cross-signal consistency.'],
+    };
+  }
+
+  return {
+    content_class: contentClass,
+    class_confidence: Number(contentClassConfidence.toFixed(2)),
+    runtime_route: 'ambiguous_escalated',
+    learning_capture_plan: 'full_multimodal_capture',
+    adversarial_guard: 'triggered',
+    mismatch_pressure: 'normal',
+    required_runtime_evidence: ['title', 'description', 'thumbnail', 'channel_history', 'light_spam_check'],
+    preserved_learning_evidence: preservedLearningEvidence,
+    route_reasons: ['Available signals are insufficient for a light route.'],
+  };
+}
+
 export function createBootstrapScore(item: ScoreItemRequest): ScoreResult {
   const title = item.title.toLowerCase();
   const hits = suspiciousTokens.filter((token) => title.includes(token)).length;
@@ -98,6 +223,11 @@ export function createBootstrapScore(item: ScoreItemRequest): ScoreResult {
       : 0;
   const contentClass = inferContentClass(item);
   const contentClassConfidence = contentClass === 'unknown' ? 0.32 : 0.72;
+  const semanticEvidenceRoute = createSemanticEvidenceRoute(
+    item,
+    contentClass,
+    contentClassConfidence,
+  );
   const strictBias = item.user_context.strict_mode ? 0.05 : 0;
   const viewCountLog = Math.log10((item.metadata.view_count ?? 0) + 1);
   const durationFactor = clamp((item.metadata.duration_seconds ?? 0) / 1800, 0, 1);
@@ -192,6 +322,7 @@ export function createBootstrapScore(item: ScoreItemRequest): ScoreResult {
     uncertainty: Number((1 - confidence).toFixed(2)),
     content_class: contentClass,
     content_class_confidence: Number(contentClassConfidence.toFixed(2)),
+    semantic_evidence_route: semanticEvidenceRoute,
     bias_profile: {
       metrics: {
         sensational_weight: Number(Math.min(1, hits * 0.2 + curiosityHits * 0.14).toFixed(2)),

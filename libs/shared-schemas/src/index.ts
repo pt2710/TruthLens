@@ -20,6 +20,70 @@ export const contentClassSchema = z.enum([
   'unknown',
 ]);
 
+export const runtimeRouteSchema = z.enum([
+  'minimal_creative',
+  'informational_consistency',
+  'high_risk_factual',
+  'ambiguous_escalated',
+]);
+
+export const learningCapturePlanSchema = z.enum(['full_multimodal_capture']);
+
+export const adversarialGuardStateSchema = z.enum(['clean', 'triggered']);
+
+export const mismatchPressureSchema = z.enum(['reduced', 'normal', 'elevated']);
+
+const defaultRequiredRuntimeEvidence = [
+  'title',
+  'description',
+  'thumbnail',
+  'channel_history',
+  'light_spam_check',
+] as const;
+
+const defaultPreservedLearningEvidence = [
+  'title',
+  'description_snapshot',
+  'transcript_excerpt',
+  'thumbnail_ref',
+  'thumbnail_features',
+  'channel',
+  'metadata',
+  'score',
+  'content_class',
+  'route',
+  'class_confidence',
+  'adversarial_guard',
+  'feedback',
+  'verify_report_outcome',
+  'user_correction',
+  'later_adjudication_state',
+] as const;
+
+export const adaptiveSemanticEvidenceRouteSchema = z
+  .object({
+    content_class: contentClassSchema.default('unknown'),
+    class_confidence: z.number().min(0).max(1).default(0),
+    runtime_route: runtimeRouteSchema.default('ambiguous_escalated'),
+    learning_capture_plan: learningCapturePlanSchema.default('full_multimodal_capture'),
+    adversarial_guard: adversarialGuardStateSchema.default('triggered'),
+    mismatch_pressure: mismatchPressureSchema.default('normal'),
+    required_runtime_evidence: z.array(z.string()).default([...defaultRequiredRuntimeEvidence]),
+    preserved_learning_evidence: z.array(z.string()).default([...defaultPreservedLearningEvidence]),
+    route_reasons: z.array(z.string()).default([]),
+  })
+  .default({
+    content_class: 'unknown',
+    class_confidence: 0,
+    runtime_route: 'ambiguous_escalated',
+    learning_capture_plan: 'full_multimodal_capture',
+    adversarial_guard: 'triggered',
+    mismatch_pressure: 'normal',
+    required_runtime_evidence: [...defaultRequiredRuntimeEvidence],
+    preserved_learning_evidence: [...defaultPreservedLearningEvidence],
+    route_reasons: [],
+  });
+
 export const channelInfoSchema = z.object({
   channel_name: z.string().min(1),
   channel_url: z.string().url().optional().nullable(),
@@ -70,6 +134,7 @@ export const observationScoreSnapshotSchema = z.object({
   recommended_action: recommendedActionSchema.default('none'),
   content_class: contentClassSchema.default('unknown'),
   content_class_confidence: z.number().min(0).max(1).default(0),
+  semantic_evidence_route: adaptiveSemanticEvidenceRouteSchema,
   explanation_id: z.string().optional().nullable(),
 });
 
@@ -535,6 +600,7 @@ export const scoreResultSchema = z
     path_contributors: z.record(z.array(z.string())).default({}),
     content_class: contentClassSchema.default('unknown'),
     content_class_confidence: z.number().min(0).max(1).default(0),
+    semantic_evidence_route: adaptiveSemanticEvidenceRouteSchema,
     bias_profile: biasProfileSchema.default({
       metrics: {},
       positive_biases: [],
@@ -618,6 +684,7 @@ export const feedbackEventSchema = z.object({
   timestamp: z.string().min(1),
   runtime_context: runtimeContextSchema.optional().nullable(),
   artifact_provenance: artifactProvenanceSchema.optional().nullable(),
+  semantic_evidence_route: adaptiveSemanticEvidenceRouteSchema.optional().nullable(),
   manual_report: manualReportSchema.optional().nullable(),
   feedback_actor: z
     .object({
@@ -652,6 +719,11 @@ export const datasetRecordSchema = z.object({
 
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
 export type ContentClass = z.infer<typeof contentClassSchema>;
+export type RuntimeRoute = z.infer<typeof runtimeRouteSchema>;
+export type LearningCapturePlan = z.infer<typeof learningCapturePlanSchema>;
+export type AdversarialGuardState = z.infer<typeof adversarialGuardStateSchema>;
+export type MismatchPressure = z.infer<typeof mismatchPressureSchema>;
+export type AdaptiveSemanticEvidenceRoute = z.infer<typeof adaptiveSemanticEvidenceRouteSchema>;
 export type BatchScoreRequest = z.infer<typeof batchScoreRequestSchema>;
 export type BatchScoreResponse = z.infer<typeof batchScoreResponseSchema>;
 export type ScoreItemRequest = z.infer<typeof scoreItemRequestSchema>;

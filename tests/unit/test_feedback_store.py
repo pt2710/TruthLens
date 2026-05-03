@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import importlib
+import sqlite3
 
 import pytest
 
@@ -15,6 +16,35 @@ from truthlens_model_serving import (
     summarize_browser_observations,
     summarize_feedback_events,
 )
+
+
+def _semantic_route_payload() -> dict[str, object]:
+    return {
+        "content_class": "music",
+        "class_confidence": 0.91,
+        "runtime_route": "minimal_creative",
+        "learning_capture_plan": "full_multimodal_capture",
+        "adversarial_guard": "clean",
+        "mismatch_pressure": "reduced",
+        "required_runtime_evidence": ["title", "channel_sanity", "light_spam_check"],
+        "preserved_learning_evidence": [
+            "title",
+            "description_snapshot",
+            "transcript_excerpt",
+            "thumbnail_ref",
+            "thumbnail_features",
+            "channel",
+            "metadata",
+            "score",
+            "content_class",
+            "route",
+            "class_confidence",
+            "adversarial_guard",
+            "feedback",
+            "verify_report_outcome",
+        ],
+        "route_reasons": ["Title strongly matches instrumental/music pattern."],
+    }
 
 
 def test_feedback_events_are_persisted_to_sqlite_and_jsonl(
@@ -48,7 +78,172 @@ def test_feedback_events_are_persisted_to_sqlite_and_jsonl(
     assert jsonl_path.exists()
     assert len(rows) == 1
     assert rows[0]["explanation_id"] == "exp-1"
+    assert rows[0]["semantic_evidence_route"] is None
     assert summary["total_events"] == 1
+
+
+def test_route_metadata_persists_to_sqlite_and_jsonl(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    route = _semantic_route_payload()
+
+    append_feedback_event(
+        {
+            "feedback_id": "feedback-route-1",
+            "item_id": "item-route-1",
+            "item_hash": None,
+            "channel_name": "Aurora Beats",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "action_shown": "none",
+            "user_action": "confirm-transparent",
+            "explanation_id": None,
+            "before_score": 0.12,
+            "after_score": 0.1,
+            "timestamp": "2026-04-30T10:00:00Z",
+            "semantic_evidence_route": route,
+        }
+    )
+    append_score_event(
+        {
+            "item_id": "item-route-1",
+            "channel_name": "Aurora Beats",
+            "model_version": "test-model",
+            "policy_version": "test-policy",
+            "recommended_action": "none",
+            "risk_score": 0.12,
+            "confidence": 0.91,
+            "uncertainty": 0.09,
+            "content_class": "music",
+            "content_class_confidence": 0.91,
+            "semantic_evidence_route": route,
+            "explanation_id": None,
+            "timestamp": "2026-04-30T10:00:01Z",
+        }
+    )
+
+    feedback_rows = load_feedback_events()
+    score_rows = load_score_events()
+    feedback_jsonl = repo_root() / "artifacts" / "reports" / "feedback_events.jsonl"
+    score_jsonl = repo_root() / "artifacts" / "reports" / "score_events.jsonl"
+
+    assert feedback_rows[0]["semantic_evidence_route"]["runtime_route"] == "minimal_creative"
+    assert score_rows[0]["content_class"] == "music"
+    assert score_rows[0]["content_class_confidence"] == 0.91
+    assert score_rows[0]["semantic_evidence_route"]["learning_capture_plan"] == "full_multimodal_capture"
+    assert "semantic_evidence_route" in feedback_jsonl.read_text(encoding="utf-8")
+    assert "semantic_evidence_route" in score_jsonl.read_text(encoding="utf-8")
+
+
+def test_old_event_store_rows_without_route_still_load(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("TRUTHLENS_REPO_ROOT", str(tmp_path))
+    db_path = repo_root() / "artifacts" / "reports" / "feedback_events.sqlite3"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE feedback_events (
+                feedback_id TEXT,
+                item_id TEXT NOT NULL,
+                item_hash TEXT,
+                observation_id TEXT,
+                channel_name TEXT,
+                model_version TEXT NOT NULL,
+                policy_version TEXT NOT NULL,
+                action_shown TEXT NOT NULL,
+                user_action TEXT NOT NULL,
+                explanation_id TEXT,
+                before_score REAL,
+                after_score REAL,
+                timestamp TEXT NOT NULL,
+                runtime_context_json TEXT,
+                artifact_provenance_json TEXT,
+                manual_report_json TEXT,
+                feedback_actor_json TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO feedback_events (
+                feedback_id, item_id, item_hash, observation_id, channel_name,
+                model_version, policy_version, action_shown, user_action,
+                explanation_id, before_score, after_score, timestamp,
+                runtime_context_json, artifact_provenance_json, manual_report_json,
+                feedback_actor_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "feedback-old-1",
+                "item-old-1",
+                None,
+                None,
+                "Old Channel",
+                "test-model",
+                "test-policy",
+                "badge",
+                "report",
+                None,
+                0.55,
+                0.72,
+                "2026-04-30T10:00:00Z",
+                None,
+                None,
+                None,
+                None,
+            ),
+        )
+        connection.execute(
+            """
+            CREATE TABLE score_events (
+                item_id TEXT NOT NULL,
+                channel_name TEXT,
+                model_version TEXT NOT NULL,
+                policy_version TEXT NOT NULL,
+                recommended_action TEXT NOT NULL,
+                risk_score REAL NOT NULL,
+                confidence REAL NOT NULL,
+                uncertainty REAL NOT NULL,
+                explanation_id TEXT,
+                timestamp TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO score_events (
+                item_id, channel_name, model_version, policy_version,
+                recommended_action, risk_score, confidence, uncertainty,
+                explanation_id, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "item-old-1",
+                "Old Channel",
+                "test-model",
+                "test-policy",
+                "badge",
+                0.55,
+                0.72,
+                0.28,
+                None,
+                "2026-04-30T10:00:01Z",
+            ),
+        )
+        connection.commit()
+
+    feedback_rows = load_feedback_events()
+    score_rows = load_score_events()
+
+    assert feedback_rows[0]["feedback_id"] == "feedback-old-1"
+    assert feedback_rows[0]["semantic_evidence_route"] is None
+    assert score_rows[0]["item_id"] == "item-old-1"
+    assert score_rows[0]["semantic_evidence_route"] is None
 
 
 def test_browser_observations_are_persisted_to_sqlite_and_jsonl(
@@ -371,7 +566,7 @@ class _FakeConnection:
         normalized = " ".join(sql.split()).lower()
         if normalized.startswith("create table"):
             return _FakeCursor([])
-        if normalized.startswith("alter table feedback_events add column"):
+        if normalized.startswith("alter table"):
             return _FakeCursor([])
         if "insert into feedback_events" in normalized:
             self._store.feedback_events.append(params or ())
@@ -424,6 +619,7 @@ def test_postgres_runtime_event_store_persists_feedback_scores_and_observations(
 
     fake_store = _FakePgStore()
     monkeypatch.setattr(registry, "psycopg", _FakePsycopg(fake_store))
+    route = _semantic_route_payload()
 
     registry.ensure_runtime_event_store()
 
@@ -444,6 +640,7 @@ def test_postgres_runtime_event_store_persists_feedback_scores_and_observations(
             "timestamp": "2026-04-11T12:00:00Z",
             "runtime_context": {"surface": "extension-feed"},
             "manual_report": {"requested_outcome": "moderate"},
+            "semantic_evidence_route": route,
         }
     )
     append_score_event(
@@ -456,6 +653,9 @@ def test_postgres_runtime_event_store_persists_feedback_scores_and_observations(
             "risk_score": 0.81,
             "confidence": 0.73,
             "uncertainty": 0.19,
+            "content_class": "music",
+            "content_class_confidence": 0.91,
+            "semantic_evidence_route": route,
             "explanation_id": "exp-pg-1",
             "timestamp": "2026-04-11T12:00:05Z",
         }
@@ -489,8 +689,11 @@ def test_postgres_runtime_event_store_persists_feedback_scores_and_observations(
     assert len(feedback_rows) == 1
     assert feedback_rows[0]["feedback_id"] == "feedback-pg-1"
     assert feedback_rows[0]["runtime_context"] == {"surface": "extension-feed"}
+    assert feedback_rows[0]["semantic_evidence_route"]["runtime_route"] == "minimal_creative"
     assert len(score_rows) == 1
     assert score_rows[0]["recommended_action"] == "ask-report"
+    assert score_rows[0]["content_class"] == "music"
+    assert score_rows[0]["semantic_evidence_route"]["mismatch_pressure"] == "reduced"
     assert len(observation_rows) == 1
     assert observation_rows[0]["provenance"]["collector"] == "extension-dom"
     assert not (repo_root() / "artifacts" / "reports" / "feedback_events.jsonl").exists()

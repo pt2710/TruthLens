@@ -1128,6 +1128,7 @@ function createFeedbackPayload(
   explanationId: string | null,
   observationId: string | null,
   artifactProvenance: ScoreResult['artifact_provenance'],
+  semanticEvidenceRoute: ScoreResult['semantic_evidence_route'],
   afterScore = beforeScore,
 ) {
   return {
@@ -1150,6 +1151,7 @@ function createFeedbackPayload(
       source_provenance: window.location.pathname,
     },
     artifact_provenance: artifactProvenance,
+    semantic_evidence_route: semanticEvidenceRoute,
   } as const;
 }
 
@@ -1193,6 +1195,7 @@ function buildBrowserObservationRecord(
       recommended_action: score.recommended_action,
       content_class: score.content_class,
       content_class_confidence: score.content_class_confidence,
+      semantic_evidence_route: score.semantic_evidence_route,
       explanation_id: score.explanation_id,
     },
     provenance: {
@@ -1303,6 +1306,7 @@ function attachActions(
         score.explanation_id ?? null,
         card.getAttribute(OBSERVATION_ID),
         score.artifact_provenance,
+        score.semantic_evidence_route,
       ),
     );
     card.classList.remove('truthlens-card-hidden');
@@ -1321,6 +1325,7 @@ function attachActions(
         score.explanation_id ?? null,
         card.getAttribute(OBSERVATION_ID),
         score.artifact_provenance,
+        score.semantic_evidence_route,
       ),
     );
   });
@@ -1341,6 +1346,7 @@ function attachActions(
         score.explanation_id ?? null,
         card.getAttribute(OBSERVATION_ID),
         score.artifact_provenance,
+        score.semantic_evidence_route,
       ),
     );
   });

@@ -26,6 +26,74 @@ class ContentClass(str, Enum):
     UNKNOWN = "unknown"
 
 
+class RuntimeRoute(str, Enum):
+    MINIMAL_CREATIVE = "minimal_creative"
+    INFORMATIONAL_CONSISTENCY = "informational_consistency"
+    HIGH_RISK_FACTUAL = "high_risk_factual"
+    AMBIGUOUS_ESCALATED = "ambiguous_escalated"
+
+
+class LearningCapturePlan(str, Enum):
+    FULL_MULTIMODAL_CAPTURE = "full_multimodal_capture"
+
+
+class AdversarialGuardState(str, Enum):
+    CLEAN = "clean"
+    TRIGGERED = "triggered"
+
+
+class MismatchPressure(str, Enum):
+    REDUCED = "reduced"
+    NORMAL = "normal"
+    ELEVATED = "elevated"
+
+
+DEFAULT_REQUIRED_RUNTIME_EVIDENCE = [
+    "title",
+    "description",
+    "thumbnail",
+    "channel_history",
+    "light_spam_check",
+]
+
+DEFAULT_PRESERVED_LEARNING_EVIDENCE = [
+    "title",
+    "description_snapshot",
+    "transcript_excerpt",
+    "thumbnail_ref",
+    "thumbnail_features",
+    "channel",
+    "metadata",
+    "score",
+    "content_class",
+    "route",
+    "class_confidence",
+    "adversarial_guard",
+    "feedback",
+    "verify_report_outcome",
+    "user_correction",
+    "later_adjudication_state",
+]
+
+
+class AdaptiveSemanticEvidenceRoute(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content_class: ContentClass = ContentClass.UNKNOWN
+    class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    runtime_route: RuntimeRoute = RuntimeRoute.AMBIGUOUS_ESCALATED
+    learning_capture_plan: LearningCapturePlan = LearningCapturePlan.FULL_MULTIMODAL_CAPTURE
+    adversarial_guard: AdversarialGuardState = AdversarialGuardState.TRIGGERED
+    mismatch_pressure: MismatchPressure = MismatchPressure.NORMAL
+    required_runtime_evidence: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_REQUIRED_RUNTIME_EVIDENCE)
+    )
+    preserved_learning_evidence: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_PRESERVED_LEARNING_EVIDENCE)
+    )
+    route_reasons: list[str] = Field(default_factory=list)
+
+
 class ChannelInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -93,6 +161,9 @@ class ObservationScoreSnapshot(BaseModel):
     recommended_action: RecommendedAction = RecommendedAction.NONE
     content_class: ContentClass = ContentClass.UNKNOWN
     content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    semantic_evidence_route: AdaptiveSemanticEvidenceRoute = Field(
+        default_factory=AdaptiveSemanticEvidenceRoute
+    )
     explanation_id: str | None = None
 
 
@@ -577,6 +648,9 @@ class ScoreResult(BaseModel):
     path_contributors: dict[str, list[str]] = Field(default_factory=dict)
     content_class: ContentClass = ContentClass.UNKNOWN
     content_class_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    semantic_evidence_route: AdaptiveSemanticEvidenceRoute = Field(
+        default_factory=AdaptiveSemanticEvidenceRoute
+    )
     bias_profile: BiasProfile = Field(default_factory=BiasProfile)
     verification: VerificationProvenance = Field(default_factory=VerificationProvenance)
     action_decision_basis: ActionDecisionBasis = Field(default_factory=ActionDecisionBasis)
@@ -633,6 +707,7 @@ class FeedbackEvent(BaseModel):
     timestamp: str = Field(min_length=1)
     runtime_context: RuntimeContext | None = None
     artifact_provenance: ArtifactProvenance | None = None
+    semantic_evidence_route: AdaptiveSemanticEvidenceRoute | None = None
     manual_report: ManualReport | None = None
     feedback_actor: dict[str, Any] | None = None
 

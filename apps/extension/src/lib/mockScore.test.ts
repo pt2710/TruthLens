@@ -77,6 +77,8 @@ describe('createBootstrapScore', () => {
 
     expect(result.content_class).toBe('music');
     expect(result.content_class_confidence).toBeGreaterThan(0.7);
+    expect(result.semantic_evidence_route.runtime_route).toBe('minimal_creative');
+    expect(result.semantic_evidence_route.learning_capture_plan).toBe('full_multimodal_capture');
   });
 
   it('detects art uploads from gallery and sketchbook framing', () => {
@@ -101,5 +103,31 @@ describe('createBootstrapScore', () => {
 
     expect(result.content_class).toBe('art');
     expect(result.content_class_confidence).toBeGreaterThan(0.7);
+    expect(result.semantic_evidence_route.runtime_route).toBe('minimal_creative');
+  });
+
+  it('does not let music keywords bypass fake official claim scrutiny', () => {
+    const result = createBootstrapScore(scoreItemRequestSchema.parse({
+      item_id: 'card-5',
+      title: 'Lo-fi hiphop instrumental - official government warning confirmed',
+      description_snapshot: 'Urgent official report says to claim now through Telegram.',
+      thumbnail_ref: null,
+      transcript_excerpt: null,
+      metadata: {},
+      channel: {
+        channel_name: 'Nova Beats',
+        prior_flags: 0,
+        channel_history_features: {},
+      },
+      user_context: {
+        strict_mode: false,
+        muted_channels: [],
+        prior_corrections: 0,
+      },
+    }));
+
+    expect(result.content_class).toBe('music');
+    expect(result.semantic_evidence_route.runtime_route).toBe('ambiguous_escalated');
+    expect(result.semantic_evidence_route.adversarial_guard).toBe('triggered');
   });
 });
