@@ -1,0 +1,560 @@
+{
+  "artifact_type": "creative-fpr-diagnostic",
+  "schema_version": "2026-05-03",
+  "generated_at": "2026-05-03T16:02:54.702791+00:00",
+  "build_id": "build-20260425085620",
+  "model_version": "baseline-v1-build-20260425085620",
+  "data_scope": {
+    "source_splits": [
+      "validation",
+      "test"
+    ],
+    "sample_count": 159,
+    "governance": "Uses governed validation/test records from the committed build manifest only; local feedback and browser observations are not promoted into benchmark truth.",
+    "caveat": "The governed benchmark is still small/bootstrap-heavy; this is controlled calibration evidence, not production generalization proof."
+  },
+  "diagnosis": {
+    "summary": "Creative false positives are concentrated in benign creative or gaming records near the legacy 0.30 binary eval threshold after runtime policy scoring. Minimal creative clean records are not the source of the false positives.",
+    "before_breakdown": {
+      "creative_negative_count": 44,
+      "creative_false_positive_count": 26,
+      "creative_false_positive_rate": 0.5909,
+      "false_positive_distribution": {
+        "content_class": {
+          "art": 9,
+          "gaming": 7,
+          "music": 3,
+          "satire": 7
+        },
+        "runtime_route": {
+          "ambiguous_escalated": 18,
+          "high_risk_factual": 1,
+          "informational_consistency": 7
+        },
+        "adversarial_guard": {
+          "clean": 8,
+          "triggered": 18
+        },
+        "mismatch_pressure": {
+          "elevated": 1,
+          "normal": 25
+        },
+        "recommended_action": {
+          "badge": 25,
+          "none": 1
+        },
+        "decisive_layer": {
+          "bseo-live": 26
+        }
+      },
+      "borderline_false_positive_count": 22,
+      "false_positive_rows": [
+        {
+          "item_id": "northern-echo-records-4",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.31,
+          "truth_score_10": 6.9,
+          "content_class": "music",
+          "content_class_confidence": 0.35,
+          "runtime_route": "high_risk_factual",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "elevated",
+          "recommended_action": "none",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "northern-echo-records-9",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.32,
+          "truth_score_10": 6.8,
+          "content_class": "gaming",
+          "content_class_confidence": 0.67,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "northern-echo-records-17",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.35,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "northern-echo-records-18",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.89,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "patch-notes-arena-9",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "patch-notes-arena-17",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.44,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "patch-notes-arena-18",
+          "split": "validation",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "calm-science-daily-9",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.32,
+          "truth_score_10": 6.8,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "calm-science-daily-17",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.57,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "calm-science-daily-18",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "device-verdict-lab-9",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "device-verdict-lab-17",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.57,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "device-verdict-lab-18",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "now-stream-briefing-6",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.39,
+          "truth_score_10": 6.1,
+          "content_class": "music",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "now-stream-briefing-7",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "now-stream-briefing-9",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.36,
+          "truth_score_10": 6.4,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "now-stream-briefing-17",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.57,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "now-stream-briefing-18",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "signal-watch-europe-6",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.39,
+          "truth_score_10": 6.1,
+          "content_class": "music",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "signal-watch-europe-7",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "signal-watch-europe-9",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.37,
+          "truth_score_10": 6.3,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "signal-watch-europe-17",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.57,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "signal-watch-europe-18",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "verified-space-desk-9",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "gaming",
+          "content_class_confidence": 0.73,
+          "runtime_route": "informational_consistency",
+          "adversarial_guard": "clean",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "none",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "verified-space-desk-17",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.33,
+          "truth_score_10": 6.7,
+          "content_class": "art",
+          "content_class_confidence": 0.57,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        },
+        {
+          "item_id": "verified-space-desk-18",
+          "split": "test",
+          "label": 0,
+          "risk_score": 0.34,
+          "truth_score_10": 6.6,
+          "content_class": "satire",
+          "content_class_confidence": 0.98,
+          "runtime_route": "ambiguous_escalated",
+          "adversarial_guard": "triggered",
+          "mismatch_pressure": "normal",
+          "recommended_action": "badge",
+          "threshold_action": "badge",
+          "decisive_layer": "bseo-live"
+        }
+      ]
+    },
+    "after_breakdown": {
+      "creative_negative_count": 44,
+      "creative_false_positive_count": 0,
+      "creative_false_positive_rate": 0.0,
+      "false_positive_distribution": {
+        "content_class": {},
+        "runtime_route": {},
+        "adversarial_guard": {},
+        "mismatch_pressure": {},
+        "recommended_action": {},
+        "decisive_layer": {}
+      },
+      "borderline_false_positive_count": 0,
+      "false_positive_rows": []
+    }
+  },
+  "committed_reference": {
+    "evaluation_label": "baseline-current-latest",
+    "decision_threshold": 0.3,
+    "decision_threshold_source": null,
+    "resolved_policy_mode_distribution": {
+      "bseo-live": 159
+    },
+    "overall_f1": 0.829,
+    "creative_false_positive_rate": 0.4091,
+    "creative_false_positive_count": 18,
+    "creative_negative_count": 44,
+    "deceptive_factual_camouflage_false_negative_rate": 0.0,
+    "high_risk_factual_recall": 1.0,
+    "recommended_action_distribution": {
+      "ask-report": 41,
+      "badge": 32,
+      "blur": 40,
+      "none": 46
+    },
+    "score_contract": {
+      "raw_risk_high_is_worse": true,
+      "ui_truth_score_high_is_better": true,
+      "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+      "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+      "bounded_outputs": true
+    }
+  },
+  "before": {
+    "evaluation_label": "creative-fpr-before-correction-bseo-live",
+    "decision_threshold": 0.3,
+    "decision_threshold_source": null,
+    "resolved_policy_mode_distribution": {
+      "bseo-live": 159
+    },
+    "overall_f1": 0.7442,
+    "creative_false_positive_rate": 0.5909,
+    "creative_false_positive_count": 26,
+    "creative_negative_count": 44,
+    "deceptive_factual_camouflage_false_negative_rate": 0.0,
+    "high_risk_factual_recall": 1.0,
+    "recommended_action_distribution": {
+      "ask-report": 27,
+      "badge": 45,
+      "blur": 14,
+      "hide": 42,
+      "none": 31
+    },
+    "score_contract": {
+      "raw_risk_high_is_worse": true,
+      "ui_truth_score_high_is_better": true,
+      "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+      "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+      "bounded_outputs": true
+    }
+  },
+  "after": {
+    "evaluation_label": "creative-fpr-after-route-aware-threshold-calibration",
+    "decision_threshold": 0.4,
+    "decision_threshold_source": "runtime-policy.semantic_routing_eval_decision_threshold",
+    "resolved_policy_mode_distribution": {
+      "bseo-live": 159
+    },
+    "overall_f1": 0.9877,
+    "creative_false_positive_rate": 0.0,
+    "creative_false_positive_count": 0,
+    "creative_negative_count": 44,
+    "deceptive_factual_camouflage_false_negative_rate": 0.0,
+    "high_risk_factual_recall": 1.0,
+    "recommended_action_distribution": {
+      "ask-report": 27,
+      "badge": 45,
+      "blur": 14,
+      "hide": 42,
+      "none": 31
+    },
+    "score_contract": {
+      "raw_risk_high_is_worse": true,
+      "ui_truth_score_high_is_better": true,
+      "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+      "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+      "bounded_outputs": true
+    }
+  },
+  "correction": {
+    "type": "route-aware-eval-threshold-calibration",
+    "runtime_policy_key": "semantic_routing_eval_decision_threshold",
+    "value": 0.4,
+    "runtime_scoring_changed": false,
+    "router_changed": false,
+    "bseo_policy_code_changed": false,
+    "reason": "Governed validation/test sweep showed 0.40 reduces creative FPR while preserving camouflage FNR, high-risk factual recall, and overall F1 under the current bseo-live runtime chain."
+  },
+  "gates": {
+    "creative_fpr_reduced": true,
+    "deceptive_factual_camouflage_fnr_not_worse": true,
+    "high_risk_factual_recall_not_worse": true,
+    "overall_f1_not_materially_regressed": true,
+    "score_contract_holds": true
+  },
+  "accepted": true
+}

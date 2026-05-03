@@ -58,6 +58,7 @@ def test_training_and_simulation_generate_artifacts(
     simulation_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-simulation.json")
     semantic_routing_eval = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-semantic-routing-eval.json")
     calibration_decision = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-calibration-decision.json")
+    creative_fpr_diagnostic = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-creative-fpr-diagnostic.json")
     bseo_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-report.json")
     bseo_lineage = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-lineage.json")
     bseo_atlas = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-mutation-bias-atlas.json")
@@ -124,6 +125,10 @@ def test_training_and_simulation_generate_artifacts(
     assert "bandit_threshold_adjustments" in simulation_report
     assert semantic_routing_eval["artifact_type"] == "semantic-routing-evaluation"
     assert semantic_routing_eval["sample_count"] > 0
+    assert semantic_routing_eval["decision_threshold_source"] in {
+        "model_info.decision_threshold",
+        "runtime-policy.semantic_routing_eval_decision_threshold",
+    }
     assert "minimal_creative" in semantic_routing_eval["route_segments"]
     assert "high_risk_factual" in semantic_routing_eval["route_segments"]
     assert semantic_routing_eval["architecture_checks"]["score_contract"]["raw_risk_high_is_worse"] is True
@@ -131,6 +136,10 @@ def test_training_and_simulation_generate_artifacts(
     assert calibration_decision["artifact_type"] == "calibration-hyperparameter-decision"
     assert "threshold_calibration" in calibration_decision["parameters"]
     assert "creative_discount_bounds" in calibration_decision["parameters"]
+    assert creative_fpr_diagnostic["artifact_type"] == "creative-fpr-diagnostic"
+    assert "before" in creative_fpr_diagnostic
+    assert "after" in creative_fpr_diagnostic
+    assert "gates" in creative_fpr_diagnostic
     assert simulation_report["replay_summary"]["steps"] > 0
     assert bseo_report["policy_version"] == "bseo-control-policy-v1"
     assert bseo_lineage

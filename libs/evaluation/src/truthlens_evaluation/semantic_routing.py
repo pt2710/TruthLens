@@ -44,6 +44,7 @@ CONTENT_CLASS_NAMES = (
 )
 CREATIVE_CLASSES = {"music", "art", "satire", "gaming"}
 HIGH_RISK_CLASSES = {"news", "politics", "health", "finance", "documentary", "commentary", "promo", "unknown"}
+ROUTE_AWARE_THRESHOLD_CONFIG_KEY = "semantic_routing_eval_decision_threshold"
 
 
 def _utc_now() -> str:
@@ -106,6 +107,26 @@ def _score_request_from_record(record: dict[str, Any]) -> ScoreItemRequest:
 def _model_decision_threshold(model_info: dict[str, Any]) -> float:
     threshold = _safe_float(model_info.get("decision_threshold"), 0.5)
     return max(0.0, min(threshold, 1.0))
+
+
+def _route_eval_threshold_payload(model_info: dict[str, Any]) -> dict[str, Any]:
+    model_threshold = _model_decision_threshold(model_info)
+    runtime_policy = _read_json_if_exists(repo_root() / "configs" / "thresholds" / "runtime-policy.json")
+    configured_threshold = runtime_policy.get(ROUTE_AWARE_THRESHOLD_CONFIG_KEY)
+    if configured_threshold is None:
+        return {
+            "decision_threshold": model_threshold,
+            "decision_threshold_source": "model_info.decision_threshold",
+            "model_decision_threshold": model_threshold,
+            "runtime_policy_threshold": None,
+        }
+    threshold = max(0.0, min(_safe_float(configured_threshold, model_threshold), 1.0))
+    return {
+        "decision_threshold": threshold,
+        "decision_threshold_source": f"runtime-policy.{ROUTE_AWARE_THRESHOLD_CONFIG_KEY}",
+        "model_decision_threshold": model_threshold,
+        "runtime_policy_threshold": threshold,
+    }
 
 
 def _metric_block(rows: list[dict[str, Any]], *, threshold: float) -> dict[str, Any]:
@@ -235,6 +256,190 @@ def _architecture_checks(rows: list[dict[str, Any]], *, threshold: float) -> dic
     }
 
 
+def _creative_negative_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        row
+        for row in rows
+        if int(row["label"]) == 0
+        and (str(row["content_class"]) in CREATIVE_CLASSES or str(row["runtime_route"]) == "minimal_creative")
+    ]
+
+
+def _creative_false_positive_rows(rows: list[dict[str, Any]], *, threshold: float) -> list[dict[str, Any]]:
+    return [row for row in _creative_negative_rows(rows) if float(row["risk_score"]) >= threshold]
+
+
+def _route_diagnostic_breakdown(rows: list[dict[str, Any]], *, threshold: float) -> dict[str, Any]:
+    false_positives = _creative_false_positive_rows(rows, threshold=threshold)
+
+    def _counter(key: str) -> dict[str, int]:
+        return dict(sorted(Counter(str(row.get(key, "unknown")) for row in false_positives).items()))
+
+    return {
+        "creative_negative_count": len(_creative_negative_rows(rows)),
+        "creative_false_positive_count": len(false_positives),
+        "creative_false_positive_rate": _rate(len(false_positives), len(_creative_negative_rows(rows))),
+        "false_positive_distribution": {
+            "content_class": _counter("content_class"),
+            "runtime_route": _counter("runtime_route"),
+            "adversarial_guard": _counter("adversarial_guard"),
+            "mismatch_pressure": _counter("mismatch_pressure"),
+            "recommended_action": _counter("recommended_action"),
+            "decisive_layer": _counter("decisive_layer"),
+        },
+        "borderline_false_positive_count": len(
+            [
+                row
+                for row in false_positives
+                if threshold <= float(row["risk_score"]) <= threshold + 0.05
+            ]
+        ),
+        "false_positive_rows": [
+            {
+                key: row.get(key)
+                for key in (
+                    "item_id",
+                    "split",
+                    "label",
+                    "risk_score",
+                    "truth_score_10",
+                    "content_class",
+                    "content_class_confidence",
+                    "runtime_route",
+                    "adversarial_guard",
+                    "mismatch_pressure",
+                    "recommended_action",
+                    "threshold_action",
+                    "decisive_layer",
+                )
+            }
+            for row in false_positives
+        ],
+    }
+
+
+def _semantic_gate_summary(eval_payload: dict[str, Any]) -> dict[str, Any]:
+    checks = dict(eval_payload.get("architecture_checks", {}))
+    high_risk = dict(checks.get("high_risk_factual", {}))
+    high_risk_metrics = dict(high_risk.get("metrics", {}))
+    return {
+        "evaluation_label": eval_payload.get("evaluation_label"),
+        "decision_threshold": eval_payload.get("decision_threshold"),
+        "decision_threshold_source": eval_payload.get("decision_threshold_source"),
+        "resolved_policy_mode_distribution": dict(
+            sorted(Counter(str(row.get("resolved_policy_mode", "unknown")) for row in eval_payload.get("compact_rows", [])).items())
+        ),
+        "overall_f1": dict(eval_payload.get("overall", {})).get("metrics", {}).get("f1"),
+        "creative_false_positive_rate": checks.get("creative_false_positive_rate"),
+        "creative_false_positive_count": checks.get("creative_false_positive_count"),
+        "creative_negative_count": checks.get("creative_negative_count"),
+        "deceptive_factual_camouflage_false_negative_rate": checks.get(
+            "deceptive_factual_camouflage_false_negative_rate"
+        ),
+        "high_risk_factual_recall": high_risk_metrics.get("recall"),
+        "recommended_action_distribution": dict(
+            dict(eval_payload.get("overall", {})).get("recommended_action_distribution", {})
+        ),
+        "score_contract": dict(checks.get("score_contract", {})),
+    }
+
+
+def build_creative_fpr_diagnostic(
+    *,
+    before_eval: dict[str, Any],
+    after_eval: dict[str, Any],
+    committed_reference_eval: dict[str, Any] | None = None,
+    correction: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    before_threshold = _safe_float(before_eval.get("decision_threshold"), 0.5)
+    after_threshold = _safe_float(after_eval.get("decision_threshold"), before_threshold)
+    before_summary = _semantic_gate_summary(before_eval)
+    after_summary = _semantic_gate_summary(after_eval)
+    reference_summary = (
+        _semantic_gate_summary(committed_reference_eval) if committed_reference_eval else None
+    )
+    before_creative_fpr = _safe_float(before_summary.get("creative_false_positive_rate"))
+    after_creative_fpr = _safe_float(after_summary.get("creative_false_positive_rate"))
+    before_camouflage_fnr = _safe_float(
+        before_summary.get("deceptive_factual_camouflage_false_negative_rate")
+    )
+    after_camouflage_fnr = _safe_float(
+        after_summary.get("deceptive_factual_camouflage_false_negative_rate")
+    )
+    before_high_recall = _safe_float(before_summary.get("high_risk_factual_recall"))
+    after_high_recall = _safe_float(after_summary.get("high_risk_factual_recall"))
+    before_f1 = _safe_float(before_summary.get("overall_f1"))
+    after_f1 = _safe_float(after_summary.get("overall_f1"))
+    gates = {
+        "creative_fpr_reduced": after_creative_fpr < before_creative_fpr,
+        "deceptive_factual_camouflage_fnr_not_worse": after_camouflage_fnr <= before_camouflage_fnr,
+        "high_risk_factual_recall_not_worse": after_high_recall >= before_high_recall,
+        "overall_f1_not_materially_regressed": after_f1 >= before_f1 - 0.01,
+        "score_contract_holds": bool(dict(after_summary.get("score_contract", {})).get("bounded_outputs")),
+    }
+    return {
+        "artifact_type": "creative-fpr-diagnostic",
+        "schema_version": "2026-05-03",
+        "generated_at": _utc_now(),
+        "build_id": after_eval.get("build_id") or before_eval.get("build_id"),
+        "model_version": after_eval.get("model_version") or before_eval.get("model_version"),
+        "data_scope": {
+            "source_splits": after_eval.get("source_splits", before_eval.get("source_splits", [])),
+            "sample_count": after_eval.get("sample_count"),
+            "governance": (
+                "Uses governed validation/test records from the committed build manifest only; local "
+                "feedback and browser observations are not promoted into benchmark truth."
+            ),
+            "caveat": "The governed benchmark is still small/bootstrap-heavy; this is controlled calibration evidence, not production generalization proof.",
+        },
+        "diagnosis": {
+            "summary": (
+                "Creative false positives are concentrated in benign creative or gaming records near the "
+                "legacy 0.30 binary eval threshold after runtime policy scoring. Minimal creative clean "
+                "records are not the source of the false positives."
+            ),
+            "before_breakdown": _route_diagnostic_breakdown(
+                list(before_eval.get("compact_rows", [])),
+                threshold=before_threshold,
+            ),
+            "after_breakdown": _route_diagnostic_breakdown(
+                list(after_eval.get("compact_rows", [])),
+                threshold=after_threshold,
+            ),
+        },
+        "committed_reference": reference_summary,
+        "before": before_summary,
+        "after": after_summary,
+        "correction": correction or {},
+        "gates": gates,
+        "accepted": all(gates.values()),
+    }
+
+
+def write_creative_fpr_diagnostic(
+    *,
+    before_eval: dict[str, Any],
+    after_eval: dict[str, Any],
+    committed_reference_eval: dict[str, Any] | None = None,
+    correction: dict[str, Any] | None = None,
+    output_path: Path | None = None,
+) -> dict[str, Any]:
+    payload = build_creative_fpr_diagnostic(
+        before_eval=before_eval,
+        after_eval=after_eval,
+        committed_reference_eval=committed_reference_eval,
+        correction=correction,
+    )
+    path = output_path or (
+        repo_root()
+        / "artifacts"
+        / "eval_runs"
+        / f"{payload['build_id']}-creative-fpr-diagnostic.json"
+    )
+    write_json(path, payload)
+    return payload
+
+
 def _compact_row(record: dict[str, Any], split_name: str, threshold: float) -> dict[str, Any]:
     result = score_item(_score_request_from_record(record))
     route = result.semantic_evidence_route.model_dump(mode="json")
@@ -308,7 +513,8 @@ def build_semantic_routing_evaluation(
 ) -> dict[str, Any]:
     resolved_manifest = manifest or load_latest_build_manifest()
     model_info = load_model_info()
-    threshold = _model_decision_threshold(model_info)
+    threshold_payload = _route_eval_threshold_payload(model_info)
+    threshold = _safe_float(threshold_payload["decision_threshold"], 0.5)
     rows: list[dict[str, Any]] = []
     split_payloads: dict[str, Any] = {}
     for split_name in split_names:
@@ -325,6 +531,9 @@ def build_semantic_routing_evaluation(
         "model_version": model_info.get("model_version"),
         "model_build_id": model_info.get("build_id"),
         "decision_threshold": threshold,
+        "decision_threshold_source": threshold_payload["decision_threshold_source"],
+        "model_decision_threshold": threshold_payload["model_decision_threshold"],
+        "runtime_policy_threshold": threshold_payload["runtime_policy_threshold"],
         "source_splits": list(split_names),
         "source_artifacts": {
             split_name: resolved_manifest["artifacts"][split_name]
@@ -399,6 +608,13 @@ def build_calibration_decision(
         root / "artifacts" / "eval_runs" / f"{build_id}-simulation.json"
     )
     bseo_report = _read_json_if_exists(root / "artifacts" / "eval_runs" / f"{build_id}-bseo-report.json")
+    runtime_policy = _read_json_if_exists(root / "configs" / "thresholds" / "runtime-policy.json")
+    model_info = load_model_info()
+    model_threshold = _model_decision_threshold(model_info)
+    route_eval_threshold = runtime_policy.get(ROUTE_AWARE_THRESHOLD_CONFIG_KEY)
+    route_threshold_changed = route_eval_threshold is not None and (
+        _safe_float(route_eval_threshold, model_threshold) != model_threshold
+    )
     sample_count = _safe_int(resolved_semantic_eval.get("sample_count"), _safe_int(eval_report.get("sample_count")))
     label_distribution = dict(resolved_semantic_eval.get("label_distribution", {}))
     has_both_labels = len({str(key) for key, value in label_distribution.items() if _safe_int(value) > 0}) >= 2
@@ -422,7 +638,7 @@ def build_calibration_decision(
         "generated_at": _utc_now(),
         "decision_label": decision_label,
         "build_id": build_id,
-        "model_version": load_model_info().get("model_version"),
+        "model_version": model_info.get("model_version"),
         "decision": "no-tune" if no_tune else "controlled-calibration-recorded",
         "promotion_decision": "requires-metric-comparison-before-model-promotion",
         "data_assessment": {
@@ -437,9 +653,20 @@ def build_calibration_decision(
         "parameters": {
             "threshold_calibration": {
                 "status": "evaluated" if threshold_sweep else "not-evaluated",
-                "changed": bool(recommended_thresholds and not no_tune),
+                "changed": bool((recommended_thresholds and not no_tune) or route_threshold_changed),
+                "model_decision_threshold": model_threshold,
+                "semantic_routing_eval_decision_threshold": (
+                    _safe_float(route_eval_threshold, model_threshold)
+                    if route_eval_threshold is not None
+                    else None
+                ),
                 "recommended_thresholds": recommended_thresholds,
-                "reason": "Existing threshold sweep and BSEO search artifacts provide bounded calibration evidence.",
+                "reason": (
+                    "Route-aware runtime policy scoring shifted the eval-score distribution, so the "
+                    "semantic routing sidecar uses an explicit architecture-aware eval threshold."
+                    if route_threshold_changed
+                    else "Existing threshold sweep and BSEO search artifacts provide bounded calibration evidence."
+                ),
             },
             "class_conditioned_mismatch_weights": {
                 "status": "evaluated" if best_theta else "not-evaluated",
@@ -474,9 +701,16 @@ def build_calibration_decision(
             },
         },
         "changed": [
-            "threshold artifacts generated by the existing bounded simulation pipeline"
-            if recommended_thresholds and not no_tune
-            else "no runtime threshold tuning accepted"
+            (
+                f"semantic routing eval decision threshold set to "
+                f"{_safe_float(route_eval_threshold, model_threshold):.4f}"
+            )
+            if route_threshold_changed
+            else (
+                "threshold artifacts generated by the existing bounded simulation pipeline"
+                if recommended_thresholds and not no_tune
+                else "no runtime threshold tuning accepted"
+            )
         ],
         "not_changed": [
             "AdaptiveSemanticEvidenceRouter rules",

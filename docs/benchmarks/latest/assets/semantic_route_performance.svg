@@ -33,8 +33,8 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="38" y="159.0">1.00</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="297.2" width="48.0" height="196.8" fill="#2563eb" rx="6" />
-<rect x="166.0" y="154.0" width="48.0" height="340.0" fill="#c2410c" rx="6" />
+<rect x="112.0" y="161.5" width="48.0" height="332.5" fill="#2563eb" rx="6" />
+<rect x="166.0" y="483.4" width="48.0" height="10.6" fill="#c2410c" rx="6" />
 <rect x="220.0" y="494.0" width="48.0" height="0.0" fill="#7c3aed" rx="6" />
 <text class="small" x="189.5" y="522" text-anchor="middle">ambiguous</text>
 <text class="small" x="189.5" y="538" text-anchor="middle">escalated</text>

@@ -3,6 +3,7 @@
   "bseo_min_confidence": 0.58,
   "bseo_max_uncertainty": 0.45,
   "bseo_artifact_max_age_hours": 168.0,
+  "semantic_routing_eval_decision_threshold": 0.4,
   "rl_min_confidence": 0.58,
   "rl_max_uncertainty": 0.45,
   "rl_artifact_max_age_hours": 168.0

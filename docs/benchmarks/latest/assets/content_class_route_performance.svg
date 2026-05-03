@@ -34,7 +34,7 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
 <rect x="112.0" y="494.0" width="45.9" height="0.0" fill="#2563eb" rx="6" />
-<rect x="163.9" y="290.0" width="45.9" height="204.0" fill="#c2410c" rx="6" />
+<rect x="163.9" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
 <text class="small" x="146.4" y="522" text-anchor="middle">art</text>
 <rect x="249.8" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
 <rect x="301.7" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
@@ -45,8 +45,8 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="525.3" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
 <rect x="577.3" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
 <text class="small" x="559.8" y="522" text-anchor="middle">gaming</text>
-<rect x="663.1" y="267.3" width="45.9" height="226.7" fill="#2563eb" rx="6" />
-<rect x="715.0" y="448.7" width="45.9" height="45.3" fill="#c2410c" rx="6" />
+<rect x="663.1" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
+<rect x="715.0" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
 <text class="small" x="697.6" y="522" text-anchor="middle">music</text>
 <rect x="800.9" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
 <rect x="852.8" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
@@ -54,11 +54,11 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <rect x="938.7" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
 <rect x="990.6" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
 <text class="small" x="973.1" y="522" text-anchor="middle">promo</text>
-<rect x="1076.4" y="267.3" width="45.9" height="226.7" fill="#2563eb" rx="6" />
-<rect x="1128.4" y="154.0" width="45.9" height="340.0" fill="#c2410c" rx="6" />
+<rect x="1076.4" y="154.0" width="45.9" height="340.0" fill="#2563eb" rx="6" />
+<rect x="1128.4" y="494.0" width="45.9" height="0.0" fill="#c2410c" rx="6" />
 <text class="small" x="1110.9" y="522" text-anchor="middle">satire</text>
-<rect x="1214.2" y="272.6" width="45.9" height="221.4" fill="#2563eb" rx="6" />
-<rect x="1266.1" y="154.0" width="45.9" height="340.0" fill="#c2410c" rx="6" />
+<rect x="1214.2" y="176.7" width="45.9" height="317.3" fill="#2563eb" rx="6" />
+<rect x="1266.1" y="448.7" width="45.9" height="45.3" fill="#c2410c" rx="6" />
 <text class="small" x="1248.7" y="522" text-anchor="middle">unknown</text>
 <rect x="86" y="540" width="16" height="16" fill="#2563eb" rx="4" />
 <text class="legend" x="110" y="553">F1</text>

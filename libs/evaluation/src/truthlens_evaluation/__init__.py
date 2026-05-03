@@ -12,8 +12,10 @@ from .runtime_governance import (
 )
 from .semantic_routing import (
     build_calibration_decision,
+    build_creative_fpr_diagnostic,
     build_semantic_routing_evaluation,
     write_calibration_decision,
+    write_creative_fpr_diagnostic,
     write_no_promotion_decision,
     write_no_retrain_decision,
     write_semantic_routing_evaluation,
@@ -24,6 +26,7 @@ from .verification_summary import build_verify_summary, render_verify_summary, r
 __all__ = [
     "apply_runtime_promotion",
     "build_calibration_decision",
+    "build_creative_fpr_diagnostic",
     "build_drift_report",
     "build_benchmark_summary",
     "build_runtime_governance_summary",
@@ -48,6 +51,7 @@ __all__ = [
     "state_key_for_score",
     "build_verify_summary",
     "write_calibration_decision",
+    "write_creative_fpr_diagnostic",
     "write_no_promotion_decision",
     "write_no_retrain_decision",
     "write_semantic_routing_evaluation",

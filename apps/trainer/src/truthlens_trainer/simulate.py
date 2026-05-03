@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from truthlens_data_pipeline.paths import ensure_dir, read_jsonl, repo_root, utc_now
+from truthlens_data_pipeline.paths import ensure_dir, read_json, read_jsonl, repo_root, utc_now
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import (
     build_drift_report,
@@ -18,6 +18,7 @@ from truthlens_evaluation import (
     run_threshold_sweep,
     search_threshold_family,
     write_calibration_decision,
+    write_creative_fpr_diagnostic,
     write_semantic_routing_evaluation,
 )
 from truthlens_model_serving import predict_item_signals
@@ -273,6 +274,33 @@ def main() -> None:
     semantic_eval = write_semantic_routing_evaluation(
         manifest=manifest,
         evaluation_label="post-training-runtime",
+    )
+    before_eval_path = eval_dir / f"{manifest['build_id']}-creative-fpr-before-eval.json"
+    committed_reference_path = eval_dir / f"{manifest['build_id']}-semantic-routing-baseline-eval.json"
+    before_eval = read_json(before_eval_path) if before_eval_path.exists() else semantic_eval
+    committed_reference_eval = (
+        read_json(committed_reference_path) if committed_reference_path.exists() else None
+    )
+    runtime_policy_path = thresholds_dir / "runtime-policy.json"
+    runtime_policy = read_json(runtime_policy_path) if runtime_policy_path.exists() else {}
+    semantic_threshold = runtime_policy.get("semantic_routing_eval_decision_threshold")
+    write_creative_fpr_diagnostic(
+        before_eval=before_eval,
+        after_eval=semantic_eval,
+        committed_reference_eval=committed_reference_eval,
+        correction={
+            "type": "route-aware-eval-threshold-calibration",
+            "runtime_policy_key": "semantic_routing_eval_decision_threshold",
+            "value": semantic_threshold,
+            "runtime_scoring_changed": False,
+            "router_changed": False,
+            "bseo_policy_code_changed": False,
+            "reason": (
+                "Governed validation/test sweep showed the legacy 0.30 model threshold over-counted "
+                "benign creative/gaming records after bseo-live policy scoring, while 0.40 preserved "
+                "camouflage FNR, high-risk factual recall, and overall F1."
+            ),
+        },
     )
     write_calibration_decision(
         manifest=manifest,

@@ -29,6 +29,7 @@ ASSET_FILENAMES = (
     "content_class_route_performance.svg",
     "recommended_action_distribution.svg",
     "semantic_route_before_after.svg",
+    "creative_fpr_diagnostic.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
     "lineage_overview.svg",
@@ -87,6 +88,8 @@ def _find_latest_eval_report(directory: Path) -> Path | None:
             and not path.name.endswith("-bseo-lineage.json")
             and not path.name.endswith("-training-history.json")
             and not path.name.endswith("-semantic-routing-eval.json")
+            and not path.name.endswith("-creative-fpr-before-eval.json")
+            and not path.name.endswith("-creative-fpr-diagnostic.json")
             and not path.name.endswith("-calibration-decision.json")
             and not path.name.endswith("-no-retrain-decision.json")
             and not path.name.endswith("-no-promotion-decision.json")
@@ -152,6 +155,16 @@ def _artifact_paths() -> dict[str, Path | None]:
         if build_id and (eval_dir / f"{build_id}-calibration-decision.json").exists()
         else _find_latest_json(eval_dir, "-calibration-decision.json")
     )
+    creative_fpr_before_eval_path = (
+        eval_dir / f"{build_id}-creative-fpr-before-eval.json"
+        if build_id and (eval_dir / f"{build_id}-creative-fpr-before-eval.json").exists()
+        else _find_latest_json(eval_dir, "-creative-fpr-before-eval.json")
+    )
+    creative_fpr_diagnostic_path = (
+        eval_dir / f"{build_id}-creative-fpr-diagnostic.json"
+        if build_id and (eval_dir / f"{build_id}-creative-fpr-diagnostic.json").exists()
+        else _find_latest_json(eval_dir, "-creative-fpr-diagnostic.json")
+    )
     no_retrain_decision_path = (
         eval_dir / f"{build_id}-no-retrain-decision.json"
         if build_id and (eval_dir / f"{build_id}-no-retrain-decision.json").exists()
@@ -204,6 +217,8 @@ def _artifact_paths() -> dict[str, Path | None]:
         "semantic_routing_eval": semantic_routing_eval_path,
         "semantic_routing_baseline_eval": semantic_routing_baseline_eval_path,
         "calibration_decision": calibration_decision_path,
+        "creative_fpr_before_eval": creative_fpr_before_eval_path,
+        "creative_fpr_diagnostic": creative_fpr_diagnostic_path,
         "no_retrain_decision": no_retrain_decision_path,
         "no_promotion_decision": no_promotion_decision_path,
         "bseo_report": bseo_report_path,
@@ -509,6 +524,7 @@ def build_benchmark_summary() -> dict[str, Any]:
     semantic_routing_eval = _read_json_if_exists(paths["semantic_routing_eval"])
     semantic_routing_baseline_eval = _read_json_if_exists(paths["semantic_routing_baseline_eval"])
     calibration_decision = _read_json_if_exists(paths["calibration_decision"])
+    creative_fpr_diagnostic = _read_json_if_exists(paths["creative_fpr_diagnostic"])
     no_retrain_decision = _read_json_if_exists(paths["no_retrain_decision"])
     no_promotion_decision = _read_json_if_exists(paths["no_promotion_decision"])
     drift_report = _read_json_if_exists(paths["drift_report"])
@@ -620,6 +636,10 @@ def build_benchmark_summary() -> dict[str, Any]:
         caveats.append(
             "No committed calibration/hyperparameter decision artifact is present, so tuning or no-tune status is not artifact-backed in this snapshot."
         )
+    if creative_fpr_diagnostic is None:
+        caveats.append(
+            "No creative-FPR diagnostic artifact is present, so the creative false-positive calibration gate is unavailable for this snapshot."
+        )
     if runtime_policy is None:
         missing.append("runtime-policy.json is missing")
     if bseo_policy is None:
@@ -720,6 +740,7 @@ def build_benchmark_summary() -> dict[str, Any]:
         "semantic_routing": _summarize_semantic_routing_eval(semantic_routing_eval),
         "semantic_routing_baseline": _summarize_semantic_routing_eval(semantic_routing_baseline_eval),
         "calibration_decision": calibration_decision or {},
+        "creative_fpr_diagnostic": creative_fpr_diagnostic or {},
         "model_decisions": {
             "no_retrain": no_retrain_decision or {},
             "no_promotion": no_promotion_decision or {},
@@ -1193,6 +1214,44 @@ def _write_semantic_route_before_after_svg(summary: dict[str, Any], path: Path) 
         series=[
             ("Baseline", "#64748b", baseline_values),
             ("Current", "#2563eb", current_values),
+        ],
+        path=path,
+    )
+
+
+def _write_creative_fpr_diagnostic_svg(summary: dict[str, Any], path: Path) -> None:
+    diagnostic = summary.get("creative_fpr_diagnostic", {})
+    diagnostic = diagnostic if isinstance(diagnostic, dict) else {}
+    before = dict(diagnostic.get("before", {}))
+    after = dict(diagnostic.get("after", {}))
+    if not before or not after:
+        _stub_svg(
+            "Creative FPR diagnostic",
+            "Before/after gate for route-aware creative false positives",
+            "No creative-FPR diagnostic artifact was available for this build.",
+            path,
+        )
+        return
+    categories = ["creative_fpr", "camouflage_fnr", "high_recall", "overall_f1"]
+    before_values = [
+        _safe_float(before.get("creative_false_positive_rate")),
+        _safe_float(before.get("deceptive_factual_camouflage_false_negative_rate")),
+        _safe_float(before.get("high_risk_factual_recall")),
+        _safe_float(before.get("overall_f1")),
+    ]
+    after_values = [
+        _safe_float(after.get("creative_false_positive_rate")),
+        _safe_float(after.get("deceptive_factual_camouflage_false_negative_rate")),
+        _safe_float(after.get("high_risk_factual_recall")),
+        _safe_float(after.get("overall_f1")),
+    ]
+    _bar_chart(
+        title="Creative FPR diagnostic",
+        subtitle="Governed before/after route-aware calibration gate. Lower FPR/FNR is better; higher recall/F1 is better.",
+        categories=categories,
+        series=[
+            ("Before", "#64748b", before_values),
+            ("After", "#2563eb", after_values),
         ],
         path=path,
     )
@@ -1855,6 +1914,9 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
     semantic_eval = _semantic_eval(summary)
     architecture_checks = dict(semantic_eval.get("architecture_checks", {}))
     calibration_decision = dict(summary.get("calibration_decision", {}))
+    creative_diagnostic = dict(summary.get("creative_fpr_diagnostic", {}))
+    creative_before = dict(creative_diagnostic.get("before", {}))
+    creative_after = dict(creative_diagnostic.get("after", {}))
     lines = [
         "# Benchmark Summary",
         "",
@@ -1876,11 +1938,14 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         f"- Route-aware eval artifact: `{summary['artifact_paths'].get('semantic_routing_eval') or 'missing'}`",
         f"- Route-aware baseline artifact: `{summary['artifact_paths'].get('semantic_routing_baseline_eval') or 'missing'}`",
         f"- Calibration decision artifact: `{summary['artifact_paths'].get('calibration_decision') or 'missing'}`",
+        f"- Creative FPR diagnostic artifact: `{summary['artifact_paths'].get('creative_fpr_diagnostic') or 'missing'}`",
         f"- Route-aware sample count: `{semantic_eval.get('sample_count', 0)}`",
         f"- Creative false-positive rate: `{architecture_checks.get('creative_false_positive_rate', 'n/a')}`",
         f"- Deceptive/factual camouflage false-negative rate: `{architecture_checks.get('deceptive_factual_camouflage_false_negative_rate', 'n/a')}`",
         f"- BSEO override frequency: `{architecture_checks.get('bseo_override_frequency', 'n/a')}`",
         f"- Calibration decision: `{calibration_decision.get('decision', 'missing')}`",
+        f"- Creative FPR gate accepted: `{creative_diagnostic.get('accepted', 'missing')}`",
+        f"- Creative FPR before/after: `{creative_before.get('creative_false_positive_rate', 'n/a')}` -> `{creative_after.get('creative_false_positive_rate', 'n/a')}`",
         "",
         "## Observation And Feedback Intake",
         "",
@@ -2172,6 +2237,7 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
     architecture_checks = dict(semantic_eval.get("architecture_checks", {}))
     score_contract = dict(architecture_checks.get("score_contract", {}))
     calibration_decision = dict(summary.get("calibration_decision", {}))
+    creative_diagnostic = dict(summary.get("creative_fpr_diagnostic", {}))
     _write_dashboard(
         summary,
         output_dir / "semantic_routing_dashboard.html",
@@ -2200,6 +2266,11 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
           <h2>Calibration decision</h2>
           <p>Decision: <code>{escape(str(calibration_decision.get('decision', 'missing')))}</code></p>
           <p>Reason: {escape(str(calibration_decision.get('reason', 'No calibration decision artifact was available.')))}</p>
+        </div>
+        <div class="card">
+          <h2>Creative FPR diagnostic</h2>
+          <p>Accepted: <code>{escape(str(creative_diagnostic.get('accepted', 'missing')))}</code></p>
+          <p>Artifact: <code>{escape(str(summary['artifact_paths'].get('creative_fpr_diagnostic') or 'missing'))}</code></p>
         </div>
         """,
     )
@@ -2242,6 +2313,7 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     _write_content_class_route_performance_svg(summary, assets_dir / "content_class_route_performance.svg")
     _write_recommended_action_distribution_svg(summary, assets_dir / "recommended_action_distribution.svg")
     _write_semantic_route_before_after_svg(summary, assets_dir / "semantic_route_before_after.svg")
+    _write_creative_fpr_diagnostic_svg(summary, assets_dir / "creative_fpr_diagnostic.svg")
     _write_bseo_bias_svg(summary, assets_dir / "bseo_bias_profile.svg")
     _write_mutation_atlas_svg(summary, assets_dir / "mutation_bias_atlas.svg")
     _write_lineage_svg(summary, assets_dir / "lineage_overview.svg")

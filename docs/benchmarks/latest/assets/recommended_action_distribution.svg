@@ -22,26 +22,26 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <line class="grid" x1="86" y1="494.0" x2="1326" y2="494.0" />
 <text class="small" x="38" y="499.0">0.00</text>
 <line class="grid" x1="86" y1="426.0" x2="1326" y2="426.0" />
-<text class="small" x="38" y="431.0">9.20</text>
+<text class="small" x="38" y="431.0">9.00</text>
 <line class="grid" x1="86" y1="358.0" x2="1326" y2="358.0" />
-<text class="small" x="38" y="363.0">18.40</text>
+<text class="small" x="38" y="363.0">18.00</text>
 <line class="grid" x1="86" y1="290.0" x2="1326" y2="290.0" />
-<text class="small" x="38" y="295.0">27.60</text>
+<text class="small" x="38" y="295.0">27.00</text>
 <line class="grid" x1="86" y1="222.0" x2="1326" y2="222.0" />
-<text class="small" x="38" y="227.0">36.80</text>
+<text class="small" x="38" y="227.0">36.00</text>
 <line class="grid" x1="86" y1="154.0" x2="1326" y2="154.0" />
-<text class="small" x="38" y="159.0">46.00</text>
+<text class="small" x="38" y="159.0">45.00</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="227.9" width="48.0" height="266.1" fill="#0f766e" rx="6" />
+<rect x="112.0" y="290.0" width="48.0" height="204.0" fill="#0f766e" rx="6" />
 <text class="small" x="174.0" y="522" text-anchor="middle">ask-report</text>
-<rect x="360.0" y="257.5" width="48.0" height="236.5" fill="#0f766e" rx="6" />
+<rect x="360.0" y="154.0" width="48.0" height="340.0" fill="#0f766e" rx="6" />
 <text class="small" x="422.0" y="522" text-anchor="middle">badge</text>
-<rect x="608.0" y="183.6" width="48.0" height="310.4" fill="#0f766e" rx="6" />
+<rect x="608.0" y="388.2" width="48.0" height="105.8" fill="#0f766e" rx="6" />
 <text class="small" x="670.0" y="522" text-anchor="middle">blur</text>
-<rect x="856.0" y="471.8" width="48.0" height="22.2" fill="#0f766e" rx="6" />
+<rect x="856.0" y="176.7" width="48.0" height="317.3" fill="#0f766e" rx="6" />
 <text class="small" x="918.0" y="522" text-anchor="middle">hide</text>
-<rect x="1104.0" y="154.0" width="48.0" height="340.0" fill="#0f766e" rx="6" />
+<rect x="1104.0" y="259.8" width="48.0" height="234.2" fill="#0f766e" rx="6" />
 <text class="small" x="1166.0" y="522" text-anchor="middle">none</text>
 <rect x="86" y="540" width="16" height="16" fill="#0f766e" rx="4" />
 <text class="legend" x="110" y="553">Actions</text>

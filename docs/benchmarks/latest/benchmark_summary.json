@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-03T06:48:25.603193+00:00",
+  "generated_at": "2026-05-03T16:03:23.863754+00:00",
   "build_id": "build-20260425085620",
   "model_version": "baseline-v1-build-20260425085620",
   "trained_at": "2026-05-03T06:31:35.873484+00:00",
@@ -12,6 +12,8 @@
     "semantic_routing_eval": "artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json",
     "semantic_routing_baseline_eval": "artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json",
     "calibration_decision": "artifacts/eval_runs/build-20260425085620-calibration-decision.json",
+    "creative_fpr_before_eval": "artifacts/eval_runs/build-20260425085620-creative-fpr-before-eval.json",
+    "creative_fpr_diagnostic": "artifacts/eval_runs/build-20260425085620-creative-fpr-diagnostic.json",
     "no_retrain_decision": null,
     "no_promotion_decision": null,
     "bseo_report": "artifacts/eval_runs/build-20260425085620-bseo-report.json",
@@ -36,19 +38,21 @@
     "eval_report": "2026-05-03T06:31:40.494885+00:00",
     "simulation": "2026-05-03T06:32:16.473381+00:00",
     "training_history": "2026-05-03T06:31:40.494885+00:00",
-    "semantic_routing_eval": "2026-05-03T06:32:26.055844+00:00",
+    "semantic_routing_eval": "2026-05-03T16:02:54.700788+00:00",
     "semantic_routing_baseline_eval": "2026-05-03T06:28:20.239580+00:00",
-    "calibration_decision": "2026-05-03T06:32:26.075218+00:00",
+    "calibration_decision": "2026-05-03T16:02:54.708800+00:00",
+    "creative_fpr_before_eval": "2026-05-03T15:58:40.439097+00:00",
+    "creative_fpr_diagnostic": "2026-05-03T16:02:54.704796+00:00",
     "no_retrain_decision": null,
     "no_promotion_decision": null,
     "bseo_report": "2026-05-03T06:32:16.475385+00:00",
     "mutation_atlas": "2026-05-03T06:32:16.497432+00:00",
     "lineage": "2026-05-03T06:32:16.495427+00:00",
     "drift_report": "2026-05-03T06:32:16.498947+00:00",
-    "runtime_policy": "2026-05-03T06:32:41.825402+00:00",
+    "runtime_policy": "2026-05-03T15:59:29.250315+00:00",
     "thresholds": "2026-05-03T06:32:16.498947+00:00",
     "bseo_policy": "2026-05-03T06:32:16.501009+00:00",
-    "runtime_governance": "2026-05-03T06:48:25.519986+00:00",
+    "runtime_governance": "2026-05-03T16:03:23.742464+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
@@ -71,7 +75,7 @@
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-05-03T06:48:25.514939+00:00",
+    "generated_at": "2026-05-03T16:03:23.727382+00:00",
     "build_id": "build-20260425085620",
     "runtime_policy": {
       "configured_mode": "bseo-live",
@@ -87,7 +91,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 0.275,
+        "age_hours": 9.525,
         "build_id": "build-20260425085620",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -666,12 +670,15 @@
   "semantic_routing": {
     "artifact_type": "semantic-routing-evaluation",
     "schema_version": "2026-05-03",
-    "generated_at": "2026-05-03T06:32:25.942845+00:00",
-    "evaluation_label": "post-training-runtime",
+    "generated_at": "2026-05-03T16:02:54.586224+00:00",
+    "evaluation_label": "creative-fpr-after-route-aware-threshold-calibration",
     "build_id": "build-20260425085620",
     "model_version": "baseline-v1-build-20260425085620",
     "model_build_id": "build-20260425085620",
-    "decision_threshold": 0.3,
+    "decision_threshold": 0.4,
+    "decision_threshold_source": "runtime-policy.semantic_routing_eval_decision_threshold",
+    "model_decision_threshold": 0.3,
+    "runtime_policy_threshold": 0.4,
     "source_splits": [
       "validation",
       "test"
@@ -711,30 +718,30 @@
         "positive_count": 29,
         "negative_count": 29,
         "metrics": {
-          "precision": 0.725,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.8406,
-          "positive_rate": 0.6897,
-          "false_positive_rate": 0.3793,
+          "f1": 1.0,
+          "positive_rate": 0.5,
+          "false_positive_rate": 0.0,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2333,
+        "calibration_error": 0.2216,
         "confusion_matrix": {
           "tp": 29,
-          "tn": 18,
-          "fp": 11,
+          "tn": 29,
+          "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.4533,
-        "average_truth_score_10": 5.4672,
+        "average_risk_score": 0.5584,
+        "average_truth_score_10": 4.4155,
         "recommended_action_distribution": {
-          "ask-report": 15,
-          "badge": 11,
-          "blur": 12,
-          "hide": 2,
-          "none": 18
+          "ask-report": 9,
+          "badge": 15,
+          "blur": 4,
+          "hide": 16,
+          "none": 14
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 23,
@@ -757,30 +764,30 @@
         "positive_count": 51,
         "negative_count": 50,
         "metrics": {
-          "precision": 0.6986,
+          "precision": 0.9623,
           "recall": 1.0,
-          "f1": 0.8226,
-          "positive_rate": 0.7228,
-          "false_positive_rate": 0.44,
+          "f1": 0.9808,
+          "positive_rate": 0.5248,
+          "false_positive_rate": 0.04,
           "false_negative_rate": 0.0,
-          "roc_auc": 0.9927,
-          "pr_auc": 0.9913
+          "roc_auc": 0.9925,
+          "pr_auc": 0.9912
         },
-        "calibration_error": 0.2182,
+        "calibration_error": 0.2435,
         "confusion_matrix": {
           "tp": 51,
-          "tn": 28,
-          "fp": 22,
+          "tn": 48,
+          "fp": 2,
           "fn": 0
         },
-        "average_risk_score": 0.4455,
-        "average_truth_score_10": 5.5446,
+        "average_risk_score": 0.5637,
+        "average_truth_score_10": 4.3634,
         "recommended_action_distribution": {
-          "ask-report": 21,
-          "badge": 21,
-          "blur": 30,
-          "hide": 1,
-          "none": 28
+          "ask-report": 18,
+          "badge": 30,
+          "blur": 10,
+          "hide": 26,
+          "none": 17
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 31,
@@ -804,30 +811,30 @@
       "positive_count": 80,
       "negative_count": 79,
       "metrics": {
-        "precision": 0.708,
+        "precision": 0.9756,
         "recall": 1.0,
-        "f1": 0.829,
-        "positive_rate": 0.7107,
-        "false_positive_rate": 0.4177,
+        "f1": 0.9877,
+        "positive_rate": 0.5157,
+        "false_positive_rate": 0.0253,
         "false_negative_rate": 0.0,
-        "roc_auc": 0.9958,
+        "roc_auc": 0.9957,
         "pr_auc": 0.995
       },
-      "calibration_error": 0.2237,
+      "calibration_error": 0.2355,
       "confusion_matrix": {
         "tp": 80,
-        "tn": 46,
-        "fp": 33,
+        "tn": 77,
+        "fp": 2,
         "fn": 0
       },
-      "average_risk_score": 0.4484,
-      "average_truth_score_10": 5.5164,
+      "average_risk_score": 0.5618,
+      "average_truth_score_10": 4.3824,
       "recommended_action_distribution": {
-        "ask-report": 36,
-        "badge": 32,
-        "blur": 42,
-        "hide": 3,
-        "none": 46
+        "ask-report": 27,
+        "badge": 45,
+        "blur": 14,
+        "hide": 42,
+        "none": 31
       },
       "runtime_route_distribution": {
         "ambiguous_escalated": 54,
@@ -851,29 +858,29 @@
         "positive_count": 22,
         "negative_count": 32,
         "metrics": {
-          "precision": 0.4074,
+          "precision": 0.9565,
           "recall": 1.0,
-          "f1": 0.5789,
-          "positive_rate": 1.0,
-          "false_positive_rate": 1.0,
+          "f1": 0.9778,
+          "positive_rate": 0.4259,
+          "false_positive_rate": 0.0312,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.3337,
+        "calibration_error": 0.2944,
         "confusion_matrix": {
           "tp": 22,
-          "tn": 0,
-          "fp": 32,
+          "tn": 31,
+          "fp": 1,
           "fn": 0
         },
-        "average_risk_score": 0.4411,
-        "average_truth_score_10": 5.5889,
+        "average_risk_score": 0.5307,
+        "average_truth_score_10": 4.6926,
         "recommended_action_distribution": {
-          "ask-report": 8,
+          "ask-report": 13,
           "badge": 32,
-          "blur": 13,
-          "hide": 1
+          "blur": 3,
+          "hide": 6
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 54
@@ -899,20 +906,20 @@
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2081,
+        "calibration_error": 0.1187,
         "confusion_matrix": {
           "tp": 37,
           "tn": 14,
           "fp": 1,
           "fn": 0
         },
-        "average_risk_score": 0.625,
-        "average_truth_score_10": 3.75,
+        "average_risk_score": 0.7802,
+        "average_truth_score_10": 2.1981,
         "recommended_action_distribution": {
-          "ask-report": 28,
-          "blur": 8,
-          "hide": 2,
-          "none": 14
+          "ask-report": 2,
+          "badge": 1,
+          "hide": 36,
+          "none": 13
         },
         "runtime_route_distribution": {
           "high_risk_factual": 52
@@ -938,18 +945,19 @@
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.4174,
+        "calibration_error": 0.3689,
         "confusion_matrix": {
           "tp": 21,
           "tn": 14,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.3403,
-        "average_truth_score_10": 6.5971,
+        "average_risk_score": 0.4871,
+        "average_truth_score_10": 5.1286,
         "recommended_action_distribution": {
-          "blur": 21,
-          "none": 14
+          "ask-report": 12,
+          "badge": 12,
+          "blur": 11
         },
         "runtime_route_distribution": {
           "informational_consistency": 35
@@ -975,15 +983,15 @@
           "roc_auc": null,
           "pr_auc": null
         },
-        "calibration_error": 0.17,
+        "calibration_error": 0.1689,
         "confusion_matrix": {
           "tp": 0,
           "tn": 18,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.17,
-        "average_truth_score_10": 8.3,
+        "average_risk_score": 0.1689,
+        "average_truth_score_10": 8.3111,
         "recommended_action_distribution": {
           "none": 18
         },
@@ -1007,21 +1015,21 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "positive_rate": 0.6,
-          "false_positive_rate": 0.6,
+          "positive_rate": 0.0,
+          "false_positive_rate": 0.0,
           "false_negative_rate": 0.0,
           "roc_auc": null,
           "pr_auc": null
         },
-        "calibration_error": 0.2533,
+        "calibration_error": 0.2627,
         "confusion_matrix": {
           "tp": 0,
-          "tn": 6,
-          "fp": 9,
+          "tn": 15,
+          "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.2533,
-        "average_truth_score_10": 7.4667,
+        "average_risk_score": 0.2627,
+        "average_truth_score_10": 7.3733,
         "recommended_action_distribution": {
           "badge": 9,
           "none": 6
@@ -1053,19 +1061,20 @@
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.3826,
+        "calibration_error": 0.2859,
         "confusion_matrix": {
           "tp": 20,
           "tn": 7,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.4478,
-        "average_truth_score_10": 5.5222,
+        "average_risk_score": 0.6104,
+        "average_truth_score_10": 3.8963,
         "recommended_action_distribution": {
-          "ask-report": 6,
-          "blur": 14,
-          "none": 7
+          "ask-report": 12,
+          "badge": 5,
+          "blur": 4,
+          "hide": 6
         },
         "runtime_route_distribution": {
           "high_risk_factual": 6,
@@ -1093,18 +1102,19 @@
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.333,
+        "calibration_error": 0.369,
         "confusion_matrix": {
           "tp": 7,
           "tn": 13,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.26,
-        "average_truth_score_10": 7.4,
+        "average_risk_score": 0.408,
+        "average_truth_score_10": 5.92,
         "recommended_action_distribution": {
+          "badge": 1,
           "blur": 7,
-          "none": 13
+          "none": 12
         },
         "runtime_route_distribution": {
           "high_risk_factual": 13,
@@ -1151,18 +1161,18 @@
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2375,
+        "calibration_error": 0.325,
         "confusion_matrix": {
           "tp": 1,
           "tn": 7,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.275,
-        "average_truth_score_10": 7.25,
+        "average_risk_score": 0.395,
+        "average_truth_score_10": 6.05,
         "recommended_action_distribution": {
-          "blur": 1,
-          "none": 7
+          "ask-report": 1,
+          "badge": 7
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 1,
@@ -1200,28 +1210,27 @@
         "positive_count": 2,
         "negative_count": 15,
         "metrics": {
-          "precision": 0.5,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.6667,
-          "positive_rate": 0.2353,
-          "false_positive_rate": 0.1333,
+          "f1": 1.0,
+          "positive_rate": 0.1176,
+          "false_positive_rate": 0.0,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2047,
+        "calibration_error": 0.2059,
         "confusion_matrix": {
           "tp": 2,
-          "tn": 13,
-          "fp": 2,
+          "tn": 15,
+          "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.2506,
-        "average_truth_score_10": 7.4941,
+        "average_risk_score": 0.2835,
+        "average_truth_score_10": 7.1647,
         "recommended_action_distribution": {
-          "ask-report": 1,
+          "ask-report": 2,
           "badge": 2,
-          "blur": 1,
           "none": 13
         },
         "runtime_route_distribution": {
@@ -1253,19 +1262,17 @@
           "roc_auc": null,
           "pr_auc": null
         },
-        "calibration_error": 0.246,
+        "calibration_error": 0.0887,
         "confusion_matrix": {
           "tp": 15,
           "tn": 0,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.754,
-        "average_truth_score_10": 2.46,
+        "average_risk_score": 0.9113,
+        "average_truth_score_10": 0.8867,
         "recommended_action_distribution": {
-          "ask-report": 7,
-          "blur": 7,
-          "hide": 1
+          "hide": 15
         },
         "runtime_route_distribution": {
           "high_risk_factual": 15
@@ -1310,18 +1317,19 @@
           "roc_auc": null,
           "pr_auc": null
         },
-        "calibration_error": 0.3414,
+        "calibration_error": 0.2021,
         "confusion_matrix": {
           "tp": 14,
           "tn": 0,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.6586,
-        "average_truth_score_10": 3.4143,
+        "average_risk_score": 0.7979,
+        "average_truth_score_10": 2.0214,
         "recommended_action_distribution": {
-          "ask-report": 7,
-          "blur": 7
+          "ask-report": 4,
+          "blur": 3,
+          "hide": 7
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 7,
@@ -1341,27 +1349,27 @@
         "positive_count": 7,
         "negative_count": 7,
         "metrics": {
-          "precision": 0.5,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.6667,
-          "positive_rate": 1.0,
-          "false_positive_rate": 1.0,
+          "f1": 1.0,
+          "positive_rate": 0.5,
+          "false_positive_rate": 0.0,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2321,
+        "calibration_error": 0.17,
         "confusion_matrix": {
           "tp": 7,
-          "tn": 0,
-          "fp": 7,
+          "tn": 7,
+          "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.5779,
-        "average_truth_score_10": 4.2214,
+        "average_risk_score": 0.67,
+        "average_truth_score_10": 3.3,
         "recommended_action_distribution": {
-          "ask-report": 7,
-          "badge": 7
+          "badge": 7,
+          "hide": 7
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 7,
@@ -1400,29 +1408,28 @@
         "positive_count": 14,
         "negative_count": 15,
         "metrics": {
-          "precision": 0.4828,
+          "precision": 0.875,
           "recall": 1.0,
-          "f1": 0.6512,
-          "positive_rate": 1.0,
-          "false_positive_rate": 1.0,
+          "f1": 0.9333,
+          "positive_rate": 0.5517,
+          "false_positive_rate": 0.1333,
           "false_negative_rate": 0.0,
           "roc_auc": 1.0,
           "pr_auc": 1.0
         },
-        "calibration_error": 0.2972,
+        "calibration_error": 0.2338,
         "confusion_matrix": {
           "tp": 14,
-          "tn": 0,
-          "fp": 15,
+          "tn": 13,
+          "fp": 2,
           "fn": 0
         },
-        "average_risk_score": 0.5214,
-        "average_truth_score_10": 4.7862,
+        "average_risk_score": 0.6393,
+        "average_truth_score_10": 3.6069,
         "recommended_action_distribution": {
           "ask-report": 8,
           "badge": 14,
-          "blur": 5,
-          "hide": 2
+          "hide": 7
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 27,
@@ -1446,11 +1453,11 @@
         "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
         "bounded_outputs": true
       },
-      "predicted_positive_count": 113,
-      "active_recommended_action_count": 113,
-      "creative_false_positive_rate": 0.4091,
+      "predicted_positive_count": 82,
+      "active_recommended_action_count": 128,
+      "creative_false_positive_rate": 0.0,
       "creative_negative_count": 44,
-      "creative_false_positive_count": 18,
+      "creative_false_positive_count": 0,
       "deceptive_factual_camouflage_false_negative_rate": 0.0,
       "deceptive_factual_camouflage_positive_count": 2,
       "deceptive_factual_camouflage_false_negative_count": 0,
@@ -1459,30 +1466,30 @@
         "positive_count": 78,
         "negative_count": 36,
         "metrics": {
-          "precision": 0.8387,
+          "precision": 0.975,
           "recall": 1.0,
-          "f1": 0.9123,
-          "positive_rate": 0.8158,
-          "false_positive_rate": 0.4167,
+          "f1": 0.9873,
+          "positive_rate": 0.7018,
+          "false_positive_rate": 0.0556,
           "false_negative_rate": 0.0,
-          "roc_auc": 0.9906,
+          "roc_auc": 0.9904,
           "pr_auc": 0.9947
         },
-        "calibration_error": 0.2269,
+        "calibration_error": 0.2231,
         "confusion_matrix": {
           "tp": 78,
-          "tn": 21,
-          "fp": 15,
+          "tn": 34,
+          "fp": 2,
           "fn": 0
         },
-        "average_risk_score": 0.5246,
-        "average_truth_score_10": 4.7535,
+        "average_risk_score": 0.6687,
+        "average_truth_score_10": 3.3132,
         "recommended_action_distribution": {
-          "ask-report": 36,
-          "badge": 14,
-          "blur": 40,
-          "hide": 3,
-          "none": 21
+          "ask-report": 25,
+          "badge": 20,
+          "blur": 14,
+          "hide": 42,
+          "none": 13
         },
         "runtime_route_distribution": {
           "ambiguous_escalated": 34,
@@ -1498,8 +1505,8 @@
           "normal": 62
         }
       },
-      "bseo_override_frequency": 0.0,
-      "bseo_live_decision_frequency": 0.0,
+      "bseo_override_frequency": 0.4843,
+      "bseo_live_decision_frequency": 1.0,
       "minimal_creative_clean": {
         "sample_count": 18,
         "positive_count": 0,
@@ -1514,15 +1521,15 @@
           "roc_auc": null,
           "pr_auc": null
         },
-        "calibration_error": 0.17,
+        "calibration_error": 0.1689,
         "confusion_matrix": {
           "tp": 0,
           "tn": 18,
           "fp": 0,
           "fn": 0
         },
-        "average_risk_score": 0.17,
-        "average_truth_score_10": 8.3,
+        "average_risk_score": 0.1689,
+        "average_truth_score_10": 8.3111,
         "recommended_action_distribution": {
           "none": 18
         },
@@ -2412,8 +2419,8 @@
   "calibration_decision": {
     "artifact_type": "calibration-hyperparameter-decision",
     "schema_version": "2026-05-03",
-    "generated_at": "2026-05-03T06:32:26.074142+00:00",
-    "decision_label": "post-training-runtime",
+    "generated_at": "2026-05-03T16:02:54.706797+00:00",
+    "decision_label": "creative-fpr-route-aware-threshold-calibration",
     "build_id": "build-20260425085620",
     "model_version": "baseline-v1-build-20260425085620",
     "decision": "controlled-calibration-recorded",
@@ -2434,13 +2441,15 @@
       "threshold_calibration": {
         "status": "evaluated",
         "changed": true,
+        "model_decision_threshold": 0.3,
+        "semantic_routing_eval_decision_threshold": 0.4,
         "recommended_thresholds": {
           "badge_threshold": 0.2972,
           "blur_threshold": 0.3957,
           "report_prompt_threshold": 0.6155,
           "hide_threshold": 0.839
         },
-        "reason": "Existing threshold sweep and BSEO search artifacts provide bounded calibration evidence."
+        "reason": "Route-aware runtime policy scoring shifted the eval-score distribution, so the semantic routing sidecar uses an explicit architecture-aware eval threshold."
       },
       "class_conditioned_mismatch_weights": {
         "status": "evaluated",
@@ -2485,7 +2494,7 @@
       }
     },
     "changed": [
-      "threshold artifacts generated by the existing bounded simulation pipeline"
+      "semantic routing eval decision threshold set to 0.4000"
     ],
     "not_changed": [
       "AdaptiveSemanticEvidenceRouter rules",
@@ -2502,6 +2511,566 @@
       "model_eval": "artifacts/eval_runs/build-20260425085620.json",
       "bseo_report": "artifacts/eval_runs/build-20260425085620-bseo-report.json"
     }
+  },
+  "creative_fpr_diagnostic": {
+    "artifact_type": "creative-fpr-diagnostic",
+    "schema_version": "2026-05-03",
+    "generated_at": "2026-05-03T16:02:54.702791+00:00",
+    "build_id": "build-20260425085620",
+    "model_version": "baseline-v1-build-20260425085620",
+    "data_scope": {
+      "source_splits": [
+        "validation",
+        "test"
+      ],
+      "sample_count": 159,
+      "governance": "Uses governed validation/test records from the committed build manifest only; local feedback and browser observations are not promoted into benchmark truth.",
+      "caveat": "The governed benchmark is still small/bootstrap-heavy; this is controlled calibration evidence, not production generalization proof."
+    },
+    "diagnosis": {
+      "summary": "Creative false positives are concentrated in benign creative or gaming records near the legacy 0.30 binary eval threshold after runtime policy scoring. Minimal creative clean records are not the source of the false positives.",
+      "before_breakdown": {
+        "creative_negative_count": 44,
+        "creative_false_positive_count": 26,
+        "creative_false_positive_rate": 0.5909,
+        "false_positive_distribution": {
+          "content_class": {
+            "art": 9,
+            "gaming": 7,
+            "music": 3,
+            "satire": 7
+          },
+          "runtime_route": {
+            "ambiguous_escalated": 18,
+            "high_risk_factual": 1,
+            "informational_consistency": 7
+          },
+          "adversarial_guard": {
+            "clean": 8,
+            "triggered": 18
+          },
+          "mismatch_pressure": {
+            "elevated": 1,
+            "normal": 25
+          },
+          "recommended_action": {
+            "badge": 25,
+            "none": 1
+          },
+          "decisive_layer": {
+            "bseo-live": 26
+          }
+        },
+        "borderline_false_positive_count": 22,
+        "false_positive_rows": [
+          {
+            "item_id": "northern-echo-records-4",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.31,
+            "truth_score_10": 6.9,
+            "content_class": "music",
+            "content_class_confidence": 0.35,
+            "runtime_route": "high_risk_factual",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "elevated",
+            "recommended_action": "none",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "northern-echo-records-9",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.32,
+            "truth_score_10": 6.8,
+            "content_class": "gaming",
+            "content_class_confidence": 0.67,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "northern-echo-records-17",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.35,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "northern-echo-records-18",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.89,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "patch-notes-arena-9",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "patch-notes-arena-17",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.44,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "patch-notes-arena-18",
+            "split": "validation",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "calm-science-daily-9",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.32,
+            "truth_score_10": 6.8,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "calm-science-daily-17",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.57,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "calm-science-daily-18",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "device-verdict-lab-9",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "device-verdict-lab-17",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.57,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "device-verdict-lab-18",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "now-stream-briefing-6",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.39,
+            "truth_score_10": 6.1,
+            "content_class": "music",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "now-stream-briefing-7",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "now-stream-briefing-9",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.36,
+            "truth_score_10": 6.4,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "now-stream-briefing-17",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.57,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "now-stream-briefing-18",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "signal-watch-europe-6",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.39,
+            "truth_score_10": 6.1,
+            "content_class": "music",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "signal-watch-europe-7",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "signal-watch-europe-9",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.37,
+            "truth_score_10": 6.3,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "signal-watch-europe-17",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.57,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "signal-watch-europe-18",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "verified-space-desk-9",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "gaming",
+            "content_class_confidence": 0.73,
+            "runtime_route": "informational_consistency",
+            "adversarial_guard": "clean",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "none",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "verified-space-desk-17",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.33,
+            "truth_score_10": 6.7,
+            "content_class": "art",
+            "content_class_confidence": 0.57,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          },
+          {
+            "item_id": "verified-space-desk-18",
+            "split": "test",
+            "label": 0,
+            "risk_score": 0.34,
+            "truth_score_10": 6.6,
+            "content_class": "satire",
+            "content_class_confidence": 0.98,
+            "runtime_route": "ambiguous_escalated",
+            "adversarial_guard": "triggered",
+            "mismatch_pressure": "normal",
+            "recommended_action": "badge",
+            "threshold_action": "badge",
+            "decisive_layer": "bseo-live"
+          }
+        ]
+      },
+      "after_breakdown": {
+        "creative_negative_count": 44,
+        "creative_false_positive_count": 0,
+        "creative_false_positive_rate": 0.0,
+        "false_positive_distribution": {
+          "content_class": {},
+          "runtime_route": {},
+          "adversarial_guard": {},
+          "mismatch_pressure": {},
+          "recommended_action": {},
+          "decisive_layer": {}
+        },
+        "borderline_false_positive_count": 0,
+        "false_positive_rows": []
+      }
+    },
+    "committed_reference": {
+      "evaluation_label": "baseline-current-latest",
+      "decision_threshold": 0.3,
+      "decision_threshold_source": null,
+      "resolved_policy_mode_distribution": {
+        "bseo-live": 159
+      },
+      "overall_f1": 0.829,
+      "creative_false_positive_rate": 0.4091,
+      "creative_false_positive_count": 18,
+      "creative_negative_count": 44,
+      "deceptive_factual_camouflage_false_negative_rate": 0.0,
+      "high_risk_factual_recall": 1.0,
+      "recommended_action_distribution": {
+        "ask-report": 41,
+        "badge": 32,
+        "blur": 40,
+        "none": 46
+      },
+      "score_contract": {
+        "raw_risk_high_is_worse": true,
+        "ui_truth_score_high_is_better": true,
+        "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+        "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+        "bounded_outputs": true
+      }
+    },
+    "before": {
+      "evaluation_label": "creative-fpr-before-correction-bseo-live",
+      "decision_threshold": 0.3,
+      "decision_threshold_source": null,
+      "resolved_policy_mode_distribution": {
+        "bseo-live": 159
+      },
+      "overall_f1": 0.7442,
+      "creative_false_positive_rate": 0.5909,
+      "creative_false_positive_count": 26,
+      "creative_negative_count": 44,
+      "deceptive_factual_camouflage_false_negative_rate": 0.0,
+      "high_risk_factual_recall": 1.0,
+      "recommended_action_distribution": {
+        "ask-report": 27,
+        "badge": 45,
+        "blur": 14,
+        "hide": 42,
+        "none": 31
+      },
+      "score_contract": {
+        "raw_risk_high_is_worse": true,
+        "ui_truth_score_high_is_better": true,
+        "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+        "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+        "bounded_outputs": true
+      }
+    },
+    "after": {
+      "evaluation_label": "creative-fpr-after-route-aware-threshold-calibration",
+      "decision_threshold": 0.4,
+      "decision_threshold_source": "runtime-policy.semantic_routing_eval_decision_threshold",
+      "resolved_policy_mode_distribution": {
+        "bseo-live": 159
+      },
+      "overall_f1": 0.9877,
+      "creative_false_positive_rate": 0.0,
+      "creative_false_positive_count": 0,
+      "creative_negative_count": 44,
+      "deceptive_factual_camouflage_false_negative_rate": 0.0,
+      "high_risk_factual_recall": 1.0,
+      "recommended_action_distribution": {
+        "ask-report": 27,
+        "badge": 45,
+        "blur": 14,
+        "hide": 42,
+        "none": 31
+      },
+      "score_contract": {
+        "raw_risk_high_is_worse": true,
+        "ui_truth_score_high_is_better": true,
+        "truth_score_formula": "round((1.0 - risk_score) * 10.0, 1)",
+        "reranking_direction_expected": "higher UI truth score promotes; higher raw risk demotes",
+        "bounded_outputs": true
+      }
+    },
+    "correction": {
+      "type": "route-aware-eval-threshold-calibration",
+      "runtime_policy_key": "semantic_routing_eval_decision_threshold",
+      "value": 0.4,
+      "runtime_scoring_changed": false,
+      "router_changed": false,
+      "bseo_policy_code_changed": false,
+      "reason": "Governed validation/test sweep showed 0.40 reduces creative FPR while preserving camouflage FNR, high-risk factual recall, and overall F1 under the current bseo-live runtime chain."
+    },
+    "gates": {
+      "creative_fpr_reduced": true,
+      "deceptive_factual_camouflage_fnr_not_worse": true,
+      "high_risk_factual_recall_not_worse": true,
+      "overall_f1_not_materially_regressed": true,
+      "score_contract_holds": true
+    },
+    "accepted": true
   },
   "model_decisions": {
     "no_retrain": {},
@@ -3073,6 +3642,7 @@
     "content_class_route_performance.svg",
     "recommended_action_distribution.svg",
     "semantic_route_before_after.svg",
+    "creative_fpr_diagnostic.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
     "lineage_overview.svg"

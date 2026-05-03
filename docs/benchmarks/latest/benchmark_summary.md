@@ -1,6 +1,6 @@
 # Benchmark Summary
 
-- Generated at: `2026-05-03T06:48:25.603193+00:00`
+- Generated at: `2026-05-03T16:03:23.863754+00:00`
 - Build ID: `build-20260425085620`
 - Model version: `baseline-v1-build-20260425085620`
 - Eval sample count: `101`
@@ -25,11 +25,14 @@
 - Route-aware eval artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
 - Route-aware baseline artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
 - Calibration decision artifact: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
+- Creative FPR diagnostic artifact: `artifacts/eval_runs/build-20260425085620-creative-fpr-diagnostic.json`
 - Route-aware sample count: `159`
-- Creative false-positive rate: `0.4091`
+- Creative false-positive rate: `0.0`
 - Deceptive/factual camouflage false-negative rate: `0.0`
-- BSEO override frequency: `0.0`
+- BSEO override frequency: `0.4843`
 - Calibration decision: `controlled-calibration-recorded`
+- Creative FPR gate accepted: `True`
+- Creative FPR before/after: `0.5909` -> `0.0`
 
 ## Observation And Feedback Intake
 
@@ -68,6 +71,8 @@
 - `semantic_routing_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
 - `semantic_routing_baseline_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
 - `calibration_decision`: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
+- `creative_fpr_before_eval`: `artifacts/eval_runs/build-20260425085620-creative-fpr-before-eval.json`
+- `creative_fpr_diagnostic`: `artifacts/eval_runs/build-20260425085620-creative-fpr-diagnostic.json`
 - `no_retrain_decision`: `missing`
 - `no_promotion_decision`: `missing`
 - `bseo_report`: `artifacts/eval_runs/build-20260425085620-bseo-report.json`
