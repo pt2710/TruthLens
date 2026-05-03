@@ -73,6 +73,7 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 - Latest committed benchmark summary: [docs/benchmarks/latest/benchmark_summary.json](docs/benchmarks/latest/benchmark_summary.json)
 - Latest committed verify summary: [docs/benchmarks/latest/verify_summary.json](docs/benchmarks/latest/verify_summary.json)
 - Benchmark visuals: [docs/benchmarks/latest/assets/](docs/benchmarks/latest/assets)
+- Semantic routing dashboard: [docs/benchmarks/latest/interactive/semantic_routing_dashboard.html](docs/benchmarks/latest/interactive/semantic_routing_dashboard.html)
 - Runtime governance artifact: [artifacts/reports/runtime-governance-latest.json](artifacts/reports/runtime-governance-latest.json)
 - Freshness gate: `python scripts/benchmark_freshness_gate.py`
 

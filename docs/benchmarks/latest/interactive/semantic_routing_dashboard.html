@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>TruthLens mutation atlas explorer</title>
+    <title>TruthLens semantic routing dashboard</title>
     <style>
       body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
       main { max-width: 1180px; margin: 0 auto; padding: 28px; }
@@ -25,24 +25,33 @@
   <body>
     <main>
       <div class="card">
-        <h1>TruthLens mutation atlas explorer</h1>
+        <h1>TruthLens semantic routing dashboard</h1>
         <p class="muted">Generated from committed artifacts. This page is static, deterministic, and should agree with README and the benchmark summary JSON.</p>
       </div>
       
         <div class="card">
-          <h2>Atlas status</h2>
+          <h2>Route-aware evaluation</h2>
           <div class="metric-grid">
-            <div class="metric"><strong>Status</strong><span>clustered</span></div>
-            <div class="metric"><strong>Usable mutations</strong><span>122</span></div>
-            <div class="metric"><strong>Cluster count</strong><span>1</span></div>
+            <div class="metric"><strong>Eval artifact</strong><span>artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json</span></div>
+            <div class="metric"><strong>Baseline artifact</strong><span>artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json</span></div>
+            <div class="metric"><strong>Rows</strong><span>159</span></div>
+            <div class="metric"><strong>Creative FPR</strong><span>0.409</span></div>
+            <div class="metric"><strong>Camouflage FNR</strong><span>0.000</span></div>
+            <div class="metric"><strong>BSEO override frequency</strong><span>0.000</span></div>
+            <div class="metric"><strong>Score contract bounded</strong><span>True</span></div>
           </div>
         </div>
         <div class="card">
-          <h2>Clusters</h2>
+          <h2>Routes</h2>
           <table>
-            <thead><tr><th>Cluster</th><th>Size</th><th>Average delta F</th><th>Average delta B</th></tr></thead>
-            <tbody><tr><td>0</td><td>24</td><td>0.000</td><td>0.000</td></tr></tbody>
+            <thead><tr><th>Route</th><th>Rows</th><th>F1</th><th>FPR</th><th>FNR</th></tr></thead>
+            <tbody><tr><td>ambiguous_escalated</td><td>54</td><td>0.579</td><td>1.000</td><td>0.000</td></tr><tr><td>high_risk_factual</td><td>52</td><td>0.987</td><td>0.067</td><td>0.000</td></tr><tr><td>informational_consistency</td><td>35</td><td>1.000</td><td>0.000</td><td>0.000</td></tr><tr><td>minimal_creative</td><td>18</td><td>0.000</td><td>0.000</td><td>0.000</td></tr></tbody>
           </table>
+        </div>
+        <div class="card">
+          <h2>Calibration decision</h2>
+          <p>Decision: <code>controlled-calibration-recorded</code></p>
+          <p>Reason: Controlled calibration artifacts were generated from governed validation/test records; route context is diagnostic and not used as a label.</p>
         </div>
         
       <div class="card">

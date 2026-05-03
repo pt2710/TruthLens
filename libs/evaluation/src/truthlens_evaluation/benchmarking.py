@@ -24,6 +24,11 @@ ASSET_FILENAMES = (
     "runtime_governance.svg",
     "observation_feedback_intake.svg",
     "benchmark_provenance.svg",
+    "semantic_route_distribution.svg",
+    "semantic_route_performance.svg",
+    "content_class_route_performance.svg",
+    "recommended_action_distribution.svg",
+    "semantic_route_before_after.svg",
     "bseo_bias_profile.svg",
     "mutation_bias_atlas.svg",
     "lineage_overview.svg",
@@ -35,6 +40,7 @@ INTERACTIVE_FILENAMES = (
     "bseo_policy_dashboard.html",
     "mutation_atlas.html",
     "runtime_governance_dashboard.html",
+    "semantic_routing_dashboard.html",
 )
 
 
@@ -80,6 +86,10 @@ def _find_latest_eval_report(directory: Path) -> Path | None:
             and not path.name.endswith("-mutation-bias-atlas.json")
             and not path.name.endswith("-bseo-lineage.json")
             and not path.name.endswith("-training-history.json")
+            and not path.name.endswith("-semantic-routing-eval.json")
+            and not path.name.endswith("-calibration-decision.json")
+            and not path.name.endswith("-no-retrain-decision.json")
+            and not path.name.endswith("-no-promotion-decision.json")
         ],
         key=lambda path: path.stat().st_mtime,
         reverse=True,
@@ -127,6 +137,31 @@ def _artifact_paths() -> dict[str, Path | None]:
         if build_id and (eval_dir / f"{build_id}-training-history.json").exists()
         else _find_latest_json(eval_dir, "-training-history.json")
     )
+    semantic_routing_eval_path = (
+        eval_dir / f"{build_id}-semantic-routing-eval.json"
+        if build_id and (eval_dir / f"{build_id}-semantic-routing-eval.json").exists()
+        else _find_latest_json(eval_dir, "-semantic-routing-eval.json")
+    )
+    semantic_routing_baseline_eval_path = (
+        eval_dir / f"{build_id}-semantic-routing-baseline-eval.json"
+        if build_id and (eval_dir / f"{build_id}-semantic-routing-baseline-eval.json").exists()
+        else _find_latest_json(eval_dir, "-semantic-routing-baseline-eval.json")
+    )
+    calibration_decision_path = (
+        eval_dir / f"{build_id}-calibration-decision.json"
+        if build_id and (eval_dir / f"{build_id}-calibration-decision.json").exists()
+        else _find_latest_json(eval_dir, "-calibration-decision.json")
+    )
+    no_retrain_decision_path = (
+        eval_dir / f"{build_id}-no-retrain-decision.json"
+        if build_id and (eval_dir / f"{build_id}-no-retrain-decision.json").exists()
+        else _find_latest_json(eval_dir, "-no-retrain-decision.json")
+    )
+    no_promotion_decision_path = (
+        eval_dir / f"{build_id}-no-promotion-decision.json"
+        if build_id and (eval_dir / f"{build_id}-no-promotion-decision.json").exists()
+        else _find_latest_json(eval_dir, "-no-promotion-decision.json")
+    )
     bseo_report_path = (
         eval_dir / f"{build_id}-bseo-report.json"
         if build_id and (eval_dir / f"{build_id}-bseo-report.json").exists()
@@ -166,6 +201,11 @@ def _artifact_paths() -> dict[str, Path | None]:
         "eval_report": eval_report_path,
         "simulation": simulation_path,
         "training_history": training_history_path,
+        "semantic_routing_eval": semantic_routing_eval_path,
+        "semantic_routing_baseline_eval": semantic_routing_baseline_eval_path,
+        "calibration_decision": calibration_decision_path,
+        "no_retrain_decision": no_retrain_decision_path,
+        "no_promotion_decision": no_promotion_decision_path,
         "bseo_report": bseo_report_path,
         "mutation_atlas": mutation_atlas_path,
         "lineage": lineage_path,
@@ -449,6 +489,16 @@ def _summarize_training_history(training_history: dict[str, Any] | None) -> dict
     }
 
 
+def _summarize_semantic_routing_eval(payload: dict[str, Any] | None) -> dict[str, Any]:
+    if not payload:
+        return {}
+    compact_rows = payload.get("compact_rows", [])
+    summary = {key: value for key, value in payload.items() if key != "compact_rows"}
+    summary["compact_row_count"] = len(compact_rows) if isinstance(compact_rows, list) else 0
+    summary["compact_rows_artifact_only"] = True
+    return summary
+
+
 def build_benchmark_summary() -> dict[str, Any]:
     runtime_governance = persist_runtime_governance_summary()
     paths = _artifact_paths()
@@ -456,6 +506,11 @@ def build_benchmark_summary() -> dict[str, Any]:
     eval_report = _read_json_if_exists(paths["eval_report"])
     simulation = _read_json_if_exists(paths["simulation"])
     training_history = _read_json_if_exists(paths["training_history"])
+    semantic_routing_eval = _read_json_if_exists(paths["semantic_routing_eval"])
+    semantic_routing_baseline_eval = _read_json_if_exists(paths["semantic_routing_baseline_eval"])
+    calibration_decision = _read_json_if_exists(paths["calibration_decision"])
+    no_retrain_decision = _read_json_if_exists(paths["no_retrain_decision"])
+    no_promotion_decision = _read_json_if_exists(paths["no_promotion_decision"])
     drift_report = _read_json_if_exists(paths["drift_report"])
     runtime_policy = _read_json_if_exists(paths["runtime_policy"])
     thresholds = _read_json_if_exists(paths["thresholds"])
@@ -550,6 +605,20 @@ def build_benchmark_summary() -> dict[str, Any]:
     if training_history is None:
         caveats.append(
             "No committed training-history artifact is present, so loss and accuracy curves fall back to explicit unavailable stubs."
+        )
+    if semantic_routing_eval is None:
+        missing.append("semantic-routing-eval artifact is missing")
+        caveats.append(
+            "No committed route-aware semantic routing evaluation artifact is present, so Adaptive Semantic Evidence Routing cannot be benchmarked from this snapshot."
+        )
+    if semantic_routing_baseline_eval is None:
+        caveats.append(
+            "No committed semantic-routing baseline artifact is present, so before/after routing comparison falls back to an unavailable stub."
+        )
+    if calibration_decision is None:
+        missing.append("calibration-decision artifact is missing")
+        caveats.append(
+            "No committed calibration/hyperparameter decision artifact is present, so tuning or no-tune status is not artifact-backed in this snapshot."
         )
     if runtime_policy is None:
         missing.append("runtime-policy.json is missing")
@@ -648,6 +717,13 @@ def build_benchmark_summary() -> dict[str, Any]:
             "q_table": dict((simulation or {}).get("q_table", {})),
         },
         "training_history": _summarize_training_history(training_history),
+        "semantic_routing": _summarize_semantic_routing_eval(semantic_routing_eval),
+        "semantic_routing_baseline": _summarize_semantic_routing_eval(semantic_routing_baseline_eval),
+        "calibration_decision": calibration_decision or {},
+        "model_decisions": {
+            "no_retrain": no_retrain_decision or {},
+            "no_promotion": no_promotion_decision or {},
+        },
         "drift": drift_report or {},
         "bseo": {
             "policy_artifact": _summarize_bseo_policy_artifact(bseo_policy),
@@ -968,6 +1044,157 @@ def _write_confusion_svg(summary: dict[str, Any], path: Path) -> None:
             body,
         ),
         encoding="utf-8",
+    )
+
+
+def _semantic_eval(summary: dict[str, Any]) -> dict[str, Any]:
+    semantic_eval = summary.get("semantic_routing", {})
+    return semantic_eval if isinstance(semantic_eval, dict) else {}
+
+
+def _write_semantic_route_distribution_svg(summary: dict[str, Any], path: Path) -> None:
+    semantic_eval = _semantic_eval(summary)
+    route_segments = dict(semantic_eval.get("route_segments", {}))
+    if not route_segments:
+        _stub_svg(
+            "Semantic route distribution",
+            "Adaptive Semantic Evidence Routing runtime distribution",
+            "No semantic-routing-eval artifact was available for this build.",
+            path,
+        )
+        return
+    categories = [name for name, payload in route_segments.items() if _safe_int(dict(payload).get("sample_count")) > 0]
+    values = [_safe_float(dict(route_segments[name]).get("sample_count")) for name in categories]
+    _bar_chart(
+        title="Semantic route distribution",
+        subtitle="Counts from the mandatory route-aware evaluation sidecar.",
+        categories=categories,
+        series=[("Rows", "#2563eb", values)],
+        path=path,
+        y_max=max(max(values, default=0.0), 1.0),
+    )
+
+
+def _write_semantic_route_performance_svg(summary: dict[str, Any], path: Path) -> None:
+    semantic_eval = _semantic_eval(summary)
+    route_segments = dict(semantic_eval.get("route_segments", {}))
+    categories = [name for name, payload in route_segments.items() if _safe_int(dict(payload).get("sample_count")) > 0]
+    if not categories:
+        _stub_svg(
+            "Semantic route performance",
+            "Route-segmented F1 and error rates",
+            "No route segments were available in the semantic-routing-eval artifact.",
+            path,
+        )
+        return
+    f1_values: list[float] = []
+    fpr_values: list[float] = []
+    fnr_values: list[float] = []
+    for name in categories:
+        metrics = dict(dict(route_segments[name]).get("metrics", {}))
+        f1_values.append(_safe_float(metrics.get("f1")))
+        fpr_values.append(_safe_float(metrics.get("false_positive_rate")))
+        fnr_values.append(_safe_float(metrics.get("false_negative_rate")))
+    _bar_chart(
+        title="Semantic route performance",
+        subtitle="Route-conditioned benchmark metrics under the current runtime policy chain.",
+        categories=categories,
+        series=[
+            ("F1", "#2563eb", f1_values),
+            ("FPR", "#c2410c", fpr_values),
+            ("FNR", "#7c3aed", fnr_values),
+        ],
+        path=path,
+    )
+
+
+def _write_content_class_route_performance_svg(summary: dict[str, Any], path: Path) -> None:
+    semantic_eval = _semantic_eval(summary)
+    class_segments = dict(semantic_eval.get("content_class_segments", {}))
+    categories = [name for name, payload in class_segments.items() if _safe_int(dict(payload).get("sample_count")) > 0]
+    if not categories:
+        _stub_svg(
+            "Content-class route performance",
+            "Content-class segmented F1 and false-positive rate",
+            "No content-class segments were available in the semantic-routing-eval artifact.",
+            path,
+        )
+        return
+    f1_values: list[float] = []
+    fpr_values: list[float] = []
+    for name in categories:
+        metrics = dict(dict(class_segments[name]).get("metrics", {}))
+        f1_values.append(_safe_float(metrics.get("f1")))
+        fpr_values.append(_safe_float(metrics.get("false_positive_rate")))
+    _bar_chart(
+        title="Content-class route performance",
+        subtitle="Class-segmented metrics. Sparse class support remains a caveat.",
+        categories=categories,
+        series=[("F1", "#2563eb", f1_values), ("FPR", "#c2410c", fpr_values)],
+        path=path,
+    )
+
+
+def _write_recommended_action_distribution_svg(summary: dict[str, Any], path: Path) -> None:
+    semantic_eval = _semantic_eval(summary)
+    overall = dict(semantic_eval.get("overall", {}))
+    distribution = dict(overall.get("recommended_action_distribution", {}))
+    if not distribution:
+        _stub_svg(
+            "Recommended action distribution",
+            "Policy action distribution from route-aware evaluation",
+            "No recommended-action distribution was available in the semantic-routing-eval artifact.",
+            path,
+        )
+        return
+    categories = list(distribution.keys())
+    values = [_safe_float(distribution[name]) for name in categories]
+    _bar_chart(
+        title="Recommended action distribution",
+        subtitle="Final user-facing policy actions under the current semantic-routing runtime chain.",
+        categories=categories,
+        series=[("Actions", "#0f766e", values)],
+        path=path,
+        y_max=max(max(values, default=0.0), 1.0),
+    )
+
+
+def _write_semantic_route_before_after_svg(summary: dict[str, Any], path: Path) -> None:
+    current = _semantic_eval(summary)
+    baseline = summary.get("semantic_routing_baseline", {})
+    baseline = baseline if isinstance(baseline, dict) else {}
+    if not current or not baseline:
+        _stub_svg(
+            "Semantic route before / after",
+            "Old latest model under new routing vs current generated runtime",
+            "Both baseline and current semantic-routing eval artifacts are required for this comparison.",
+            path,
+        )
+        return
+    categories = ["overall_f1", "creative_fpr", "camouflage_fnr", "bseo_override"]
+    current_checks = dict(current.get("architecture_checks", {}))
+    baseline_checks = dict(baseline.get("architecture_checks", {}))
+    current_values = [
+        _safe_float(dict(current.get("overall", {})).get("metrics", {}).get("f1")),
+        _safe_float(current_checks.get("creative_false_positive_rate")),
+        _safe_float(current_checks.get("deceptive_factual_camouflage_false_negative_rate")),
+        _safe_float(current_checks.get("bseo_override_frequency")),
+    ]
+    baseline_values = [
+        _safe_float(dict(baseline.get("overall", {})).get("metrics", {}).get("f1")),
+        _safe_float(baseline_checks.get("creative_false_positive_rate")),
+        _safe_float(baseline_checks.get("deceptive_factual_camouflage_false_negative_rate")),
+        _safe_float(baseline_checks.get("bseo_override_frequency")),
+    ]
+    _bar_chart(
+        title="Semantic route before / after",
+        subtitle="Artifact-backed comparison of baseline latest vs current generated runtime under semantic routing.",
+        categories=categories,
+        series=[
+            ("Baseline", "#64748b", baseline_values),
+            ("Current", "#2563eb", current_values),
+        ],
+        path=path,
     )
 
 
@@ -1625,6 +1852,9 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
     local_user_feedback = dict(feedback_layers.get("local_user_feedback", {}))
     creator_feedback = dict(feedback_layers.get("creator_operator_feedback", {}))
     global_truth = dict(feedback_layers.get("global_benchmark_truth", {}))
+    semantic_eval = _semantic_eval(summary)
+    architecture_checks = dict(semantic_eval.get("architecture_checks", {}))
+    calibration_decision = dict(summary.get("calibration_decision", {}))
     lines = [
         "# Benchmark Summary",
         "",
@@ -1640,6 +1870,17 @@ def _benchmark_summary_markdown(summary: dict[str, Any]) -> str:
         "## Metrics",
         "",
         _overall_metrics_table(summary).rstrip(),
+        "",
+        "## Adaptive Semantic Evidence Routing Eval",
+        "",
+        f"- Route-aware eval artifact: `{summary['artifact_paths'].get('semantic_routing_eval') or 'missing'}`",
+        f"- Route-aware baseline artifact: `{summary['artifact_paths'].get('semantic_routing_baseline_eval') or 'missing'}`",
+        f"- Calibration decision artifact: `{summary['artifact_paths'].get('calibration_decision') or 'missing'}`",
+        f"- Route-aware sample count: `{semantic_eval.get('sample_count', 0)}`",
+        f"- Creative false-positive rate: `{architecture_checks.get('creative_false_positive_rate', 'n/a')}`",
+        f"- Deceptive/factual camouflage false-negative rate: `{architecture_checks.get('deceptive_factual_camouflage_false_negative_rate', 'n/a')}`",
+        f"- BSEO override frequency: `{architecture_checks.get('bseo_override_frequency', 'n/a')}`",
+        f"- Calibration decision: `{calibration_decision.get('decision', 'missing')}`",
         "",
         "## Observation And Feedback Intake",
         "",
@@ -1913,6 +2154,56 @@ def _write_interactive_dashboards(summary: dict[str, Any], output_dir: Path) -> 
         """,
     )
 
+    semantic_eval = _semantic_eval(summary)
+    route_segments = dict(semantic_eval.get("route_segments", {}))
+    route_rows = "".join(
+        "<tr>"
+        f"<td>{escape(str(route_name))}</td>"
+        f"<td>{_safe_int(dict(payload).get('sample_count'))}</td>"
+        f"<td>{_safe_float(dict(dict(payload).get('metrics', {})).get('f1')):.3f}</td>"
+        f"<td>{_safe_float(dict(dict(payload).get('metrics', {})).get('false_positive_rate')):.3f}</td>"
+        f"<td>{_safe_float(dict(dict(payload).get('metrics', {})).get('false_negative_rate')):.3f}</td>"
+        "</tr>"
+        for route_name, payload in route_segments.items()
+        if _safe_int(dict(payload).get("sample_count")) > 0
+    )
+    if not route_rows:
+        route_rows = "<tr><td colspan='5'>No semantic routing evaluation artifact is available.</td></tr>"
+    architecture_checks = dict(semantic_eval.get("architecture_checks", {}))
+    score_contract = dict(architecture_checks.get("score_contract", {}))
+    calibration_decision = dict(summary.get("calibration_decision", {}))
+    _write_dashboard(
+        summary,
+        output_dir / "semantic_routing_dashboard.html",
+        "TruthLens semantic routing dashboard",
+        f"""
+        <div class="card">
+          <h2>Route-aware evaluation</h2>
+          <div class="metric-grid">
+            <div class="metric"><strong>Eval artifact</strong><span>{escape(str(summary['artifact_paths'].get('semantic_routing_eval') or 'missing'))}</span></div>
+            <div class="metric"><strong>Baseline artifact</strong><span>{escape(str(summary['artifact_paths'].get('semantic_routing_baseline_eval') or 'missing'))}</span></div>
+            <div class="metric"><strong>Rows</strong><span>{escape(str(_safe_int(semantic_eval.get('sample_count'))))}</span></div>
+            <div class="metric"><strong>Creative FPR</strong><span>{escape(_format_metric(_safe_float(architecture_checks.get('creative_false_positive_rate'))))}</span></div>
+            <div class="metric"><strong>Camouflage FNR</strong><span>{escape(_format_metric(_safe_float(architecture_checks.get('deceptive_factual_camouflage_false_negative_rate'))))}</span></div>
+            <div class="metric"><strong>BSEO override frequency</strong><span>{escape(_format_metric(_safe_float(architecture_checks.get('bseo_override_frequency'))))}</span></div>
+            <div class="metric"><strong>Score contract bounded</strong><span>{escape(str(score_contract.get('bounded_outputs', False)))}</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Routes</h2>
+          <table>
+            <thead><tr><th>Route</th><th>Rows</th><th>F1</th><th>FPR</th><th>FNR</th></tr></thead>
+            <tbody>{route_rows}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Calibration decision</h2>
+          <p>Decision: <code>{escape(str(calibration_decision.get('decision', 'missing')))}</code></p>
+          <p>Reason: {escape(str(calibration_decision.get('reason', 'No calibration decision artifact was available.')))}</p>
+        </div>
+        """,
+    )
+
 
 def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     root = output_root or (repo_root() / "docs" / "benchmarks" / "latest")
@@ -1946,6 +2237,11 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     _write_runtime_governance_svg(summary, assets_dir / "runtime_governance.svg")
     _write_observation_feedback_intake_svg(summary, assets_dir / "observation_feedback_intake.svg")
     _write_provenance_svg(summary, assets_dir / "benchmark_provenance.svg")
+    _write_semantic_route_distribution_svg(summary, assets_dir / "semantic_route_distribution.svg")
+    _write_semantic_route_performance_svg(summary, assets_dir / "semantic_route_performance.svg")
+    _write_content_class_route_performance_svg(summary, assets_dir / "content_class_route_performance.svg")
+    _write_recommended_action_distribution_svg(summary, assets_dir / "recommended_action_distribution.svg")
+    _write_semantic_route_before_after_svg(summary, assets_dir / "semantic_route_before_after.svg")
     _write_bseo_bias_svg(summary, assets_dir / "bseo_bias_profile.svg")
     _write_mutation_atlas_svg(summary, assets_dir / "mutation_bias_atlas.svg")
     _write_lineage_svg(summary, assets_dir / "lineage_overview.svg")

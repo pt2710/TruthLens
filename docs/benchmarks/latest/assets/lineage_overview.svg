@@ -33,22 +33,22 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="38" y="159.0">0.90</text>
 <line class="axis" x1="86" y1="154" x2="86" y2="494" />
 <line class="axis" x1="86" y1="494" x2="1326" y2="494" />
-<rect x="112.0" y="246.6" width="48.0" height="247.4" fill="#2563eb" rx="6" />
+<rect x="112.0" y="247.1" width="48.0" height="246.9" fill="#2563eb" rx="6" />
 <text class="small" x="150.8" y="522" text-anchor="middle">g0-m0</text>
-<rect x="267.0" y="244.4" width="48.0" height="249.6" fill="#2563eb" rx="6" />
+<rect x="267.0" y="243.4" width="48.0" height="250.6" fill="#2563eb" rx="6" />
 <text class="small" x="305.8" y="522" text-anchor="middle">g0-m1</text>
-<rect x="422.0" y="246.7" width="48.0" height="247.3" fill="#2563eb" rx="6" />
+<rect x="422.0" y="244.8" width="48.0" height="249.2" fill="#2563eb" rx="6" />
 <text class="small" x="460.8" y="522" text-anchor="middle">g0-m10</text>
-<rect x="577.0" y="244.3" width="48.0" height="249.7" fill="#2563eb" rx="6" />
+<rect x="577.0" y="243.4" width="48.0" height="250.6" fill="#2563eb" rx="6" />
 <text class="small" x="615.8" y="522" text-anchor="middle">g0-m11</text>
-<rect x="732.0" y="203.5" width="48.0" height="290.5" fill="#2563eb" rx="6" />
+<rect x="732.0" y="202.1" width="48.0" height="291.9" fill="#2563eb" rx="6" />
 <text class="small" x="770.8" y="522" text-anchor="middle">g0-m12</text>
-<rect x="887.0" y="243.4" width="48.0" height="250.6" fill="#2563eb" rx="6" />
-<text class="small" x="925.8" y="522" text-anchor="middle">g0-m14</text>
-<rect x="1042.0" y="242.9" width="48.0" height="251.1" fill="#2563eb" rx="6" />
-<text class="small" x="1080.8" y="522" text-anchor="middle">g0-m15</text>
-<rect x="1197.0" y="201.6" width="48.0" height="292.4" fill="#2563eb" rx="6" />
-<text class="small" x="1235.8" y="522" text-anchor="middle">g0-m16</text>
+<rect x="887.0" y="244.8" width="48.0" height="249.2" fill="#2563eb" rx="6" />
+<text class="small" x="925.8" y="522" text-anchor="middle">g0-m13</text>
+<rect x="1042.0" y="241.5" width="48.0" height="252.5" fill="#2563eb" rx="6" />
+<text class="small" x="1080.8" y="522" text-anchor="middle">g0-m14</text>
+<rect x="1197.0" y="241.7" width="48.0" height="252.3" fill="#2563eb" rx="6" />
+<text class="small" x="1235.8" y="522" text-anchor="middle">g0-m15</text>
 <rect x="86" y="540" width="16" height="16" fill="#2563eb" rx="4" />
 <text class="legend" x="110" y="553">Objective</text>
 </svg>

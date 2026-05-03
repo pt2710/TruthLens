@@ -56,6 +56,8 @@ def test_training_and_simulation_generate_artifacts(
     eval_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest.json")
     training_history = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-training-history.json")
     simulation_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-simulation.json")
+    semantic_routing_eval = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-semantic-routing-eval.json")
+    calibration_decision = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-calibration-decision.json")
     bseo_report = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-report.json")
     bseo_lineage = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-bseo-lineage.json")
     bseo_atlas = read_json(repo_root() / "artifacts/eval_runs/build-test-latest-mutation-bias-atlas.json")
@@ -120,6 +122,15 @@ def test_training_and_simulation_generate_artifacts(
     assert "bseo_search" in simulation_report
     assert "contextual_bandit" in simulation_report
     assert "bandit_threshold_adjustments" in simulation_report
+    assert semantic_routing_eval["artifact_type"] == "semantic-routing-evaluation"
+    assert semantic_routing_eval["sample_count"] > 0
+    assert "minimal_creative" in semantic_routing_eval["route_segments"]
+    assert "high_risk_factual" in semantic_routing_eval["route_segments"]
+    assert semantic_routing_eval["architecture_checks"]["score_contract"]["raw_risk_high_is_worse"] is True
+    assert semantic_routing_eval["architecture_checks"]["score_contract"]["ui_truth_score_high_is_better"] is True
+    assert calibration_decision["artifact_type"] == "calibration-hyperparameter-decision"
+    assert "threshold_calibration" in calibration_decision["parameters"]
+    assert "creative_discount_bounds" in calibration_decision["parameters"]
     assert simulation_report["replay_summary"]["steps"] > 0
     assert bseo_report["policy_version"] == "bseo-control-policy-v1"
     assert bseo_lineage

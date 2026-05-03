@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from truthlens_data_pipeline.paths import ensure_dir, read_jsonl, repo_root
+from truthlens_data_pipeline.paths import ensure_dir, read_jsonl, repo_root, utc_now
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import (
     build_drift_report,
@@ -17,6 +17,8 @@ from truthlens_evaluation import (
     run_policy_replay,
     run_threshold_sweep,
     search_threshold_family,
+    write_calibration_decision,
+    write_semantic_routing_evaluation,
 )
 from truthlens_model_serving import predict_item_signals
 from truthlens_model_serving.registry import ARCHITECTURE_PLAN_VERSION, HEAD_SPEC_VERSION
@@ -71,6 +73,7 @@ def _score_request_from_record(record: dict[str, Any]) -> ScoreItemRequest:
 
 def main() -> None:
     manifest = load_latest_build_manifest()
+    generated_at = utc_now()
     train_rows = read_jsonl(repo_root() / manifest["artifacts"]["train"])
     test_rows = read_jsonl(repo_root() / manifest["artifacts"]["test"])
 
@@ -151,6 +154,7 @@ def main() -> None:
 
     payload: dict[str, Any] = {
         "build_id": manifest["build_id"],
+        "generated_at": generated_at,
         "threshold_sweep": sweep,
         "q_table": q_table,
         "policy": policy,
@@ -182,7 +186,7 @@ def main() -> None:
         json.dumps(
             {
                 "build_id": manifest["build_id"],
-                "generated_at": manifest["generated_at"],
+                "generated_at": generated_at,
                 "policy_version": bseo_search["policy_version"],
                 "best_candidate_id": bseo_search["best_candidate_id"],
                 "best_objective": bseo_search["best_objective"],
@@ -228,7 +232,8 @@ def main() -> None:
         json.dumps(
             {
                 "policy_version": bseo_search["policy_version"],
-                "generated_at": manifest["generated_at"],
+                "generated_at": generated_at,
+                "dataset_generated_at": manifest["generated_at"],
                 "build_id": manifest["build_id"],
                 "head_spec_version": HEAD_SPEC_VERSION,
                 "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
@@ -246,7 +251,8 @@ def main() -> None:
         json.dumps(
             {
                 "policy_version": "rl-action-policy-v1",
-                "generated_at": manifest["generated_at"],
+                "generated_at": generated_at,
+                "dataset_generated_at": manifest["generated_at"],
                 "build_id": manifest["build_id"],
                 "head_spec_version": HEAD_SPEC_VERSION,
                 "architecture_plan_version": ARCHITECTURE_PLAN_VERSION,
@@ -263,6 +269,16 @@ def main() -> None:
             ensure_ascii=True,
         ),
         encoding="utf-8",
+    )
+    semantic_eval = write_semantic_routing_evaluation(
+        manifest=manifest,
+        evaluation_label="post-training-runtime",
+    )
+    write_calibration_decision(
+        manifest=manifest,
+        semantic_eval=semantic_eval,
+        simulation=payload,
+        decision_label="post-training-runtime",
     )
     print(manifest["build_id"])
 

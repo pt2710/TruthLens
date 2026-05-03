@@ -10,15 +10,25 @@ from .runtime_governance import (
     build_runtime_governance_summary,
     persist_runtime_governance_summary,
 )
+from .semantic_routing import (
+    build_calibration_decision,
+    build_semantic_routing_evaluation,
+    write_calibration_decision,
+    write_no_promotion_decision,
+    write_no_retrain_decision,
+    write_semantic_routing_evaluation,
+)
 from .simulation import run_threshold_sweep
 from .verification_summary import build_verify_summary, render_verify_summary, run_verify_commands
 
 __all__ = [
     "apply_runtime_promotion",
+    "build_calibration_decision",
     "build_drift_report",
     "build_benchmark_summary",
     "build_runtime_governance_summary",
     "build_q_table",
+    "build_semantic_routing_evaluation",
     "compute_binary_metrics",
     "confusion_counts",
     "derive_policy",
@@ -37,4 +47,8 @@ __all__ = [
     "search_threshold_family",
     "state_key_for_score",
     "build_verify_summary",
+    "write_calibration_decision",
+    "write_no_promotion_decision",
+    "write_no_retrain_decision",
+    "write_semantic_routing_evaluation",
 ]

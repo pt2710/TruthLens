@@ -7,6 +7,7 @@ Rules:
 - Benchmark claims in `README.md` must trace back to `docs/benchmarks/latest/benchmark_summary.json`.
 - Visuals in `docs/benchmarks/latest/assets/` are generated from committed artifacts only.
 - The public repo keeps curated benchmark truth surfaces and metadata, not every raw eval/drift payload or binary model bundle.
+- Adaptive Semantic Evidence Routing refreshes must include route-aware eval and calibration decision artifacts before README claims change.
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
 - Small sample sizes, validation regressions, runtime-governance blockers, and runtime-policy mismatches must be surfaced explicitly.
 - Browser-observation and supplemental-intake volume must be surfaced honestly; zero supplemental volume is a valid committed state.
@@ -22,7 +23,11 @@ Primary outputs:
 - `latest/assets/*.svg`
 - `latest/assets/observation_feedback_intake.svg`
 - `latest/assets/overall_metrics_table.md`
+- `latest/assets/semantic_route_distribution.svg`
+- `latest/assets/semantic_route_performance.svg`
+- `latest/assets/semantic_route_before_after.svg`
 - `latest/interactive/*.html`
+- `latest/interactive/semantic_routing_dashboard.html`
 - `../../artifacts/reports/runtime-governance-latest.json`
 
 Regenerate everything with:

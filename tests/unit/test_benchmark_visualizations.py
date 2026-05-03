@@ -109,11 +109,19 @@ def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
     assert (output_root / "assets/policy_mode_comparison.svg").exists()
     assert (output_root / "assets/runtime_governance.svg").exists()
     assert (output_root / "assets/observation_feedback_intake.svg").exists()
+    assert (output_root / "assets/semantic_route_distribution.svg").exists()
+    assert (output_root / "assets/semantic_route_performance.svg").exists()
+    assert (output_root / "assets/content_class_route_performance.svg").exists()
+    assert (output_root / "assets/recommended_action_distribution.svg").exists()
+    assert (output_root / "assets/semantic_route_before_after.svg").exists()
     assert (output_root / "interactive/metrics_dashboard.html").exists()
     assert (output_root / "interactive/runtime_governance_dashboard.html").exists()
+    assert (output_root / "interactive/semantic_routing_dashboard.html").exists()
     assert "Shadow observation count" in (output_root / "benchmark_summary.md").read_text(encoding="utf-8")
     assert "metric-grid" in (output_root / "interactive/metrics_dashboard.html").read_text(encoding="utf-8")
     assert "Data unavailable for this visualization" in (output_root / "assets/bseo_bias_profile.svg").read_text(encoding="utf-8")
+    assert "Data unavailable for this visualization" in (output_root / "assets/semantic_route_distribution.svg").read_text(encoding="utf-8")
+    assert "Data unavailable for this visualization" in (output_root / "assets/semantic_route_before_after.svg").read_text(encoding="utf-8")
     assert "Data unavailable for this visualization" in (output_root / "assets/training_loss_curve.svg").read_text(encoding="utf-8")
     assert "Data unavailable for this visualization" in (output_root / "assets/training_accuracy_curve.svg").read_text(encoding="utf-8")
     assert summary["runtime_truth"]["configured_policy_mode"] == "threshold-default"
@@ -239,6 +247,66 @@ def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(
             },
         },
     )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-semantic-routing-eval.json",
+        {
+            "artifact_type": "semantic-routing-evaluation",
+            "build_id": "build-test",
+            "sample_count": 4,
+            "overall": {
+                "recommended_action_distribution": {"none": 2, "badge": 1, "ask-report": 1},
+            },
+            "route_segments": {
+                "minimal_creative": {
+                    "sample_count": 2,
+                    "metrics": {"f1": 1.0, "false_positive_rate": 0.0, "false_negative_rate": 0.0},
+                },
+                "high_risk_factual": {
+                    "sample_count": 2,
+                    "metrics": {"f1": 0.8, "false_positive_rate": 0.0, "false_negative_rate": 0.2},
+                },
+            },
+            "content_class_segments": {
+                "music": {
+                    "sample_count": 2,
+                    "metrics": {"f1": 1.0, "false_positive_rate": 0.0},
+                },
+                "news": {
+                    "sample_count": 2,
+                    "metrics": {"f1": 0.8, "false_positive_rate": 0.0},
+                },
+            },
+            "architecture_checks": {
+                "creative_false_positive_rate": 0.0,
+                "deceptive_factual_camouflage_false_negative_rate": 0.0,
+                "bseo_override_frequency": 0.25,
+                "score_contract": {"bounded_outputs": True},
+            },
+        },
+    )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-semantic-routing-baseline-eval.json",
+        {
+            "artifact_type": "semantic-routing-evaluation",
+            "build_id": "build-test",
+            "sample_count": 4,
+            "overall": {"metrics": {"f1": 0.7}},
+            "architecture_checks": {
+                "creative_false_positive_rate": 0.1,
+                "deceptive_factual_camouflage_false_negative_rate": 0.2,
+                "bseo_override_frequency": 0.0,
+            },
+        },
+    )
+    _write_json(
+        tmp_path / "artifacts/eval_runs/build-test-calibration-decision.json",
+        {
+            "artifact_type": "calibration-hyperparameter-decision",
+            "build_id": "build-test",
+            "decision": "controlled-calibration-recorded",
+            "reason": "Test route-aware calibration decision.",
+        },
+    )
 
     render_benchmark_bundle()
     output_root = tmp_path / "docs/benchmarks/latest"
@@ -248,13 +316,20 @@ def test_render_benchmark_bundle_uses_bseo_artifacts_when_available(
     governance_svg = (output_root / "assets/runtime_governance.svg").read_text(encoding="utf-8")
     loss_svg = (output_root / "assets/training_loss_curve.svg").read_text(encoding="utf-8")
     accuracy_svg = (output_root / "assets/training_accuracy_curve.svg").read_text(encoding="utf-8")
+    semantic_route_svg = (output_root / "assets/semantic_route_distribution.svg").read_text(encoding="utf-8")
+    semantic_before_after_svg = (output_root / "assets/semantic_route_before_after.svg").read_text(encoding="utf-8")
+    semantic_route_dashboard = (output_root / "interactive/semantic_routing_dashboard.html").read_text(encoding="utf-8")
     bseo_dashboard = (output_root / "interactive/bseo_policy_dashboard.html").read_text(encoding="utf-8")
 
     assert "Data unavailable for this visualization" not in bias_svg
     assert "Data unavailable for this visualization" not in loss_svg
     assert "Data unavailable for this visualization" not in accuracy_svg
+    assert "Data unavailable for this visualization" not in semantic_route_svg
+    assert "Data unavailable for this visualization" not in semantic_before_after_svg
     assert "Train loss" in loss_svg
     assert "Validation accuracy" in accuracy_svg
+    assert "minimal creative" in semantic_route_svg
+    assert "Route-aware evaluation" in semantic_route_dashboard
     assert "Mutation bias atlas" in atlas_svg
     assert "Accepted lineage objective scores" in lineage_svg
     assert "Runtime governance summary" in governance_svg

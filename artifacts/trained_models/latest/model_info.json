@@ -1,6 +1,6 @@
 {
   "model_version": "baseline-v1-build-20260425085620",
-  "trained_at": "2026-04-25T08:56:20.686458+00:00",
+  "trained_at": "2026-05-03T06:31:35.873484+00:00",
   "build_id": "build-20260425085620",
   "head_spec_version": "2026-04-02",
   "head_specs": [
@@ -141,6 +141,18 @@
       "backend": "scikit-learn",
       "runtime_path": "core-inference",
       "notes": "Channel-history aggregation over prior flags, upload velocity, repeat templates, and engagement anomalies."
+    },
+    {
+      "component_id": "adaptive-semantic-evidence-router",
+      "label": "Adaptive semantic evidence routing",
+      "phase": "V3",
+      "status": "implemented",
+      "layer_type": "evidence-routing",
+      "family": "semantic-evidence-router",
+      "encoder": "heuristic-router-v1",
+      "backend": "python-rules",
+      "runtime_path": "pre-policy-routing",
+      "notes": "Class-conditioned route layer that reduces clean creative mismatch pressure while preserving full observation and feedback learning context and escalating adversarial creative camouflage."
     },
     {
       "component_id": "text-head",

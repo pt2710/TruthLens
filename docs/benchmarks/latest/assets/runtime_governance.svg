@@ -39,13 +39,13 @@ text { font-family: 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
 <text class="small" x="842" y="290">matter.</text>
 <rect class="card" x="52" y="346" width="360" height="188" rx="20" />
 <text class="label" x="74" y="378">Objective + calibration</text>
-<text class="value" x="74" y="428">obj=0.819 | ece=0.175</text>
+<text class="value" x="74" y="428">obj=0.818 | ece=0.175</text>
 <text class="small" x="74" y="468">BSEO promotion stays downstream of</text>
 <text class="small" x="74" y="486">fused/calibrated scoring quality.</text>
 <rect class="card" x="436" y="346" width="360" height="188" rx="20" />
 <text class="label" x="458" y="378">Atlas + lineage</text>
 <text class="value-compact" x="458" y="428">clustered | lineage=125</text>
-<text class="small" x="458" y="468">usable_mutations=124</text>
+<text class="small" x="458" y="468">usable_mutations=122</text>
 <rect class="accent" x="820" y="346" width="360" height="188" rx="20" />
 <text class="label" x="842" y="378">Live blockers</text>
 <text class="value" x="842" y="428">none</text>

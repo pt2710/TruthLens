@@ -1,6 +1,6 @@
 # Benchmark Summary
 
-- Generated at: `2026-04-25T17:14:36.225812+00:00`
+- Generated at: `2026-05-03T06:48:25.603193+00:00`
 - Build ID: `build-20260425085620`
 - Model version: `baseline-v1-build-20260425085620`
 - Eval sample count: `101`
@@ -20,6 +20,17 @@
 | PR AUC | 1.000 | 1.000 |
 | Calibration error | 0.175 | 0.185 |
 
+## Adaptive Semantic Evidence Routing Eval
+
+- Route-aware eval artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
+- Route-aware baseline artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
+- Calibration decision artifact: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
+- Route-aware sample count: `159`
+- Creative false-positive rate: `0.4091`
+- Deceptive/factual camouflage false-negative rate: `0.0`
+- BSEO override frequency: `0.0`
+- Calibration decision: `controlled-calibration-recorded`
+
 ## Observation And Feedback Intake
 
 - Browser observations: `1459`
@@ -27,7 +38,7 @@
 - Observation rows linked back to scored items: `1459`
 - Legacy supplemental candidates: `0`
 - Legacy split-blocked candidates: `0`
-- Local-user feedback events: `77`
+- Local-user feedback events: `85`
 - Creator/operator candidates: `53`
 - Creator/operator gold rows: `53`
 - Creator/operator ingested rows: `53`
@@ -38,7 +49,7 @@
 - Shadow eligible: `True`
 - Live eligible: `True`
 - Shadow observation count: `911`
-- BSEO objective score: `0.819`
+- BSEO objective score: `0.8178`
 
 ## Caveats
 
@@ -54,6 +65,11 @@
 - `eval_report`: `artifacts/eval_runs/build-20260425085620.json`
 - `simulation`: `artifacts/eval_runs/build-20260425085620-simulation.json`
 - `training_history`: `artifacts/eval_runs/build-20260425085620-training-history.json`
+- `semantic_routing_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
+- `semantic_routing_baseline_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
+- `calibration_decision`: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
+- `no_retrain_decision`: `missing`
+- `no_promotion_decision`: `missing`
 - `bseo_report`: `artifacts/eval_runs/build-20260425085620-bseo-report.json`
 - `mutation_atlas`: `artifacts/eval_runs/build-20260425085620-mutation-bias-atlas.json`
 - `lineage`: `artifacts/eval_runs/build-20260425085620-bseo-lineage.json`

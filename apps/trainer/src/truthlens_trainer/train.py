@@ -16,7 +16,7 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     torch_version = None
 
-from truthlens_data_pipeline.paths import read_jsonl, repo_root
+from truthlens_data_pipeline.paths import read_jsonl, repo_root, utc_now
 from truthlens_dataset_governance import load_latest_build_manifest
 from truthlens_evaluation import compute_binary_metrics, confusion_counts, expected_calibration_error
 from truthlens_feature_extractors import (
@@ -349,6 +349,7 @@ def _aggregate_histories(
 
 def main() -> None:
     manifest = load_latest_build_manifest()
+    training_generated_at = utc_now()
     train_records = _load_split_records(manifest, "train")
     validation_records = _load_split_records(manifest, "validation")
     test_records = _load_split_records(manifest, "test")
@@ -720,7 +721,7 @@ def main() -> None:
 
     model_info = {
         "model_version": f"baseline-v1-{manifest['build_id']}",
-        "trained_at": manifest["generated_at"],
+        "trained_at": training_generated_at,
         "build_id": manifest["build_id"],
         "head_spec_version": HEAD_SPEC_VERSION,
         "head_specs": runtime_head_specs(
@@ -767,6 +768,7 @@ def main() -> None:
     eval_dir.mkdir(parents=True, exist_ok=True)
     evaluation_payload = {
         "build_id": manifest["build_id"],
+        "generated_at": training_generated_at,
         "metrics": metrics,
         "calibration_error": calibration_error,
         "confusion_matrix": confusion,
@@ -781,7 +783,7 @@ def main() -> None:
     )
     training_history_payload = {
         "build_id": manifest["build_id"],
-        "generated_at": manifest["generated_at"],
+        "generated_at": training_generated_at,
         "baseline_heads": {
             "fit_label": "train",
             "eval_label": "validation",
