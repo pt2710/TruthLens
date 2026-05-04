@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from truthlens_feature_extractors import infer_content_taxonomy
 from truthlens_model_serving.semantic_router import (
     AdaptiveSemanticEvidenceRouter,
     route_adjusted_mismatch,
@@ -59,6 +60,29 @@ def test_genuine_instrumental_beat_routes_minimal_and_preserves_learning_capture
     assert "thumbnail_ref" in route["preserved_learning_evidence"]
     assert "feedback" in route["preserved_learning_evidence"]
     assert "verify_report_outcome" in route["preserved_learning_evidence"]
+
+
+def test_rap_instrumental_beat_title_routes_minimal_from_taxonomy_confidence() -> None:
+    title = 'Freestyle Beat - "VILLAIN\'S GAME" | Rap Instrumental 2026 | Rap Beats'
+    taxonomy = infer_content_taxonomy(
+        title=title,
+        description="Download links, credits, streaming links, and producer notes.",
+        transcript=None,
+        channel_name="Nova Beats",
+        channel_history_features={},
+    )
+    route = _route(
+        title=title,
+        description="Download links, credits, streaming links, and producer notes.",
+        content_class=str(taxonomy["content_class"]),
+        confidence=float(taxonomy["content_class_confidence"]),
+    )
+
+    assert taxonomy["content_class"] == "music"
+    assert taxonomy["content_class_confidence"] >= 0.62
+    assert route["runtime_route"] == "minimal_creative"
+    assert route["adversarial_guard"] == "clean"
+    assert route["mismatch_pressure"] == "reduced"
 
 
 def test_album_cover_music_upload_routes_minimal_creative() -> None:

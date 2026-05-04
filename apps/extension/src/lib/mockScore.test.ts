@@ -81,6 +81,32 @@ describe('createBootstrapScore', () => {
     expect(result.semantic_evidence_route.learning_capture_plan).toBe('full_multimodal_capture');
   });
 
+  it('keeps rap instrumental beat uploads on the clean minimal creative route', () => {
+    const result = createBootstrapScore(scoreItemRequestSchema.parse({
+      item_id: 'card-rap-beat',
+      title: 'Freestyle Beat - "VILLAIN\'S GAME" | Rap Instrumental 2026 | Rap Beats',
+      description_snapshot: 'Download links, credits, streaming links, and producer notes.',
+      thumbnail_ref: null,
+      transcript_excerpt: null,
+      metadata: {},
+      channel: {
+        channel_name: 'Nova Beats',
+        prior_flags: 0,
+        channel_history_features: {},
+      },
+      user_context: {
+        strict_mode: false,
+        muted_channels: [],
+        prior_corrections: 0,
+      },
+    }));
+
+    expect(result.content_class).toBe('music');
+    expect(result.recommended_action).toBe('none');
+    expect(result.semantic_evidence_route.runtime_route).toBe('minimal_creative');
+    expect(result.semantic_evidence_route.mismatch_pressure).toBe('reduced');
+  });
+
   it('detects art uploads from gallery and sketchbook framing', () => {
     const result = createBootstrapScore(scoreItemRequestSchema.parse({
       item_id: 'card-4',

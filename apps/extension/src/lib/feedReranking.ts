@@ -4,8 +4,8 @@ import type { FeedbackChannelProfile } from './api';
 import {
   feedHistoryAdjustmentScore,
   feedRiskScore,
-  getTruthBand,
   type TruthBand,
+  truthBandFromScore,
   truthScore,
 } from './feedScoreTruth';
 import type { PersonalizationSnapshot } from './personalization';
@@ -51,6 +51,19 @@ function strongTransparentHistory(profile: FeedbackChannelProfile | undefined): 
   return transparentCount >= 2 || (trustScore >= 7.5 && reportedItemCount <= Math.max(transparentCount, 1));
 }
 
+function reviewPromptTruthScoreCap(
+  score: ScoreResult,
+  reviewPrompt: ReviewPromptDecision | null,
+): number {
+  if (reviewPrompt?.workflowMode !== 'report') {
+    return 10;
+  }
+  if (score.recommended_action === 'ask-report' || score.recommended_action === 'hide') {
+    return 4.9;
+  }
+  return 6.6;
+}
+
 export function buildFeedPresentationSnapshot(
   score: ScoreResult,
   personalization: PersonalizationSnapshot,
@@ -58,9 +71,10 @@ export function buildFeedPresentationSnapshot(
   reviewPrompt: ReviewPromptDecision | null,
   rerankLocked: boolean,
 ): FeedPresentationSnapshot {
-  const nextTruthScore = truthScore(score);
-  const nextTruthBand = getTruthBand(score);
-  const nextFeedRiskScore = feedRiskScore(score);
+  const scoreCap = reviewPromptTruthScoreCap(score, reviewPrompt);
+  const nextTruthScore = Math.min(truthScore(score), scoreCap);
+  const nextTruthBand = truthBandFromScore(nextTruthScore);
+  const nextFeedRiskScore = Math.max(feedRiskScore(score), 10 - nextTruthScore);
   const historyAdjustment = feedHistoryAdjustmentScore(score);
   const runtimeRiskScore = Number((score.risk_score * 10).toFixed(1));
   const negativeBiases = new Set(score.bias_profile.negative_biases);

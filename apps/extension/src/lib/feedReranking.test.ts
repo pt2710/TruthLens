@@ -183,6 +183,42 @@ describe('feedReranking', () => {
     expect(highTrust.rerankPriority).toBeGreaterThan(lowTrust.rerankPriority);
   });
 
+  it('does not show a green truth band when the prompt asks for report review', () => {
+    const snapshot = buildFeedPresentationSnapshot(
+      scoreResultSchema.parse({
+        risk_score: 0.2,
+        confidence: 0.82,
+        uncertainty: 0.18,
+        path_scores: {},
+        content_class: 'satire',
+        content_class_confidence: 0.71,
+        bias_profile: {
+          metrics: {},
+          positive_biases: ['ambiguity-aware-caution'],
+          negative_biases: ['genre-confusion'],
+          guardrail_applied: 'satire-context-prefers-review',
+        },
+        recommended_action: 'badge',
+        reasons: ['Example'],
+        explanation_id: 'exp-review',
+        explanation_summary: 'Example',
+        evidence: [],
+      }),
+      makePersonalization({ rankingScore: 7.2 }),
+      makeProfile({ trust_score: 6.5 }),
+      makeReviewPrompt({
+        workflowMode: 'report',
+        label: 'Review report',
+        reason: 'TruthLens wants a human report decision for this feed item.',
+      }),
+      false,
+    );
+
+    expect(snapshot.truthScore).toBe(6.6);
+    expect(snapshot.truthBand).toBe('yellow');
+    expect(snapshot.feedRiskScore).toBeGreaterThanOrEqual(3.4);
+  });
+
   it('keeps satire above the negative bands when only genre confusion is present', () => {
     const snapshot = buildFeedPresentationSnapshot(
       scoreResultSchema.parse({
