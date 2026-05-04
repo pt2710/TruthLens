@@ -171,6 +171,7 @@ async function main() {
   const optimizationRequests = [];
   const suggestionRequests = [];
   const youtubeReports = [];
+  const scoreRequestTitles = [];
   let batchRequests = 0;
   let artificialBatchDelayMs = 0;
   let artificialSuggestDelayMs = 0;
@@ -386,6 +387,7 @@ async function main() {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
       const body = JSON.parse(route.request().postData() ?? '{}');
+      scoreRequestTitles.push(...(body.items ?? []).map((item) => item.title));
       const results = Object.fromEntries(
         (body.items ?? []).map((item) => [item.item_id, mockScore(item)]),
       );
@@ -653,8 +655,13 @@ async function main() {
     assert.equal(await page.locator('.truthlens-report-card').count(), 0);
     assert.equal(await page.locator('.truthlens-action-row').count(), 3);
     assert.equal(browserObservations.length, 3);
+    assert.equal(
+      scoreRequestTitles.some((title) => title.includes('High-speed internet around the world')),
+      false,
+    );
 
     const cards = page.locator('[data-truthlens-card]');
+    const externalAdCard = page.locator('[data-fixture-card="external-ad"]');
     const weeklyCard = page.locator('[data-truthlens-card]', {
       hasText: 'Weekly launch schedule and mission recap',
     });
@@ -699,6 +706,64 @@ async function main() {
     assert.equal(await breakingCard.getAttribute('data-truthlens-runtime-score'), '7.4');
     assert.ok(Number(await breakingCard.getAttribute('data-truthlens-truth-score')) < 2.6);
     assert.equal(await breakingCard.getAttribute('data-truthlens-truth-band'), 'red');
+    assert.equal(await externalAdCard.getAttribute('data-truthlens-processed'), null);
+    assert.equal(await externalAdCard.getAttribute('data-truthlens-rerank-priority'), null);
+    assert.equal(await externalAdCard.locator('.truthlens-card-flag').count(), 0);
+    assert.equal(await externalAdCard.locator('.truthlens-review-prompt').count(), 0);
+    assert.equal(await externalAdCard.locator('.truthlens-action-row').count(), 0);
+
+    await page.evaluate(async () => {
+      const targetCard = document.querySelector('[data-fixture-card="external-ad"]');
+      if (!(targetCard instanceof HTMLElement)) {
+        throw new Error('fixture external ad card missing for context menu');
+      }
+      const thumbnail = targetCard.querySelector('img') ?? targetCard;
+      thumbnail.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        }),
+      );
+      await window.__dispatchTruthlensRuntimeMessage({
+        type: 'TRUTHLENS_OPEN_MANUAL_REPORT',
+        pageUrl: window.location.href,
+        workflowMode: 'report',
+      });
+    });
+    assert.equal(await page.locator('.truthlens-report-card').count(), 0);
+
+    await page.evaluate(() => {
+      const targetCard = document.querySelector('[data-fixture-card="external-ad"]');
+      if (!(targetCard instanceof HTMLElement)) {
+        throw new Error('fixture external ad card missing for cleanup');
+      }
+      targetCard.setAttribute('data-truthlens-processed', 'true');
+      targetCard.setAttribute('data-truthlens-rerank-priority', '8.5');
+      targetCard.classList.add('truthlens-card-boosted');
+      const flag = document.createElement('span');
+      flag.className = 'truthlens-card-flag';
+      flag.textContent = '8.5';
+      const actionRow = document.createElement('div');
+      actionRow.className = 'truthlens-action-row';
+      actionRow.textContent = 'Why Not misleading Hide Mute channel Report';
+      const refreshMarker = document.createElement('span');
+      refreshMarker.className = 'ad-refresh-marker';
+      refreshMarker.textContent = 'Ad metadata refreshed';
+      targetCard.append(flag, actionRow, refreshMarker);
+    });
+    await page.waitForFunction(() => {
+      const targetCard = document.querySelector('[data-fixture-card="external-ad"]');
+      return (
+        targetCard instanceof HTMLElement &&
+        targetCard.getAttribute('data-truthlens-processed') === null &&
+        targetCard.getAttribute('data-truthlens-rerank-priority') === null &&
+        !targetCard.classList.contains('truthlens-card-boosted') &&
+        !targetCard.querySelector('.truthlens-card-flag') &&
+        !targetCard.querySelector('.truthlens-action-row')
+      );
+    });
+    assert.equal(browserObservations.length, 3);
 
     await page.evaluate(async () => {
       await chrome.storage.local.set({
@@ -965,6 +1030,7 @@ async function main() {
         .filter((card) => {
           return (
             card instanceof HTMLElement &&
+            card.querySelector('#video-title') instanceof HTMLElement &&
             !card.classList.contains('truthlens-card-hidden') &&
             getComputedStyle(card).display !== 'none'
           );

@@ -41,6 +41,11 @@ import {
   isReadyForStableFeedScoring,
 } from './lib/feedCardStability';
 import {
+  extractPrimaryCardLinkUrl,
+  inferYouTubeVideoLinkKind as inferLinkKind,
+  isScoreableYouTubeVideoCard,
+} from './lib/feedCardEligibility';
+import {
   buildPersonalizationSnapshot,
   shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
@@ -646,7 +651,10 @@ function findFeedCardFromEventTarget(target: EventTarget | null): HTMLElement | 
 
 function rememberContextMenuSelection(event: MouseEvent): void {
   const card = findFeedCardFromEventTarget(event.target);
-  if (!card) {
+  if (!card || !isScoreableYouTubeVideoCard(card)) {
+    if (card) {
+      clearNonScoreableTruthLensState(card);
+    }
     lastContextMenuSelection = null;
     return;
   }
@@ -659,24 +667,6 @@ function rememberContextMenuSelection(event: MouseEvent): void {
         capturedAtMs: Date.now(),
       }
     : null;
-}
-
-function inferLinkKind(linkUrl: string | null): 'watch' | 'shorts' | 'other' | 'unknown' {
-  if (!linkUrl) {
-    return 'unknown';
-  }
-  try {
-    const url = new URL(linkUrl, window.location.href);
-    if (url.pathname === '/watch') {
-      return 'watch';
-    }
-    if (url.pathname.startsWith('/shorts/')) {
-      return 'shorts';
-    }
-    return 'other';
-  } catch {
-    return 'unknown';
-  }
 }
 
 function parseCollectionIdentity(
@@ -725,12 +715,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
   const thumbnailRef = card.querySelector<HTMLImageElement>('img')?.getAttribute('src') || null;
   const descriptionSnapshot = extractText(card, '#description-text, #metadata-line, .metadata-snippet');
   const transcriptExcerpt = null;
-  const linkUrl =
-    card.querySelector<HTMLAnchorElement>(
-      'a#thumbnail, a[href*="watch"], a[href*="/shorts/"], a[href*="playlist?list="]',
-    )
-      ?.href || null;
-  const linkKind = inferLinkKind(linkUrl);
+  const linkUrl = extractPrimaryCardLinkUrl(card);
   const durationSeconds = parseDurationSeconds(
     extractText(
       card,
@@ -763,7 +748,7 @@ function extractCardContext(card: HTMLElement, index: number): PendingCard | nul
     descriptionSnapshot,
     transcriptExcerpt,
     signature,
-    rerankLocked: isSponsoredCard(card, linkKind),
+    rerankLocked: false,
     request: {
       item_id: itemId,
       title,
@@ -916,6 +901,29 @@ function clearCardAugmentations(card: HTMLElement) {
   card.querySelector('.truthlens-details')?.remove();
 }
 
+function clearNonScoreableTruthLensState(card: HTMLElement): void {
+  clearCardAugmentations(card);
+  clearRerankChunkState(card);
+  card.removeAttribute(PROCESSED);
+  card.removeAttribute(PROCESSING);
+  card.removeAttribute(ITEM_ID);
+  card.removeAttribute(SIGNATURE);
+  card.removeAttribute(PERSONALIZATION);
+  card.removeAttribute(PERSONALIZATION_SCORE);
+  card.removeAttribute(TRUTH_SCORE);
+  card.removeAttribute(FEED_RISK_SCORE);
+  card.removeAttribute(RUNTIME_SCORE);
+  card.removeAttribute(TRUTH_BAND);
+  card.removeAttribute(RERANK_PRIORITY);
+  card.removeAttribute(RERANK_LOCKED);
+  card.removeAttribute(OBSERVATION_ID);
+  card.removeAttribute('data-truthlens-review-mode');
+  card.removeAttribute('data-truthlens-personalization-reasons');
+  if (lastContextMenuSelection?.entry.card === card) {
+    lastContextMenuSelection = null;
+  }
+}
+
 function syncPersonalizationPresentation(
   card: HTMLElement,
   score: ScoreResult,
@@ -976,7 +984,8 @@ function directCardChildren(container: HTMLElement): HTMLElement[] {
     (child): child is HTMLElement =>
       child instanceof HTMLElement &&
       matchesFeedCardSelector(child) &&
-      !isSuppressedFeedCard(child),
+      !isSuppressedFeedCard(child) &&
+      isScoreableYouTubeVideoCard(child),
   );
 }
 
@@ -1053,7 +1062,7 @@ function reorderCardsWithinContainer(
 
 function restoreOriginalFeedOrdering(): void {
   const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR)).filter(
-    (card) => !isSuppressedFeedCard(card),
+    (card) => !isSuppressedFeedCard(card) && isScoreableYouTubeVideoCard(card),
   );
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
@@ -1084,9 +1093,11 @@ function applyLocalPersonalizationOrdering(targetCards?: HTMLElement[]) {
 
   const cards =
     targetCards && targetCards.length > 0
-      ? targetCards.filter((card) => !isSuppressedFeedCard(card))
+      ? targetCards.filter(
+          (card) => !isSuppressedFeedCard(card) && isScoreableYouTubeVideoCard(card),
+        )
       : Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR)).filter(
-          (card) => !isSuppressedFeedCard(card),
+          (card) => !isSuppressedFeedCard(card) && isScoreableYouTubeVideoCard(card),
         );
   const containers = new Map<HTMLElement, HTMLElement[]>();
 
@@ -1404,6 +1415,10 @@ function attachActions(
 }
 
 function buildPendingCard(card: HTMLElement, index: number): PendingCard | null {
+  if (!isScoreableYouTubeVideoCard(card)) {
+    clearNonScoreableTruthLensState(card);
+    return null;
+  }
   if (isSuppressedFeedCard(card)) {
     return null;
   }
@@ -1514,6 +1529,10 @@ function findManualReportTarget(message: ManualReportMessage): ManualReportTarge
   const workflowMode = message.workflowMode ?? 'report';
 
   for (let index = 0; index < cards.length; index += 1) {
+    if (!isScoreableYouTubeVideoCard(cards[index])) {
+      clearNonScoreableTruthLensState(cards[index]);
+      continue;
+    }
     const entry = extractCardContext(cards[index], index);
     if (!entry) {
       continue;
@@ -1529,6 +1548,10 @@ function findManualReportTarget(message: ManualReportMessage): ManualReportTarge
 
   if (lastContextMenuSelection) {
     const ageMs = Date.now() - lastContextMenuSelection.capturedAtMs;
+    if (!isScoreableYouTubeVideoCard(lastContextMenuSelection.entry.card)) {
+      clearNonScoreableTruthLensState(lastContextMenuSelection.entry.card);
+      return null;
+    }
     const pageOriginMatches =
       !message.pageUrl ||
       (() => {
@@ -1575,6 +1598,9 @@ function findSubmittedReviewCard(
   const cards = Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
   for (let index = 0; index < cards.length; index += 1) {
     const card = cards[index];
+    if (!isScoreableYouTubeVideoCard(card)) {
+      continue;
+    }
     const entry = extractCardContext(card, index);
     if (!entry || !matchesSubmittedReviewTarget(entry, target)) {
       continue;
@@ -1782,42 +1808,6 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
       applyLocalPersonalizationOrdering(scoredCards);
     }
   }
-}
-
-function cardContainsSponsoredMarker(card: HTMLElement): boolean {
-  const text = card.textContent?.toLowerCase() ?? '';
-  return (
-    text.includes('sponsored') ||
-    text.includes('sponsoreret') ||
-    text.includes('promoted')
-  );
-}
-
-function cardContainsExternalCallToAction(card: HTMLElement): boolean {
-  const text = card.textContent?.toLowerCase() ?? '';
-  return (
-    text.includes('visit site') ||
-    text.includes('besøg website') ||
-    text.includes('learn more') ||
-    text.includes('shop now')
-  );
-}
-
-function isSponsoredCard(
-  card: HTMLElement,
-  linkKind: 'watch' | 'shorts' | 'other' | 'unknown',
-): boolean {
-  if (
-    card.closest('ytd-ad-slot-renderer, ytd-display-ad-renderer, ytd-promoted-video-renderer')
-  ) {
-    return true;
-  }
-
-  if (cardContainsSponsoredMarker(card)) {
-    return true;
-  }
-
-  return linkKind === 'other' && cardContainsExternalCallToAction(card);
 }
 
 const homepageScoreScheduler = createHomepageScoreScheduler(
