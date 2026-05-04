@@ -1,0 +1,39 @@
+{
+  "status": "clustered",
+  "usable_mutations": 122,
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "size": 24,
+      "member_ids": [
+        "g1-elite0",
+        "g1-elite1",
+        "g1-elite2",
+        "g1-elite3",
+        "g2-elite0",
+        "g2-elite1",
+        "g2-elite2",
+        "g2-elite3",
+        "g3-elite0",
+        "g3-elite1",
+        "g3-elite2",
+        "g3-elite3",
+        "g4-elite0",
+        "g4-elite1",
+        "g4-elite2",
+        "g4-elite3",
+        "g5-elite0",
+        "g5-elite1",
+        "g5-elite2",
+        "g5-elite3",
+        "g6-elite0",
+        "g6-elite1",
+        "g6-elite2",
+        "g6-elite3"
+      ],
+      "average_delta_f": 0.0,
+      "average_delta_b": 0.0,
+      "average_theta_shift": 0.0
+    }
+  ]
+}

@@ -88,9 +88,9 @@
   ],
   "reason": "Controlled calibration artifacts were generated from governed validation/test records; route context is diagnostic and not used as a label.",
   "input_artifacts": {
-    "semantic_routing_eval": "artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json",
-    "simulation": "artifacts/eval_runs/build-20260425085620-simulation.json",
-    "model_eval": "artifacts/eval_runs/build-20260425085620.json",
-    "bseo_report": "artifacts/eval_runs/build-20260425085620-bseo-report.json"
+    "semantic_routing_eval": "docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-eval.json",
+    "simulation": "docs/benchmarks/latest/artifacts/build-20260425085620-simulation.json",
+    "model_eval": "docs/benchmarks/latest/artifacts/build-20260425085620.json",
+    "bseo_report": "docs/benchmarks/latest/artifacts/build-20260425085620-bseo-report.json"
   }
 }

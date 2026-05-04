@@ -731,6 +731,36 @@ async function main() {
       );
     });
 
+    assert.equal(await page.locator('.truthlens-report-card').count(), 0);
+    await page.evaluate(async () => {
+      const targetCard = Array.from(document.querySelectorAll('[data-truthlens-card]')).find((card) =>
+        card.textContent?.includes('Secret lab leak exposed in new footage'),
+      );
+      if (!(targetCard instanceof HTMLElement)) {
+        throw new Error('fixture secret card missing for context menu');
+      }
+      const thumbnail = targetCard.querySelector('img') ?? targetCard;
+      thumbnail.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        }),
+      );
+      await window.__dispatchTruthlensRuntimeMessage({
+        type: 'TRUTHLENS_OPEN_MANUAL_REPORT',
+        pageUrl: window.location.href,
+        workflowMode: 'report',
+      });
+    });
+    await expectText(
+      page,
+      '.truthlens-report-card h2',
+      'Secret lab leak exposed in new footage',
+    );
+    await page.locator('.truthlens-report-sheet').getByRole('button', { name: 'Close' }).click();
+    await page.waitForFunction(() => document.querySelector('.truthlens-report-sheet') === null);
+
     if ((await page.locator('.truthlens-report-card').count()) === 0) {
       artificialSuggestDelayMs = 7000;
       await secretCard.locator('.truthlens-review-prompt').click();
@@ -802,7 +832,7 @@ async function main() {
       null,
       { timeout: 4000 },
     );
-    assert.equal(suggestionRequests.length, 1);
+    assert.equal(suggestionRequests.length, 2);
     assert.equal(optimizationRequests.length, 1);
     assert.equal(youtubeReports.length, 1);
     assert.equal(feedbackEvents.length, 1);

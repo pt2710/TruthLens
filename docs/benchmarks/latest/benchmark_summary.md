@@ -22,10 +22,10 @@
 
 ## Adaptive Semantic Evidence Routing Eval
 
-- Route-aware eval artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
-- Route-aware baseline artifact: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
-- Calibration decision artifact: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
-- Creative FPR diagnostic artifact: `artifacts/eval_runs/build-20260425085620-creative-fpr-diagnostic.json`
+- Route-aware eval artifact: `docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-eval.json`
+- Route-aware baseline artifact: `docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-baseline-eval.json`
+- Calibration decision artifact: `docs/benchmarks/latest/artifacts/build-20260425085620-calibration-decision.json`
+- Creative FPR diagnostic artifact: `docs/benchmarks/latest/artifacts/build-20260425085620-creative-fpr-diagnostic.json`
 - Route-aware sample count: `159`
 - Creative false-positive rate: `0.0`
 - Deceptive/factual camouflage false-negative rate: `0.0`
@@ -65,19 +65,19 @@
 ## Artifact Provenance
 
 - `model_info`: `artifacts/trained_models/latest/model_info.json`
-- `eval_report`: `artifacts/eval_runs/build-20260425085620.json`
-- `simulation`: `artifacts/eval_runs/build-20260425085620-simulation.json`
-- `training_history`: `artifacts/eval_runs/build-20260425085620-training-history.json`
-- `semantic_routing_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-eval.json`
-- `semantic_routing_baseline_eval`: `artifacts/eval_runs/build-20260425085620-semantic-routing-baseline-eval.json`
-- `calibration_decision`: `artifacts/eval_runs/build-20260425085620-calibration-decision.json`
-- `creative_fpr_before_eval`: `artifacts/eval_runs/build-20260425085620-creative-fpr-before-eval.json`
-- `creative_fpr_diagnostic`: `artifacts/eval_runs/build-20260425085620-creative-fpr-diagnostic.json`
+- `eval_report`: `docs/benchmarks/latest/artifacts/build-20260425085620.json`
+- `simulation`: `docs/benchmarks/latest/artifacts/build-20260425085620-simulation.json`
+- `training_history`: `docs/benchmarks/latest/artifacts/build-20260425085620-training-history.json`
+- `semantic_routing_eval`: `docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-eval.json`
+- `semantic_routing_baseline_eval`: `docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-baseline-eval.json`
+- `calibration_decision`: `docs/benchmarks/latest/artifacts/build-20260425085620-calibration-decision.json`
+- `creative_fpr_before_eval`: `docs/benchmarks/latest/artifacts/build-20260425085620-creative-fpr-before-eval.json`
+- `creative_fpr_diagnostic`: `docs/benchmarks/latest/artifacts/build-20260425085620-creative-fpr-diagnostic.json`
 - `no_retrain_decision`: `missing`
 - `no_promotion_decision`: `missing`
-- `bseo_report`: `artifacts/eval_runs/build-20260425085620-bseo-report.json`
-- `mutation_atlas`: `artifacts/eval_runs/build-20260425085620-mutation-bias-atlas.json`
-- `lineage`: `artifacts/eval_runs/build-20260425085620-bseo-lineage.json`
+- `bseo_report`: `docs/benchmarks/latest/artifacts/build-20260425085620-bseo-report.json`
+- `mutation_atlas`: `docs/benchmarks/latest/artifacts/build-20260425085620-mutation-bias-atlas.json`
+- `lineage`: `docs/benchmarks/latest/artifacts/build-20260425085620-bseo-lineage.json`
 - `drift_report`: `artifacts/drift_reports/build-20260425085620.json`
 - `runtime_policy`: `configs/thresholds/runtime-policy.json`
 - `thresholds`: `configs/thresholds/default.json`

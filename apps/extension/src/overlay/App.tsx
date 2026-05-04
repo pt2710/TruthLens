@@ -323,6 +323,74 @@ async function openTargetUrl(url: string | null): Promise<void> {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+const OPTIMIZATION_STOPWORDS = new Set([
+  'about',
+  'actual',
+  'also',
+  'because',
+  'could',
+  'from',
+  'have',
+  'image',
+  'into',
+  'itself',
+  'more',
+  'that',
+  'their',
+  'there',
+  'this',
+  'video',
+  'what',
+  'when',
+  'which',
+  'with',
+  'would',
+]);
+
+const GENERIC_OPTIMIZATION_PATTERNS = [
+  'may not accurately represent',
+  'could mislead users about what the video actually shows',
+  'available text context',
+  'should still be reviewed',
+  'does not clearly reinforce the same understanding',
+  'actual focus',
+];
+
+function meaningfulOptimizationTokens(comment: string): Set<string> {
+  return new Set(
+    comment
+      .toLowerCase()
+      .replace('ai-generated', 'ai generated')
+      .match(/[a-z0-9']+/g)
+      ?.filter((token) => token.length >= 4 && !OPTIMIZATION_STOPWORDS.has(token)) ?? [],
+  );
+}
+
+function optimizationCommentLosesSubstance(originalComment: string, candidateComment: string): boolean {
+  const original = originalComment.trim();
+  const candidate = candidateComment.trim();
+  if (!original) {
+    return !candidate;
+  }
+  if (!candidate) {
+    return true;
+  }
+  const originalTokens = meaningfulOptimizationTokens(original);
+  if (originalTokens.size === 0) {
+    return false;
+  }
+  const candidateTokens = meaningfulOptimizationTokens(candidate);
+  const sharedCount = Array.from(originalTokens).filter((token) => candidateTokens.has(token)).length;
+  const coverage = sharedCount / originalTokens.size;
+  const genericHit = GENERIC_OPTIMIZATION_PATTERNS.some((pattern) =>
+    candidate.toLowerCase().includes(pattern),
+  );
+  if (genericHit && coverage < 0.65) {
+    return true;
+  }
+  return originalTokens.size >= 8 && coverage < 0.35;
+}
+
 export function App() {
   const { manualReportTarget, closeManualReport } = useOverlayStore();
   const [selectedIssues, setSelectedIssues] = useState<SelectedIssueState>(DEFAULT_SELECTED_ISSUES);
@@ -677,15 +745,23 @@ export function App() {
     });
       const nextComments = { ...comments };
       const nextOriginalComments: Partial<IssueCommentState> = {};
+      let usedPreservationFallback = false;
       for (const issue of response.issues) {
-        nextOriginalComments[issue.issue_type] = comments[issue.issue_type];
-        nextComments[issue.issue_type] = issue.comment;
+        const originalComment = comments[issue.issue_type];
+        const optimizedComment = issue.comment.trim();
+        nextOriginalComments[issue.issue_type] = originalComment;
+        if (optimizationCommentLosesSubstance(originalComment, optimizedComment)) {
+          nextComments[issue.issue_type] = originalComment.trim();
+          usedPreservationFallback = true;
+        } else {
+          nextComments[issue.issue_type] = optimizedComment;
+        }
       }
       setComments(nextComments);
       setOriginalComments(nextOriginalComments);
       setOptimizationApplied(true);
       setOptimizationModel(response.optimization_model);
-      setOptimizedReportText(response.report_text);
+      setOptimizedReportText(usedPreservationFallback ? null : response.report_text);
       const usedHeuristicOptimization = response.optimization_model.startsWith('truthlens-heuristic-');
       setSuccessMessage(
         usedHeuristicOptimization

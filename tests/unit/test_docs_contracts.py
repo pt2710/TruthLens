@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from truthlens_data_pipeline.paths import repo_root
 
 
@@ -37,6 +39,7 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     landing_page = _read("docs/index.html")
     landing_css = _read("docs/assets/landing.css")
     benchmark_readme = _read("docs/benchmarks/README.md")
+    benchmark_summary = json.loads(_read("docs/benchmarks/latest/benchmark_summary.json"))
     beta_install = _read("docs/beta-install.md")
     deployment_guide = _read("docs/deployment/render-beta.md")
     hosted_verification = _read("docs/deployment/hosted-beta-verification.md")
@@ -117,3 +120,14 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "pnpm docs:render-benchmarks" in benchmark_readme
     assert "pnpm docs:render-verify" in benchmark_readme
     assert "visible warning-state" in benchmark_readme.lower()
+    assert "docs/benchmarks/latest/artifacts/" in benchmark_readme
+    for artifact_name in (
+        "semantic_routing_eval",
+        "semantic_routing_baseline_eval",
+        "calibration_decision",
+        "creative_fpr_before_eval",
+        "creative_fpr_diagnostic",
+    ):
+        assert benchmark_summary["artifact_paths"][artifact_name].startswith(
+            "docs/benchmarks/latest/artifacts/"
+        )

@@ -43,6 +43,7 @@ def test_optimize_manual_report_stamps_configured_model_name(
     def fake_post(url: str, **kwargs):
         captured_request["url"] = url
         captured_request["timeout"] = kwargs.get("timeout")
+        captured_request["json"] = kwargs.get("json")
         return _MockResponse(
             {
                 "candidates": [
@@ -104,6 +105,9 @@ def test_optimize_manual_report_stamps_configured_model_name(
 
     assert captured_request["url"].endswith("/models/gemini-2.5-flash:generateContent")
     assert captured_request["timeout"] == 60.0
+    assert "The title states the claim as a confirmed fact." in json.dumps(
+        captured_request["json"]
+    )
     assert result.optimization_model == "gemini-2.5-flash"
     assert result.report_text.startswith("Please review this video")
 
@@ -154,16 +158,89 @@ def test_optimize_manual_report_falls_back_when_gemini_is_rate_limited(
 
     assert result.optimization_model == "truthlens-heuristic-optimizer-v1"
     assert result.issues[0].comment == (
-        "Thumbnail image may not accurately represent the scenario or subject suggested by the title, which could mislead users about what the video actually shows. The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
+        "Thumbnail image may not accurately represent the scenario suggested by the title. The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
     )
     assert result.issues[1].comment == (
-        "Overall packaging appears to rely on clickbait or fear-based curiosity cues rather than clearly representing the actual content."
+        "Video packaging uses clickbait or fear-based curiosity cues."
     )
     assert result.report_text.startswith("Requested action: Please moderate this content")
     assert (
-        "- Thumbnail: Thumbnail image may not accurately represent the scenario or subject suggested by the title, which could mislead users about what the video actually shows. The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
+        "- Thumbnail: Thumbnail image may not accurately represent the scenario suggested by the title. The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
         in result.report_text
     )
+
+
+def test_optimize_manual_report_preserves_concrete_thumbnail_details_when_gemini_is_generic(
+    monkeypatch,
+) -> None:
+    concrete_thumbnail_observation = (
+        "Thumbnail contains an explicit high-severity accusation involving children, and the "
+        "wording itself is inappropriate and harmful as public thumbnail text. It may also "
+        "misrepresent the actual content and create a misleading accusation."
+    )
+
+    def generic_post(url: str, **kwargs):
+        return _MockResponse(
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps(
+                                        {
+                                            "issues": [
+                                                {
+                                                    "issue_type": "thumbnail",
+                                                    "comment": "Thumbnail image may not accurately represent the scenario or subject suggested by the title, which could mislead users about what the video actually shows.",
+                                                }
+                                            ],
+                                            "optimization_model": "LLM_Report_Generator",
+                                            "report_text": "Please review this video for misleading framing.\n- Thumbnail: Thumbnail image may not accurately represent the scenario or subject suggested by the title.",
+                                        }
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr("truthlens_api.manual_reports.httpx.post", generic_post)
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_api_key",
+        "test-key",
+    )
+    monkeypatch.setattr(
+        "truthlens_api.manual_reports.settings.gemini_model",
+        "gemini-2.5-flash",
+    )
+
+    result = optimize_manual_report(
+        ManualReportOptimizationRequest.model_validate(
+            {
+                "target_url": "https://www.youtube.com/watch?v=item-manual-report",
+                "title_snapshot": "Unverified accusation in thumbnail",
+                "channel_name": "Signal Watch",
+                "transcript_excerpt": None,
+                "requested_outcome": "moderate",
+                "issues": [
+                    {
+                        "issue_type": "thumbnail",
+                        "comment": concrete_thumbnail_observation,
+                    }
+                ],
+            }
+        )
+    )
+
+    optimized_comment = result.issues[0].comment
+    assert "explicit high-severity accusation involving children" in optimized_comment
+    assert "inappropriate and harmful as public thumbnail text" in optimized_comment
+    assert "misleading accusation" in optimized_comment
+    assert "scenario or subject suggested by the title" not in optimized_comment
+    assert "explicit high-severity accusation involving children" in result.report_text
 
 
 def test_suggest_manual_report_normalizes_missing_issue_types(

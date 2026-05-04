@@ -202,6 +202,16 @@ function getTagCheckbox(label: string): HTMLInputElement {
   return input;
 }
 
+function getIssueCard(label: string): HTMLLabelElement {
+  const card = Array.from(document.querySelectorAll<HTMLLabelElement>('.truthlens-issue-card'))
+    .filter((entry) => !entry.classList.contains('truthlens-tag-card'))
+    .find((entry) => entry.textContent?.includes(label));
+  if (!card) {
+    throw new Error(`Could not find issue card for ${label}`);
+  }
+  return card;
+}
+
 describe('manual review overlay', () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -363,6 +373,73 @@ describe('manual review overlay', () => {
     expect(apiMocks.sendFeedbackEvent.mock.calls[0][0].manual_report.transcript_excerpt).toBe(
       'Fetched transcript evidence from captions.',
     );
+  });
+
+  it('preserves concrete thumbnail text when optimization returns generic wording', async () => {
+    const concreteThumbnailObservation =
+      'Thumbnail contains an explicit high-severity accusation involving children, and the wording itself is inappropriate and harmful as public thumbnail text. It may also misrepresent the actual content and create a misleading accusation.';
+    const thumbnailOnlyDraft = makeSuggestion('report', false);
+    thumbnailOnlyDraft.issues = thumbnailOnlyDraft.issues.map((issue) => ({
+      ...issue,
+      suggested: issue.issue_type === 'thumbnail',
+      comment: issue.issue_type === 'thumbnail' ? 'Initial thumbnail concern.' : '',
+    }));
+    apiMocks.suggestManualReportComments.mockResolvedValueOnce(thumbnailOnlyDraft);
+    apiMocks.optimizeManualReportComments.mockResolvedValueOnce({
+      issues: [
+        {
+          issue_type: 'thumbnail',
+          comment:
+            'Thumbnail image may not accurately represent the scenario or subject suggested by the title, which could mislead users about what the video actually shows.',
+        },
+      ],
+      optimization_model: 'gemini-2.5-flash',
+      report_text:
+        'Please review this video.\n- Thumbnail: Thumbnail image may not accurately represent the scenario or subject suggested by the title.',
+      selected_tags: [],
+    });
+
+    useOverlayStore.getState().openManualReport(makeTarget('report'));
+    await flushUi();
+
+    const thumbnailCard = getIssueCard('Thumbnail');
+    const thumbnailComment = thumbnailCard.querySelector<HTMLTextAreaElement>('textarea');
+    if (!thumbnailComment) {
+      throw new Error('Missing thumbnail comment textarea');
+    }
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value',
+    )?.set;
+    valueSetter?.call(thumbnailComment, concreteThumbnailObservation);
+    thumbnailComment.dispatchEvent(new Event('input', { bubbles: true }));
+    await flushUi();
+
+    const optimizeYes = document.querySelectorAll<HTMLInputElement>(
+      'input[name="truthlens-optimize-choice"]',
+    )[0];
+    if (!optimizeYes) {
+      throw new Error('Missing optimize choice');
+    }
+    optimizeYes.click();
+    await flushUi();
+
+    const optimizeButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.truthlens-secondary-button'),
+    ).find((button) => button.textContent?.includes('Optimize comments'));
+    if (!optimizeButton) {
+      throw new Error('Missing optimize button');
+    }
+
+    optimizeButton.click();
+    await flushUi();
+
+    expect(apiMocks.optimizeManualReportComments.mock.calls[0][0].issues[0].comment).toBe(
+      concreteThumbnailObservation,
+    );
+    expect(thumbnailComment.value).toBe(concreteThumbnailObservation);
+    expect(document.body.textContent).toContain('explicit high-severity accusation involving children');
+    expect(document.body.textContent).not.toContain('scenario or subject suggested by the title');
   });
 
   it('lets verify mode switch positive tags and persists the override in feedback', async () => {

@@ -171,6 +171,7 @@ let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
 const MAX_PENDING_CARDS_PER_PASS = 36;
 const BACKLOG_SCORE_DELAY_MS = 180;
+const CONTEXT_MENU_SELECTION_MAX_AGE_MS = 10_000;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
 let homepageStartupRetryCount = 0;
 let homepageStartupRetryTimer: number | null = null;
@@ -181,6 +182,7 @@ let channelTrustProfilesRefreshPromise: Promise<void> | null = null;
 let backlogScoreTimer: number | null = null;
 const OBSERVATION_SESSION_ID = createClientId('obs-session');
 const HOMEPAGE_LOG_PREFIX = '[truthlens:homepage]';
+let lastContextMenuSelection: ContextMenuSelection | null = null;
 
 type PendingCard = {
   card: HTMLElement;
@@ -195,6 +197,11 @@ type PendingCard = {
   signature: string;
   rerankLocked: boolean;
   request: ScoreItemRequest;
+};
+
+type ContextMenuSelection = {
+  entry: PendingCard;
+  capturedAtMs: number;
 };
 
 type ManualReportMessage = {
@@ -625,6 +632,35 @@ function normalizeAssetUrl(value: string | null): string | null {
   }
 }
 
+function feedCardIndex(card: HTMLElement): number {
+  return Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR)).indexOf(card);
+}
+
+function findFeedCardFromEventTarget(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof Element)) {
+    return null;
+  }
+  const card = target.closest(CARD_SELECTOR);
+  return card instanceof HTMLElement ? card : null;
+}
+
+function rememberContextMenuSelection(event: MouseEvent): void {
+  const card = findFeedCardFromEventTarget(event.target);
+  if (!card) {
+    lastContextMenuSelection = null;
+    return;
+  }
+
+  const index = feedCardIndex(card);
+  const entry = extractCardContext(card, index >= 0 ? index : 0);
+  lastContextMenuSelection = entry
+    ? {
+        entry,
+        capturedAtMs: Date.now(),
+      }
+    : null;
+}
+
 function inferLinkKind(linkUrl: string | null): 'watch' | 'shorts' | 'other' | 'unknown' {
   if (!linkUrl) {
     return 'unknown';
@@ -839,6 +875,14 @@ function buildManualReportTarget(
     channelReportCount: priorFlagsFromProfile(profile),
     score,
   };
+}
+
+function buildManualReportTargetFromEntry(
+  entry: PendingCard,
+  workflowMode: ManualReportWorkflowMode,
+): ManualReportTarget {
+  const score = useOverlayStore.getState().scoresByItemId[entry.itemId] ?? null;
+  return buildManualReportTarget(entry, score, workflowMode);
 }
 
 function openManualReport(entry: PendingCard, score: ScoreResult | null) {
@@ -1467,6 +1511,7 @@ function findManualReportTarget(message: ManualReportMessage): ManualReportTarge
   const normalizedLink = normalizeComparableUrl(message.linkUrl ?? null);
   const normalizedSrc = normalizeAssetUrl(message.srcUrl ?? null);
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
+  const workflowMode = message.workflowMode ?? 'report';
 
   for (let index = 0; index < cards.length; index += 1) {
     const entry = extractCardContext(cards[index], index);
@@ -1478,8 +1523,29 @@ function findManualReportTarget(message: ManualReportMessage): ManualReportTarge
     const imageMatch =
       normalizedSrc !== null && normalizeAssetUrl(entry.thumbnailRef) === normalizedSrc;
     if (linkMatch || imageMatch) {
-      const score = useOverlayStore.getState().scoresByItemId[entry.itemId] ?? null;
-      return buildManualReportTarget(entry, score, message.workflowMode ?? 'report');
+      return buildManualReportTargetFromEntry(entry, workflowMode);
+    }
+  }
+
+  if (lastContextMenuSelection) {
+    const ageMs = Date.now() - lastContextMenuSelection.capturedAtMs;
+    const pageOriginMatches =
+      !message.pageUrl ||
+      (() => {
+        try {
+          return new URL(message.pageUrl, window.location.href).origin === window.location.origin;
+        } catch {
+          return false;
+        }
+      })();
+    if (ageMs <= CONTEXT_MENU_SELECTION_MAX_AGE_MS && pageOriginMatches) {
+      const selectedCard = lastContextMenuSelection.entry.card;
+      const currentIndex = selectedCard.isConnected ? feedCardIndex(selectedCard) : -1;
+      const currentEntry =
+        currentIndex >= 0
+          ? extractCardContext(selectedCard, currentIndex) ?? lastContextMenuSelection.entry
+          : lastContextMenuSelection.entry;
+      return buildManualReportTargetFromEntry(currentEntry, workflowMode);
     }
   }
 
@@ -1768,6 +1834,7 @@ function requestScoreCards(trigger: HomepageScoreTrigger): void {
 }
 
 mountOverlay();
+document.addEventListener('contextmenu', rememberContextMenuSelection, true);
 installRuntimeListeners();
 installFeedRerankSettingListener();
 installManualReviewSubmissionListener();

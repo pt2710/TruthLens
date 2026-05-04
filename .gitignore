@@ -20,10 +20,6 @@ __pycache__/
 .codex/environments/
 artifacts/**
 !artifacts/**/.gitkeep
-!artifacts/eval_runs/
-!artifacts/eval_runs/*-semantic-routing-eval.json
-!artifacts/eval_runs/*-semantic-routing-baseline-eval.json
-!artifacts/eval_runs/*-calibration-decision.json
 !artifacts/reports/runtime-governance-latest.json
 !artifacts/trained_models/latest/model_info.json
 datasets/raw/**

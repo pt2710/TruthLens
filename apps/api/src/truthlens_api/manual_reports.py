@@ -1301,6 +1301,26 @@ def _build_heuristic_issue_comment(
         for marker in ("fear", "danger", "warning", "curiosity", "clickbait")
     )
 
+    if normalized_original:
+        comment = normalized_original
+        if issue_type == "other" and has_resource_signal and "unnecessary clicks" not in lower_original:
+            comment = (
+                f"{comment} This may also generate unnecessary clicks or watch starts without setting clear expectations."
+                if comment.endswith(".")
+                else f"{comment} This may also generate unnecessary clicks or watch starts without setting clear expectations."
+            )
+        elif (
+            issue_type in {"thumbnail", "title"}
+            and has_fear_cue
+            and "heightened curiosity" not in lower_original
+        ):
+            comment = (
+                f"{comment} The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
+                if comment.endswith(".")
+                else f"{comment} The current packaging also leans on heightened curiosity or warning cues that may amplify the mismatch."
+            )
+        return comment
+
     if workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT:
         templates = {
             "thumbnail": "Thumbnail appears consistent with the scenario suggested by the title and visible context.",
@@ -1356,6 +1376,25 @@ def _fallback_report_opening_line(
     return "Requested action: Please moderate this content so the presentation becomes consistent and non-misleading."
 
 
+def _build_optimization_report_text(
+    payload: ManualReportOptimizationRequest,
+    issues: list[ManualReportIssue],
+) -> str:
+    lines = [
+        _fallback_report_opening_line(payload.workflow_mode, payload.requested_outcome),
+        f'Video: "{payload.title_snapshot}"',
+        f"Channel: {payload.channel_name}",
+        "",
+        (
+            "Transparency notes:"
+            if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
+            else "Requested review for potentially misleading presentation in these areas:"
+        ),
+        *[f"- {_issue_label(issue.issue_type)}: {issue.comment}" for issue in issues],
+    ]
+    return "\n".join(lines).strip()
+
+
 def _build_heuristic_optimization_response(
     payload: ManualReportOptimizationRequest,
 ) -> ManualReportOptimizationResponse:
@@ -1371,25 +1410,10 @@ def _build_heuristic_optimization_response(
         )
         for issue in payload.issues
     ]
-    lines = [
-        _fallback_report_opening_line(payload.workflow_mode, payload.requested_outcome),
-        f'Video: "{payload.title_snapshot}"',
-        f"Channel: {payload.channel_name}",
-        "",
-        (
-            "Transparency notes:"
-            if payload.workflow_mode == ManualReportWorkflowMode.VERIFY_TRANSPARENT
-            else "Requested review for potentially misleading presentation in these areas:"
-        ),
-        *[
-            f"- {_issue_label(issue.issue_type)}: {issue.comment}"
-            for issue in normalized_issues
-        ],
-    ]
     return ManualReportOptimizationResponse(
         issues=normalized_issues,
         optimization_model=HEURISTIC_OPTIMIZATION_MODEL,
-        report_text="\n".join(lines).strip(),
+        report_text=_build_optimization_report_text(payload, normalized_issues),
         selected_tags=payload.selected_tags,
     )
 
@@ -2321,6 +2345,97 @@ def suggest_manual_report(
     return heuristic_fallback
 
 
+OPTIMIZATION_STOPWORDS = {
+    "about",
+    "actual",
+    "also",
+    "because",
+    "could",
+    "from",
+    "have",
+    "image",
+    "into",
+    "itself",
+    "more",
+    "that",
+    "their",
+    "there",
+    "this",
+    "video",
+    "what",
+    "when",
+    "which",
+    "with",
+    "would",
+}
+
+GENERIC_OPTIMIZATION_PATTERNS = (
+    "may not accurately represent",
+    "could mislead users about what the video actually shows",
+    "available text context",
+    "should still be reviewed",
+    "does not clearly reinforce the same understanding",
+    "actual focus",
+)
+
+
+def _meaningful_optimization_tokens(comment: str) -> set[str]:
+    normalized = _normalize_text(comment).lower().replace("ai-generated", "ai generated")
+    return {
+        token
+        for token in re.findall(r"[a-z0-9']+", normalized)
+        if len(token) >= 4 and token not in OPTIMIZATION_STOPWORDS
+    }
+
+
+def _optimization_comment_loses_substance(original_comment: str, candidate_comment: str) -> bool:
+    original = _normalize_text(original_comment)
+    candidate = _normalize_text(candidate_comment)
+    if not original:
+        return not candidate
+    if not candidate:
+        return True
+
+    original_tokens = _meaningful_optimization_tokens(original)
+    if not original_tokens:
+        return False
+    candidate_tokens = _meaningful_optimization_tokens(candidate)
+    coverage = len(original_tokens & candidate_tokens) / len(original_tokens)
+    generic_hit = any(pattern in candidate.lower() for pattern in GENERIC_OPTIMIZATION_PATTERNS)
+    if generic_hit and coverage < 0.65:
+        return True
+    return len(original_tokens) >= 8 and coverage < 0.35
+
+
+def _normalize_optimization_response(
+    payload: ManualReportOptimizationRequest,
+    optimized: ManualReportOptimizationResponse,
+) -> tuple[list[ManualReportIssue], bool]:
+    optimized_by_type = {issue.issue_type: issue for issue in optimized.issues}
+    normalized_issues: list[ManualReportIssue] = []
+    used_preservation_fallback = False
+    for original_issue in payload.issues:
+        optimized_issue = optimized_by_type.get(original_issue.issue_type)
+        candidate_comment = _normalize_comment_text(
+            optimized_issue.comment if optimized_issue else ""
+        )
+        if _optimization_comment_loses_substance(original_issue.comment, candidate_comment):
+            candidate_comment = _build_heuristic_issue_comment(
+                issue_type=original_issue.issue_type,
+                original_comment=original_issue.comment,
+                workflow_mode=payload.workflow_mode,
+                title_snapshot=payload.title_snapshot,
+            )
+            used_preservation_fallback = True
+        normalized_issues.append(
+            ManualReportIssue(
+                issue_type=original_issue.issue_type,
+                comment=candidate_comment,
+            )
+        )
+    return normalized_issues, used_preservation_fallback
+
+
 def optimize_manual_report(
     payload: ManualReportOptimizationRequest,
 ) -> ManualReportOptimizationResponse:
@@ -2333,18 +2448,17 @@ def optimize_manual_report(
             _optimization_schema(),
         )
         optimized = ManualReportOptimizationResponse.model_validate(response_payload)
-        normalized_issues = []
-        for issue in optimized.issues:
-            normalized_issues.append(
-                ManualReportIssue(
-                    issue_type=issue.issue_type,
-                    comment=issue.comment,
-                )
-            )
+        normalized_issues, used_preservation_fallback = _normalize_optimization_response(
+            payload,
+            optimized,
+        )
+        report_text = _normalize_text(optimized.report_text)
+        if used_preservation_fallback or not report_text:
+            report_text = _build_optimization_report_text(payload, normalized_issues)
         return ManualReportOptimizationResponse(
             issues=normalized_issues,
             optimization_model=settings.gemini_model,
-            report_text=optimized.report_text,
+            report_text=report_text,
             selected_tags=payload.selected_tags,
         )
     except (httpx.HTTPError, ValidationError, ValueError, json.JSONDecodeError):

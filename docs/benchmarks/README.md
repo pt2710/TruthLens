@@ -7,6 +7,7 @@ Rules:
 - Benchmark claims in `README.md` must trace back to `docs/benchmarks/latest/benchmark_summary.json`.
 - Visuals in `docs/benchmarks/latest/assets/` are generated from committed artifacts only.
 - The public repo keeps curated benchmark truth surfaces and metadata, not every raw eval/drift payload or binary model bundle.
+- Route-aware eval/calibration sidecars that back public benchmark claims belong under `docs/benchmarks/latest/artifacts/`; raw `artifacts/eval_runs/` outputs are generated workspace artifacts and are not part of the curated release.
 - Adaptive Semantic Evidence Routing refreshes must include route-aware eval and calibration decision artifacts before README claims change.
 - Creative false-positive calibration changes must include a route-aware before/after diagnostic artifact before benchmark claims change.
 - Missing BSEO lineage, atlas, or policy artifacts must produce stubs and caveats rather than fabricated charts.
@@ -19,6 +20,7 @@ Primary outputs:
 
 - `latest/benchmark_summary.json`
 - `latest/benchmark_summary.md`
+- `latest/artifacts/*.json`
 - `latest/verify_summary.json`
 - `latest/verify_summary.md`
 - `latest/assets/*.svg`
