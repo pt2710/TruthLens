@@ -17,7 +17,13 @@ function isTruthLensOwnedElement(element: Element, overlayId: string): boolean {
 
   return Boolean(
     element.closest(
-      `#${overlayId}, .truthlens-card-flag, .truthlens-action-row, .truthlens-details`,
+      [
+        `#${overlayId}`,
+        '.truthlens-card-flag',
+        '.truthlens-review-prompt',
+        '.truthlens-action-row',
+        '.truthlens-details',
+      ].join(', '),
     ),
   );
 }

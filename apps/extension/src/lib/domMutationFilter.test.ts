@@ -41,6 +41,23 @@ describe('shouldRescoreFromMutations', () => {
     expect(shouldRescoreFromMutations(mutations, OVERLAY_ID)).toBe(false);
   });
 
+  it('ignores TruthLens review prompt insertions', async () => {
+    document.body.innerHTML = '<ytd-rich-item-renderer id="card"></ytd-rich-item-renderer>';
+    const card = document.getElementById('card');
+    if (!card) {
+      throw new Error('Expected a card element in the test DOM.');
+    }
+
+    const mutations = await collectMutations(() => {
+      const prompt = document.createElement('button');
+      prompt.className = 'truthlens-review-prompt truthlens-review-prompt-report';
+      prompt.textContent = 'Review report';
+      card.appendChild(prompt);
+    });
+
+    expect(shouldRescoreFromMutations(mutations, OVERLAY_ID)).toBe(false);
+  });
+
   it('rescans when a new YouTube card is added to the page', async () => {
     const mutations = await collectMutations(() => {
       const card = document.createElement('ytd-rich-item-renderer');

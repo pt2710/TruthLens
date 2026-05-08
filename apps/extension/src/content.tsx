@@ -47,13 +47,13 @@ import {
 } from './lib/feedCardEligibility';
 import {
   buildPersonalizationSnapshot,
-  shouldShowPersonalizationBadge,
   type PersonalizationSnapshot,
 } from './lib/personalization';
 import {
   collectSafePendingEntries,
   HOMEPAGE_STARTUP_RETRY_DELAY_MS,
   shouldScheduleHomepageStartupRetry,
+  splitResponsivePendingEntries,
   type HomepageScoreTrigger,
 } from './lib/homepageScoring';
 import { createHomepageScoreScheduler } from './lib/homepageScheduler';
@@ -188,7 +188,7 @@ const TAXONOMY_HINT_MARKERS: Record<string, readonly string[]> = {
 };
 let rescoreTimer: number | null = null;
 const BATCH_SIZE = 12;
-const MAX_PENDING_CARDS_PER_PASS = 36;
+const MAX_PENDING_CARDS_PER_PASS = BATCH_SIZE;
 const BACKLOG_SCORE_DELAY_MS = 180;
 const CONTEXT_MENU_SELECTION_MAX_AGE_MS = 10_000;
 let channelTrustProfiles: Record<string, FeedbackChannelProfile> = {};
@@ -944,7 +944,6 @@ function syncPersonalizationPresentation(
   personalization: PersonalizationSnapshot,
   presentation: FeedPresentationSnapshot,
 ): void {
-  const shouldShowFlag = shouldShowPersonalizationBadge(personalization, score);
   const truthScoreLabel = presentation.truthScore.toFixed(1);
   const feedRiskLabel = presentation.feedRiskScore.toFixed(1);
   const runtimeLabel = presentation.runtimeRiskScore.toFixed(1);
@@ -968,11 +967,6 @@ function syncPersonalizationPresentation(
   );
 
   const existingFlag = card.querySelector<HTMLElement>('.truthlens-card-flag');
-  if (!shouldShowFlag) {
-    existingFlag?.remove();
-    return;
-  }
-
   const flag = existingFlag ?? document.createElement('span');
   flag.className = `truthlens-card-flag truthlens-card-flag-${presentation.truthBand} truthlens-card-flag-${personalization.bucket}`;
   flag.textContent = truthScoreLabel;
@@ -1788,8 +1782,8 @@ async function scoreCards(trigger: HomepageScoreTrigger = 'mutation') {
     }
   }
 
-  const cardsForPass = pendingCards.slice(0, MAX_PENDING_CARDS_PER_PASS);
-  const deferredCards = pendingCards.slice(MAX_PENDING_CARDS_PER_PASS);
+  const { entriesForPass: cardsForPass, deferredEntries: deferredCards } =
+    splitResponsivePendingEntries(pendingCards, MAX_PENDING_CARDS_PER_PASS);
   deferredCards.forEach((entry) => {
     entry.card.removeAttribute(PROCESSING);
   });

@@ -23,6 +23,18 @@ export function collectSafePendingEntries<TItem, TEntry>(
   return entries;
 }
 
+export function splitResponsivePendingEntries<TEntry>(
+  entries: readonly TEntry[],
+  maxEntriesPerPass: number,
+): { entriesForPass: TEntry[]; deferredEntries: TEntry[] } {
+  const numericMax = Number.isFinite(maxEntriesPerPass) ? maxEntriesPerPass : 1;
+  const boundedMax = Math.max(1, Math.floor(numericMax));
+  return {
+    entriesForPass: entries.slice(0, boundedMax),
+    deferredEntries: entries.slice(boundedMax),
+  };
+}
+
 export function shouldScheduleHomepageStartupRetry(
   pathname: string,
   trigger: HomepageScoreTrigger,

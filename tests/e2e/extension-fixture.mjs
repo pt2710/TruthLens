@@ -964,7 +964,7 @@ async function main() {
         updatedCard.getAttribute('data-truthlens-signature')?.includes('Weekly launch schedule') &&
         !updatedCard.classList.contains('truthlens-card-blur') &&
         updatedCard.getAttribute('data-truthlens-personalization') === 'steady' &&
-        !updatedCard.querySelector('.truthlens-card-flag')
+        updatedCard.querySelector('.truthlens-card-flag') instanceof HTMLElement
       );
     });
     await page.waitForFunction(() => {
@@ -991,7 +991,10 @@ async function main() {
     );
     assert.equal(await updatedCard.getAttribute('data-truthlens-personalization'), 'steady');
     assert.equal(await updatedCard.evaluate((element) => element.style.order), '');
-    assert.equal(await updatedCard.locator('.truthlens-card-flag').count(), 0);
+    assert.match(
+      (await updatedCard.locator('.truthlens-card-flag').textContent()) ?? '',
+      /^\d{1,2}\.\d$/,
+    );
 
     await page.evaluate(() => {
       const feed = document.querySelector('.feed');

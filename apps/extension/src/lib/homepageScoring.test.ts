@@ -4,6 +4,7 @@ import {
   collectSafePendingEntries,
   HOMEPAGE_STARTUP_RETRY_DELAY_MS,
   shouldScheduleHomepageStartupRetry,
+  splitResponsivePendingEntries,
 } from './homepageScoring';
 
 describe('homepageScoring', () => {
@@ -30,5 +31,15 @@ describe('homepageScoring', () => {
     expect(shouldScheduleHomepageStartupRetry('/', 'homepage-retry', 0, 1)).toBe(false);
     expect(shouldScheduleHomepageStartupRetry('/', 'startup', 2, 0)).toBe(false);
     expect(shouldScheduleHomepageStartupRetry('/watch', 'startup', 0, 0)).toBe(false);
+  });
+
+  it('splits a responsive scoring pass from deferred infinite-scroll backlog', () => {
+    const { entriesForPass, deferredEntries } = splitResponsivePendingEntries(
+      ['card-1', 'card-2', 'card-3', 'card-4'],
+      2,
+    );
+
+    expect(entriesForPass).toEqual(['card-1', 'card-2']);
+    expect(deferredEntries).toEqual(['card-3', 'card-4']);
   });
 });
