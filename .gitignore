@@ -18,6 +18,9 @@ __pycache__/
 .env
 .env.local
 .codex/environments/
+
+# Local browser / Playwright MCP artifacts
+.playwright-mcp/
 artifacts/**
 !artifacts/**/.gitkeep
 !artifacts/reports/runtime-governance-latest.json
