@@ -627,6 +627,16 @@ async function main() {
 
     artificialBatchDelayMs = 6000;
     await page.goto(`${baseUrl}/tests/fixtures/youtube-feed.html`);
+
+    // Local feed reranking is opt-in and OFF by default in the public beta. The fixture
+    // explicitly enables reranking so E2E can validate both the ON behavior and the
+    // runtime toggle/restore behavior.
+    await page.evaluate(async () => {
+      await chrome.storage.local.set({
+        'truthlens-feed-rerank-enabled': true,
+      });
+    });
+
     await page.addScriptTag({
       type: 'module',
       path: resolve(repoRoot, 'apps/extension/dist/content.js'),
