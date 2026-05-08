@@ -16,6 +16,7 @@ import {
 import {
   loadFeedRerankEnabled,
   persistFeedRerankEnabled,
+  DEFAULT_FEED_RERANK_ENABLED,
 } from './lib/feedRerankSettings';
 import { truthScore } from './lib/feedScoreTruth';
 
@@ -35,7 +36,9 @@ function Popup() {
     useState<FeedbackSummary | null>(null);
   const [sessionStats, setSessionStats] =
     useState<ExtensionSessionStats | null>(null);
-  const [feedRerankEnabled, setFeedRerankEnabled] = useState(true);
+  const [feedRerankEnabled, setFeedRerankEnabled] = useState(
+    DEFAULT_FEED_RERANK_ENABLED,
+  );
 
   useEffect(() => {
     Promise.all([
@@ -183,9 +186,9 @@ function Popup() {
             Enable local feed reranking
           </span>
           <span style={{ color: '#555', fontSize: 12 }}>
-            TruthLens can locally promote higher-scoring transparent content and
-            demote lower-scoring misleading or AI-noise content. This changes
-            only your extension view, not YouTube&apos;s backend ranking.
+            Off by default. When enabled, TruthLens can locally reorder visible
+            feed cards in your browser view. It does not change YouTube&apos;s
+            backend ranking.
           </span>
         </label>
       </section>
@@ -370,6 +373,8 @@ function Popup() {
     </main>
   );
 }
+
+export { Popup };
 
 const root = document.getElementById('root');
 if (root) {

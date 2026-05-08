@@ -11,6 +11,24 @@ describe('feedRerankSettings', () => {
     vi.unstubAllGlobals();
   });
 
+  it('defaults to disabled when the storage key is missing', async () => {
+    vi.stubGlobal('chrome', {
+      storage: {
+        local: {
+          get: vi.fn(async (key: string) => {
+            void key;
+            return {};
+          }),
+          set: vi.fn(async (payload: Record<string, unknown>) => {
+            void payload;
+          }),
+        },
+      },
+    });
+
+    await expect(loadFeedRerankEnabled()).resolves.toBe(false);
+  });
+
   it('persists and loads the feed reranking toggle through chrome.storage.local', async () => {
     const storage = new Map<string, unknown>();
     vi.stubGlobal('chrome', {

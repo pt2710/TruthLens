@@ -27,6 +27,7 @@ import {
   planStableRerankOrder,
   type FeedPresentationSnapshot,
 } from './lib/feedReranking';
+import { shouldRestoreOriginalOrderingWhenDisabled } from './lib/feedRerankGate';
 import {
   DEFAULT_FEED_RERANK_ENABLED,
   FEED_RERANK_ENABLED_KEY,
@@ -1095,7 +1096,16 @@ function restoreOriginalFeedOrdering(): void {
 
 function applyLocalPersonalizationOrdering(targetCards?: HTMLElement[]) {
   if (!feedRerankEnabled) {
-    restoreOriginalFeedOrdering();
+    // When reranking is disabled, do not reorder the feed. The only exception is when
+    // reranking had been applied earlier in the same session and the user later toggles it off:
+    // in that case we restore the original ordering as an explicit "undo".
+    const cardsToInspect =
+      targetCards && targetCards.length > 0
+        ? targetCards
+        : Array.from(document.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+    if (shouldRestoreOriginalOrderingWhenDisabled(cardsToInspect)) {
+      restoreOriginalFeedOrdering();
+    }
     return;
   }
 

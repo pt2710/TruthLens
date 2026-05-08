@@ -1,6 +1,7 @@
 const FEED_RERANK_ENABLED_KEY = 'truthlens-feed-rerank-enabled';
 
-export const DEFAULT_FEED_RERANK_ENABLED = true;
+// Public beta: local feed reranking is opt-in and must be OFF by default.
+export const DEFAULT_FEED_RERANK_ENABLED = false;
 
 export async function loadFeedRerankEnabled(): Promise<boolean> {
   if (typeof chrome === 'undefined' || !chrome.storage?.local) {
