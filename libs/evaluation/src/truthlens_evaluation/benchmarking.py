@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
@@ -252,6 +253,55 @@ def _artifact_paths() -> dict[str, Path | None]:
         ),
         "build_manifest": build_manifest_path if build_manifest_path.exists() else None,
     }
+
+
+def _is_generated_workspace_artifact(path: Path) -> bool:
+    relative_path = _relative(path) or ""
+    return relative_path.startswith(("artifacts/eval_runs/", "artifacts/drift_reports/"))
+
+
+def _publish_curated_artifact_paths(
+    paths: dict[str, Path | None],
+    output_root: Path,
+) -> dict[str, str]:
+    public_artifacts_dir = ensure_dir(output_root / "artifacts")
+    candidates: list[tuple[Path, Path, str, str]] = []
+    replacements: dict[str, str] = {}
+    for path in paths.values():
+        if path is None or not path.exists() or not _is_generated_workspace_artifact(path):
+            continue
+        source_relative = _relative(path)
+        destination_name = path.name
+        if source_relative and source_relative.startswith("artifacts/drift_reports/"):
+            destination_name = f"drift-{path.name}"
+        destination = public_artifacts_dir / destination_name
+        destination_relative = _relative(destination)
+        if source_relative and destination_relative:
+            candidates.append((path, destination, source_relative, destination_relative))
+            replacements[source_relative] = destination_relative
+
+    for path, destination, _, _ in candidates:
+        if path.resolve() == destination.resolve():
+            continue
+        if path.suffix.lower() == ".json":
+            payload = _remap_public_artifact_references(read_json(path), replacements)
+            write_json(destination, payload)
+        else:
+            shutil.copy2(path, destination)
+    return replacements
+
+
+def _remap_public_artifact_references(value: Any, replacements: dict[str, str]) -> Any:
+    if isinstance(value, str):
+        return replacements.get(value, value)
+    if isinstance(value, list):
+        return [_remap_public_artifact_references(item, replacements) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _remap_public_artifact_references(item, replacements)
+            for key, item in value.items()
+        }
+    return value
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
@@ -2282,6 +2332,8 @@ def render_benchmark_bundle(output_root: Path | None = None) -> dict[str, Any]:
     interactive_dir = ensure_dir(root / "interactive")
 
     summary = build_benchmark_summary()
+    public_artifact_replacements = _publish_curated_artifact_paths(_artifact_paths(), root)
+    summary = _remap_public_artifact_references(summary, public_artifact_replacements)
     write_json(root / "benchmark_summary.json", summary)
     (root / "benchmark_summary.md").write_text(_benchmark_summary_markdown(summary), encoding="utf-8")
     (assets_dir / "overall_metrics_table.md").write_text(_overall_metrics_table(summary), encoding="utf-8")

@@ -1,6 +1,6 @@
 # Benchmark Summary
 
-- Generated at: `2026-05-03T16:03:23.863754+00:00`
+- Generated at: `2026-05-08T20:20:42.107491+00:00`
 - Build ID: `build-20260425085620`
 - Model version: `baseline-v1-build-20260425085620`
 - Eval sample count: `101`
@@ -41,7 +41,7 @@
 - Observation rows linked back to scored items: `1459`
 - Legacy supplemental candidates: `0`
 - Legacy split-blocked candidates: `0`
-- Local-user feedback events: `85`
+- Local-user feedback events: `93`
 - Creator/operator candidates: `53`
 - Creator/operator gold rows: `53`
 - Creator/operator ingested rows: `53`
@@ -78,7 +78,7 @@
 - `bseo_report`: `docs/benchmarks/latest/artifacts/build-20260425085620-bseo-report.json`
 - `mutation_atlas`: `docs/benchmarks/latest/artifacts/build-20260425085620-mutation-bias-atlas.json`
 - `lineage`: `docs/benchmarks/latest/artifacts/build-20260425085620-bseo-lineage.json`
-- `drift_report`: `artifacts/drift_reports/build-20260425085620.json`
+- `drift_report`: `docs/benchmarks/latest/artifacts/drift-build-20260425085620.json`
 - `runtime_policy`: `configs/thresholds/runtime-policy.json`
 - `thresholds`: `configs/thresholds/default.json`
 - `bseo_policy`: `configs/thresholds/bseo-policy.json`

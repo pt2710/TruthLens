@@ -34,6 +34,13 @@ Required runtime inputs:
 
 Input normalization must preserve enough context for both baseline scoring and later review flows.
 
+Extension-specific scoreability rules:
+
+- YouTube watch and shorts video items are scoreable when normal video context is present
+- sponsored, promoted, external landing-page, shopping, display-ad, and non-video cards are not scoreable
+- ineligible cards must not receive TruthLens badges, action chips, reranking, observation events, feedback targets, or context-menu report/verify targets
+- if a card is later identified as non-scoreable, extension-owned UI must be removed from that card
+
 ## 3. Adaptive Semantic Evidence Routing
 
 Adaptive semantic evidence routing sits before policy/BSEO and near the scorer's evidence selection.

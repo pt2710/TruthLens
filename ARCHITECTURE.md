@@ -13,11 +13,12 @@ TruthLens is a multimodal detection, explanation, filtering, and human-review su
 TruthLens runtime is organized as:
 
 1. input and context
-2. core multimodal perception
-3. fusion and calibration
-4. selective deep verification
-5. policy and action selection
-6. explanation and review provenance
+2. adaptive semantic evidence routing
+3. core multimodal perception
+4. fusion and calibration
+5. selective deep verification
+6. policy and action selection
+7. explanation and review provenance
 
 That order is strict. Perception, verification, policy, and explanation must not be collapsed into one opaque layer.
 
@@ -39,6 +40,8 @@ That order is strict. Perception, verification, policy, and explanation must not
 - `recommended_action = blur` may remain in the policy contract for compatibility, but extension presentation must keep thumbnails visible unless a separate `hide` policy is selected.
 - `report` and `verify-transparent` must stay behaviorally distinct in draft suggestions, tag defaults, and collection-scope review semantics even though they share the same base contracts.
 - direct `/youtube/report` availability is account-dependent; extension flows must preflight capability truth and use YouTube’s in-page flow instead of knowingly triggering an unsupported direct API path.
+- hosted beta extension builds use the committed Render API default unless an operator overrides the API base explicitly.
+- ad, sponsored, external landing-page, and non-video cards are not scoreable YouTube video items and must be filtered before scoring, reranking, observation, feedback, or context-menu targeting.
 
 ## Layer Boundaries
 

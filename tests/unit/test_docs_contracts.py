@@ -28,9 +28,11 @@ def test_architecture_docs_surface_selective_verification_and_bseo_boundaries() 
     assert "governance feedback loop source" in architecture_assets.lower()
     assert "three png renders" in architecture_assets.lower()
     assert "bseo wording should reflect truthlens' positive-bias preservation" in architecture_assets.lower()
-    assert "runtime core" in blueprint.lower()
-    assert "bseo interpretation / search / artifacts" in blueprint.lower()
-    assert "observation / feedback intake" in blueprint.lower()
+    assert "hosted render api" in blueprint.lower()
+    assert "ad / non-video guard" in blueprint.lower()
+    assert "adaptive semantic evidence router" in blueprint.lower()
+    assert "bseo downstream policy layer" in blueprint.lower()
+    assert "feedback / observation / score events" in blueprint.lower()
     assert "positive-bias preservation" in blueprint.lower()
 
 
@@ -56,10 +58,18 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "## first 60 seconds" in readme.lower()
     assert "## public surfaces" in readme.lower()
     assert "## repo layout" in readme.lower()
-    assert "## extension beta quick start" in readme.lower()
+    assert "## quick start: hosted beta extension test" in readme.lower()
+    assert "## developer setup" in readme.lower()
+    assert "## architecture overview" in readme.lower()
     assert "## benchmark truth" in readme.lower()
     assert "docs/index.html" in readme
-    assert "## extension beta quick start" in readme.lower()
+    assert "git clone https://github.com/pt2710/TruthLens.git" in readme
+    assert "pnpm --filter @truthlens/extension build" in readme
+    assert "Select: apps/extension/dist" in readme
+    assert "py -m uv sync" in readme
+    assert "pyproject.toml` and `uv.lock`" in readme
+    assert "There is no canonical `requirements.txt`" in readme
+    assert "docs/architecture/truthlens-architecture-blueprint.png" in readme
     assert "docs/beta-install.md" in readme
     assert "docs/deployment/render-beta.md" in readme
     assert "docs/deployment/hosted-beta-verification.md" in readme
@@ -90,6 +100,7 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "./assets/tutorial/manual-review/report-02-right-click-menu.png" in landing_page
     assert "./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png" in landing_page
     assert "docs/privacy-dataflow.md" in landing_page
+    assert "./architecture/truthlens-architecture-blueprint.png" in landing_page
     assert "TruthLens---Browser-plugin" not in landing_page
     assert "gemini assists drafting or wording" in landing_page.lower()
     assert "landing.css" in landing_page
@@ -97,8 +108,9 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "upload-pages-artifact@v3" in pages_workflow.lower()
     assert "deploy-pages@v4" in pages_workflow.lower()
     assert "path: docs" in pages_workflow.lower()
-    assert "hosted api plus unpacked chromium extension" in beta_install.lower()
-    assert "there is no committed live default hostname" in beta_install.lower()
+    assert "hosted api plus an unpacked chromium extension" in beta_install.lower()
+    assert "committed hosted beta origin" in beta_install.lower()
+    assert "beta testers do not need local gemini, youtube, render, postgres, or api secrets" in beta_install.lower()
     assert "render web service" in deployment_guide.lower()
     assert "postgres" in deployment_guide.lower()
     assert "runtime event database" in deployment_guide.lower()

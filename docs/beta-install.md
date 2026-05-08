@@ -1,8 +1,8 @@
 # Extension Beta Install
 
-TruthLens' first external beta is extension-only and expects a hosted API.
-The supported install path is a hosted API plus unpacked Chromium extension.
-There is no committed live default hostname in the public repo. External beta bundles must be pointed at the real hosted origin explicitly.
+TruthLens' first external beta is extension-only and uses the hosted beta API by default for production extension builds.
+The supported install path is the hosted API plus an unpacked Chromium extension.
+The committed hosted beta origin is `https://truthlens-beta-api.onrender.com`; operators can override it with `VITE_TRUTHLENS_API_BASE` when building a private or staging bundle.
 
 ## What this beta includes
 
@@ -19,29 +19,26 @@ There is no committed live default hostname in the public repo. External beta bu
 
 ## Install the extension
 
-1. Set the live hosted beta origin for the build:
+1. Install Node dependencies and build the extension bundle:
 
    ```powershell
-   $env:VITE_TRUTHLENS_API_BASE="https://<your-live-hosted-beta-origin>"
-   ```
-
-2. Build the extension bundle:
-
-   ```powershell
+   git clone https://github.com/pt2710/TruthLens.git
+   cd TruthLens
    pnpm install
    pnpm --filter @truthlens/extension build
    ```
 
-3. Open `chrome://extensions`
-4. Turn on `Developer mode`
-5. Choose `Load unpacked`
-6. Select `apps/extension/dist`
+2. Open `chrome://extensions`
+3. Turn on `Developer mode`
+4. Choose `Load unpacked`
+5. Select `apps/extension/dist`
 
 ## Expected beta boundaries
 
 - if Gemini is not configured server-side, TruthLens falls back to heuristic draft suggestions
 - if direct YouTube API reporting is unavailable or disabled, TruthLens falls back to manual/page-level review flows
-- if no live hosted beta origin is configured at build time, the extension cannot be treated as a real external beta build
+- beta testers do not need local Gemini, YouTube, Render, Postgres, or API secrets for the hosted extension path
+- local backend setup is only needed for contributors or operators testing API/deployment changes
 - benchmark visuals in the repo are engineering truth surfaces, not mass-market claims
 
 ## If you are running locally instead

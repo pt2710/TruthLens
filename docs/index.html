@@ -333,6 +333,21 @@
       .score-card.yellow { border-top: 6px solid #eab308; }
       .score-card.green { border-top: 6px solid var(--green); }
 
+      .architecture-figure {
+        margin: 20px 0 0;
+        padding: 14px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .architecture-figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 14px;
+      }
+
       .split-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1001,6 +1016,28 @@
             actually implemented later.
           </div>
         </article>
+      </section>
+
+      <section class="wide-panel">
+        <h2>Current architecture at a glance</h2>
+        <p>
+          The public beta path starts in the user browser, filters out ad and non-video cards,
+          scores eligible YouTube video items through the hosted Render API, and keeps reranking
+          local to the user’s browser. Adaptive Semantic Evidence Routing conditions which evidence
+          matters at runtime, while BSEO remains a downstream policy layer rather than the core
+          classifier.
+        </p>
+        <div class="architecture-figure">
+          <img
+            alt="TruthLens architecture overview showing extension, hosted API, semantic routing, BSEO, manual review, event capture, and governed benchmark truth."
+            src="./architecture/truthlens-architecture-blueprint.png"
+          />
+        </div>
+        <p>
+          Feedback, browser observations, score events, and report or verify outcomes can support
+          diagnostics and governed evaluation, but ordinary public beta feedback is not automatically
+          promoted into global benchmark truth.
+        </p>
       </section>
 
       <section class="wide-panel">

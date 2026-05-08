@@ -68,6 +68,7 @@ def _seed_common_artifacts(root: Path) -> None:
                 "report_prompt_threshold": 0.65,
                 "hide_threshold": 0.8,
             },
+            "input_artifacts": {"eval_report": "artifacts/eval_runs/build-test.json"},
         },
     )
     _write_json(
@@ -99,6 +100,26 @@ def test_render_benchmark_bundle_surfaces_caveats_and_fail_soft_assets(
     benchmark_summary = read_json(output_root / "benchmark_summary.json")
 
     assert benchmark_summary["sample_count"] == 4
+    assert (
+        benchmark_summary["artifact_paths"]["eval_report"]
+        == "docs/benchmarks/latest/artifacts/build-test.json"
+    )
+    assert (
+        benchmark_summary["artifact_paths"]["simulation"]
+        == "docs/benchmarks/latest/artifacts/build-test-simulation.json"
+    )
+    assert (
+        benchmark_summary["artifact_paths"]["drift_report"]
+        == "docs/benchmarks/latest/artifacts/drift-build-test.json"
+    )
+    assert (output_root / "artifacts/build-test.json").exists()
+    assert (output_root / "artifacts/build-test-simulation.json").exists()
+    assert (output_root / "artifacts/drift-build-test.json").exists()
+    copied_simulation = read_json(output_root / "artifacts/build-test-simulation.json")
+    assert (
+        copied_simulation["input_artifacts"]["eval_report"]
+        == "docs/benchmarks/latest/artifacts/build-test.json"
+    )
     assert any("only 4" in caveat for caveat in benchmark_summary["caveats"])
     assert any("No committed configs/thresholds/bseo-policy.json" in caveat for caveat in benchmark_summary["caveats"])
     assert (output_root / "benchmark_summary.md").exists()

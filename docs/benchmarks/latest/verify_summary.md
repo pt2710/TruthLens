@@ -1,9 +1,9 @@
 # TruthLens Verify Summary
 
-- Generated at: `2026-05-03T06:49:02.824641+00:00`
+- Generated at: `2026-05-08T20:21:23.032950+00:00`
 - Overall status: `passed`
 - Commands passed: `9/9`
-- Total duration (s): `215.367`
+- Total duration (s): `219.918`
 
 ## Benchmark Context
 
@@ -18,15 +18,15 @@
 
 | Command | Status | Exit code | Duration (s) |
 | --- | --- | ---: | ---: |
-| `pytest` | `passed` | 0 | 108.778 |
-| `ruff` | `passed` | 0 | 0.185 |
-| `mypy` | `passed` | 0 | 14.71 |
-| `pnpm-typecheck` | `passed` | 0 | 9.335 |
-| `pnpm-test` | `passed` | 0 | 15.115 |
-| `pnpm-build` | `passed` | 0 | 8.621 |
-| `docs-render-architecture` | `passed` | 0 | 8.727 |
-| `docs-render-benchmarks` | `passed` | 0 | 13.635 |
-| `pnpm-test-e2e` | `passed` | 0 | 36.261 |
+| `pytest` | `passed` | 0 | 108.664 |
+| `ruff` | `passed` | 0 | 0.199 |
+| `mypy` | `passed` | 0 | 17.066 |
+| `pnpm-typecheck` | `passed` | 0 | 9.283 |
+| `pnpm-test` | `passed` | 0 | 15.405 |
+| `pnpm-build` | `passed` | 0 | 8.487 |
+| `docs-render-architecture` | `passed` | 0 | 7.725 |
+| `docs-render-benchmarks` | `passed` | 0 | 13.177 |
+| `pnpm-test-e2e` | `passed` | 0 | 39.912 |
 
 ## Output Excerpts
 
@@ -36,8 +36,8 @@ Command: `<repo>\.venv\Scripts\python.exe -m pytest -q`
 
 ```text
 ........................................................................ [ 50%]
-......................................................................   [100%]
-142 passed in 104.25s (0:01:44)
+........................................................................ [100%]
+144 passed in 106.03s (0:01:46)
 ```
 
 ### `ruff`
@@ -92,12 +92,12 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m<repo>/libs/shared-schemas[39m
 
- [32m✓[39m src/index.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/index.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
-[2m   Start at [22m 08:47:41
-[2m   Duration [22m 545ms[2m (transform 90ms, setup 0ms, collect 121ms, tests 9ms, environment 0ms, prepare 146ms)[22m
+[2m   Start at [22m 22:19:59
+[2m   Duration [22m 532ms[2m (transform 92ms, setup 0ms, collect 121ms, tests 8ms, environment 0ms, prepare 156ms)[22m
 
 
 > @truthlens/extension@0.1.0 test <repo>\apps\extension
@@ -106,12 +106,17 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m<repo>/apps/extension[39m
 
+ [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/lib/feedCardEligibility.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
 [90mstdout[2m | src/lib/api.test.ts[2m > [22m[2mscoreFeedItem[2m > [22m[2mfalls back to bootstrap batch scoring when the API hangs
 [22m[39m[truthlens:homepage] bootstrap fallback used for /batch-score {
   itemCount: [33m1[39m,
   reason: [32m'TruthLens API request timed out after 12000ms.'[39m
 }
 
+ [32m✓[39m src/background.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
 [90mstdout[2m | src/lib/api.test.ts[2m > [22m[2mscoreFeedItem[2m > [22m[2mfalls back to bootstrap scoring when the API is unavailable
 [22m[39m[truthlens:homepage] bootstrap fallback used for /score-item { itemId: [32m'card-2'[39m, reason: [32m'offline'[39m }
 
@@ -124,22 +129,17 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
   reason: [32m'TruthLens API request timed out after 12000ms.'[39m
 }
 
- [32m✓[39m src/lib/api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 43[2mms[22m[39m
- [32m✓[39m src/background.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 23[2mms[22m[39m
- [32m✓[39m src/lib/domMutationFilter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 53[2mms[22m[39m
- [32m✓[39m src/lib/userPreferences.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/lib/mockScore.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
- [32m✓[39m src/lib/sessionStats.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/feedReranking.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/overlay/store.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 688[2mms[22m[39m
- [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/overlay/App.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 666[2mms[22m[39m
  [32m✓[39m src/lib/youtubeWatchMetadata.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/lib/feedScoreTruth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/lib/channelTrustCache.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/reportFeedbackScoring.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/lib/feedRerankSe
+ [32m✓[39m src/lib/feedReranking.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/reviewPrompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/overlay/store.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/sessionStats.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/channelTrustCache.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/personalization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/feedScoreTruth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/homepageSco
 ... [truncated]
 ```
 
@@ -171,12 +171,12 @@ computing gzip size...
 [32m✓ built in 1.07s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
-[32m✓[39m 61 modules transformed.
+[32m✓[39m 62 modules transformed.
 rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.12 kB[22m[1m[22m[2m │ gzip:   1.87 kB[22m
-[2mdist/[22m[36mcontent.js          [39m[1m[2m364.68 kB[22m[1m[22m[2m │ gzip: 106.65 kB[22m
-[32m✓ built in 1.38s[39m
+[2mdist/[22m[36mcontent.js          [39m[1m[2m368.24 kB[22m[1m[22m[2m │ gzip: 107.95 kB[22m
+[32m✓ built in 1.33s[39m
 Extension build verified.
 
 > @truthlens/labeling-ui@0.1.0 build <repo>\apps\labeling-ui
@@ -191,7 +191,7 @@ computing gzip size...
 [2mdist/[22m[32mannotation-batch.data.json  [39m[1m[2m287.13 kB[22m[1m[22m[2m │ gzip: 11.64 kB[22m
 [2mdist/[22m[35massets/index-KaTrgatk.css   [39m[1m[2m  3.61 kB[22m[1m[22m[2m │ gzip:  1.15 kB[22m
 [2mdist/[22m[36massets/index-D1nJvnxU.js    [39m[1m[2m279.30 kB[22m[1m[22m[2m │ gzip: 80.09 kB[22m
-[32m✓ built in 1.10s[39m
+[32m✓ built in 1.09s[39m
 ```
 
 ### `docs-render-architecture`
@@ -209,7 +209,7 @@ Command: `<repo>\.venv\Scripts\python.exe scripts/render_benchmark_visualization
 
 ```text
 {
-  "generated_at": "2026-05-03T06:48:25.603193+00:00",
+  "generated_at": "2026-05-08T20:20:42.107491+00:00",
   "build_id": "build-20260425085620",
   "model_version": "baseline-v1-build-20260425085620",
   "trained_at": "2026-05-03T06:31:35.873484+00:00",
@@ -222,12 +222,14 @@ Command: `<repo>\.venv\Scripts\python.exe scripts/render_benchmark_visualization
     "semantic_routing_eval": "docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-eval.json",
     "semantic_routing_baseline_eval": "docs/benchmarks/latest/artifacts/build-20260425085620-semantic-routing-baseline-eval.json",
     "calibration_decision": "docs/benchmarks/latest/artifacts/build-20260425085620-calibration-decision.json",
+    "creative_fpr_before_eval": "docs/benchmarks/latest/artifacts/build-20260425085620-creative-fpr-before-eval.json",
+    "creative_fpr_diagnostic": "docs/benchmarks/latest/artifacts/build-20260425085620-creative-fpr-diagnostic.json",
     "no_retrain_decision": null,
     "no_promotion_decision": null,
     "bseo_report": "docs/benchmarks/latest/artifacts/build-20260425085620-bseo-report.json",
     "mutation_atlas": "docs/benchmarks/latest/artifacts/build-20260425085620-mutation-bias-atlas.json",
     "lineage": "docs/benchmarks/latest/artifacts/build-20260425085620-bseo-lineage.json",
-    "drift_report": "artifacts/drift_reports/build-20260425085620.json",
+    "drift_report": "docs/benchmarks/latest/artifacts/drift-build-20260425085620.json",
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
     "bseo_policy": "configs/thresholds/bseo-policy.json",
@@ -246,19 +248,21 @@ Command: `<repo>\.venv\Scripts\python.exe scripts/render_benchmark_visualization
     "eval_report": "2026-05-03T06:31:40.494885+00:00",
     "simulation": "2026-05-03T06:32:16.473381+00:00",
     "training_history": "2026-05-03T06:31:40.494885+00:00",
-    "semantic_routing_eval": "2026-05-03T06:32:26.055844+00:00",
+    "semantic_routing_eval": "2026-05-03T16:02:54.700788+00:00",
     "semantic_routing_baseline_eval": "2026-05-03T06:28:20.239580+00:00",
-    "calibration_decision": "2026-05-03T06:32:26.075218+00:00",
+    "calibration_decision": "2026-05-03T16:02:54.708800+00:00",
+    "creative_fpr_before_eval": "2026-05-03T15:58:40.439097+00:00",
+    "creative_fpr_diagnostic": "2026-05-03T16:02:54.704796+00:00",
     "no_retrain_decision": null,
     "no_promotion_decision": null,
     "bseo_report": "2026-05-03T06:32:16.475385+00:00",
     "mutation_atlas": "2026-05-03T06:32:16.497432+00:00",
     "lineage": "2026-05-03T06:32:16.495427+00:00",
     "drift_report": "2026-05-03T06:32:16.498947+00:00",
-    "runtime_policy": "2026-05-03T06:32:41.825402+00:00",
+    "runtime_policy": "2026-05-03T15:59:29.250315+00:00",
     "thresholds": "2026-05-03T06:32:16.498947+00:00",
     "bseo_policy": "2026-05-03T06:32:16.501009+00:00",
-    "runtime_governance": "2026-05-03T06:48:25.519986+00:00",
+    "runtime_governance": "2026-05-08T20:20:42.024036+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
@@ -266,22 +270,7 @@ Command: `<repo>\.venv\Scripts\python.exe scripts/render_benchmark_visualization
     "operator_ingestion_manifest": "2026-04-25T08:56:20.586240+00:00",
     "operator_adjudication": "2026-04-25T08:56:20.336170+00:00",
     "operator_gold": "2026-04-25T08:56:20.339904+00:00",
-    "build_manifest": "2026-04-25T08:56:20.703349+00:00"
-  },
-  "runtime_truth": {
-    "configured_policy_mode": "bseo-live",
-    "resolved_policy_mode": "bseo-live",
-    "bseo_artifact_committed": true,
-    "bseo_artifact_compatible": true,
-    "selective_verification_contract_present": true,
-    "heavy_llm_hot_path": false,
-    "recommended_policy_mode": "bseo-live",
-    "max_promotable_mode": "bseo-live",
-    "shadow_eligible": true,
-    "live_eligible": true
-  },
-  "runtime_governance": {
-    "generated_at": "2026-05-03T06:48
+    "build_manifest": "2026-04-2
 ... [truncated]
 ```
 
@@ -306,15 +295,15 @@ computing gzip size...
 [2mdist/[22m[36mbackground.js            [39m[1m[2m  2.60 kB[22m[1m[22m[2m │ gzip:  1.16 kB[22m
 [2mdist/[22m[36mchunks/runtimeConfig.js  [39m[1m[2m 70.05 kB[22m[1m[22m[2m │ gzip: 15.96 kB[22m
 [2mdist/[22m[36mpopup.js                 [39m[1m[2m204.16 kB[22m[1m[22m[2m │ gzip: 63.41 kB[22m
-[32m✓ built in 1.06s[39m
+[32m✓ built in 1.08s[39m
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
 transforming...
-[32m✓[39m 61 modules transformed.
+[32m✓[39m 62 modules transformed.
 rendering chunks...
 computing gzip size...
 [2mdist/[22m[35massets/content.css  [39m[1m[2m  7.12 kB[22m[1m[22m[2m │ gzip:   1.87 kB[22m
-[2mdist/[22m[36mcontent.js          [39m[1m[2m364.68 kB[22m[1m[22m[2m │ gzip: 106.65 kB[22m
-[32m✓ built in 1.30s[39m
+[2mdist/[22m[36mcontent.js          [39m[1m[2m368.24 kB[22m[1m[22m[2m │ gzip: 107.95 kB[22m
+[32m✓ built in 1.31s[39m
 Extension build verified.
 {
   "batchRequests": 6,

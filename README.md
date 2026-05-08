@@ -48,13 +48,65 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 | Firefox | not committed as supported |
 | iOS | not committed as supported |
 
-## Extension Beta Quick Start
+## Quick Start: Hosted Beta Extension Test
 
-1. Read the hosted deployment contract: [docs/deployment/render-beta.md](docs/deployment/render-beta.md)
-2. Read the tester install path: [docs/beta-install.md](docs/beta-install.md)
-3. Install dependencies: `pnpm install` and `python -m uv sync --group dev`
-4. Build the extension: `pnpm --filter @truthlens/extension build`
-5. Load the unpacked extension in Chromium and point it at the configured TruthLens API origin
+This path is for external beta testers who want to load the Chromium extension against the hosted beta API.
+
+```powershell
+git clone https://github.com/pt2710/TruthLens.git
+cd TruthLens
+pnpm install
+pnpm --filter @truthlens/extension build
+```
+
+Then open Chromium or Chrome:
+
+```text
+chrome://extensions
+Developer mode: ON
+Load unpacked
+Select: apps/extension/dist
+```
+
+Beta testers do not need local Gemini, YouTube, Render, Postgres, or API secrets for this hosted beta extension path. The production extension build uses the committed hosted beta API default unless an operator explicitly overrides `VITE_TRUTHLENS_API_BASE`.
+
+This remains a hosted/open beta, not a production release. Local backend setup is only needed for contributors working on API, scoring, governance, or deployment code.
+
+## Developer Setup
+
+TruthLens uses `pnpm` for Node workspaces and `uv` for Python tooling.
+
+```powershell
+pnpm install
+py -m uv sync
+```
+
+Common verification commands:
+
+```powershell
+py -m uv run pytest tests
+py -m uv run ruff check .
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+Python dependencies are governed by `pyproject.toml` and `uv.lock`. There is no canonical `requirements.txt`; one is not needed for hosted beta extension testing. If a compatibility export is added later, `pyproject.toml` and `uv.lock` should remain the source of truth.
+
+Node dependencies are governed by `package.json`, package workspace manifests, and `pnpm-lock.yaml`. The extension build output is `apps/extension/dist`.
+
+## Architecture Overview
+
+The current architecture diagrams are source-generated from Mermaid files under `docs/architecture/` and rendered as committed SVG/PNG assets.
+
+![TruthLens architecture overview](docs/architecture/truthlens-architecture-blueprint.png)
+
+![TruthLens runtime decision flow](docs/architecture/truthlens-runtime-decision-flow.png)
+
+![TruthLens governance feedback loop](docs/architecture/truthlens-governance-feedback-loop.png)
+
+These diagrams show the hosted Render API, Chromium extension beta, ad/non-video filtering, local user-side reranking, Adaptive Semantic Evidence Routing, BSEO as downstream policy, human-assisted reporting, event capture, and governed benchmark truth surfaces.
 
 ## Runtime And UI Truth
 
@@ -89,13 +141,15 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 ## Developer Checks
 
 ```powershell
-python scripts/release_hygiene_audit.py
-python -m uv run pytest
+py -m uv run python scripts/release_hygiene_audit.py
+py -m uv run pytest tests
+py -m uv run ruff check .
 pnpm typecheck
+pnpm lint
 pnpm test
 pnpm build
 pnpm test:e2e
-python scripts/benchmark_freshness_gate.py
+py -m uv run python scripts/benchmark_freshness_gate.py
 ```
 
 ## Repo Truth Notes

@@ -2,7 +2,7 @@
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Arial, Helvetica, sans-serif",
-    "fontSize": "22px",
+    "fontSize": "21px",
     "primaryTextColor": "#0f172a",
     "lineColor": "#334155",
     "background": "#ffffff"
@@ -10,8 +10,8 @@
   "flowchart": {
     "curve": "linear",
     "htmlLabels": true,
-    "nodeSpacing": 64,
-    "rankSpacing": 88
+    "nodeSpacing": 54,
+    "rankSpacing": 78
   }
 }}%%
 flowchart LR
@@ -21,13 +21,26 @@ classDef contract fill:#ecfeff,stroke:#0f766e,stroke-width:2px,color:#0f172a;
 classDef policy fill:#fff7ed,stroke:#c2410c,stroke-width:2px,color:#0f172a;
 classDef offline fill:#f8fafc,stroke:#475569,stroke-width:1.8px,color:#0f172a;
 
-clients["Client surfaces<br/>browser extension | FastAPI API | mobile share"]:::implemented
-runtime["Runtime core<br/>perception -> fusion/calibration -> selective verification"]:::implemented
-policy["Decision layer<br/>policy mode | explanation | review provenance"]:::policy
-bseo["BSEO interpretation / search / artifacts<br/>positive-bias preservation | negative-bias penalty<br/>control genome | lineage | mutation atlas"]:::offline
-intake["Observation / feedback intake<br/>browser observations | feedback events<br/>supplemental candidates"]:::contract
-offline["Offline governance and training<br/>dataset governance | trainer | eval | drift | benchmark renders"]:::offline
-promotion["Runtime promotion truth<br/>threshold-default | bseo-shadow | bseo-live"]:::policy
+youtube["User browser<br/>YouTube feed / watch page"]:::implemented
+extension["Chromium extension beta<br/>score badges | action chips | explicit review opens"]:::implemented
+adguard["Ad / non-video guard<br/>ignore sponsored external cards<br/>remove TruthLens UI if ineligible"]:::implemented
+localLayer["Local user-side layer<br/>score cache | badge render | rerank<br/>no YouTube backend control"]:::implemented
+hostedApi["Hosted Render API<br/>FastAPI runtime | committed hosted beta default<br/>Postgres-backed event paths"]:::implemented
+router["Adaptive Semantic Evidence Router<br/>content class | runtime route | evidence pressure<br/>route light, learn deep"]:::contract
+scorer["Model-serving scorer<br/>text | thumbnail refs/features | channel history<br/>bounded explicit fallbacks"]:::implemented
+verification["Selective verification<br/>high-risk | high-uncertainty | threshold-near | review-flow"]:::contract
+bseo["BSEO downstream policy layer<br/>positive-bias preservation | negative-bias penalty<br/>artifact guarded"]:::policy
+action["Explanation + suggested action<br/>truth score | badge state | reasons | provenance"]:::contract
+review["Human-assisted verify/report card<br/>Gemini wording assist optional<br/>user final review/submission"]:::implemented
+youtubeReport["YouTube in-page / account-gated report path<br/>manual fallback, no autonomous mass reporting"]:::contract
+events["Feedback / observation / score events<br/>score audit | browser observation | feedback | outcomes"]:::contract
+governance["Governed benchmark truth<br/>manifests | eval reports | dashboards<br/>public feedback not automatic train truth"]:::offline
+pages["Public truth surfaces<br/>README | GitHub Pages | architecture diagrams | benchmark visuals"]:::offline
 
-clients --> runtime --> policy --> intake --> offline --> promotion
-runtime --> bseo --> policy
+youtube --> extension --> adguard --> localLayer --> hostedApi
+hostedApi --> router --> scorer --> verification --> bseo --> action --> extension
+action --> review --> youtubeReport
+extension --> events
+review --> events
+events --> governance --> pages
+governance -. runtime-safe artifacts .-> bseo

@@ -1,0 +1,20 @@
+{
+  "reference_count": 236,
+  "current_count": 101,
+  "title_length_shift": 0.0503,
+  "sensational_count_shift": 0.0215,
+  "thumbnail_text_density_shift": -0.0056,
+  "transcript_mismatch_shift": -0.023,
+  "repeat_template_rate_shift": -0.0524,
+  "channel_risk_mean_shift": -0.018,
+  "label_rate_shift": -0.0247,
+  "label_distribution_shift": {
+    "clickbait": -0.045,
+    "misleading_thumbnail": -0.0363,
+    "misleading_title": -0.0277,
+    "fearbait": -0.0024,
+    "ai_mass_spam": -0.0084
+  },
+  "retraining_recommended": false,
+  "trigger_reasons": []
+}

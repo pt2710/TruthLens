@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-03T16:03:23.863754+00:00",
+  "generated_at": "2026-05-08T20:20:42.107491+00:00",
   "build_id": "build-20260425085620",
   "model_version": "baseline-v1-build-20260425085620",
   "trained_at": "2026-05-03T06:31:35.873484+00:00",
@@ -19,7 +19,7 @@
     "bseo_report": "docs/benchmarks/latest/artifacts/build-20260425085620-bseo-report.json",
     "mutation_atlas": "docs/benchmarks/latest/artifacts/build-20260425085620-mutation-bias-atlas.json",
     "lineage": "docs/benchmarks/latest/artifacts/build-20260425085620-bseo-lineage.json",
-    "drift_report": "artifacts/drift_reports/build-20260425085620.json",
+    "drift_report": "docs/benchmarks/latest/artifacts/drift-build-20260425085620.json",
     "runtime_policy": "configs/thresholds/runtime-policy.json",
     "thresholds": "configs/thresholds/default.json",
     "bseo_policy": "configs/thresholds/bseo-policy.json",
@@ -52,7 +52,7 @@
     "runtime_policy": "2026-05-03T15:59:29.250315+00:00",
     "thresholds": "2026-05-03T06:32:16.498947+00:00",
     "bseo_policy": "2026-05-03T06:32:16.501009+00:00",
-    "runtime_governance": "2026-05-03T16:03:23.742464+00:00",
+    "runtime_governance": "2026-05-08T20:20:42.024036+00:00",
     "supplemental_candidates": null,
     "supplemental_adjudication": null,
     "supplemental_gold": null,
@@ -75,7 +75,7 @@
     "live_eligible": true
   },
   "runtime_governance": {
-    "generated_at": "2026-05-03T16:03:23.727382+00:00",
+    "generated_at": "2026-05-08T20:20:42.021613+00:00",
     "build_id": "build-20260425085620",
     "runtime_policy": {
       "configured_mode": "bseo-live",
@@ -91,7 +91,7 @@
         "stale": false,
         "status": "compatible",
         "reason": null,
-        "age_hours": 9.525,
+        "age_hours": 133.813,
         "build_id": "build-20260425085620",
         "policy_version": "bseo-control-policy-v1"
       },
@@ -3542,9 +3542,9 @@
   },
   "feedback_layers": {
     "local_user_feedback": {
-      "total_events": 85,
+      "total_events": 93,
       "action_counts": {
-        "not-misleading": 85
+        "not-misleading": 93
       }
     },
     "creator_operator_feedback": {
