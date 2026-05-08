@@ -102,6 +102,71 @@
         margin-top: 30px;
       }
 
+      .hero-highlights {
+        margin: 18px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+        color: #334155;
+        font-size: 1.02rem;
+      }
+
+      .hero-highlights strong {
+        color: var(--ink);
+      }
+
+      .hero-boxes {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .hero-box {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 16px 18px;
+      }
+
+      .hero-box h3 {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .code-block {
+        margin: 10px 0 0;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.06);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
+      .privacy-note {
+        margin: 10px 0 0;
+        color: #0f172a;
+        font-weight: 650;
+      }
+
+      .hero-meta {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 0.98rem;
+      }
+
+      .hero-meta a {
+        text-decoration: none;
+        font-weight: 750;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.18);
+      }
+
       .primary-link,
       .secondary-link,
       .link-list a {
@@ -593,6 +658,10 @@
           height: auto;
           aspect-ratio: 1;
         }
+
+        .hero-boxes {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -603,24 +672,63 @@
           <span class="eyebrow">TruthLens hosted beta</span>
           <h1>An honesty layer for misleading video feeds.</h1>
           <p class="lead">
-            TruthLens is a browser-extension and API initiative focused on misleading packaging in
-            the age of synthetic promotion: clickbait, fake-news-like framing, deceptive thumbnails,
-            and AI-mass-produced noise. It works locally on top of what a platform already shows
-            the individual user.
+            TruthLens is a browser-side AI layer for YouTube-like feeds. It detects misleading
+            thumbnails, clickbait framing, and synthetic packaging noise — then explains the risk,
+            assists human review, and lets the user locally rerank their feed.
           </p>
+          <ul class="hero-highlights">
+            <li><strong>Detect & explain:</strong> risk score, reasons, and review context.</li>
+            <li><strong>Assist review:</strong> human-assisted report/verify flows (manual submission).</li>
+            <li><strong>Local rerank:</strong> user-side feed control without YouTube backend access.</li>
+          </ul>
           <div class="hero-actions">
             <a
               class="primary-link"
-              href="https://github.com/pt2710/TruthLens/blob/main/docs/beta-install.md"
+              href="./beta-install.md"
             >
-              Install the extension beta
+              Try the extension beta
             </a>
             <a
               class="secondary-link"
-              href="https://github.com/pt2710/TruthLens/blob/main/docs/deployment/hosted-beta-verification.md"
+              href="./deployment/hosted-beta-verification.md"
             >
               Check hosted beta proof
             </a>
+          </div>
+
+          <div class="hero-boxes" aria-label="Beta test quick path and privacy note">
+            <div class="hero-box">
+              <h3>Try this first</h3>
+              <div class="hero-meta">
+                Hosted beta extension test path. No local Gemini/YouTube/Render secrets required.
+              </div>
+              <pre class="code-block">git clone https://github.com/pt2710/TruthLens.git
+cd TruthLens
+pnpm install
+pnpm --filter @truthlens/extension build</pre>
+              <pre class="code-block">chrome://extensions
+Developer mode: ON
+Load unpacked
+Select: apps/extension/dist</pre>
+              <div class="hero-meta">
+                Local backend is only needed for contributors/operators.
+              </div>
+            </div>
+            <div class="hero-box">
+              <h3>Beta limits & privacy</h3>
+              <div class="hero-meta">
+                Hosted/open beta, not production-grade. No autonomous mass reporting. No YouTube backend/recommender control.
+              </div>
+              <div class="privacy-note">
+                Do not submit private, sensitive, confidential, or personal material during the hosted beta.
+              </div>
+              <div class="hero-meta">
+                Details: <a href="./privacy-dataflow.md">privacy/dataflow</a>. Artifact-backed metrics live under <a href="./benchmarks/latest/benchmark_summary.md">benchmarks</a>.
+              </div>
+              <div class="hero-meta">
+                Questions/ideas: <a href="https://github.com/pt2710/TruthLens/discussions">GitHub Discussions</a>.
+              </div>
+            </div>
           </div>
         </div>
 
@@ -661,6 +769,11 @@
             TruthLens can assist review and reporting, but it does not currently claim autonomous
             mass reporting. The current report path remains explicitly human-initiated.
           </p>
+          <div class="link-list" aria-label="Live proof and docs links">
+            <a href="./deployment/hosted-beta-verification.md">Hosted beta proof</a>
+            <a href="./privacy-dataflow.md">Privacy/dataflow</a>
+            <a href="./benchmarks/latest/interactive/metrics_dashboard.html">Benchmarks</a>
+          </div>
         </aside>
       </section>
 
@@ -1364,19 +1477,19 @@
         <article class="panel">
           <h2>Public links</h2>
           <div class="link-list">
-            <a href="https://github.com/pt2710/TruthLens/blob/main/docs/beta-install.md">
+            <a href="./beta-install.md">
               Extension beta install guide
             </a>
-            <a href="https://github.com/pt2710/TruthLens/blob/main/docs/deployment/render-beta.md">
+            <a href="./deployment/render-beta.md">
               Hosted beta contract
             </a>
-            <a href="https://github.com/pt2710/TruthLens/blob/main/docs/deployment/hosted-beta-verification.md">
+            <a href="./deployment/hosted-beta-verification.md">
               Hosted beta verification
             </a>
-            <a href="https://github.com/pt2710/TruthLens/blob/main/docs/benchmarks/README.md">
+            <a href="./benchmarks/README.md">
               Benchmark docs
             </a>
-            <a href="https://github.com/pt2710/TruthLens/blob/main/docs/privacy-dataflow.md">
+            <a href="./privacy-dataflow.md">
               Privacy and dataflow
             </a>
             <a href="./benchmarks/latest/interactive/metrics_dashboard.html">Latest benchmark dashboard</a>

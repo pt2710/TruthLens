@@ -99,7 +99,7 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "manual report and verification from the feed" in landing_page.lower()
     assert "./assets/tutorial/manual-review/report-02-right-click-menu.png" in landing_page
     assert "./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png" in landing_page
-    assert "docs/privacy-dataflow.md" in landing_page
+    assert "./privacy-dataflow.md" in landing_page
     assert "./architecture/truthlens-architecture-blueprint.png" in landing_page
     assert "TruthLens---Browser-plugin" not in landing_page
     assert "gemini assists drafting or wording" in landing_page.lower()
