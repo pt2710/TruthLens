@@ -1,0 +1,38 @@
+name: False negative
+description: Report content TruthLens treated as too safe or transparent.
+title: "[false negative] "
+labels:
+  - false negative
+  - beta feedback
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Content context
+      description: Describe the video/feed item and what looked misleading, harmful, or report-worthy.
+    validations:
+      required: true
+  - type: textarea
+    id: truthlens_output
+    attributes:
+      label: TruthLens output
+      description: Include score band, action badge, route/context if visible, and explanation text.
+    validations:
+      required: true
+  - type: dropdown
+    id: expected_action
+    attributes:
+      label: Expected user-facing action
+      options:
+        - lower score / warning
+        - Review report
+        - stronger explanation
+        - moderation/removal suggestion
+        - other / unsure
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Why this looks like a false negative
+      description: Use redacted wording for sensitive or harmful details.

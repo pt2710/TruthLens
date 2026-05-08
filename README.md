@@ -10,11 +10,12 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 
 ## First 60 Seconds
 
-- TruthLens is currently a controlled extension-first hosted beta, not a broad public launch.
+- TruthLens is currently a hosted/open beta codebase, not production-grade software or a broad public launch.
 - Feed scoring and reranking happen locally in the extension on top of what YouTube already showed the current user.
 - TruthLens truth score is user-facing: `10.0` is best, `0.0` is worst.
 - Report and verify sheets open only on explicit user action.
 - TruthLens-assisted reporting is currently human-assisted manual submission, not autonomous reporting.
+- Metrics are artifact-backed benchmark truth, not generalized production claims.
 - Committed benchmark truth lives under `docs/benchmarks/latest/` and is guarded by `python scripts/benchmark_freshness_gate.py`.
 
 ## Public Surfaces
@@ -24,6 +25,7 @@ The primary public-facing presentation surface now lives in [docs/index.html](do
 - Extension beta install: [docs/beta-install.md](docs/beta-install.md)
 - Hosted beta contract: [docs/deployment/render-beta.md](docs/deployment/render-beta.md)
 - Hosted beta verification: [docs/deployment/hosted-beta-verification.md](docs/deployment/hosted-beta-verification.md)
+- Privacy and dataflow note: [docs/privacy-dataflow.md](docs/privacy-dataflow.md)
 - Public hardening audit: [docs/decision-records/wave1-public-hardening-audit.md](docs/decision-records/wave1-public-hardening-audit.md)
 
 ## Repo Layout
@@ -101,4 +103,5 @@ python scripts/benchmark_freshness_gate.py
 - Direct YouTube API reporting remains deployment- and account-dependent.
 - TruthLens can fall back to YouTube’s in-page report flow when direct API reporting is unavailable.
 - Creator/operator benchmark truth is kept separate from ordinary local-user optimization feedback.
+- Ordinary public/test-user local feedback is supplemental runtime evidence unless a controlled adjudication path promotes it.
 - README should stay repo-like; public rationale and project presentation belong on the landing page and linked docs.

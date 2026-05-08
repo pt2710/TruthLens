@@ -1,0 +1,39 @@
+name: False positive
+description: Report a score, warning, or report prompt that seems too harsh.
+title: "[false positive] "
+labels:
+  - false positive
+  - beta feedback
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Content context
+      description: Describe the video/feed item and why it appears legitimate.
+    validations:
+      required: true
+  - type: textarea
+    id: truthlens_output
+    attributes:
+      label: TruthLens output
+      description: Include score band, action badge, route/context if visible, and explanation text.
+    validations:
+      required: true
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: Expected content type
+      options:
+        - music / art / creative
+        - tutorial / educational
+        - documentary / news / factual
+        - satire / comedy
+        - gaming
+        - other / unsure
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Why this looks like a false positive
+      description: Avoid private data; screenshots are useful if they do not expose sensitive material.

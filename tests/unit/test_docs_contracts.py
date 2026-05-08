@@ -40,6 +40,8 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     landing_css = _read("docs/assets/landing.css")
     benchmark_readme = _read("docs/benchmarks/README.md")
     benchmark_summary = json.loads(_read("docs/benchmarks/latest/benchmark_summary.json"))
+    privacy_dataflow = _read("docs/privacy-dataflow.md")
+    verify_summary = _read("docs/benchmarks/latest/verify_summary.md")
     beta_install = _read("docs/beta-install.md")
     deployment_guide = _read("docs/deployment/render-beta.md")
     hosted_verification = _read("docs/deployment/hosted-beta-verification.md")
@@ -61,6 +63,7 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "docs/beta-install.md" in readme
     assert "docs/deployment/render-beta.md" in readme
     assert "docs/deployment/hosted-beta-verification.md" in readme
+    assert "docs/privacy-dataflow.md" in readme
     assert "docs/decision-records/wave1-public-hardening-audit.md" in readme
     assert "docs/benchmarks/latest/benchmark_summary.json" in readme
     assert "docs/benchmarks/latest/verify_summary.json" in readme
@@ -86,6 +89,8 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "manual report and verification from the feed" in landing_page.lower()
     assert "./assets/tutorial/manual-review/report-02-right-click-menu.png" in landing_page
     assert "./assets/tutorial/manual-review/verify-08-after-gemini-optimize.png" in landing_page
+    assert "docs/privacy-dataflow.md" in landing_page
+    assert "TruthLens---Browser-plugin" not in landing_page
     assert "gemini assists drafting or wording" in landing_page.lower()
     assert "landing.css" in landing_page
     assert "--page-bg" in landing_css
@@ -113,6 +118,11 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "apache license" in _read("LICENSE").lower()
     assert "contributor covenant" in conduct.lower()
     assert "security@truthlens.dev" in security.lower()
+    assert "what the extension sends" in privacy_dataflow.lower()
+    assert "ordinary public/test-user feedback is not automatically promoted into global benchmark truth" in privacy_dataflow.lower()
+    assert "human-assisted/manual" in privacy_dataflow.lower()
+    assert "C:\\Users\\" not in verify_summary
+    assert "Desktop" not in verify_summary
     assert "TRUTHLENS_DATABASE_URL" in env_example
     assert "@pt2710" in codeowners
     assert "benchmark_freshness_gate.py" in benchmark_readme

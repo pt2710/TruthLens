@@ -32,7 +32,7 @@
 
 ### `pytest`
 
-Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\.venv\Scripts\python.exe -m pytest -q`
+Command: `<repo>\.venv\Scripts\python.exe -m pytest -q`
 
 ```text
 ........................................................................ [ 50%]
@@ -42,7 +42,7 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 
 ### `ruff`
 
-Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\.venv\Scripts\python.exe -m ruff check .`
+Command: `<repo>\.venv\Scripts\python.exe -m ruff check .`
 
 ```text
 All checks passed!
@@ -50,7 +50,7 @@ All checks passed!
 
 ### `mypy`
 
-Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\.venv\Scripts\python.exe -m mypy .`
+Command: `<repo>\.venv\Scripts\python.exe -m mypy .`
 
 ```text
 Success: no issues found in 71 source files
@@ -61,19 +61,19 @@ Success: no issues found in 71 source files
 Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm typecheck`
 
 ```text
-> truthlens@0.1.0 typecheck C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens
+> truthlens@0.1.0 typecheck <repo>
 > pnpm --filter @truthlens/shared-schemas typecheck && pnpm --filter @truthlens/extension typecheck && pnpm --filter @truthlens/labeling-ui typecheck
 
 
-> @truthlens/shared-schemas@0.1.0 typecheck C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\libs\shared-schemas
+> @truthlens/shared-schemas@0.1.0 typecheck <repo>\libs\shared-schemas
 > tsc --noEmit -p tsconfig.json
 
 
-> @truthlens/extension@0.1.0 typecheck C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
+> @truthlens/extension@0.1.0 typecheck <repo>\apps\extension
 > tsc --noEmit -p tsconfig.json
 
 
-> @truthlens/labeling-ui@0.1.0 typecheck C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\labeling-ui
+> @truthlens/labeling-ui@0.1.0 typecheck <repo>\apps\labeling-ui
 > tsc --noEmit -p tsconfig.json
 ```
 
@@ -82,15 +82,15 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm ty
 Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm test`
 
 ```text
-> truthlens@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens
+> truthlens@0.1.0 test <repo>
 > pnpm --filter @truthlens/shared-schemas test && pnpm --filter @truthlens/extension test && pnpm --filter @truthlens/labeling-ui test
 
 
-> @truthlens/shared-schemas@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\libs\shared-schemas
+> @truthlens/shared-schemas@0.1.0 test <repo>\libs\shared-schemas
 > vitest run
 
 
-[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/PT-Xb/Desktop/Arbejde_og_Udvikling_af_Machine_learning_og_software/TruthLens/libs/shared-schemas[39m
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m<repo>/libs/shared-schemas[39m
 
  [32m✓[39m src/index.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
 
@@ -100,11 +100,11 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 [2m   Duration [22m 545ms[2m (transform 90ms, setup 0ms, collect 121ms, tests 9ms, environment 0ms, prepare 146ms)[22m
 
 
-> @truthlens/extension@0.1.0 test C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
+> @truthlens/extension@0.1.0 test <repo>\apps\extension
 > vitest run
 
 
-[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/PT-Xb/Desktop/Arbejde_og_Udvikling_af_Machine_learning_og_software/TruthLens/apps/extension[39m
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m<repo>/apps/extension[39m
 
 [90mstdout[2m | src/lib/api.test.ts[2m > [22m[2mscoreFeedItem[2m > [22m[2mfalls back to bootstrap batch scoring when the API hangs
 [22m[39m[truthlens:homepage] bootstrap fallback used for /batch-score {
@@ -148,15 +148,15 @@ Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm te
 Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm build`
 
 ```text
-> truthlens@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens
+> truthlens@0.1.0 build <repo>
 > pnpm --filter @truthlens/shared-schemas build && pnpm --filter @truthlens/extension build && pnpm --filter @truthlens/labeling-ui build
 
 
-> @truthlens/shared-schemas@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\libs\shared-schemas
+> @truthlens/shared-schemas@0.1.0 build <repo>\libs\shared-schemas
 > tsc -p tsconfig.json
 
 
-> @truthlens/extension@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
+> @truthlens/extension@0.1.0 build <repo>\apps\extension
 > vite build && vite build --config vite.content.config.ts && node scripts/verify-build.mjs
 
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
@@ -179,7 +179,7 @@ computing gzip size...
 [32m✓ built in 1.38s[39m
 Extension build verified.
 
-> @truthlens/labeling-ui@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\labeling-ui
+> @truthlens/labeling-ui@0.1.0 build <repo>\apps\labeling-ui
 > vite build
 
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
@@ -199,13 +199,13 @@ computing gzip size...
 Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm docs:render-architecture`
 
 ```text
-> truthlens@0.1.0 docs:render-architecture C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens
+> truthlens@0.1.0 docs:render-architecture <repo>
 > node scripts/render_architecture_diagram.mjs
 ```
 
 ### `docs-render-benchmarks`
 
-Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\.venv\Scripts\python.exe scripts/render_benchmark_visualizations.py`
+Command: `<repo>\.venv\Scripts\python.exe scripts/render_benchmark_visualizations.py`
 
 ```text
 {
@@ -290,11 +290,11 @@ Command: `C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_sof
 Command: `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command pnpm test:e2e`
 
 ```text
-> truthlens@0.1.0 test:e2e C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens
+> truthlens@0.1.0 test:e2e <repo>
 > pnpm --filter @truthlens/extension build && node tests/e2e/extension-fixture.mjs
 
 
-> @truthlens/extension@0.1.0 build C:\Users\PT-Xb\Desktop\Arbejde_og_Udvikling_af_Machine_learning_og_software\TruthLens\apps\extension
+> @truthlens/extension@0.1.0 build <repo>\apps\extension
 > vite build && vite build --config vite.content.config.ts && node scripts/verify-build.mjs
 
 [36mvite v6.4.1 [32mbuilding for production...[36m[39m

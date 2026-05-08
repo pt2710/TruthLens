@@ -87,6 +87,23 @@ def _truncate_output(stdout: str, stderr: str, *, max_chars: int = 4000) -> str:
     return f"{combined[:max_chars].rstrip()}\n... [truncated]"
 
 
+def _sanitize_public_text(value: str, root: Path) -> str:
+    sanitized = value
+    root_variants = {
+        str(root),
+        str(root).replace("\\", "/"),
+        root.as_posix(),
+    }
+    for root_value in sorted(root_variants, key=len, reverse=True):
+        if root_value:
+            sanitized = sanitized.replace(root_value, "<repo>")
+    return sanitized
+
+
+def _sanitize_public_command(command: list[str], root: Path) -> list[str]:
+    return [_sanitize_public_text(part, root) for part in command]
+
+
 def run_verify_commands(
     *,
     commands: list[VerifyCommandSpec] | None = None,
@@ -101,15 +118,21 @@ def run_verify_commands(
         try:
             completed = active_runner(spec["command"], resolved_root)
             exit_code = int(completed.returncode)
-            output_excerpt = _truncate_output(completed.stdout, completed.stderr)
+            output_excerpt = _sanitize_public_text(
+                _truncate_output(completed.stdout, completed.stderr),
+                resolved_root,
+            )
         except FileNotFoundError as exc:
             exit_code = 127
-            output_excerpt = _truncate_output("", str(exc))
+            output_excerpt = _sanitize_public_text(
+                _truncate_output("", str(exc)),
+                resolved_root,
+            )
         duration_seconds = round(time.perf_counter() - start, 3)
         results.append(
             {
                 "name": spec["name"],
-                "command": list(spec["command"]),
+                "command": _sanitize_public_command(list(spec["command"]), resolved_root),
                 "exit_code": exit_code,
                 "status": "passed" if exit_code == 0 else "failed",
                 "duration_seconds": duration_seconds,

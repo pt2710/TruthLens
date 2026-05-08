@@ -39,11 +39,11 @@ def test_render_verify_summary_writes_truth_surface(
 
     def runner(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         assert cwd == tmp_path
-        return _completed_process(command, 0, f"ok: {' '.join(command)}")
+        return _completed_process(command, 0, f"ok from {tmp_path}: {' '.join(command)}")
 
     summary = render_verify_summary(
         commands=[
-            {"name": "pytest", "command": ["py", "-m", "uv", "run", "pytest", "-q"]},
+            {"name": "pytest", "command": [str(tmp_path / ".venv/Scripts/python.exe"), "-m", "pytest", "-q"]},
             {"name": "pnpm-test", "command": ["pnpm", "test"]},
         ],
         root=tmp_path,
@@ -56,6 +56,12 @@ def test_render_verify_summary_writes_truth_surface(
     assert summary["overall_status"] == "passed"
     assert verify_summary["passed_count"] == 2
     assert verify_summary["benchmark_context"]["build_id"] == "build-test"
+    assert (
+        verify_summary["commands"][0]["command"][0].replace("\\", "/")
+        == "<repo>/.venv/Scripts/python.exe"
+    )
+    assert str(tmp_path) not in verify_markdown
+    assert "<repo>" in verify_markdown
     assert "| `pytest` | `passed` | 0 |" in verify_markdown
     assert "Command: `pnpm test`" in verify_markdown
 
