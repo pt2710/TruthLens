@@ -119,7 +119,7 @@
       .hero-boxes {
         margin-top: 20px;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 16px;
       }
 
@@ -130,11 +130,46 @@
         padding: 16px 18px;
       }
 
+      .hero-box-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
       .hero-box h3 {
         margin: 0 0 10px;
         font-size: 0.95rem;
         letter-spacing: 0.06em;
         text-transform: uppercase;
+      }
+
+      .copy-button {
+        appearance: none;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-weight: 750;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        white-space: nowrap;
+      }
+
+      .copy-button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(15, 23, 42, 0.22);
+      }
+
+      .copy-button:active {
+        transform: translateY(0);
+      }
+
+      .copy-button:focus-visible {
+        outline: 3px solid rgba(56, 189, 248, 0.45);
+        outline-offset: 2px;
       }
 
       .code-block {
@@ -147,6 +182,9 @@
         font-size: 0.92rem;
         line-height: 1.45;
         white-space: pre-wrap;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-wrap: anywhere;
       }
 
       .privacy-note {
@@ -698,11 +736,21 @@
 
           <div class="hero-boxes" aria-label="Beta test quick path and privacy note">
             <div class="hero-box">
-              <h3>Try this first</h3>
+              <div class="hero-box-header">
+                <h3>Try this first</h3>
+                <button
+                  type="button"
+                  class="copy-button"
+                  data-copy-commands
+                  aria-label="Copy extension beta build commands"
+                >
+                  Copy commands
+                </button>
+              </div>
               <div class="hero-meta">
                 Hosted beta extension test path. No local Gemini/YouTube/Render secrets required.
               </div>
-              <pre class="code-block">git clone https://github.com/pt2710/TruthLens.git
+              <pre class="code-block" data-copy-source>git clone https://github.com/pt2710/TruthLens.git
 cd TruthLens
 pnpm install
 pnpm --filter @truthlens/extension build</pre>
@@ -1517,5 +1565,70 @@ Select: apps/extension/dist</pre>
         </p>
       </footer>
     </main>
+    <script>
+      (function () {
+        var copyButton = document.querySelector("[data-copy-commands]");
+        var source = document.querySelector("[data-copy-source]");
+        if (!copyButton || !source) return;
+
+        var defaultLabel = copyButton.textContent || "Copy commands";
+
+        function setLabel(text) {
+          copyButton.textContent = text;
+        }
+
+        function resetLabelSoon() {
+          window.setTimeout(function () {
+            setLabel(defaultLabel);
+          }, 1500);
+        }
+
+        function fallbackCopy(text) {
+          try {
+            var textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "fixed";
+            textarea.style.top = "-9999px";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+            return true;
+          } catch (err) {
+            return false;
+          }
+        }
+
+        copyButton.addEventListener("click", function () {
+          var text = (source.textContent || "").trim();
+          if (!text) return;
+
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(
+                function () {
+                  setLabel("Copied");
+                  resetLabelSoon();
+                },
+                function () {
+                  var ok = fallbackCopy(text);
+                  setLabel(ok ? "Copied" : "Copy failed");
+                  resetLabelSoon();
+                },
+              );
+              return;
+            }
+          } catch (err) {
+            // ignore and fall back
+          }
+
+          var ok = fallbackCopy(text);
+          setLabel(ok ? "Copied" : "Copy failed");
+          resetLabelSoon();
+        });
+      })();
+    </script>
   </body>
 </html>
