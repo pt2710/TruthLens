@@ -14,7 +14,7 @@ TruthLens is currently an active beta/research codebase. Security reports should
 
 Do not open public GitHub issues for suspected vulnerabilities.
 
-Instead, contact the maintainer privately at `security@truthlens.dev` and include:
+Instead, use GitHub Security Advisories (private disclosure) if available and include:
 
 - a short summary
 - affected path, surface, or workflow
@@ -22,7 +22,19 @@ Instead, contact the maintainer privately at `security@truthlens.dev` and includ
 - impact assessment
 - any suggested mitigation
 
-You will receive an acknowledgement as quickly as practical. Please allow reasonable time for investigation and remediation before public disclosure.
+If Security Advisories are not available, open a minimal public issue without sensitive details and request a private contact channel from maintainers before sharing reproduction steps.
+
+Do not include access tokens, API keys, OAuth secrets, or personal data in any report.
+
+## What To Include
+
+The most useful reports include:
+
+- a short summary
+- affected path, surface, or workflow
+- reproduction steps or proof of concept
+- impact assessment
+- any suggested mitigation
 
 ## Current Beta Boundaries
 

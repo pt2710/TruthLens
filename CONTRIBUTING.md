@@ -1,49 +1,85 @@
 # Contributing
 
-TruthLens is still in a controlled beta/research phase. The project is open to contributions, but the safest first lanes are docs, install/onboarding polish, tests, UI friction reduction, and other low-risk fixes.
+TruthLens is a public hosted/open beta. It is not production-grade, and current reporting is human-assisted/manual submission, not autonomous mass reporting.
 
-`main` is the canonical trunk for contributor work. `master` is deprecated and not part of the public contributor flow for the hosted-beta phase.
+License: Apache-2.0 (see `LICENSE`).
 
-## Working Style
+## Where To Start
 
-- Follow `PROBE -> DIAGNOSE -> CONTRACT -> TEST -> PATCH -> VERIFY -> REPORT`.
-- Keep changes small and contract-driven.
-- Do not introduce alternative root structures or placeholder project names.
-- Respect layer boundaries between extension, API, data, governance, training, and evaluation code.
+- Issues: reproducible bugs, false positives, false negatives, and concrete documentation fixes.
+- Discussions: Q&A, ideas, ethics/governance, roadmap, and broader beta feedback. See `docs/community/discussions.md`.
+- Pull requests: code and doc changes that match repo contracts and include verification.
 
-## Before Commit
+GitHub Wiki is intentionally disabled. Canonical docs live in `README.md`, `docs/`, and GitHub Pages.
 
-- Run Python checks: `pytest`, `ruff check`, `mypy`
-- Run TypeScript checks: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`
-- Run release hygiene checks when touching repo surface or public-release files: `python scripts/release_hygiene_audit.py`
-- Verify git status is intentional and reviewable
-- Base new branches and pull requests on `main`
+## Quick Start: Hosted Beta Extension Test
 
-## First Contribution Lanes
+External beta testers do not need local Gemini, YouTube, Render, Postgres, or API secrets for this path.
 
-- `docs`
-- `good first issue`
-- `extension`
-- `api`
-- `training`
-- `policy`
-- `dataset-governance`
+```powershell
+git clone https://github.com/pt2710/TruthLens.git
+cd TruthLens
+pnpm install
+pnpm --filter @truthlens/extension build
+```
 
-## Commit Format
+Then open Chromium or Chrome:
+
+```text
+chrome://extensions
+Developer mode: ON
+Load unpacked
+Select: apps/extension/dist
+```
+
+## Developer Setup
+
+```powershell
+pnpm install
+py -m uv sync
+```
+
+Common checks:
+
+```powershell
+py -m uv run python scripts/release_hygiene_audit.py
+py -m uv run pytest tests
+py -m uv run ruff check .
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+## DCO / Sign-Off
+
+This repo requires sign-off for web-based commits, and contributors should also sign off local commits.
 
 Use:
 
-```text
-type(scope): short summary
+```powershell
+git commit -s -m "message"
 ```
 
-Examples:
+Sign-off is a Developer Certificate of Origin style provenance statement. It confirms you have the right to submit the contribution; it is not a copyright assignment.
 
-- `chore(repo): bootstrap truthlens monorepo skeleton`
-- `docs(agents): add workflow and architecture references`
-- `feat(api): add initial scoring stub`
+## Working Style
 
-## Subagents
+- Follow `PROBE -> DIAGNOSE -> CONTRACT -> TEST -> PATCH -> VERIFY -> REPORT` (see `CODEX_WORKFLOW.md`).
+- Keep changes small and contract-driven.
+- Respect layer boundaries between extension, API, data, governance, training, and evaluation code.
+- Avoid committing generated artifacts unless repo policy explicitly allows them.
 
-- Use only for bounded work with explicit file ownership.
-- Do not run concurrent edits on the same files without worktree discipline.
+## Sensitive Areas (Extra Care Required)
+
+- scoring
+- BSEO/policy
+- semantic routing
+- benchmark/model artifacts and governance
+- privacy/dataflow
+- report/verify flows
+- YouTube/Gemini/Render integrations
+
+## Secrets And Safety
+
+Never commit API keys, OAuth tokens, `.env` files, Render secrets, Gemini keys, YouTube secrets, or GitHub tokens. Redact sensitive information in issues, screenshots, and logs.

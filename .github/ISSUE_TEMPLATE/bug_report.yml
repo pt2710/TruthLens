@@ -12,6 +12,24 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Chromium
+        - Edge
+        - Brave
+        - Other Chromium
+        - Other (not Chromium)
+    validations:
+      required: true
+  - type: input
+    id: extension_build
+    attributes:
+      label: Extension build/source
+      description: Example: "apps/extension/dist from main @ <commit>" or "Chrome Web Store build (if applicable)"
+  - type: dropdown
     id: surface
     attributes:
       label: Surface
@@ -44,3 +62,8 @@ body:
       label: Actual behavior
     validations:
       required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Optional. Redact any personal data or tokens. Browser console output and screenshots can help a lot.

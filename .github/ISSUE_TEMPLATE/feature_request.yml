@@ -2,7 +2,7 @@ name: Feature request
 description: Propose a scoped improvement for TruthLens.
 title: "[feature] "
 labels:
-  - docs
+  - enhancement
 body:
   - type: textarea
     id: problem
@@ -36,3 +36,14 @@ body:
     id: risks
     attributes:
       label: Risks or tradeoffs
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Affected areas (check all that apply)
+      options:
+        - label: extension UI/runtime
+        - label: hosted API
+        - label: scoring/BSEO/policy
+        - label: semantic router
+        - label: benchmark/model artifacts
+        - label: docs/privacy/community

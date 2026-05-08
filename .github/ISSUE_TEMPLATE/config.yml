@@ -3,3 +3,9 @@ contact_links:
   - name: Security reports
     url: https://github.com/pt2710/TruthLens/security/policy
     about: Use the private security channel described in SECURITY.md for vulnerabilities.
+  - name: Questions and ideas (Discussions)
+    url: https://github.com/pt2710/TruthLens/discussions
+    about: Use Discussions for Q&A, ideas, ethics/governance, and broader beta feedback.
+  - name: Contributing guide
+    url: https://github.com/pt2710/TruthLens/blob/main/CONTRIBUTING.md
+    about: Setup steps, checks, DCO/sign-off, and sensitive-area guidance.

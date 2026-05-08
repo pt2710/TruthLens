@@ -129,7 +129,8 @@ def test_benchmark_docs_point_to_generated_truth_surface() -> None:
     assert "/ready" in render_blueprint
     assert "apache license" in _read("LICENSE").lower()
     assert "contributor covenant" in conduct.lower()
-    assert "security@truthlens.dev" in security.lower()
+    assert "do not open public github issues" in security.lower()
+    assert "security advisories" in security.lower()
     assert "what the extension sends" in privacy_dataflow.lower()
     assert "ordinary public/test-user feedback is not automatically promoted into global benchmark truth" in privacy_dataflow.lower()
     assert "human-assisted/manual" in privacy_dataflow.lower()

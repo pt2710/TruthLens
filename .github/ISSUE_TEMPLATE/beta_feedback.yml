@@ -2,7 +2,7 @@ name: Beta feedback
 description: Share tester feedback about usefulness, friction, or false positives.
 title: "[beta] "
 labels:
-  - docs
+  - beta feedback
 body:
   - type: textarea
     id: context
@@ -11,6 +11,17 @@ body:
       description: What video/page context were you testing?
     validations:
       required: true
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: Content type
+      options:
+        - music / art / creative
+        - tutorial / educational
+        - documentary / news / factual
+        - satire / comedy
+        - gaming
+        - other / unsure
   - type: textarea
     id: outcome
     attributes:

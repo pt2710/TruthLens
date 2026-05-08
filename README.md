@@ -138,6 +138,13 @@ These diagrams show the hosted Render API, Chromium extension beta, ad/non-video
 - Deployment docs: [docs/deployment/](docs/deployment)
 - Decision records: [docs/decision-records/](docs/decision-records)
 
+## Community
+
+- Issues: bugs, false positives, false negatives, and documentation fixes (see `.github/ISSUE_TEMPLATE/`).
+- Discussions: Q&A, ideas, ethics/governance, and broader beta feedback: [docs/community/discussions.md](docs/community/discussions.md).
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security reports: [SECURITY.md](SECURITY.md)
+
 ## Developer Checks
 
 ```powershell

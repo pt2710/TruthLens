@@ -1,0 +1,25 @@
+name: Documentation issue
+description: Report unclear, stale, or incorrect documentation.
+title: "[docs] "
+labels:
+  - docs
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or section
+      description: Link to the page, or name the file/section (for example README, docs/index.html, docs/privacy-dataflow.md).
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or incorrect?
+      description: Describe what you read and why it does not match reality.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested correction
+      description: If you can, propose replacement wording or a concrete change.
