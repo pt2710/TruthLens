@@ -144,6 +144,52 @@
         text-transform: uppercase;
       }
 
+      .command-shell {
+        position: relative;
+      }
+
+      .copy-icon-button {
+        appearance: none;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: rgba(255, 255, 255, 0.75);
+        color: rgba(15, 23, 42, 0.88);
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      .copy-icon-button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(15, 23, 42, 0.22);
+      }
+
+      .copy-icon-button:active {
+        transform: translateY(0);
+      }
+
+      .copy-icon-button:focus-visible {
+        outline: 3px solid rgba(56, 189, 248, 0.45);
+        outline-offset: 2px;
+      }
+
+      .copy-icon-button[data-copy-state="copied"] {
+        border-color: rgba(34, 197, 94, 0.45);
+        box-shadow: 0 10px 22px rgba(34, 197, 94, 0.12);
+      }
+
+      .copy-icon-button svg {
+        width: 18px;
+        height: 18px;
+      }
+
       .copy-button {
         appearance: none;
         border: 1px solid rgba(15, 23, 42, 0.14);
@@ -185,6 +231,10 @@
         max-width: 100%;
         overflow-x: auto;
         overflow-wrap: anywhere;
+      }
+
+      .code-block.install-commands {
+        padding-right: 58px;
       }
 
       .privacy-note {
@@ -736,31 +786,33 @@
 
           <div class="hero-boxes" aria-label="Beta test quick path and privacy note">
             <div class="hero-box">
-              <div class="hero-box-header">
-                <h3>Try this first</h3>
+              <h3>Try TruthLens!</h3>
+              <div class="hero-meta">
+                Run these commands in PowerShell, CMD, Terminal, or another shell. Then load the built
+                extension manually in Chrome or Chromium.
+              </div>
+              <div class="command-shell" aria-label="Install commands">
                 <button
                   type="button"
-                  class="copy-button"
-                  data-copy-commands
-                  aria-label="Copy extension beta build commands"
+                  class="copy-icon-button"
+                  data-copy-target="#install-commands"
+                  aria-label="Copy install commands"
+                  title="Copy install commands"
                 >
-                  Copy commands
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                    <rect x="4" y="4" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2" opacity="0.85"></rect>
+                  </svg>
                 </button>
-              </div>
-              <div class="hero-meta">
-                Hosted beta extension test path. No local Gemini/YouTube/Render secrets required.
-              </div>
-              <pre class="code-block" data-copy-source>git clone https://github.com/pt2710/TruthLens.git
+                <pre id="install-commands" class="code-block install-commands">git clone https://github.com/pt2710/TruthLens.git
 cd TruthLens
 pnpm install
 pnpm --filter @truthlens/extension build</pre>
+              </div>
               <pre class="code-block">chrome://extensions
 Developer mode: ON
 Load unpacked
 Select: apps/extension/dist</pre>
-              <div class="hero-meta">
-                Local backend is only needed for contributors/operators.
-              </div>
             </div>
             <div class="hero-box">
               <h3>Beta limits & privacy</h3>
@@ -1567,21 +1619,8 @@ Select: apps/extension/dist</pre>
     </main>
     <script>
       (function () {
-        var copyButton = document.querySelector("[data-copy-commands]");
-        var source = document.querySelector("[data-copy-source]");
-        if (!copyButton || !source) return;
-
-        var defaultLabel = copyButton.textContent || "Copy commands";
-
-        function setLabel(text) {
-          copyButton.textContent = text;
-        }
-
-        function resetLabelSoon() {
-          window.setTimeout(function () {
-            setLabel(defaultLabel);
-          }, 1500);
-        }
+        var buttons = Array.prototype.slice.call(document.querySelectorAll("[data-copy-target]"));
+        if (!buttons.length) return;
 
         function fallbackCopy(text) {
           try {
@@ -1601,32 +1640,48 @@ Select: apps/extension/dist</pre>
           }
         }
 
-        copyButton.addEventListener("click", function () {
-          var text = (source.textContent || "").trim();
-          if (!text) return;
-
-          try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(text).then(
-                function () {
-                  setLabel("Copied");
-                  resetLabelSoon();
-                },
-                function () {
-                  var ok = fallbackCopy(text);
-                  setLabel(ok ? "Copied" : "Copy failed");
-                  resetLabelSoon();
-                },
-              );
-              return;
-            }
-          } catch (err) {
-            // ignore and fall back
+        function setTransientState(button, state) {
+          button.setAttribute("data-copy-state", state);
+          var originalTitle = button.getAttribute("data-original-title");
+          if (!originalTitle) {
+            originalTitle = button.getAttribute("title") || "";
+            button.setAttribute("data-original-title", originalTitle);
           }
+          button.setAttribute("title", state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : originalTitle);
+          window.setTimeout(function () {
+            button.removeAttribute("data-copy-state");
+            button.setAttribute("title", originalTitle);
+          }, 1500);
+        }
 
-          var ok = fallbackCopy(text);
-          setLabel(ok ? "Copied" : "Copy failed");
-          resetLabelSoon();
+        buttons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            var selector = button.getAttribute("data-copy-target");
+            if (!selector) return;
+            var source = document.querySelector(selector);
+            var text = (source && source.textContent ? source.textContent : "").trim();
+            if (!text) return;
+
+            try {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(
+                  function () {
+                    setTransientState(button, "copied");
+                  },
+                  function () {
+                    var ok = fallbackCopy(text);
+                    setTransientState(button, ok ? "copied" : "failed");
+                  },
+                );
+                return;
+              }
+            } catch (err) {
+              // ignore and fall back
+            }
+
+            var ok = fallbackCopy(text);
+            setTransientState(button, ok ? "copied" : "failed");
+          });
         });
       })();
     </script>
